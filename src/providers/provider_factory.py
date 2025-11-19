@@ -15,15 +15,18 @@ class ProviderFactory:
     MODEL_PROVIDER_MAP = {
         # OpenAI models
         "gpt-5.1": "openai",
-        "gpt-4o": "openai",
+        "gpt-5-mini": "openai",
+        "gpt-5-nano": "openai",
 
         # Google models
-        "gemini-3.0": "google",
-        "gemini-2.0-flash": "google",
+        "gemini-3-pro": "google",
+        "gemini-2.5-flash": "google",
+        "gemini-2.5-flash-lite": "google",
 
         # Anthropic models
         "claude-sonnet-4.5": "anthropic",
-        "claude-3-5-sonnet": "anthropic",
+        "claude-haiku-4.5": "anthropic",
+        "claude-opus-4.1": "anthropic",
     }
 
     @staticmethod

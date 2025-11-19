@@ -20,8 +20,9 @@ class GoogleProvider(BaseProvider):
     """Google Gemini provider implementation."""
 
     SUPPORTED_MODELS = [
-        "gemini-3.0",
-        "gemini-2.0-flash",
+        "gemini-3-pro",
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
     ]
 
     def __init__(self, api_key: str):

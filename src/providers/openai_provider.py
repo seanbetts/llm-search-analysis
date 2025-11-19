@@ -21,7 +21,8 @@ class OpenAIProvider(BaseProvider):
 
     SUPPORTED_MODELS = [
         "gpt-5.1",
-        "gpt-4o",
+        "gpt-5-mini",
+        "gpt-5-nano",
     ]
 
     def __init__(self, api_key: str):
