@@ -1,0 +1,276 @@
+"""
+Database models and operations using SQLAlchemy.
+"""
+
+from datetime import datetime
+from typing import List, Optional
+from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, ForeignKey, JSON
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, relationship, Session
+
+from .config import Config
+
+Base = declarative_base()
+
+
+class Provider(Base):
+    """AI provider information."""
+    __tablename__ = "providers"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), unique=True, nullable=False)  # e.g., "openai", "google", "anthropic"
+    display_name = Column(String(100))  # e.g., "OpenAI", "Google", "Anthropic"
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    sessions = relationship("SessionModel", back_populates="provider")
+
+
+class SessionModel(Base):
+    """Prompt session."""
+    __tablename__ = "sessions"
+
+    id = Column(Integer, primary_key=True)
+    provider_id = Column(Integer, ForeignKey("providers.id"))
+    model_used = Column(String(100))  # e.g., "gpt-5.1", "gemini-3.0"
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    provider = relationship("Provider", back_populates="sessions")
+    prompts = relationship("Prompt", back_populates="session")
+
+
+class Prompt(Base):
+    """User prompt."""
+    __tablename__ = "prompts"
+
+    id = Column(Integer, primary_key=True)
+    session_id = Column(Integer, ForeignKey("sessions.id"))
+    prompt_text = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    session = relationship("SessionModel", back_populates="prompts")
+    response = relationship("Response", back_populates="prompt", uselist=False)
+
+
+class Response(Base):
+    """Model response."""
+    __tablename__ = "responses"
+
+    id = Column(Integer, primary_key=True)
+    prompt_id = Column(Integer, ForeignKey("prompts.id"))
+    response_text = Column(Text)
+    response_time_ms = Column(Integer)  # Response time in milliseconds
+    created_at = Column(DateTime, default=datetime.utcnow)
+    raw_response_json = Column(JSON)  # Store raw API response
+
+    # Relationships
+    prompt = relationship("Prompt", back_populates="response")
+    search_calls = relationship("SearchCall", back_populates="response")
+    citations = relationship("CitationModel", back_populates="response")
+
+
+class SearchCall(Base):
+    """Search/tool call made during response generation."""
+    __tablename__ = "search_calls"
+
+    id = Column(Integer, primary_key=True)
+    response_id = Column(Integer, ForeignKey("responses.id"))
+    search_query = Column(Text)  # The search query text
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    response = relationship("Response", back_populates="search_calls")
+    sources = relationship("SourceModel", back_populates="search_call")
+
+
+class SourceModel(Base):
+    """Source/URL fetched during search."""
+    __tablename__ = "sources"
+
+    id = Column(Integer, primary_key=True)
+    search_call_id = Column(Integer, ForeignKey("search_calls.id"))
+    url = Column(Text, nullable=False)
+    title = Column(Text)
+    domain = Column(String(255))
+
+    # Relationships
+    search_call = relationship("SearchCall", back_populates="sources")
+
+
+class CitationModel(Base):
+    """Citation used in the response."""
+    __tablename__ = "citations"
+
+    id = Column(Integer, primary_key=True)
+    response_id = Column(Integer, ForeignKey("responses.id"))
+    url = Column(Text, nullable=False)
+    title = Column(Text)
+
+    # Relationships
+    response = relationship("Response", back_populates="citations")
+
+
+class Database:
+    """Database manager."""
+
+    def __init__(self, database_url: str = None):
+        """
+        Initialize database connection.
+
+        Args:
+            database_url: Database URL (defaults to config value)
+        """
+        self.database_url = database_url or Config.DATABASE_URL
+        self.engine = create_engine(self.database_url)
+        self.SessionLocal = sessionmaker(bind=self.engine)
+
+    def create_tables(self):
+        """Create all database tables."""
+        Base.metadata.create_all(self.engine)
+
+    def get_session(self) -> Session:
+        """Get a new database session."""
+        return self.SessionLocal()
+
+    def ensure_providers(self):
+        """Ensure default providers exist in database."""
+        session = self.get_session()
+        try:
+            providers_data = [
+                {"name": "openai", "display_name": "OpenAI"},
+                {"name": "google", "display_name": "Google"},
+                {"name": "anthropic", "display_name": "Anthropic"},
+            ]
+
+            for provider_data in providers_data:
+                existing = session.query(Provider).filter_by(name=provider_data["name"]).first()
+                if not existing:
+                    provider = Provider(**provider_data)
+                    session.add(provider)
+
+            session.commit()
+        finally:
+            session.close()
+
+    def save_interaction(self, provider_name: str, model: str, prompt: str,
+                        response_text: str, search_queries: List,
+                        sources: List, citations: List,
+                        response_time_ms: int, raw_response: dict):
+        """
+        Save a complete interaction to the database.
+
+        Args:
+            provider_name: Provider name (e.g., "openai")
+            model: Model used
+            prompt: User's prompt
+            response_text: Model's response
+            search_queries: List of SearchQuery objects
+            sources: List of Source objects
+            citations: List of Citation objects
+            response_time_ms: Response time in milliseconds
+            raw_response: Raw API response dictionary
+        """
+        session = self.get_session()
+        try:
+            # Get or create provider
+            provider = session.query(Provider).filter_by(name=provider_name).first()
+            if not provider:
+                provider = Provider(name=provider_name, display_name=provider_name.capitalize())
+                session.add(provider)
+                session.flush()
+
+            # Create session
+            session_obj = SessionModel(provider_id=provider.id, model_used=model)
+            session.add(session_obj)
+            session.flush()
+
+            # Create prompt
+            prompt_obj = Prompt(session_id=session_obj.id, prompt_text=prompt)
+            session.add(prompt_obj)
+            session.flush()
+
+            # Create response
+            response_obj = Response(
+                prompt_id=prompt_obj.id,
+                response_text=response_text,
+                response_time_ms=response_time_ms,
+                raw_response_json=raw_response
+            )
+            session.add(response_obj)
+            session.flush()
+
+            # Create search calls and sources
+            for query in search_queries:
+                search_call = SearchCall(
+                    response_id=response_obj.id,
+                    search_query=query.query
+                )
+                session.add(search_call)
+                session.flush()
+
+                # Associate sources with this search call
+                for source in sources:
+                    source_obj = SourceModel(
+                        search_call_id=search_call.id,
+                        url=source.url,
+                        title=source.title,
+                        domain=source.domain
+                    )
+                    session.add(source_obj)
+
+            # Create citations
+            for citation in citations:
+                citation_obj = CitationModel(
+                    response_id=response_obj.id,
+                    url=citation.url,
+                    title=citation.title
+                )
+                session.add(citation_obj)
+
+            session.commit()
+            return response_obj.id
+
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
+    def get_recent_interactions(self, limit: int = 50):
+        """
+        Get recent interactions for display.
+
+        Args:
+            limit: Maximum number of interactions to return
+
+        Returns:
+            List of interaction dictionaries
+        """
+        session = self.get_session()
+        try:
+            results = []
+            prompts = session.query(Prompt).order_by(Prompt.created_at.desc()).limit(limit).all()
+
+            for prompt in prompts:
+                if prompt.response:
+                    search_count = len(prompt.response.search_calls)
+                    source_count = sum(len(sc.sources) for sc in prompt.response.search_calls)
+                    citation_count = len(prompt.response.citations)
+
+                    results.append({
+                        "id": prompt.id,
+                        "timestamp": prompt.created_at,
+                        "prompt": prompt.prompt_text,
+                        "model": prompt.session.model_used,
+                        "provider": prompt.session.provider.display_name,
+                        "searches": search_count,
+                        "sources": source_count,
+                        "citations": citation_count,
+                    })
+
+            return results
+        finally:
+            session.close()
