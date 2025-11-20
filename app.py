@@ -102,6 +102,22 @@ def display_response(response):
         'anthropic': 'Anthropic'
     }
 
+    # Model display names
+    model_names = {
+        # Anthropic
+        'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
+        'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
+        'claude-opus-4-1-20250805': 'Claude Opus 4.1',
+        # OpenAI
+        'gpt-5.1': 'GPT-5.1',
+        'gpt-5-mini': 'GPT-5 Mini',
+        'gpt-5-nano': 'GPT-5 Nano',
+        # Google
+        'gemini-3-pro-preview': 'Gemini 3 Pro (Preview)',
+        'gemini-2.5-flash': 'Gemini 2.5 Flash',
+        'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite',
+    }
+
     # Response metadata
     st.markdown("### 📊 Response Metadata")
     col1, col2, col3, col4, col5, col6 = st.columns([1, 2.5, 1, 1, 1, 1])
@@ -109,7 +125,7 @@ def display_response(response):
     with col1:
         st.metric("Provider", provider_names.get(response.provider, response.provider.capitalize()))
     with col2:
-        st.metric("Model", response.model)
+        st.metric("Model", model_names.get(response.model, response.model))
     with col3:
         response_time = f"{response.response_time_ms / 1000:.2f}s" if response.response_time_ms else "N/A"
         st.metric("Response Time", response_time)
