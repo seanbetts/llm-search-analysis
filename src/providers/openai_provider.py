@@ -71,12 +71,12 @@ class OpenAIProvider(BaseProvider):
             # Call OpenAI Responses API with web_search tool
             response = self.client.responses.create(
                 model=model,
+                input=prompt,
                 tools=[{
                     "type": "web_search",
                 }],
                 tool_choice="auto",
-                include=["web_search_call.action.sources"],
-                input=prompt
+                include=["web_search_call.action.sources"]  # Request sources in response
             )
 
             # Calculate response time
@@ -90,7 +90,7 @@ class OpenAIProvider(BaseProvider):
 
     def _parse_response(self, response, model: str, response_time_ms: int) -> ProviderResponse:
         """
-        Parse OpenAI response into standardized format.
+        Parse OpenAI Responses API response into standardized format.
 
         Args:
             response: Raw OpenAI API response
@@ -105,41 +105,42 @@ class OpenAIProvider(BaseProvider):
         citations = []
         response_text = ""
 
-        # Extract response items
-        for item in response.items:
-            # Extract web_search_call items
-            if item.type == "web_search_call":
-                if item.status == "completed" and item.action:
-                    # Extract search query
-                    if item.action.type == "search" and item.action.query:
-                        search_queries.append(SearchQuery(
-                            query=item.action.query
-                        ))
+        # Extract response from output array
+        if hasattr(response, 'output') and response.output:
+            for output_item in response.output:
+                # Handle web_search_call type
+                if output_item.type == "web_search_call":
+                    if output_item.status == "completed" and hasattr(output_item, 'action'):
+                        action = output_item.action
 
-                    # Extract sources
-                    if hasattr(item.action, 'sources') and item.action.sources:
-                        for source in item.action.sources:
-                            sources.append(Source(
-                                url=source.url,
-                                title=source.title if hasattr(source, 'title') else None,
-                                domain=urlparse(source.url).netloc
-                            ))
+                        # Extract search query
+                        if hasattr(action, 'query') and action.query:
+                            search_queries.append(SearchQuery(query=action.query))
 
-            # Extract message (final response)
-            elif item.type == "message":
-                if item.status == "completed" and item.content:
-                    for content in item.content:
-                        if content.type == "output_text":
-                            response_text = content.text
+                        # Extract sources (requires include=["web_search_call.action.sources"])
+                        if hasattr(action, 'sources') and action.sources:
+                            for source in action.sources:
+                                sources.append(Source(
+                                    url=source.url if hasattr(source, 'url') else "",
+                                    title=source.title if hasattr(source, 'title') else None,
+                                    domain=urlparse(source.url).netloc if hasattr(source, 'url') else None
+                                ))
 
-                            # Extract citations from annotations
-                            if hasattr(content, 'annotations') and content.annotations:
-                                for annotation in content.annotations:
-                                    if annotation.type == "url_citation":
-                                        citations.append(Citation(
-                                            url=annotation.url,
-                                            title=annotation.title if hasattr(annotation, 'title') else None,
-                                        ))
+                # Handle message type
+                elif output_item.type == "message":
+                    if output_item.status == "completed" and hasattr(output_item, 'content'):
+                        for content_item in output_item.content:
+                            if content_item.type == "output_text":
+                                response_text += content_item.text
+
+                                # Extract citations from annotations
+                                if hasattr(content_item, 'annotations') and content_item.annotations:
+                                    for annotation in content_item.annotations:
+                                        if annotation.type == "url_citation":
+                                            citations.append(Citation(
+                                                url=annotation.url if hasattr(annotation, 'url') else "",
+                                                title=annotation.title if hasattr(annotation, 'title') else None
+                                            ))
 
         return ProviderResponse(
             response_text=response_text,

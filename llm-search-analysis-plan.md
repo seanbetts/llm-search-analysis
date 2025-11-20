@@ -91,9 +91,9 @@ Build a unified application to monitor and analyze how LLM models from multiple 
 
 **Input Section:**
 - **Model selector** dropdown with latest models:
-  - `gpt-5.1` (OpenAI)
-  - `claude-sonnet-4.5` (Anthropic)
-  - `gemini-3.0` (Google)
+  - OpenAI: `gpt-5.1`, `gpt-5-mini`, `gpt-5-nano`
+  - Google: `gemini-3-pro-preview`, `gemini-2.5-flash`, `gemini-2.5-flash-lite`
+  - Anthropic: `claude-sonnet-4-5-20250929`, `claude-haiku-4-5-20251001`, `claude-opus-4-1-20250805`
 - **Prompt** text area
 - **Send** button
 
@@ -449,7 +449,8 @@ llm-search-analysis/
      - ✅ Handle Google Search grounding
      - ✅ Extract grounding metadata
    - ✅ `anthropic_provider.py`: Anthropic Claude integration
-     - ✅ Basic implementation (search deferred to future)
+     - ✅ Basic implementation
+     - ⏳ Search integration (in progress)
 
 4. ✅ **Build unified parser module** (`src/parser.py`)
    - ✅ Helper utilities for parsing
@@ -476,6 +477,8 @@ llm-search-analysis/
    - ✅ Test with mocked API responses
    - ✅ Database and analyzer tests
    - ✅ Provider factory tests
+   - ✅ Integration testing with real APIs (verify_providers.py)
+   - ✅ All 9 models verified working
 
 ### Phase 2: Streamlit UI ⏳ IN PROGRESS
 

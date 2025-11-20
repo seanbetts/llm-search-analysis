@@ -5,7 +5,8 @@ Google Gemini provider implementation with Search Grounding.
 import time
 from typing import List
 from urllib.parse import urlparse
-import google.generativeai as genai
+from google.genai import Client
+from google.genai.types import GenerateContentConfig, GoogleSearch
 
 from .base_provider import (
     BaseProvider,
@@ -20,7 +21,7 @@ class GoogleProvider(BaseProvider):
     """Google Gemini provider implementation."""
 
     SUPPORTED_MODELS = [
-        "gemini-3-pro",
+        "gemini-3-pro-preview",
         "gemini-2.5-flash",
         "gemini-2.5-flash-lite",
     ]
@@ -33,7 +34,7 @@ class GoogleProvider(BaseProvider):
             api_key: Google AI API key
         """
         super().__init__(api_key)
-        genai.configure(api_key=api_key)
+        self.client = Client(api_key=api_key)
 
     def get_provider_name(self) -> str:
         """Get provider name."""
@@ -68,19 +69,18 @@ class GoogleProvider(BaseProvider):
         start_time = time.time()
 
         try:
-            # Create model with Google Search grounding
-            gemini_model = genai.GenerativeModel(
-                model_name=model,
-                tools=[genai.Tool.google_search],
+            # Create config with Google Search grounding
+            config = GenerateContentConfig(
+                temperature=0.7,
+                top_p=0.95,
+                tools=[GoogleSearch],
             )
 
-            # Generate content
-            response = gemini_model.generate_content(
-                prompt,
-                generation_config={
-                    "temperature": 0.7,
-                    "top_p": 0.95,
-                }
+            # Generate content using new SDK
+            response = self.client.models.generate_content(
+                model=model,
+                contents=prompt,
+                config=config,
             )
 
             # Calculate response time

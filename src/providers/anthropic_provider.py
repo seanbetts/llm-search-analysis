@@ -27,9 +27,9 @@ class AnthropicProvider(BaseProvider):
     """
 
     SUPPORTED_MODELS = [
-        "claude-sonnet-4.5",
-        "claude-haiku-4.5",
-        "claude-opus-4.1",
+        "claude-sonnet-4-5-20250929",
+        "claude-haiku-4-5-20251001",
+        "claude-opus-4-1-20250805",
     ]
 
     def __init__(self, api_key: str):

@@ -2,9 +2,9 @@
 streamlit>=1.30.0
 
 # AI Provider SDKs
-openai>=1.12.0
-google-generativeai>=0.3.0
-anthropic>=0.18.0
+openai>=2.8.0              # Responses API with web_search tool
+google-genai>=1.51.0       # New unified Google GenAI SDK (replaces google-generativeai)
+anthropic>=0.74.0          # Latest Anthropic SDK
 
 # Database & Data
 sqlalchemy>=2.0.25

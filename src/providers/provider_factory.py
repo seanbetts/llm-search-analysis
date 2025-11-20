@@ -19,14 +19,14 @@ class ProviderFactory:
         "gpt-5-nano": "openai",
 
         # Google models
-        "gemini-3-pro": "google",
+        "gemini-3-pro-preview": "google",
         "gemini-2.5-flash": "google",
         "gemini-2.5-flash-lite": "google",
 
         # Anthropic models
-        "claude-sonnet-4.5": "anthropic",
-        "claude-haiku-4.5": "anthropic",
-        "claude-opus-4.1": "anthropic",
+        "claude-sonnet-4-5-20250929": "anthropic",
+        "claude-haiku-4-5-20251001": "anthropic",
+        "claude-opus-4-1-20250805": "anthropic",
     }
 
     @staticmethod
