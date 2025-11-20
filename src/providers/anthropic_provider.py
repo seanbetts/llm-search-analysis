@@ -131,13 +131,16 @@ class AnthropicProvider(BaseProvider):
                 # Extract search queries from server_tool_use blocks
                 elif content_block.type == "server_tool_use":
                     if hasattr(content_block, 'name') and content_block.name == "web_search":
-                        if hasattr(content_block, 'input') and hasattr(content_block.input, 'query'):
-                            search_queries.append(SearchQuery(query=content_block.input.query))
+                        if hasattr(content_block, 'input'):
+                            # input is a dict, not an object
+                            query = content_block.input.get('query') if isinstance(content_block.input, dict) else None
+                            if query:
+                                search_queries.append(SearchQuery(query=query))
 
                 # Extract sources from web_search_tool_result blocks
                 elif content_block.type == "web_search_tool_result":
-                    if hasattr(content_block, 'results') and content_block.results:
-                        for result in content_block.results:
+                    if hasattr(content_block, 'content') and content_block.content:
+                        for result in content_block.content:
                             if hasattr(result, 'url'):
                                 sources.append(Source(
                                     url=result.url if hasattr(result, 'url') else "",
