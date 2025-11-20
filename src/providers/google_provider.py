@@ -6,7 +6,7 @@ import time
 from typing import List
 from urllib.parse import urlparse
 from google.genai import Client
-from google.genai.types import GenerateContentConfig, GoogleSearch
+from google.genai.types import GenerateContentConfig, GoogleSearch, Tool
 
 from .base_provider import (
     BaseProvider,
@@ -70,10 +70,12 @@ class GoogleProvider(BaseProvider):
 
         try:
             # Create config with Google Search grounding
+            # Must wrap GoogleSearch in Tool object for it to work
+            tool = Tool(google_search=GoogleSearch())
             config = GenerateContentConfig(
                 temperature=0.7,
                 top_p=0.95,
-                tools=[GoogleSearch],
+                tools=[tool],
             )
 
             # Generate content using new SDK
@@ -119,13 +121,10 @@ class GoogleProvider(BaseProvider):
                 if hasattr(candidate, 'grounding_metadata') and candidate.grounding_metadata:
                     metadata = candidate.grounding_metadata
 
-                    # Extract search queries from search entry point
-                    if hasattr(metadata, 'search_entry_point'):
-                        # Note: This might need adjustment based on actual API structure
-                        # The exact field name may vary
-                        search_queries.append(SearchQuery(
-                            query="Google Search"  # Placeholder - actual query may not be available
-                        ))
+                    # Extract search queries from web_search_queries field
+                    if hasattr(metadata, 'web_search_queries') and metadata.web_search_queries:
+                        for query in metadata.web_search_queries:
+                            search_queries.append(SearchQuery(query=query))
 
                     # Extract sources from grounding chunks
                     if hasattr(metadata, 'grounding_chunks') and metadata.grounding_chunks:

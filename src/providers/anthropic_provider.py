@@ -1,12 +1,10 @@
 """
-Anthropic Claude provider implementation.
-
-Note: Full search integration requires external search API (Brave, Tavily, etc.)
-This is a placeholder implementation for MVP - full integration deferred.
+Anthropic Claude provider implementation with web search.
 """
 
 import time
 from typing import List
+from urllib.parse import urlparse
 from anthropic import Anthropic
 
 from .base_provider import (
@@ -20,10 +18,9 @@ from .base_provider import (
 
 class AnthropicProvider(BaseProvider):
     """
-    Anthropic Claude provider implementation.
+    Anthropic Claude provider implementation with web search tool.
 
-    Note: This is a basic implementation. Full search integration with
-    external APIs (Brave, Tavily, Perplexity) is deferred for future versions.
+    Uses Claude's built-in web_search_20250305 tool powered by Brave Search.
     """
 
     SUPPORTED_MODELS = [
@@ -52,23 +49,18 @@ class AnthropicProvider(BaseProvider):
 
     def send_prompt(self, prompt: str, model: str) -> ProviderResponse:
         """
-        Send prompt to Anthropic Claude.
+        Send prompt to Anthropic Claude with web search enabled.
 
         Args:
             prompt: User's prompt
-            model: Model to use (e.g., "claude-sonnet-4.5")
+            model: Model to use
 
         Returns:
-            ProviderResponse
+            ProviderResponse with search data
 
         Raises:
             ValueError: If model is not supported
             Exception: If API call fails
-
-        Note:
-            This MVP version does not include search integration.
-            Search functionality requires external search API integration
-            which is planned for future versions.
         """
         if not self.validate_model(model):
             raise ValueError(
@@ -80,13 +72,18 @@ class AnthropicProvider(BaseProvider):
         start_time = time.time()
 
         try:
-            # Call Anthropic API (basic implementation without search tools)
+            # Call Anthropic API with web search tool
             response = self.client.messages.create(
                 model=model,
                 max_tokens=4096,
                 messages=[{
                     "role": "user",
                     "content": prompt
+                }],
+                tools=[{
+                    "type": "web_search_20250305",
+                    "name": "web_search",
+                    "max_uses": 5
                 }]
             )
 
@@ -110,27 +107,49 @@ class AnthropicProvider(BaseProvider):
 
         Returns:
             ProviderResponse object
-
-        Note:
-            MVP version returns empty search data.
-            Full implementation will parse tool use for search queries.
         """
         response_text = ""
+        search_queries = []
+        sources = []
+        citations = []
 
-        # Extract response text
+        # Extract content blocks
         if hasattr(response, 'content') and response.content:
             for content_block in response.content:
+                # Extract text responses
                 if content_block.type == "text":
                     response_text += content_block.text
 
-        # MVP: No search integration yet
-        # Future: Parse tool_use blocks for search queries and integrate with external search API
+                    # Extract citations from text blocks
+                    if hasattr(content_block, 'citations') and content_block.citations:
+                        for citation in content_block.citations:
+                            citations.append(Citation(
+                                url=citation.url if hasattr(citation, 'url') else "",
+                                title=citation.title if hasattr(citation, 'title') else None,
+                            ))
+
+                # Extract search queries from server_tool_use blocks
+                elif content_block.type == "server_tool_use":
+                    if hasattr(content_block, 'name') and content_block.name == "web_search":
+                        if hasattr(content_block, 'input') and hasattr(content_block.input, 'query'):
+                            search_queries.append(SearchQuery(query=content_block.input.query))
+
+                # Extract sources from web_search_tool_result blocks
+                elif content_block.type == "web_search_tool_result":
+                    if hasattr(content_block, 'results') and content_block.results:
+                        for result in content_block.results:
+                            if hasattr(result, 'url'):
+                                sources.append(Source(
+                                    url=result.url if hasattr(result, 'url') else "",
+                                    title=result.title if hasattr(result, 'title') else None,
+                                    domain=urlparse(result.url).netloc if hasattr(result, 'url') else None
+                                ))
 
         return ProviderResponse(
             response_text=response_text,
-            search_queries=[],  # No search in MVP
-            sources=[],  # No search in MVP
-            citations=[],  # No search in MVP
+            search_queries=search_queries,
+            sources=sources,
+            citations=citations,
             raw_response=response.model_dump() if hasattr(response, 'model_dump') else {},
             model=model,
             provider=self.get_provider_name(),
