@@ -138,10 +138,12 @@ def display_response(response):
 
         for i, citation in enumerate(response.citations, 1):
             with st.container():
+                url_display = citation.url or 'No URL'
+                url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
                 st.markdown(f"""
                 <div class="citation-item">
                     <strong>{i}. {citation.title or 'Untitled'}</strong><br/>
-                    <a href="{citation.url}" target="_blank">{citation.url[:80]}{'...' if len(citation.url) > 80 else ''}</a>
+                    <a href="{url_display}" target="_blank">{url_truncated}</a>
                 </div>
                 """, unsafe_allow_html=True)
         st.divider()
@@ -152,11 +154,13 @@ def display_response(response):
             st.caption("All sources retrieved during the search process")
 
             for i, source in enumerate(response.sources, 1):
+                url_display = source.url or 'No URL'
+                url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
                 st.markdown(f"""
                 <div class="source-item">
                     <strong>{i}. {source.title or 'Untitled'}</strong><br/>
                     <small>{source.domain or 'Unknown domain'}</small><br/>
-                    <a href="{source.url}" target="_blank">{source.url[:80]}{'...' if len(source.url) > 80 else ''}</a>
+                    <a href="{url_display}" target="_blank">{url_truncated}</a>
                 </div>
                 """, unsafe_allow_html=True)
 
