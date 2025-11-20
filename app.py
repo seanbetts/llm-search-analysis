@@ -118,7 +118,7 @@ def display_response(response):
     with col5:
         st.metric("Sources Fetched", len(response.sources))
     with col6:
-        st.metric("Citations Used", len(response.citations))
+        st.metric("Sources Used", len(response.citations))
 
     st.divider()
 
@@ -153,10 +153,10 @@ def display_response(response):
                         """, unsafe_allow_html=True)
         st.divider()
 
-    # Citations
+    # Sources used (from web search)
     if response.citations:
-        st.markdown(f"### 📝 Citations Used ({len(response.citations)})")
-        st.caption("Sources actually cited in the response")
+        st.markdown(f"### 📝 Sources Used ({len(response.citations)})")
+        st.caption("Sources the model consulted via web search")
 
         for i, citation in enumerate(response.citations, 1):
             with st.container():
@@ -213,31 +213,31 @@ def main():
         - Anthropic Claude (Web Search Tool)
         """)
 
-    # Understanding Citations section
-    with st.sidebar.expander("📚 Understanding Citations", expanded=False):
+    # Understanding Sources Used section
+    with st.sidebar.expander("📚 Understanding Sources Used", expanded=False):
         st.markdown("""
         **Important Nuances:**
 
-        **"Citations Used"** tracks sources the model actually searched for via web search APIs, not all URLs in the response.
+        **"Sources Used"** tracks sources the model actually searched for via web search APIs, not all URLs in the response.
 
         **Three scenarios you may see:**
 
-        1. **Citation tracked + URL in response**
+        1. **Source used + URL in response**
            - Normal case: model searched and cited
 
-        2. **Citation tracked + No URL in response**
+        2. **Source used + No URL in response**
            - Model used search but didn't show URL in text
-           - Still counted as citation used
+           - Still counted as source used
 
-        3. **No citation + URL in response**
+        3. **No source used + URL in response**
            - Model mentioned URL from training knowledge
            - Not counted (didn't actually search for it)
 
         **For Google:**
-        - Citations = 0 (cannot distinguish from sources)
-        - Google's API doesn't separate citations from sources
+        - Sources Used = 0 (cannot distinguish from Sources Fetched)
+        - Google's API doesn't separate them
 
-        This means "Citations Used" measures **sources consulted**, not **URLs mentioned in text**.
+        This means "Sources Used" measures **sources consulted via search**, not **URLs mentioned in text**.
         """)
 
     # Main content - Prompt input
