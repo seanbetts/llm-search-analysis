@@ -297,7 +297,9 @@ def main():
             return
 
         # Show loading state
-        with st.spinner(f"Querying {selected_model}..."):
+        # Extract formatted model name from selected_label (format: "🟢 Provider - Model Name")
+        formatted_model = selected_label.split(' - ', 1)[1] if ' - ' in selected_label else selected_model
+        with st.spinner(f"Querying {formatted_model}..."):
             try:
                 # Get API keys and create provider
                 api_keys = Config.get_api_keys()
