@@ -212,8 +212,10 @@ def main():
 
     # Prompt input
     prompt = st.text_area(
+        "Ask a question that requires current information",
         placeholder="What are the latest developments in artificial intelligence this week?",
-        height=100
+        height=100,
+        help="The model will search the web to answer your question"
     )
 
     # Submit button
