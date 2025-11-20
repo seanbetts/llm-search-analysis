@@ -211,8 +211,8 @@ class Database:
                 session.add(search_call)
                 session.flush()
 
-                # Associate sources with this search call
-                for source in sources:
+                # Associate sources with this search call (use query.sources, not global sources list)
+                for source in query.sources:
                     source_obj = SourceModel(
                         search_call_id=search_call.id,
                         url=source.url,
@@ -272,5 +272,59 @@ class Database:
                     })
 
             return results
+        finally:
+            session.close()
+
+    def get_interaction_details(self, prompt_id: int):
+        """
+        Get detailed information about a specific interaction.
+
+        Args:
+            prompt_id: ID of the prompt to retrieve
+
+        Returns:
+            Dictionary with full interaction details or None if not found
+        """
+        session = self.get_session()
+        try:
+            prompt = session.query(Prompt).filter_by(id=prompt_id).first()
+            if not prompt or not prompt.response:
+                return None
+
+            # Build search queries with their sources
+            search_queries = []
+            for search_call in prompt.response.search_calls:
+                sources = [
+                    {
+                        "url": source.url,
+                        "title": source.title,
+                        "domain": source.domain
+                    }
+                    for source in search_call.sources
+                ]
+                search_queries.append({
+                    "query": search_call.search_query,
+                    "sources": sources
+                })
+
+            # Build citations
+            citations = [
+                {
+                    "url": citation.url,
+                    "title": citation.title
+                }
+                for citation in prompt.response.citations
+            ]
+
+            return {
+                "prompt": prompt.prompt_text,
+                "response_text": prompt.response.response_text,
+                "provider": prompt.session.provider.display_name,
+                "model": prompt.session.model_used,
+                "response_time_ms": prompt.response.response_time_ms,
+                "search_queries": search_queries,
+                "citations": citations,
+                "created_at": prompt.created_at
+            }
         finally:
             session.close()

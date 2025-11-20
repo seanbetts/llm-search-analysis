@@ -12,6 +12,7 @@ pandas>=2.1.4
 
 # Utilities
 python-dotenv>=1.0.0
+requests>=2.31.0           # HTTP library for Google redirect resolution
 
 # Visualization
 plotly>=5.18.0

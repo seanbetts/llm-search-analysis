@@ -6,8 +6,11 @@ across OpenAI, Google Gemini, and Anthropic Claude models.
 """
 
 import streamlit as st
+import pandas as pd
+from datetime import datetime
 from src.config import Config
 from src.providers.provider_factory import ProviderFactory
+from src.database import Database
 
 # Page config
 st.set_page_config(
@@ -66,6 +69,13 @@ def initialize_session_state():
         st.session_state.response = None
     if 'error' not in st.session_state:
         st.session_state.error = None
+    if 'db' not in st.session_state:
+        # Initialize database
+        st.session_state.db = Database()
+        st.session_state.db.create_tables()
+        st.session_state.db.ensure_providers()
+    if 'batch_results' not in st.session_state:
+        st.session_state.batch_results = []
 
 def get_all_models():
     """Get all available models with provider labels."""
@@ -203,26 +213,20 @@ def display_response(response):
                 </div>
                 """, unsafe_allow_html=True)
 
-def main():
-    """Main application logic."""
-    initialize_session_state()
-
-    # Header
-    st.markdown('<div class="main-header">🔍 LLM Search Analysis</div>', unsafe_allow_html=True)
-
-    # Sidebar - Model Selection
-    st.sidebar.title("⚙️ Configuration")
+def tab_interactive():
+    """Tab 1: Interactive Prompting."""
+    st.markdown("### 💭 Enter Your Prompt")
 
     # Load all available models
     models = get_all_models()
 
     if not models:
         st.error("No API keys configured. Please set up your .env file with at least one provider API key.")
-        st.stop()
+        return
 
-    # Model selection with provider labels
+    # Model selection
     model_labels = list(models.keys())
-    selected_label = st.sidebar.selectbox(
+    selected_label = st.selectbox(
         "Select Model",
         model_labels,
         help="Choose a model from any available provider"
@@ -231,7 +235,302 @@ def main():
     # Extract provider and model from selection
     selected_provider, selected_model = models[selected_label]
 
-    st.sidebar.divider()
+    # Prompt input
+    prompt = st.text_area(
+        "Prompt",
+        placeholder="What are the latest developments in artificial intelligence this week?",
+        height=100,
+        label_visibility="collapsed"
+    )
+
+    # Submit button
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        submit_button = st.button("🚀 Submit Query", type="primary", use_container_width=True)
+
+    # Handle submission
+    if submit_button:
+        if not prompt:
+            st.warning("Please enter a prompt")
+            return
+
+        # Show loading state
+        # Extract formatted model name from selected_label (format: "🟢 Provider - Model Name")
+        formatted_model = selected_label.split(' - ', 1)[1] if ' - ' in selected_label else selected_model
+        with st.spinner(f"Querying {formatted_model}..."):
+            try:
+                # Get API keys and create provider
+                api_keys = Config.get_api_keys()
+                provider = ProviderFactory.create_provider(selected_provider, api_keys[selected_provider])
+
+                # Send prompt
+                response = provider.send_prompt(prompt, selected_model)
+
+                # Save to database
+                try:
+                    st.session_state.db.save_interaction(
+                        provider_name=selected_provider,
+                        model=selected_model,
+                        prompt=prompt,
+                        response_text=response.response_text,
+                        search_queries=response.search_queries,
+                        sources=response.sources,
+                        citations=response.citations,
+                        response_time_ms=response.response_time_ms,
+                        raw_response=response.raw_response
+                    )
+                except Exception as db_error:
+                    st.warning(f"Response saved but database error occurred: {str(db_error)}")
+
+                # Store in session state
+                st.session_state.response = response
+                st.session_state.error = None
+
+            except Exception as e:
+                st.session_state.error = str(e)
+                st.session_state.response = None
+
+    # Display results
+    if st.session_state.error:
+        st.error(f"Error: {st.session_state.error}")
+
+    if st.session_state.response:
+        st.divider()
+        display_response(st.session_state.response)
+
+def tab_batch():
+    """Tab 2: Batch Analysis."""
+    st.markdown("### 📦 Batch Analysis")
+    st.caption("Run multiple prompts and analyze aggregate results")
+
+    # Load all available models
+    models = get_all_models()
+
+    if not models:
+        st.error("No API keys configured. Please set up your .env file with at least one provider API key.")
+        return
+
+    # Model selection
+    model_labels = list(models.keys())
+    selected_label = st.selectbox(
+        "Select Model for Batch",
+        model_labels,
+        help="Choose a model to use for all prompts"
+    )
+
+    # Extract provider and model from selection
+    selected_provider, selected_model = models[selected_label]
+
+    # Prompt input methods
+    st.markdown("#### Enter Prompts")
+    input_method = st.radio("Input Method", ["Text Area", "CSV Upload"], horizontal=True)
+
+    prompts = []
+
+    if input_method == "Text Area":
+        prompts_text = st.text_area(
+            "Enter prompts (one per line)",
+            height=200,
+            placeholder="What is the weather today?\nTell me about AI advancements\nWho won the latest sports championship?"
+        )
+        if prompts_text:
+            prompts = [p.strip() for p in prompts_text.split('\n') if p.strip()]
+
+    else:  # CSV Upload
+        uploaded_file = st.file_uploader("Upload CSV file with 'prompt' column", type=['csv'])
+        if uploaded_file is not None:
+            try:
+                df = pd.read_csv(uploaded_file)
+                if 'prompt' not in df.columns:
+                    st.error("CSV must have a 'prompt' column")
+                else:
+                    prompts = df['prompt'].dropna().tolist()
+                    st.success(f"Loaded {len(prompts)} prompts from CSV")
+            except Exception as e:
+                st.error(f"Error reading CSV: {str(e)}")
+
+    # Display prompt count
+    if prompts:
+        st.info(f"Ready to process {len(prompts)} prompts")
+
+    # Run button
+    if st.button("▶️ Run Batch Analysis", type="primary", disabled=len(prompts) == 0):
+        st.session_state.batch_results = []
+
+        # Progress tracking
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+
+        # Get API keys and create provider
+        api_keys = Config.get_api_keys()
+        provider = ProviderFactory.create_provider(selected_provider, api_keys[selected_provider])
+
+        # Process each prompt
+        for idx, prompt in enumerate(prompts):
+            status_text.text(f"Processing prompt {idx + 1}/{len(prompts)}...")
+
+            try:
+                # Send prompt
+                response = provider.send_prompt(prompt, selected_model)
+
+                # Save to database
+                try:
+                    st.session_state.db.save_interaction(
+                        provider_name=selected_provider,
+                        model=selected_model,
+                        prompt=prompt,
+                        response_text=response.response_text,
+                        search_queries=response.search_queries,
+                        sources=response.sources,
+                        citations=response.citations,
+                        response_time_ms=response.response_time_ms,
+                        raw_response=response.raw_response
+                    )
+                except Exception as db_error:
+                    st.warning(f"Database error for prompt {idx + 1}: {str(db_error)}")
+
+                # Store result
+                st.session_state.batch_results.append({
+                    'prompt': prompt,
+                    'searches': len(response.search_queries),
+                    'sources': len(response.sources),
+                    'citations': len(response.citations),
+                    'response_time_ms': response.response_time_ms
+                })
+
+            except Exception as e:
+                st.session_state.batch_results.append({
+                    'prompt': prompt,
+                    'error': str(e)
+                })
+
+            # Update progress
+            progress_bar.progress((idx + 1) / len(prompts))
+
+        status_text.text("✅ Batch processing complete!")
+
+    # Display results
+    if st.session_state.batch_results:
+        st.divider()
+        st.markdown("### 📊 Batch Results")
+
+        # Summary stats
+        successful = [r for r in st.session_state.batch_results if 'error' not in r]
+        failed = [r for r in st.session_state.batch_results if 'error' in r]
+
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Total Prompts", len(st.session_state.batch_results))
+        with col2:
+            st.metric("Successful", len(successful))
+        with col3:
+            if successful:
+                avg_sources = sum(r['sources'] for r in successful) / len(successful)
+                st.metric("Avg Sources", f"{avg_sources:.1f}")
+        with col4:
+            if successful:
+                avg_citations = sum(r['citations'] for r in successful) / len(successful)
+                st.metric("Avg Citations", f"{avg_citations:.1f}")
+
+        # Results table
+        st.markdown("#### Detailed Results")
+        df_results = pd.DataFrame(st.session_state.batch_results)
+        st.dataframe(df_results, use_container_width=True)
+
+        # Export button
+        csv = df_results.to_csv(index=False)
+        st.download_button(
+            label="📥 Download Results as CSV",
+            data=csv,
+            file_name=f"batch_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime="text/csv"
+        )
+
+        # Show errors if any
+        if failed:
+            st.warning(f"⚠️ {len(failed)} prompts failed")
+            with st.expander("View Errors"):
+                for idx, result in enumerate(failed, 1):
+                    st.error(f"{idx}. {result['prompt'][:50]}...\n Error: {result['error']}")
+
+def tab_history():
+    """Tab 3: Query History."""
+    st.markdown("### 📜 Query History")
+    st.caption("View and search past interactions")
+
+    # Get recent interactions
+    try:
+        interactions = st.session_state.db.get_recent_interactions(limit=100)
+
+        if not interactions:
+            st.info("No interactions recorded yet. Start by submitting prompts in the Interactive tab!")
+            return
+
+        # Convert to DataFrame
+        df = pd.DataFrame(interactions)
+
+        # Format timestamp
+        df['timestamp'] = pd.to_datetime(df['timestamp']).dt.strftime('%Y-%m-%d %H:%M:%S')
+
+        # Truncate prompt for display
+        df['prompt_preview'] = df['prompt'].str[:80] + df['prompt'].apply(lambda x: '...' if len(x) > 80 else '')
+
+        # Search filter
+        search_query = st.text_input("🔍 Search prompts", placeholder="Enter keywords to filter...")
+
+        if search_query:
+            df = df[df['prompt'].str.contains(search_query, case=False, na=False)]
+            st.caption(f"Showing {len(df)} matching results")
+
+        # Display table
+        display_df = df[['timestamp', 'prompt_preview', 'provider', 'model', 'searches', 'sources', 'citations']]
+        display_df.columns = ['Timestamp', 'Prompt', 'Provider', 'Model', 'Searches', 'Sources', 'Citations']
+
+        st.dataframe(display_df, use_container_width=True, height=400)
+
+        # Export button
+        csv = df.to_csv(index=False)
+        st.download_button(
+            label="📥 Export History as CSV",
+            data=csv,
+            file_name=f"query_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime="text/csv"
+        )
+
+        # View details
+        st.markdown("#### View Interaction Details")
+        selected_id = st.selectbox(
+            "Select an interaction to view details",
+            options=df['id'].tolist(),
+            format_func=lambda x: f"ID {x}: {df[df['id'] == x]['prompt_preview'].values[0]}"
+        )
+
+        if selected_id:
+            details = st.session_state.db.get_interaction_details(selected_id)
+            if details:
+                st.divider()
+                st.markdown(f"**Prompt:** {details['prompt']}")
+                st.markdown(f"**Provider:** {details['provider']} | **Model:** {details['model']} | **Time:** {details['response_time_ms']}ms")
+
+                st.markdown("**Response:**")
+                st.markdown(details['response_text'])
+
+                if details['search_queries']:
+                    st.markdown(f"**Search Queries ({len(details['search_queries'])}):**")
+                    for i, query in enumerate(details['search_queries'], 1):
+                        st.markdown(f"{i}. {query['query']} ({len(query['sources'])} sources)")
+
+                if details['citations']:
+                    st.markdown(f"**Citations ({len(details['citations'])}):**")
+                    for i, citation in enumerate(details['citations'], 1):
+                        st.markdown(f"{i}. [{citation['title'] or 'Untitled'}]({citation['url']})")
+
+    except Exception as e:
+        st.error(f"Error loading history: {str(e)}")
+
+def sidebar_info():
+    """Sidebar information."""
+    st.sidebar.title("⚙️ Configuration")
 
     # Info section
     with st.sidebar.expander("ℹ️ About", expanded=False):
@@ -274,55 +573,27 @@ def main():
         This means "Sources Used" measures **sources consulted via search**, not **URLs mentioned in text**.
         """)
 
-    # Main content - Prompt input
-    st.markdown("### 💭 Enter Your Prompt")
+def main():
+    """Main application logic."""
+    initialize_session_state()
 
-    # Prompt input
-    prompt = st.text_area(
-        "Prompt",
-        placeholder="What are the latest developments in artificial intelligence this week?",
-        height=100,
-        label_visibility="collapsed"
-    )
+    # Header
+    st.markdown('<div class="main-header">🔍 LLM Search Analysis</div>', unsafe_allow_html=True)
 
-    # Submit button
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        submit_button = st.button("🚀 Submit Query", type="primary", use_container_width=True)
+    # Sidebar
+    sidebar_info()
 
-    # Handle submission
-    if submit_button:
-        if not prompt:
-            st.warning("Please enter a prompt")
-            return
+    # Main tabs
+    tab1, tab2, tab3 = st.tabs(["🎯 Interactive", "📦 Batch Analysis", "📜 History"])
 
-        # Show loading state
-        # Extract formatted model name from selected_label (format: "🟢 Provider - Model Name")
-        formatted_model = selected_label.split(' - ', 1)[1] if ' - ' in selected_label else selected_model
-        with st.spinner(f"Querying {formatted_model}..."):
-            try:
-                # Get API keys and create provider
-                api_keys = Config.get_api_keys()
-                provider = ProviderFactory.create_provider(selected_provider, api_keys[selected_provider])
+    with tab1:
+        tab_interactive()
 
-                # Send prompt
-                response = provider.send_prompt(prompt, selected_model)
+    with tab2:
+        tab_batch()
 
-                # Store in session state
-                st.session_state.response = response
-                st.session_state.error = None
-
-            except Exception as e:
-                st.session_state.error = str(e)
-                st.session_state.response = None
-
-    # Display results
-    if st.session_state.error:
-        st.error(f"Error: {st.session_state.error}")
-
-    if st.session_state.response:
-        st.divider()
-        display_response(st.session_state.response)
+    with tab3:
+        tab_history()
 
 if __name__ == "__main__":
     main()
