@@ -95,12 +95,19 @@ def get_all_models():
 def display_response(response):
     """Display the LLM response with search metadata."""
 
+    # Provider display names
+    provider_names = {
+        'openai': 'OpenAI',
+        'google': 'Google',
+        'anthropic': 'Anthropic'
+    }
+
     # Response metadata
     st.markdown("### 📊 Response Metadata")
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    col1, col2, col3, col4, col5, col6 = st.columns([1, 2.5, 1, 1, 1, 1])
 
     with col1:
-        st.metric("Provider", response.provider.upper())
+        st.metric("Provider", provider_names.get(response.provider, response.provider.capitalize()))
     with col2:
         st.metric("Model", response.model)
     with col3:
@@ -168,7 +175,6 @@ def main():
 
     # Header
     st.markdown('<div class="main-header">🔍 LLM Search Analysis</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">Compare search capabilities across OpenAI, Google Gemini, and Anthropic Claude</div>', unsafe_allow_html=True)
 
     # Sidebar - Model Selection
     st.sidebar.title("⚙️ Configuration")
@@ -212,10 +218,10 @@ def main():
 
     # Prompt input
     prompt = st.text_area(
-        "Ask a question that requires current information",
+        "Prompt",
         placeholder="What are the latest developments in artificial intelligence this week?",
         height=100,
-        help="The model will search the web to answer your question"
+        label_visibility="collapsed"
     )
 
     # Submit button

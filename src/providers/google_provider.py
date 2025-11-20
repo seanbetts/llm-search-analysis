@@ -167,21 +167,10 @@ class GoogleProvider(BaseProvider):
                             sources=all_sources
                         ))
 
-                    # Extract citations from grounding supports
-                    if hasattr(metadata, 'grounding_supports') and metadata.grounding_supports:
-                        for support in metadata.grounding_supports:
-                            if hasattr(support, 'segment') and hasattr(support, 'grounding_chunk_indices'):
-                                # Citations are linked to chunks
-                                for idx in support.grounding_chunk_indices:
-                                    if idx < len(metadata.grounding_chunks):
-                                        chunk = metadata.grounding_chunks[idx]
-                                        if hasattr(chunk, 'web') and chunk.web:
-                                            # Only include citations with valid URIs
-                                            if hasattr(chunk.web, 'uri') and chunk.web.uri:
-                                                citations.append(Citation(
-                                                    url=chunk.web.uri,
-                                                    title=chunk.web.title if hasattr(chunk.web, 'title') else None,
-                                                ))
+                    # Note: Google's grounding_supports includes ALL sources, not just citations
+                    # We cannot reliably distinguish between sources that are merely fetched
+                    # vs. those that are explicitly cited in the response text.
+                    # Therefore, we leave citations empty for Google to maintain accuracy.
 
         # Remove duplicate citations
         seen_urls = set()
