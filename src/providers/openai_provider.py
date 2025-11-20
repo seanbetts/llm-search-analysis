@@ -120,11 +120,13 @@ class OpenAIProvider(BaseProvider):
                         # Extract sources (requires include=["web_search_call.action.sources"])
                         if hasattr(action, 'sources') and action.sources:
                             for source in action.sources:
-                                sources.append(Source(
-                                    url=source.url if hasattr(source, 'url') else "",
-                                    title=source.title if hasattr(source, 'title') else None,
-                                    domain=urlparse(source.url).netloc if hasattr(source, 'url') else None
-                                ))
+                                # Only include sources that have a valid URL
+                                if hasattr(source, 'url') and source.url:
+                                    sources.append(Source(
+                                        url=source.url,
+                                        title=source.title if hasattr(source, 'title') else None,
+                                        domain=urlparse(source.url).netloc
+                                    ))
 
                 # Handle message type
                 elif output_item.type == "message":
@@ -137,10 +139,12 @@ class OpenAIProvider(BaseProvider):
                                 if hasattr(content_item, 'annotations') and content_item.annotations:
                                     for annotation in content_item.annotations:
                                         if annotation.type == "url_citation":
-                                            citations.append(Citation(
-                                                url=annotation.url if hasattr(annotation, 'url') else "",
-                                                title=annotation.title if hasattr(annotation, 'title') else None
-                                            ))
+                                            # Only include citations with valid URLs
+                                            if hasattr(annotation, 'url') and annotation.url:
+                                                citations.append(Citation(
+                                                    url=annotation.url,
+                                                    title=annotation.title if hasattr(annotation, 'title') else None
+                                                ))
 
         return ProviderResponse(
             response_text=response_text,

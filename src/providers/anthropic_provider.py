@@ -123,10 +123,12 @@ class AnthropicProvider(BaseProvider):
                     # Extract citations from text blocks
                     if hasattr(content_block, 'citations') and content_block.citations:
                         for citation in content_block.citations:
-                            citations.append(Citation(
-                                url=citation.url if hasattr(citation, 'url') else "",
-                                title=citation.title if hasattr(citation, 'title') else None,
-                            ))
+                            # Only include citations with valid URLs
+                            if hasattr(citation, 'url') and citation.url:
+                                citations.append(Citation(
+                                    url=citation.url,
+                                    title=citation.title if hasattr(citation, 'title') else None,
+                                ))
 
                 # Extract search queries from server_tool_use blocks
                 elif content_block.type == "server_tool_use":
@@ -141,11 +143,12 @@ class AnthropicProvider(BaseProvider):
                 elif content_block.type == "web_search_tool_result":
                     if hasattr(content_block, 'content') and content_block.content:
                         for result in content_block.content:
-                            if hasattr(result, 'url'):
+                            # Only include sources with valid URLs
+                            if hasattr(result, 'url') and result.url:
                                 sources.append(Source(
-                                    url=result.url if hasattr(result, 'url') else "",
+                                    url=result.url,
                                     title=result.title if hasattr(result, 'title') else None,
-                                    domain=urlparse(result.url).netloc if hasattr(result, 'url') else None
+                                    domain=urlparse(result.url).netloc
                                 ))
 
         return ProviderResponse(

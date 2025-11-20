@@ -130,11 +130,13 @@ class GoogleProvider(BaseProvider):
                     if hasattr(metadata, 'grounding_chunks') and metadata.grounding_chunks:
                         for chunk in metadata.grounding_chunks:
                             if hasattr(chunk, 'web') and chunk.web:
-                                sources.append(Source(
-                                    url=chunk.web.uri if hasattr(chunk.web, 'uri') else "",
-                                    title=chunk.web.title if hasattr(chunk.web, 'title') else None,
-                                    domain=urlparse(chunk.web.uri).netloc if hasattr(chunk.web, 'uri') else None
-                                ))
+                                # Only include sources with valid URIs
+                                if hasattr(chunk.web, 'uri') and chunk.web.uri:
+                                    sources.append(Source(
+                                        url=chunk.web.uri,
+                                        title=chunk.web.title if hasattr(chunk.web, 'title') else None,
+                                        domain=urlparse(chunk.web.uri).netloc
+                                    ))
 
                     # Extract citations from grounding supports
                     if hasattr(metadata, 'grounding_supports') and metadata.grounding_supports:
@@ -145,10 +147,12 @@ class GoogleProvider(BaseProvider):
                                     if idx < len(metadata.grounding_chunks):
                                         chunk = metadata.grounding_chunks[idx]
                                         if hasattr(chunk, 'web') and chunk.web:
-                                            citations.append(Citation(
-                                                url=chunk.web.uri if hasattr(chunk.web, 'uri') else "",
-                                                title=chunk.web.title if hasattr(chunk.web, 'title') else None,
-                                            ))
+                                            # Only include citations with valid URIs
+                                            if hasattr(chunk.web, 'uri') and chunk.web.uri:
+                                                citations.append(Citation(
+                                                    url=chunk.web.uri,
+                                                    title=chunk.web.title if hasattr(chunk.web, 'title') else None,
+                                                ))
 
         # Remove duplicate citations
         seen_urls = set()
