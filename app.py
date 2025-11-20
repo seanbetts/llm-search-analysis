@@ -67,20 +67,29 @@ def initialize_session_state():
     if 'error' not in st.session_state:
         st.session_state.error = None
 
-def get_provider_models():
-    """Get available providers and their models."""
+def get_all_models():
+    """Get all available models with provider labels."""
     try:
         api_keys = Config.get_api_keys()
-        providers = {}
+        models = {}
+
+        provider_labels = {
+            'openai': '🟢 OpenAI',
+            'google': '🔵 Google',
+            'anthropic': '🟣 Anthropic'
+        }
 
         for provider_name in ['openai', 'google', 'anthropic']:
             if api_keys.get(provider_name):
                 provider = ProviderFactory.create_provider(provider_name, api_keys[provider_name])
-                providers[provider_name] = provider.get_supported_models()
+                for model in provider.get_supported_models():
+                    # Create label: "🟢 OpenAI - gpt-5.1"
+                    label = f"{provider_labels[provider_name]} - {model}"
+                    models[label] = (provider_name, model)
 
-        return providers
+        return models
     except Exception as e:
-        st.error(f"Error loading providers: {str(e)}")
+        st.error(f"Error loading models: {str(e)}")
         return {}
 
 def display_response(response):
@@ -88,17 +97,27 @@ def display_response(response):
 
     # Response metadata
     st.markdown("### 📊 Response Metadata")
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
 
     with col1:
         st.metric("Provider", response.provider.upper())
     with col2:
         st.metric("Model", response.model)
     with col3:
-        st.metric("Response Time", f"{response.response_time_ms}ms" if response.response_time_ms else "N/A")
+        response_time = f"{response.response_time_ms / 1000:.2f}s" if response.response_time_ms else "N/A"
+        st.metric("Response Time", response_time)
     with col4:
         st.metric("Search Queries", len(response.search_queries))
+    with col5:
+        st.metric("Sources Fetched", len(response.sources))
+    with col6:
+        st.metric("Citations Used", len(response.citations))
 
+    st.divider()
+
+    # Response text
+    st.markdown("### 💬 Response")
+    st.markdown(response.response_text)
     st.divider()
 
     # Search queries
@@ -110,27 +129,6 @@ def display_response(response):
                 <strong>Query {i}:</strong> {query.query}
             </div>
             """, unsafe_allow_html=True)
-        st.divider()
-
-    # Response text
-    st.markdown("### 💬 Response")
-    st.markdown(response.response_text)
-    st.divider()
-
-    # Sources
-    if response.sources:
-        st.markdown(f"### 📚 Sources Fetched ({len(response.sources)})")
-        st.caption("All sources retrieved during the search process")
-
-        for i, source in enumerate(response.sources, 1):
-            with st.container():
-                st.markdown(f"""
-                <div class="source-item">
-                    <strong>{i}. {source.title or 'Untitled'}</strong><br/>
-                    <small>{source.domain or 'Unknown domain'}</small><br/>
-                    <a href="{source.url}" target="_blank">{source.url[:80]}{'...' if len(source.url) > 80 else ''}</a>
-                </div>
-                """, unsafe_allow_html=True)
         st.divider()
 
     # Citations
@@ -146,6 +144,21 @@ def display_response(response):
                     <a href="{citation.url}" target="_blank">{citation.url[:80]}{'...' if len(citation.url) > 80 else ''}</a>
                 </div>
                 """, unsafe_allow_html=True)
+        st.divider()
+
+    # Sources (collapsible)
+    if response.sources:
+        with st.expander(f"📚 Sources Fetched ({len(response.sources)})", expanded=False):
+            st.caption("All sources retrieved during the search process")
+
+            for i, source in enumerate(response.sources, 1):
+                st.markdown(f"""
+                <div class="source-item">
+                    <strong>{i}. {source.title or 'Untitled'}</strong><br/>
+                    <small>{source.domain or 'Unknown domain'}</small><br/>
+                    <a href="{source.url}" target="_blank">{source.url[:80]}{'...' if len(source.url) > 80 else ''}</a>
+                </div>
+                """, unsafe_allow_html=True)
 
 def main():
     """Main application logic."""
@@ -155,36 +168,26 @@ def main():
     st.markdown('<div class="main-header">🔍 LLM Search Analysis</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Compare search capabilities across OpenAI, Google Gemini, and Anthropic Claude</div>', unsafe_allow_html=True)
 
-    # Sidebar - Provider and Model Selection
+    # Sidebar - Model Selection
     st.sidebar.title("⚙️ Configuration")
 
-    # Load providers and models
-    providers = get_provider_models()
+    # Load all available models
+    models = get_all_models()
 
-    if not providers:
+    if not models:
         st.error("No API keys configured. Please set up your .env file with at least one provider API key.")
         st.stop()
 
-    # Provider selection
-    provider_names = list(providers.keys())
-    provider_labels = {
-        'openai': '🟢 OpenAI',
-        'google': '🔵 Google Gemini',
-        'anthropic': '🟣 Anthropic Claude'
-    }
-
-    selected_provider = st.sidebar.selectbox(
-        "Select Provider",
-        provider_names,
-        format_func=lambda x: provider_labels.get(x, x)
-    )
-
-    # Model selection
-    available_models = providers[selected_provider]
-    selected_model = st.sidebar.selectbox(
+    # Model selection with provider labels
+    model_labels = list(models.keys())
+    selected_label = st.sidebar.selectbox(
         "Select Model",
-        available_models
+        model_labels,
+        help="Choose a model from any available provider"
     )
+
+    # Extract provider and model from selection
+    selected_provider, selected_model = models[selected_label]
 
     st.sidebar.divider()
 
