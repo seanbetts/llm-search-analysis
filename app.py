@@ -79,12 +79,30 @@ def get_all_models():
             'anthropic': '🟣 Anthropic'
         }
 
+        # Model display names
+        model_names = {
+            # Anthropic
+            'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
+            'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
+            'claude-opus-4-1-20250805': 'Claude Opus 4.1',
+            # OpenAI
+            'gpt-5.1': 'GPT-5.1',
+            'gpt-5-mini': 'GPT-5 Mini',
+            'gpt-5-nano': 'GPT-5 Nano',
+            # Google
+            'gemini-3-pro-preview': 'Gemini 3 Pro (Preview)',
+            'gemini-2.5-flash': 'Gemini 2.5 Flash',
+            'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite',
+        }
+
         for provider_name in ['openai', 'google', 'anthropic']:
             if api_keys.get(provider_name):
                 provider = ProviderFactory.create_provider(provider_name, api_keys[provider_name])
                 for model in provider.get_supported_models():
-                    # Create label: "🟢 OpenAI - gpt-5.1"
-                    label = f"{provider_labels[provider_name]} - {model}"
+                    # Get formatted model name
+                    formatted_model = model_names.get(model, model)
+                    # Create label: "🟢 OpenAI - GPT-5.1"
+                    label = f"{provider_labels[provider_name]} - {formatted_model}"
                     models[label] = (provider_name, model)
 
         return models
