@@ -94,3 +94,33 @@ class ProviderFactory:
             Provider name or None if model is not supported
         """
         return ProviderFactory.MODEL_PROVIDER_MAP.get(model)
+
+    @staticmethod
+    def create_provider(provider_name: str, api_key: str) -> BaseProvider:
+        """
+        Create a provider instance by provider name.
+
+        Args:
+            provider_name: Name of provider ("openai", "google", or "anthropic")
+            api_key: API key for the provider
+
+        Returns:
+            Instance of the appropriate provider
+
+        Raises:
+            ValueError: If provider name is not supported
+        """
+        if provider_name == "openai":
+            from .openai_provider import OpenAIProvider
+            return OpenAIProvider(api_key)
+        elif provider_name == "google":
+            from .google_provider import GoogleProvider
+            return GoogleProvider(api_key)
+        elif provider_name == "anthropic":
+            from .anthropic_provider import AnthropicProvider
+            return AnthropicProvider(api_key)
+        else:
+            raise ValueError(
+                f"Unknown provider: {provider_name}. "
+                f"Supported providers: openai, google, anthropic"
+            )
