@@ -3,6 +3,7 @@ Google Gemini provider implementation with Search Grounding.
 """
 
 import time
+import requests
 from typing import List
 from urllib.parse import urlparse
 from google.genai import Client
@@ -39,6 +40,28 @@ class GoogleProvider(BaseProvider):
     def get_provider_name(self) -> str:
         """Get provider name."""
         return "google"
+
+    def _resolve_redirect_url(self, redirect_url: str) -> str:
+        """
+        Resolve Google's grounding API redirect URL to get the actual destination.
+
+        Args:
+            redirect_url: Google's redirect URL
+
+        Returns:
+            The actual destination URL, or the original URL if resolution fails
+        """
+        # Check if this is a Google redirect URL
+        if 'vertexaisearch.cloud.google.com/grounding-api-redirect' not in redirect_url:
+            return redirect_url
+
+        try:
+            # Follow redirects with a short timeout
+            response = requests.head(redirect_url, allow_redirects=True, timeout=3)
+            return response.url
+        except Exception:
+            # If redirect resolution fails, return the original URL
+            return redirect_url
 
     def get_supported_models(self) -> List[str]:
         """Get list of supported Google models."""
@@ -133,10 +156,12 @@ class GoogleProvider(BaseProvider):
                             if hasattr(chunk, 'web') and chunk.web:
                                 # Only include sources with valid URIs
                                 if hasattr(chunk.web, 'uri') and chunk.web.uri:
+                                    # Resolve redirect URL to get actual destination
+                                    actual_url = self._resolve_redirect_url(chunk.web.uri)
                                     source_obj = Source(
-                                        url=chunk.web.uri,
+                                        url=actual_url,
                                         title=chunk.web.title if hasattr(chunk.web, 'title') else None,
-                                        domain=urlparse(chunk.web.uri).netloc
+                                        domain=urlparse(actual_url).netloc
                                     )
                                     all_sources.append(source_obj)
                                     sources.append(source_obj)
