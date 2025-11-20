@@ -113,20 +113,28 @@ class OpenAIProvider(BaseProvider):
                     if output_item.status == "completed" and hasattr(output_item, 'action'):
                         action = output_item.action
 
-                        # Extract search query
+                        # Extract search query with its sources
                         if hasattr(action, 'query') and action.query:
-                            search_queries.append(SearchQuery(query=action.query))
+                            query_sources = []
 
-                        # Extract sources (requires include=["web_search_call.action.sources"])
-                        if hasattr(action, 'sources') and action.sources:
-                            for source in action.sources:
-                                # Only include sources that have a valid URL
-                                if hasattr(source, 'url') and source.url:
-                                    sources.append(Source(
-                                        url=source.url,
-                                        title=source.title if hasattr(source, 'title') else None,
-                                        domain=urlparse(source.url).netloc
-                                    ))
+                            # Extract sources for this query (requires include=["web_search_call.action.sources"])
+                            if hasattr(action, 'sources') and action.sources:
+                                for source in action.sources:
+                                    # Only include sources that have a valid URL
+                                    if hasattr(source, 'url') and source.url:
+                                        source_obj = Source(
+                                            url=source.url,
+                                            title=source.title if hasattr(source, 'title') else None,
+                                            domain=urlparse(source.url).netloc
+                                        )
+                                        query_sources.append(source_obj)
+                                        sources.append(source_obj)
+
+                            # Create SearchQuery with its sources
+                            search_queries.append(SearchQuery(
+                                query=action.query,
+                                sources=query_sources
+                            ))
 
                 # Handle message type
                 elif output_item.type == "message":

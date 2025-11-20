@@ -121,22 +121,51 @@ class GoogleProvider(BaseProvider):
                 if hasattr(candidate, 'grounding_metadata') and candidate.grounding_metadata:
                     metadata = candidate.grounding_metadata
 
-                    # Extract search queries from web_search_queries field
+                    # First, collect all query strings
+                    query_strings = []
                     if hasattr(metadata, 'web_search_queries') and metadata.web_search_queries:
-                        for query in metadata.web_search_queries:
-                            search_queries.append(SearchQuery(query=query))
+                        query_strings = list(metadata.web_search_queries)
 
-                    # Extract sources from grounding chunks
+                    # Then collect all sources
+                    all_sources = []
                     if hasattr(metadata, 'grounding_chunks') and metadata.grounding_chunks:
                         for chunk in metadata.grounding_chunks:
                             if hasattr(chunk, 'web') and chunk.web:
                                 # Only include sources with valid URIs
                                 if hasattr(chunk.web, 'uri') and chunk.web.uri:
-                                    sources.append(Source(
+                                    source_obj = Source(
                                         url=chunk.web.uri,
                                         title=chunk.web.title if hasattr(chunk.web, 'title') else None,
                                         domain=urlparse(chunk.web.uri).netloc
-                                    ))
+                                    )
+                                    all_sources.append(source_obj)
+                                    sources.append(source_obj)
+
+                    # Link sources to queries
+                    # Google doesn't provide explicit links, so we'll distribute sources across queries
+                    if query_strings:
+                        sources_per_query = len(all_sources) // len(query_strings)
+                        remainder = len(all_sources) % len(query_strings)
+
+                        start_idx = 0
+                        for i, query_str in enumerate(query_strings):
+                            # Calculate how many sources this query gets
+                            count = sources_per_query + (1 if i < remainder else 0)
+                            end_idx = start_idx + count
+
+                            # Assign sources to this query
+                            query_sources = all_sources[start_idx:end_idx]
+                            search_queries.append(SearchQuery(
+                                query=query_str,
+                                sources=query_sources
+                            ))
+                            start_idx = end_idx
+                    elif all_sources:
+                        # If we have sources but no queries, create a generic query
+                        search_queries.append(SearchQuery(
+                            query="Search",
+                            sources=all_sources
+                        ))
 
                     # Extract citations from grounding supports
                     if hasattr(metadata, 'grounding_supports') and metadata.grounding_supports:

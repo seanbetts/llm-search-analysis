@@ -13,7 +13,13 @@ from dataclasses import dataclass
 class SearchQuery:
     """Represents a search query made by the model."""
     query: str
+    sources: List['Source'] = None
     timestamp: Optional[str] = None
+
+    def __post_init__(self):
+        """Initialize sources list if not provided."""
+        if self.sources is None:
+            self.sources = []
 
 
 @dataclass

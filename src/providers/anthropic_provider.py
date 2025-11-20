@@ -113,6 +113,11 @@ class AnthropicProvider(BaseProvider):
         sources = []
         citations = []
 
+        # Temporary storage to link queries with their results
+        # Anthropic returns blocks in order: query1, result1, query2, result2, etc.
+        pending_queries = []
+        result_index = 0
+
         # Extract content blocks
         if hasattr(response, 'content') and response.content:
             for content_block in response.content:
@@ -137,19 +142,30 @@ class AnthropicProvider(BaseProvider):
                             # input is a dict, not an object
                             query = content_block.input.get('query') if isinstance(content_block.input, dict) else None
                             if query:
-                                search_queries.append(SearchQuery(query=query))
+                                # Create query and add to pending list
+                                search_query = SearchQuery(query=query, sources=[])
+                                pending_queries.append(search_query)
+                                search_queries.append(search_query)
 
                 # Extract sources from web_search_tool_result blocks
                 elif content_block.type == "web_search_tool_result":
                     if hasattr(content_block, 'content') and content_block.content:
+                        result_sources = []
                         for result in content_block.content:
                             # Only include sources with valid URLs
                             if hasattr(result, 'url') and result.url:
-                                sources.append(Source(
+                                source_obj = Source(
                                     url=result.url,
                                     title=result.title if hasattr(result, 'title') else None,
                                     domain=urlparse(result.url).netloc
-                                ))
+                                )
+                                result_sources.append(source_obj)
+                                sources.append(source_obj)
+
+                        # Link these sources to the corresponding query
+                        if result_index < len(pending_queries):
+                            pending_queries[result_index].sources = result_sources
+                            result_index += 1
 
         return ProviderResponse(
             response_text=response_text,

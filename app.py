@@ -120,15 +120,30 @@ def display_response(response):
     st.markdown(response.response_text)
     st.divider()
 
-    # Search queries
+    # Search queries with their sources
     if response.search_queries:
-        st.markdown("### 🔍 Search Queries")
+        st.markdown("### 🔍 Search Queries & Sources")
         for i, query in enumerate(response.search_queries, 1):
+            # Display query
             st.markdown(f"""
             <div class="search-query">
                 <strong>Query {i}:</strong> {query.query}
             </div>
             """, unsafe_allow_html=True)
+
+            # Display sources for this query in collapsible section
+            if query.sources:
+                with st.expander(f"📚 Sources from Query {i} ({len(query.sources)} sources)", expanded=False):
+                    for j, source in enumerate(query.sources, 1):
+                        url_display = source.url or 'No URL'
+                        url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
+                        st.markdown(f"""
+                        <div class="source-item">
+                            <strong>{j}. {source.title or 'Untitled'}</strong><br/>
+                            <small>{source.domain or 'Unknown domain'}</small><br/>
+                            <a href="{url_display}" target="_blank">{url_truncated}</a>
+                        </div>
+                        """, unsafe_allow_html=True)
         st.divider()
 
     # Citations
@@ -143,23 +158,6 @@ def display_response(response):
                 st.markdown(f"""
                 <div class="citation-item">
                     <strong>{i}. {citation.title or 'Untitled'}</strong><br/>
-                    <a href="{url_display}" target="_blank">{url_truncated}</a>
-                </div>
-                """, unsafe_allow_html=True)
-        st.divider()
-
-    # Sources (collapsible)
-    if response.sources:
-        with st.expander(f"📚 Sources Fetched ({len(response.sources)})", expanded=False):
-            st.caption("All sources retrieved during the search process")
-
-            for i, source in enumerate(response.sources, 1):
-                url_display = source.url or 'No URL'
-                url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
-                st.markdown(f"""
-                <div class="source-item">
-                    <strong>{i}. {source.title or 'Untitled'}</strong><br/>
-                    <small>{source.domain or 'Unknown domain'}</small><br/>
                     <a href="{url_display}" target="_blank">{url_truncated}</a>
                 </div>
                 """, unsafe_allow_html=True)
@@ -214,10 +212,8 @@ def main():
 
     # Prompt input
     prompt = st.text_area(
-        "Ask a question that requires current information",
         placeholder="What are the latest developments in artificial intelligence this week?",
-        height=100,
-        help="The model will search the web to answer your question"
+        height=100
     )
 
     # Submit button
