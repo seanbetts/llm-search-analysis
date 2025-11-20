@@ -448,9 +448,13 @@ llm-search-analysis/
    - ✅ `google_provider.py`: Google Gemini integration
      - ✅ Handle Google Search grounding
      - ✅ Extract grounding metadata
+     - ✅ Resolve redirect URLs to actual destinations
    - ✅ `anthropic_provider.py`: Anthropic Claude integration
-     - ✅ Basic implementation
-     - ⏳ Search integration (in progress)
+     - ✅ Full implementation with web_search_20250305 tool
+     - ✅ Parse search queries from server_tool_use blocks
+     - ✅ Parse sources from web_search_tool_result blocks
+     - ✅ Extract citations from text block annotations
+     - ✅ Link queries with their corresponding results
 
 4. ✅ **Build unified parser module** (`src/parser.py`)
    - ✅ Helper utilities for parsing
@@ -482,19 +486,43 @@ llm-search-analysis/
 
 ### Phase 2: Streamlit UI ⏳ IN PROGRESS
 
-9. ⬜ **Main app setup** (`app.py`)
-   - ⬜ Initialize Streamlit app
-   - ⬜ Setup database connection
-   - ⬜ Create tab layout
+**Status:** Core interactive prompting interface complete with all 9 models working. Database integration and additional tabs (Batch Analysis, Query History) deferred.
 
-10. ⬜ **Tab 1: Interactive Prompting**
-    - ⬜ Model selector dropdown
-    - ⬜ Prompt input text area
-    - ⬜ Send button with loading state
-    - ⬜ Display response and search data
-    - ⬜ Save to database
+**Recent Session Accomplishments:**
+- ✅ Sources grouped by search query with collapsible sections
+- ✅ Fixed text area error and model name truncation
+- ✅ Provider and model name formatting improvements
+- ✅ Google redirect URL resolution to actual destinations
+- ✅ Citation accuracy fixes and documentation
+- ✅ Terminology change: "Citations Used" → "Sources Used"
+- ✅ Human-friendly model names throughout UI
+- ✅ Comprehensive help documentation for source behavior nuances
 
-11. ⬜ **Tab 2: Batch Analysis**
+9. ✅ **Main app setup** (`app.py`)
+   - ✅ Initialize Streamlit app
+   - ✅ Setup page configuration and styling
+   - ✅ Single-page layout (tabs deferred to Phase 3)
+
+10. ✅ **Interactive Prompting Interface**
+    - ✅ Model selector dropdown with all 9 models across 3 providers
+    - ✅ Provider-specific emojis and formatting (🟢 OpenAI, 🔵 Google, 🟣 Anthropic)
+    - ✅ Human-friendly model names (e.g., "Claude Sonnet 4.5", "GPT-5.1")
+    - ✅ Prompt input text area
+    - ✅ Send button with formatted loading state showing model name
+    - ✅ Display response metadata (provider, model, response time, query counts)
+    - ✅ Display response text with markdown formatting
+    - ✅ Display search queries grouped with their sources
+    - ✅ Collapsible source sections per query
+    - ✅ Display sources used (citations) in dedicated section
+    - ✅ Source details: title, domain, clickable URLs
+    - ✅ Google redirect URL resolution to actual destinations
+    - ✅ Citation accuracy (Google limitations documented)
+    - ✅ Help documentation explaining source behavior nuances
+    - ✅ Custom CSS styling for better visual hierarchy
+    - ✅ Error handling and user-friendly error messages
+    - ⬜ Save interactions to database (deferred)
+
+11. ⬜ **Tab 2: Batch Analysis** (Not Started)
     - ⬜ Multi-line text area for prompts
     - ⬜ CSV file upload option
     - ⬜ Model selection
@@ -503,7 +531,7 @@ llm-search-analysis/
     - ⬜ Simple domain bar chart
     - ⬜ CSV export
 
-12. ⬜ **Tab 3: Query History**
+12. ⬜ **Tab 3: Query History** (Not Started)
     - ⬜ Simple table with search/filter
     - ⬜ Click to view details
     - ⬜ CSV export
