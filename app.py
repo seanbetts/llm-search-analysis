@@ -213,6 +213,33 @@ def main():
         - Anthropic Claude (Web Search Tool)
         """)
 
+    # Understanding Citations section
+    with st.sidebar.expander("📚 Understanding Citations", expanded=False):
+        st.markdown("""
+        **Important Nuances:**
+
+        **"Citations Used"** tracks sources the model actually searched for via web search APIs, not all URLs in the response.
+
+        **Three scenarios you may see:**
+
+        1. **Citation tracked + URL in response**
+           - Normal case: model searched and cited
+
+        2. **Citation tracked + No URL in response**
+           - Model used search but didn't show URL in text
+           - Still counted as citation used
+
+        3. **No citation + URL in response**
+           - Model mentioned URL from training knowledge
+           - Not counted (didn't actually search for it)
+
+        **For Google:**
+        - Citations = 0 (cannot distinguish from sources)
+        - Google's API doesn't separate citations from sources
+
+        This means "Citations Used" measures **sources consulted**, not **URLs mentioned in text**.
+        """)
+
     # Main content - Prompt input
     st.markdown("### 💭 Enter Your Prompt")
 
