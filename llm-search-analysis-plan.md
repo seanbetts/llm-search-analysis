@@ -79,9 +79,9 @@ Build a unified application to monitor and analyze how LLM models from multiple 
 │  • sessions                                      │
 │  • prompts                                       │
 │  • responses                                     │
-│  • search_calls                                  │
+│  • search_queries                                │
 │  • sources                                       │
-│  • citations                                     │
+│  • sources_used                                  │
 └──────────────────────────────────────────────────┘
 ```
 
@@ -358,30 +358,26 @@ message = client.messages.create(
 - created_at (timestamp)
 - raw_response_json (json)
 
-**search_calls**
+**search_queries**
 - id (primary key)
 - response_id (foreign key)
-- search_call_id (string) - from API
-- action_type (string) - search/open_page/find_in_page
-- search_query (text, nullable)
+- search_query (text) - the search query text
 - created_at (timestamp)
 
 **sources**
 - id (primary key)
-- search_call_id (foreign key)
+- search_query_id (foreign key)
 - url (text)
 - title (text, nullable)
 - domain (string)
-- was_cited (boolean)
+- rank (integer) - position in search results (1-indexed)
 
-**citations**
+**sources_used**
 - id (primary key)
 - response_id (foreign key)
 - url (text)
 - title (text, nullable)
-- start_index (integer)
-- end_index (integer)
-- cited_text (text)
+- rank (integer) - rank from original search results (1-indexed)
 
 ## Project Structure
 
@@ -505,6 +501,33 @@ llm-search-analysis/
 - ✅ Query history with search and detail views
 - ✅ Auto-save all interactions to database
 
+**Session 3 Accomplishments (Rank Feature & Multi-Model):**
+- ✅ Source rank tracking implementation
+  - ✅ Added rank fields to Source and Citation dataclasses (1-indexed)
+  - ✅ Updated database schema with rank columns
+  - ✅ Implemented rank capture in all three providers
+  - ✅ URL normalization for citation matching (handles tracking params)
+- ✅ Database schema alignment
+  - ✅ Renamed SearchCall → SearchQuery (table: search_queries)
+  - ✅ Renamed CitationModel → SourceUsed (table: sources_used)
+  - ✅ Updated all foreign key relationships
+- ✅ Average rank metric
+  - ✅ Calculated and displayed in response metadata
+  - ✅ Added to history table as new column
+  - ✅ Included in interaction details view
+- ✅ UI consistency improvements
+  - ✅ Unified terminology: "Sources Used" (not "Citations")
+  - ✅ Consistent rank display format: "(Rank N)"
+  - ✅ Response times in seconds with 1 decimal place
+  - ✅ Removed redundant rank labels from numbered lists
+- ✅ Multi-model batch analysis
+  - ✅ Changed from single to multi-select for model selection
+  - ✅ Nested loop processing: prompts × models
+  - ✅ Model column added to results table
+  - ✅ Enhanced metrics: Total Runs, Avg Sources Used, Avg Rank
+  - ✅ Formatted results table with all new metrics
+  - ✅ Progress tracking shows current model and prompt
+
 9. ✅ **Main app setup** (`app.py`)
    - ✅ Initialize Streamlit app
    - ✅ Setup page configuration and styling
@@ -533,22 +556,31 @@ llm-search-analysis/
 11. ✅ **Tab 2: Batch Analysis**
     - ✅ Multi-line text area for prompts (one per line)
     - ✅ CSV file upload option with 'prompt' column
-    - ✅ Model selection for batch processing
-    - ✅ Progress bar tracking with status messages
-    - ✅ Summary statistics (total, successful, avg sources/citations)
-    - ✅ Detailed results table with all metrics
-    - ✅ CSV export with timestamps
+    - ✅ Multi-model selection for batch processing
+    - ✅ Calculation display: prompts × models = total runs
+    - ✅ Nested loop processing (each prompt tested with each model)
+    - ✅ Progress bar tracking with model and prompt status
+    - ✅ Summary statistics (Total Runs, Successful, Avg Sources, Avg Sources Used, Avg Rank)
+    - ✅ Detailed results table with Model column and formatted metrics
+    - ✅ Formatted display: Avg. Rank (1 decimal), Response Time (seconds)
+    - ✅ CSV export with timestamps and all metrics
     - ✅ Error handling and failed prompt reporting
     - ✅ Auto-save all batch interactions to database
 
 12. ✅ **Tab 3: Query History**
     - ✅ Table display of recent 100 interactions
     - ✅ Search/filter by prompt keywords
-    - ✅ Sortable columns (timestamp, prompt, provider, model, stats)
-    - ✅ CSV export functionality
+    - ✅ Sortable columns (Timestamp, Prompt, Provider, Model, Searches, Sources, Sources Used, Avg. Rank)
+    - ✅ Average rank calculation and display
+    - ✅ CSV export functionality with all metrics
     - ✅ Interactive detail view selector
-    - ✅ Full interaction details (prompt, response, queries, citations)
+    - ✅ Full interaction details with comprehensive metrics:
+      - ✅ Provider, Model, Response Time (seconds), Searches, Sources, Sources Used, Avg. Rank
+      - ✅ Complete response text
+      - ✅ Search queries with source counts
+      - ✅ Sources Used with rank display: "Title (Rank N)"
     - ✅ Direct database integration for retrieval
+    - ✅ Consistent terminology: "Sources Used" throughout
 
 ### Phase 3: Polish & Basic Analytics ⬜ NOT STARTED
 

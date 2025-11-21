@@ -321,14 +321,19 @@ def tab_batch():
 
     # Model selection
     model_labels = list(models.keys())
-    selected_label = st.selectbox(
-        "Select Model for Batch",
+    selected_labels = st.multiselect(
+        "Select Models for Batch",
         model_labels,
-        help="Choose a model to use for all prompts"
+        default=[model_labels[0]] if model_labels else [],
+        help="Choose one or more models to compare across all prompts"
     )
 
-    # Extract provider and model from selection
-    selected_provider, selected_model = models[selected_label]
+    # Extract providers and models from selections
+    selected_models = []
+    if selected_labels:
+        for label in selected_labels:
+            provider, model = models[label]
+            selected_models.append((label, provider, model))
 
     # Prompt input methods
     st.markdown("#### Enter Prompts")
@@ -358,63 +363,79 @@ def tab_batch():
             except Exception as e:
                 st.error(f"Error reading CSV: {str(e)}")
 
-    # Display prompt count
-    if prompts:
-        st.info(f"Ready to process {len(prompts)} prompts")
+    # Display prompt and model count
+    if prompts and selected_models:
+        total_runs = len(prompts) * len(selected_models)
+        st.info(f"Ready to process {len(prompts)} prompt(s) × {len(selected_models)} model(s) = {total_runs} total runs")
 
     # Run button
-    if st.button("▶️ Run Batch Analysis", type="primary", disabled=len(prompts) == 0):
+    if st.button("▶️ Run Batch Analysis", type="primary", disabled=len(prompts) == 0 or len(selected_models) == 0):
         st.session_state.batch_results = []
 
         # Progress tracking
         progress_bar = st.progress(0)
         status_text = st.empty()
 
-        # Get API keys and create provider
+        # Get API keys
         api_keys = Config.get_api_keys()
-        provider = ProviderFactory.create_provider(selected_provider, api_keys[selected_provider])
 
-        # Process each prompt
-        for idx, prompt in enumerate(prompts):
-            status_text.text(f"Processing prompt {idx + 1}/{len(prompts)}...")
+        # Calculate total runs
+        total_runs = len(prompts) * len(selected_models)
+        current_run = 0
 
-            try:
-                # Send prompt
-                response = provider.send_prompt(prompt, selected_model)
+        # Process each prompt with each model
+        for prompt_idx, prompt in enumerate(prompts):
+            for model_label, provider_name, model_name in selected_models:
+                current_run += 1
+                status_text.text(f"Processing run {current_run}/{total_runs}: {model_label} - Prompt {prompt_idx + 1}/{len(prompts)}")
 
-                # Save to database
                 try:
-                    st.session_state.db.save_interaction(
-                        provider_name=selected_provider,
-                        model=selected_model,
-                        prompt=prompt,
-                        response_text=response.response_text,
-                        search_queries=response.search_queries,
-                        sources=response.sources,
-                        citations=response.citations,
-                        response_time_ms=response.response_time_ms,
-                        raw_response=response.raw_response
-                    )
-                except Exception as db_error:
-                    st.warning(f"Database error for prompt {idx + 1}: {str(db_error)}")
+                    # Create provider for this model
+                    provider = ProviderFactory.create_provider(provider_name, api_keys[provider_name])
 
-                # Store result
-                st.session_state.batch_results.append({
-                    'prompt': prompt,
-                    'searches': len(response.search_queries),
-                    'sources': len(response.sources),
-                    'citations': len(response.citations),
-                    'response_time_ms': response.response_time_ms
-                })
+                    # Send prompt
+                    response = provider.send_prompt(prompt, model_name)
 
-            except Exception as e:
-                st.session_state.batch_results.append({
-                    'prompt': prompt,
-                    'error': str(e)
-                })
+                    # Save to database
+                    try:
+                        st.session_state.db.save_interaction(
+                            provider_name=provider_name,
+                            model=model_name,
+                            prompt=prompt,
+                            response_text=response.response_text,
+                            search_queries=response.search_queries,
+                            sources=response.sources,
+                            citations=response.citations,
+                            response_time_ms=response.response_time_ms,
+                            raw_response=response.raw_response
+                        )
+                    except Exception as db_error:
+                        st.warning(f"Database error for {model_label} prompt {prompt_idx + 1}: {str(db_error)}")
 
-            # Update progress
-            progress_bar.progress((idx + 1) / len(prompts))
+                    # Calculate average rank
+                    citations_with_rank = [c for c in response.citations if c.rank]
+                    avg_rank = sum(c.rank for c in citations_with_rank) / len(citations_with_rank) if citations_with_rank else None
+
+                    # Store result
+                    st.session_state.batch_results.append({
+                        'prompt': prompt,
+                        'model': model_label,
+                        'searches': len(response.search_queries),
+                        'sources': len(response.sources),
+                        'sources_used': len(response.citations),
+                        'avg_rank': avg_rank,
+                        'response_time_s': response.response_time_ms / 1000
+                    })
+
+                except Exception as e:
+                    st.session_state.batch_results.append({
+                        'prompt': prompt,
+                        'model': model_label,
+                        'error': str(e)
+                    })
+
+                # Update progress
+                progress_bar.progress(current_run / total_runs)
 
         status_text.text("✅ Batch processing complete!")
 
@@ -427,9 +448,9 @@ def tab_batch():
         successful = [r for r in st.session_state.batch_results if 'error' not in r]
         failed = [r for r in st.session_state.batch_results if 'error' in r]
 
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
-            st.metric("Total Prompts", len(st.session_state.batch_results))
+            st.metric("Total Runs", len(st.session_state.batch_results))
         with col2:
             st.metric("Successful", len(successful))
         with col3:
@@ -438,13 +459,42 @@ def tab_batch():
                 st.metric("Avg Sources", f"{avg_sources:.1f}")
         with col4:
             if successful:
-                avg_citations = sum(r['citations'] for r in successful) / len(successful)
-                st.metric("Avg Citations", f"{avg_citations:.1f}")
+                avg_sources_used = sum(r['sources_used'] for r in successful) / len(successful)
+                st.metric("Avg Sources Used", f"{avg_sources_used:.1f}")
+        with col5:
+            if successful:
+                ranks = [r['avg_rank'] for r in successful if r['avg_rank'] is not None]
+                if ranks:
+                    overall_avg_rank = sum(ranks) / len(ranks)
+                    st.metric("Avg Rank", f"{overall_avg_rank:.1f}")
+                else:
+                    st.metric("Avg Rank", "N/A")
 
         # Results table
         st.markdown("#### Detailed Results")
         df_results = pd.DataFrame(st.session_state.batch_results)
-        st.dataframe(df_results, use_container_width=True)
+
+        # Format the display columns
+        if not df_results.empty and 'error' not in df_results.columns:
+            # Format avg_rank for display
+            df_results['avg_rank_display'] = df_results['avg_rank'].apply(
+                lambda x: f"{x:.1f}" if pd.notna(x) else "N/A"
+            )
+
+            # Format response_time for display
+            df_results['response_time_display'] = df_results['response_time_s'].apply(
+                lambda x: f"{x:.1f}s" if pd.notna(x) else "N/A"
+            )
+
+            # Select and rename columns for display
+            display_df = df_results[['prompt', 'model', 'searches', 'sources', 'sources_used',
+                                     'avg_rank_display', 'response_time_display']]
+            display_df.columns = ['Prompt', 'Model', 'Searches', 'Sources', 'Sources Used',
+                                 'Avg. Rank', 'Response Time']
+
+            st.dataframe(display_df, use_container_width=True)
+        else:
+            st.dataframe(df_results, use_container_width=True)
 
         # Export button
         csv = df_results.to_csv(index=False)
