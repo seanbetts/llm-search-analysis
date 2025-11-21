@@ -196,10 +196,9 @@ def display_response(response):
                     for j, source in enumerate(query.sources, 1):
                         url_display = source.url or 'No URL'
                         url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
-                        rank_display = f"[Rank: {source.rank}] " if source.rank else ""
                         st.markdown(f"""
                         <div class="source-item">
-                            <strong>{j}. {rank_display}{source.title or 'Untitled'}</strong><br/>
+                            <strong>{j}. {source.title or 'Untitled'}</strong><br/>
                             <small>{source.domain or 'Unknown domain'}</small><br/>
                             <a href="{url_display}" target="_blank">{url_truncated}</a>
                         </div>
@@ -215,10 +214,9 @@ def display_response(response):
             with st.container():
                 url_display = citation.url or 'No URL'
                 url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
-                rank_display = f"[Rank: {citation.rank}] " if citation.rank else ""
                 st.markdown(f"""
                 <div class="citation-item">
-                    <strong>{i}. {rank_display}{citation.title or 'Untitled'}</strong><br/>
+                    <strong>{i}. {citation.title or 'Untitled'}</strong><br/>
                     <a href="{url_display}" target="_blank">{url_truncated}</a>
                 </div>
                 """, unsafe_allow_html=True)

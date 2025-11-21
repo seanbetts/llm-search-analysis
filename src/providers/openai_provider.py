@@ -150,10 +150,14 @@ class OpenAIProvider(BaseProvider):
                                         if annotation.type == "url_citation":
                                             # Only include citations with valid URLs
                                             if hasattr(annotation, 'url') and annotation.url:
+                                                # Normalize URLs by removing query params for matching
+                                                citation_url_base = annotation.url.split('?')[0]
+
                                                 # Try to find rank from sources list
                                                 rank = None
                                                 for source in sources:
-                                                    if source.url == annotation.url:
+                                                    source_url_base = source.url.split('?')[0]
+                                                    if source_url_base == citation_url_base:
                                                         rank = source.rank
                                                         break
 
