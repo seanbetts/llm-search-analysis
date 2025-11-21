@@ -214,9 +214,10 @@ def display_response(response):
             with st.container():
                 url_display = citation.url or 'No URL'
                 url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
+                rank_display = f" (Rank {citation.rank})" if citation.rank else ""
                 st.markdown(f"""
                 <div class="citation-item">
-                    <strong>{i}. {citation.title or 'Untitled'}</strong><br/>
+                    <strong>{i}. {citation.title or 'Untitled'}{rank_display}</strong><br/>
                     <a href="{url_display}" target="_blank">{url_truncated}</a>
                 </div>
                 """, unsafe_allow_html=True)
