@@ -155,7 +155,7 @@ def display_response(response):
     with col2:
         st.metric("Model", model_names.get(response.model, response.model))
     with col3:
-        response_time = f"{response.response_time_ms / 1000:.2f}s" if response.response_time_ms else "N/A"
+        response_time = f"{response.response_time_ms / 1000:.1f}s" if response.response_time_ms else "N/A"
         st.metric("Response Time", response_time)
     with col4:
         st.metric("Search Queries", len(response.search_queries))
