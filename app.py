@@ -522,7 +522,20 @@ def tab_history():
             if details:
                 st.divider()
                 st.markdown(f"**Prompt:** {details['prompt']}")
-                st.markdown(f"**Provider:** {details['provider']} | **Model:** {details['model']} | **Time:** {details['response_time_ms']}ms")
+
+                # Calculate metrics
+                num_searches = len(details['search_queries'])
+                num_sources = sum(len(query['sources']) for query in details['search_queries'])
+                num_sources_used = len(details['citations'])
+
+                citations_with_rank = [c for c in details['citations'] if c.get('rank') is not None]
+                avg_rank_display = f"{sum(c['rank'] for c in citations_with_rank) / len(citations_with_rank):.1f}" if citations_with_rank else "N/A"
+
+                # Convert response time to seconds
+                response_time_s = f"{details['response_time_ms'] / 1000:.1f}s"
+
+                st.markdown(f"**Provider:** {details['provider']} | **Model:** {details['model']} | **Time:** {response_time_s}")
+                st.markdown(f"**Searches:** {num_searches} | **Sources:** {num_sources} | **Sources Used:** {num_sources_used} | **Avg. Rank:** {avg_rank_display}")
 
                 st.markdown("**Response:**")
                 st.markdown(details['response_text'])
@@ -533,9 +546,9 @@ def tab_history():
                         st.markdown(f"{i}. {query['query']} ({len(query['sources'])} sources)")
 
                 if details['citations']:
-                    st.markdown(f"**Citations ({len(details['citations'])}):**")
+                    st.markdown(f"**Sources Used ({len(details['citations'])}):**")
                     for i, citation in enumerate(details['citations'], 1):
-                        rank_display = f" [Rank: {citation['rank']}]" if citation.get('rank') else ""
+                        rank_display = f" (Rank {citation['rank']})" if citation.get('rank') else ""
                         st.markdown(f"{i}. [{citation['title'] or 'Untitled'}]({citation['url']}){rank_display}")
 
     except Exception as e:
