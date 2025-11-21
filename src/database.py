@@ -95,6 +95,7 @@ class SourceModel(Base):
     url = Column(Text, nullable=False)
     title = Column(Text)
     domain = Column(String(255))
+    rank = Column(Integer)  # Position in search results (1-indexed)
 
     # Relationships
     search_call = relationship("SearchCall", back_populates="sources")
@@ -108,6 +109,7 @@ class CitationModel(Base):
     response_id = Column(Integer, ForeignKey("responses.id"))
     url = Column(Text, nullable=False)
     title = Column(Text)
+    rank = Column(Integer)  # Rank from original search results (1-indexed)
 
     # Relationships
     response = relationship("Response", back_populates="citations")
@@ -217,7 +219,8 @@ class Database:
                         search_call_id=search_call.id,
                         url=source.url,
                         title=source.title,
-                        domain=source.domain
+                        domain=source.domain,
+                        rank=source.rank
                     )
                     session.add(source_obj)
 
@@ -226,7 +229,8 @@ class Database:
                 citation_obj = CitationModel(
                     response_id=response_obj.id,
                     url=citation.url,
-                    title=citation.title
+                    title=citation.title,
+                    rank=citation.rank
                 )
                 session.add(citation_obj)
 
@@ -298,7 +302,8 @@ class Database:
                     {
                         "url": source.url,
                         "title": source.title,
-                        "domain": source.domain
+                        "domain": source.domain,
+                        "rank": source.rank
                     }
                     for source in search_call.sources
                 ]
@@ -311,7 +316,8 @@ class Database:
             citations = [
                 {
                     "url": citation.url,
-                    "title": citation.title
+                    "title": citation.title,
+                    "rank": citation.rank
                 }
                 for citation in prompt.response.citations
             ]

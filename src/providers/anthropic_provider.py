@@ -130,9 +130,17 @@ class AnthropicProvider(BaseProvider):
                         for citation in content_block.citations:
                             # Only include citations with valid URLs
                             if hasattr(citation, 'url') and citation.url:
+                                # Try to find rank from sources list by matching URL
+                                rank = None
+                                for source in sources:
+                                    if source.url == citation.url:
+                                        rank = source.rank
+                                        break
+
                                 citations.append(Citation(
                                     url=citation.url,
                                     title=citation.title if hasattr(citation, 'title') else None,
+                                    rank=rank
                                 ))
 
                 # Extract search queries from server_tool_use blocks
@@ -151,13 +159,14 @@ class AnthropicProvider(BaseProvider):
                 elif content_block.type == "web_search_tool_result":
                     if hasattr(content_block, 'content') and content_block.content:
                         result_sources = []
-                        for result in content_block.content:
+                        for rank, result in enumerate(content_block.content, 1):
                             # Only include sources with valid URLs
                             if hasattr(result, 'url') and result.url:
                                 source_obj = Source(
                                     url=result.url,
                                     title=result.title if hasattr(result, 'title') else None,
-                                    domain=urlparse(result.url).netloc
+                                    domain=urlparse(result.url).netloc,
+                                    rank=rank
                                 )
                                 result_sources.append(source_obj)
                                 sources.append(source_obj)

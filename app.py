@@ -188,9 +188,10 @@ def display_response(response):
                     for j, source in enumerate(query.sources, 1):
                         url_display = source.url or 'No URL'
                         url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
+                        rank_display = f"[Rank: {source.rank}] " if source.rank else ""
                         st.markdown(f"""
                         <div class="source-item">
-                            <strong>{j}. {source.title or 'Untitled'}</strong><br/>
+                            <strong>{j}. {rank_display}{source.title or 'Untitled'}</strong><br/>
                             <small>{source.domain or 'Unknown domain'}</small><br/>
                             <a href="{url_display}" target="_blank">{url_truncated}</a>
                         </div>
@@ -206,9 +207,10 @@ def display_response(response):
             with st.container():
                 url_display = citation.url or 'No URL'
                 url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
+                rank_display = f"[Rank: {citation.rank}] " if citation.rank else ""
                 st.markdown(f"""
                 <div class="citation-item">
-                    <strong>{i}. {citation.title or 'Untitled'}</strong><br/>
+                    <strong>{i}. {rank_display}{citation.title or 'Untitled'}</strong><br/>
                     <a href="{url_display}" target="_blank">{url_truncated}</a>
                 </div>
                 """, unsafe_allow_html=True)
@@ -523,7 +525,8 @@ def tab_history():
                 if details['citations']:
                     st.markdown(f"**Citations ({len(details['citations'])}):**")
                     for i, citation in enumerate(details['citations'], 1):
-                        st.markdown(f"{i}. [{citation['title'] or 'Untitled'}]({citation['url']})")
+                        rank_display = f" [Rank: {citation['rank']}]" if citation.get('rank') else ""
+                        st.markdown(f"{i}. [{citation['title'] or 'Untitled'}]({citation['url']}){rank_display}")
 
     except Exception as e:
         st.error(f"Error loading history: {str(e)}")

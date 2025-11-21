@@ -28,6 +28,7 @@ class Source:
     url: str
     title: Optional[str] = None
     domain: Optional[str] = None
+    rank: Optional[int] = None  # Position in search results (1-indexed)
 
 
 @dataclass
@@ -36,6 +37,7 @@ class Citation:
     url: str
     title: Optional[str] = None
     text_snippet: Optional[str] = None
+    rank: Optional[int] = None  # Rank from original search results (1-indexed)
 
 
 @dataclass

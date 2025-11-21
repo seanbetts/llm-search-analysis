@@ -152,6 +152,7 @@ class GoogleProvider(BaseProvider):
                     # Then collect all sources
                     all_sources = []
                     if hasattr(metadata, 'grounding_chunks') and metadata.grounding_chunks:
+                        rank = 1
                         for chunk in metadata.grounding_chunks:
                             if hasattr(chunk, 'web') and chunk.web:
                                 # Only include sources with valid URIs
@@ -161,10 +162,12 @@ class GoogleProvider(BaseProvider):
                                     source_obj = Source(
                                         url=actual_url,
                                         title=chunk.web.title if hasattr(chunk.web, 'title') else None,
-                                        domain=urlparse(actual_url).netloc
+                                        domain=urlparse(actual_url).netloc,
+                                        rank=rank
                                     )
                                     all_sources.append(source_obj)
                                     sources.append(source_obj)
+                                    rank += 1
 
                     # Link sources to queries
                     # Google doesn't provide explicit links, so we'll distribute sources across queries

@@ -119,13 +119,14 @@ class OpenAIProvider(BaseProvider):
 
                             # Extract sources for this query (requires include=["web_search_call.action.sources"])
                             if hasattr(action, 'sources') and action.sources:
-                                for source in action.sources:
+                                for rank, source in enumerate(action.sources, 1):
                                     # Only include sources that have a valid URL
                                     if hasattr(source, 'url') and source.url:
                                         source_obj = Source(
                                             url=source.url,
                                             title=source.title if hasattr(source, 'title') else None,
-                                            domain=urlparse(source.url).netloc
+                                            domain=urlparse(source.url).netloc,
+                                            rank=rank
                                         )
                                         query_sources.append(source_obj)
                                         sources.append(source_obj)
@@ -149,9 +150,17 @@ class OpenAIProvider(BaseProvider):
                                         if annotation.type == "url_citation":
                                             # Only include citations with valid URLs
                                             if hasattr(annotation, 'url') and annotation.url:
+                                                # Try to find rank from sources list
+                                                rank = None
+                                                for source in sources:
+                                                    if source.url == annotation.url:
+                                                        rank = source.rank
+                                                        break
+
                                                 citations.append(Citation(
                                                     url=annotation.url,
-                                                    title=annotation.title if hasattr(annotation, 'title') else None
+                                                    title=annotation.title if hasattr(annotation, 'title') else None,
+                                                    rank=rank
                                                 ))
 
         return ProviderResponse(
