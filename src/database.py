@@ -264,6 +264,10 @@ class Database:
                     source_count = sum(len(sq.sources) for sq in prompt.response.search_queries)
                     sources_used_count = len(prompt.response.sources_used)
 
+                    # Calculate average rank from sources used
+                    sources_with_rank = [su for su in prompt.response.sources_used if su.rank is not None]
+                    avg_rank = sum(su.rank for su in sources_with_rank) / len(sources_with_rank) if sources_with_rank else None
+
                     results.append({
                         "id": prompt.id,
                         "timestamp": prompt.created_at,
@@ -273,6 +277,7 @@ class Database:
                         "searches": search_count,
                         "sources": source_count,
                         "citations": sources_used_count,
+                        "avg_rank": avg_rank,
                     })
 
             return results

@@ -148,7 +148,7 @@ def display_response(response):
 
     # Response metadata
     st.markdown("### 📊 Response Metadata")
-    col1, col2, col3, col4, col5, col6, col7 = st.columns([1, 2.5, 1, 1, 1, 1, 1])
+    col1, col2, col3, col4, col5, col6, col7 = st.columns([1.5, 2, 1, 1, 1, 1, 1])
 
     with col1:
         st.metric("Provider", provider_names.get(response.provider, response.provider.capitalize()))
@@ -491,9 +491,12 @@ def tab_history():
             df = df[df['prompt'].str.contains(search_query, case=False, na=False)]
             st.caption(f"Showing {len(df)} matching results")
 
+        # Format average rank for display
+        df['avg_rank_display'] = df['avg_rank'].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "N/A")
+
         # Display table
-        display_df = df[['timestamp', 'prompt_preview', 'provider', 'model', 'searches', 'sources', 'citations']]
-        display_df.columns = ['Timestamp', 'Prompt', 'Provider', 'Model', 'Searches', 'Sources', 'Citations']
+        display_df = df[['timestamp', 'prompt_preview', 'provider', 'model', 'searches', 'sources', 'citations', 'avg_rank_display']]
+        display_df.columns = ['Timestamp', 'Prompt', 'Provider', 'Model', 'Searches', 'Sources', 'Sources Used', 'Avg. Rank']
 
         st.dataframe(display_df, use_container_width=True, height=400)
 
