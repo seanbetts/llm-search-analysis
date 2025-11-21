@@ -148,7 +148,7 @@ def display_response(response):
 
     # Response metadata
     st.markdown("### 📊 Response Metadata")
-    col1, col2, col3, col4, col5, col6 = st.columns([1, 2.5, 1, 1, 1, 1])
+    col1, col2, col3, col4, col5, col6, col7 = st.columns([1, 2.5, 1, 1, 1, 1, 1])
 
     with col1:
         st.metric("Provider", provider_names.get(response.provider, response.provider.capitalize()))
@@ -163,6 +163,14 @@ def display_response(response):
         st.metric("Sources Fetched", len(response.sources))
     with col6:
         st.metric("Sources Used", len(response.citations))
+    with col7:
+        # Calculate average rank from sources used (citations)
+        sources_with_rank = [c for c in response.citations if c.rank]
+        if sources_with_rank:
+            avg_rank = sum(c.rank for c in sources_with_rank) / len(sources_with_rank)
+            st.metric("Avg. Rank", f"{avg_rank:.1f}")
+        else:
+            st.metric("Avg. Rank", "N/A")
 
     st.divider()
 

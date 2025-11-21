@@ -68,13 +68,13 @@ class Response(Base):
 
     # Relationships
     prompt = relationship("Prompt", back_populates="response")
-    search_calls = relationship("SearchCall", back_populates="response")
-    citations = relationship("CitationModel", back_populates="response")
+    search_queries = relationship("SearchQuery", back_populates="response")
+    sources_used = relationship("SourceUsed", back_populates="response")
 
 
-class SearchCall(Base):
-    """Search/tool call made during response generation."""
-    __tablename__ = "search_calls"
+class SearchQuery(Base):
+    """Search query made during response generation."""
+    __tablename__ = "search_queries"
 
     id = Column(Integer, primary_key=True)
     response_id = Column(Integer, ForeignKey("responses.id"))
@@ -82,8 +82,8 @@ class SearchCall(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
-    response = relationship("Response", back_populates="search_calls")
-    sources = relationship("SourceModel", back_populates="search_call")
+    response = relationship("Response", back_populates="search_queries")
+    sources = relationship("SourceModel", back_populates="search_query")
 
 
 class SourceModel(Base):
@@ -91,19 +91,19 @@ class SourceModel(Base):
     __tablename__ = "sources"
 
     id = Column(Integer, primary_key=True)
-    search_call_id = Column(Integer, ForeignKey("search_calls.id"))
+    search_query_id = Column(Integer, ForeignKey("search_queries.id"))
     url = Column(Text, nullable=False)
     title = Column(Text)
     domain = Column(String(255))
     rank = Column(Integer)  # Position in search results (1-indexed)
 
     # Relationships
-    search_call = relationship("SearchCall", back_populates="sources")
+    search_query = relationship("SearchQuery", back_populates="sources")
 
 
-class CitationModel(Base):
-    """Citation used in the response."""
-    __tablename__ = "citations"
+class SourceUsed(Base):
+    """Source actually used/cited in the response."""
+    __tablename__ = "sources_used"
 
     id = Column(Integer, primary_key=True)
     response_id = Column(Integer, ForeignKey("responses.id"))
@@ -112,7 +112,7 @@ class CitationModel(Base):
     rank = Column(Integer)  # Rank from original search results (1-indexed)
 
     # Relationships
-    response = relationship("Response", back_populates="citations")
+    response = relationship("Response", back_populates="sources_used")
 
 
 class Database:
@@ -204,19 +204,19 @@ class Database:
             session.add(response_obj)
             session.flush()
 
-            # Create search calls and sources
+            # Create search queries and sources
             for query in search_queries:
-                search_call = SearchCall(
+                search_query_obj = SearchQuery(
                     response_id=response_obj.id,
                     search_query=query.query
                 )
-                session.add(search_call)
+                session.add(search_query_obj)
                 session.flush()
 
-                # Associate sources with this search call (use query.sources, not global sources list)
+                # Associate sources with this search query (use query.sources, not global sources list)
                 for source in query.sources:
                     source_obj = SourceModel(
-                        search_call_id=search_call.id,
+                        search_query_id=search_query_obj.id,
                         url=source.url,
                         title=source.title,
                         domain=source.domain,
@@ -224,15 +224,15 @@ class Database:
                     )
                     session.add(source_obj)
 
-            # Create citations
+            # Create sources used
             for citation in citations:
-                citation_obj = CitationModel(
+                source_used_obj = SourceUsed(
                     response_id=response_obj.id,
                     url=citation.url,
                     title=citation.title,
                     rank=citation.rank
                 )
-                session.add(citation_obj)
+                session.add(source_used_obj)
 
             session.commit()
             return response_obj.id
@@ -260,9 +260,9 @@ class Database:
 
             for prompt in prompts:
                 if prompt.response:
-                    search_count = len(prompt.response.search_calls)
-                    source_count = sum(len(sc.sources) for sc in prompt.response.search_calls)
-                    citation_count = len(prompt.response.citations)
+                    search_count = len(prompt.response.search_queries)
+                    source_count = sum(len(sq.sources) for sq in prompt.response.search_queries)
+                    sources_used_count = len(prompt.response.sources_used)
 
                     results.append({
                         "id": prompt.id,
@@ -272,7 +272,7 @@ class Database:
                         "provider": prompt.session.provider.display_name,
                         "searches": search_count,
                         "sources": source_count,
-                        "citations": citation_count,
+                        "citations": sources_used_count,
                     })
 
             return results
@@ -297,7 +297,7 @@ class Database:
 
             # Build search queries with their sources
             search_queries = []
-            for search_call in prompt.response.search_calls:
+            for search_query in prompt.response.search_queries:
                 sources = [
                     {
                         "url": source.url,
@@ -305,21 +305,21 @@ class Database:
                         "domain": source.domain,
                         "rank": source.rank
                     }
-                    for source in search_call.sources
+                    for source in search_query.sources
                 ]
                 search_queries.append({
-                    "query": search_call.search_query,
+                    "query": search_query.search_query,
                     "sources": sources
                 })
 
-            # Build citations
+            # Build sources used
             citations = [
                 {
-                    "url": citation.url,
-                    "title": citation.title,
-                    "rank": citation.rank
+                    "url": source_used.url,
+                    "title": source_used.title,
+                    "rank": source_used.rank
                 }
-                for citation in prompt.response.citations
+                for source_used in prompt.response.sources_used
             ]
 
             return {
