@@ -135,9 +135,10 @@ llm-search-analysis/
 │   │   ├── openai_provider.py # OpenAI Responses API
 │   │   ├── google_provider.py # Google Gemini with search grounding
 │   │   └── anthropic_provider.py # Anthropic Claude web search
-├── tests/                     # Unit tests (52 passing)
-├── verify_providers.py        # API verification script
-├── test_rank_feature.py       # Rank tracking validation
+├── tests/                     # Unit tests and validation scripts
+│   ├── verify_providers.py   # API verification script
+│   ├── test_rank_feature.py  # Rank tracking validation
+│   └── ... (52 passing tests)
 ├── llm_search_analysis.db     # SQLite database (auto-created)
 ├── requirements.txt           # Python dependencies
 └── README.md                  # This file
@@ -165,7 +166,12 @@ pytest tests/ -v
 
 Run provider verification:
 ```bash
-python verify_providers.py
+python tests/verify_providers.py
+```
+
+Test rank tracking feature:
+```bash
+python tests/test_rank_feature.py
 ```
 
 ### Adding a New Provider
