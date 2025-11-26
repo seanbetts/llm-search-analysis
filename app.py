@@ -8,6 +8,7 @@ across OpenAI, Google Gemini, and Anthropic Claude models.
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+from urllib.parse import urlparse
 from src.config import Config
 from src.providers.provider_factory import ProviderFactory
 from src.database import Database
@@ -196,9 +197,11 @@ def display_response(response):
                     for j, source in enumerate(query.sources, 1):
                         url_display = source.url or 'No URL'
                         url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
+                        # Use domain as title fallback when title is missing
+                        display_title = source.title or source.domain or 'Unknown source'
                         st.markdown(f"""
                         <div class="source-item">
-                            <strong>{j}. {source.title or 'Untitled'}</strong><br/>
+                            <strong>{j}. {display_title}</strong><br/>
                             <small>{source.domain or 'Unknown domain'}</small><br/>
                             <a href="{url_display}" target="_blank">{url_truncated}</a>
                         </div>
@@ -215,9 +218,12 @@ def display_response(response):
                 url_display = citation.url or 'No URL'
                 url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
                 rank_display = f" (Rank {citation.rank})" if citation.rank else ""
+                # Extract domain from URL for fallback
+                domain = urlparse(citation.url).netloc if citation.url else 'Unknown domain'
+                display_title = citation.title or domain or 'Unknown source'
                 st.markdown(f"""
                 <div class="citation-item">
-                    <strong>{i}. {citation.title or 'Untitled'}{rank_display}</strong><br/>
+                    <strong>{i}. {display_title}{rank_display}</strong><br/>
                     <a href="{url_display}" target="_blank">{url_truncated}</a>
                 </div>
                 """, unsafe_allow_html=True)
@@ -599,7 +605,10 @@ def tab_history():
                     st.markdown(f"**Sources Used ({len(details['citations'])}):**")
                     for i, citation in enumerate(details['citations'], 1):
                         rank_display = f" (Rank {citation['rank']})" if citation.get('rank') else ""
-                        st.markdown(f"{i}. [{citation['title'] or 'Untitled'}]({citation['url']}){rank_display}")
+                        # Extract domain from URL for fallback
+                        domain = urlparse(citation['url']).netloc if citation.get('url') else 'Unknown domain'
+                        display_title = citation.get('title') or domain or 'Unknown source'
+                        st.markdown(f"{i}. [{display_title}]({citation['url']}){rank_display}")
 
     except Exception as e:
         st.error(f"Error loading history: {str(e)}")
