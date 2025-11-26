@@ -256,19 +256,24 @@ def tab_interactive():
     # Update session state based on selection
     st.session_state.data_collection_mode = 'api' if selected_mode == mode_options[0] else 'network_log'
 
-    # Show warning for network log mode
+    # Show info for network log mode
     if st.session_state.data_collection_mode == 'network_log':
-        st.warning("""
-        ⚠️ **Experimental Feature**
+        st.info("""
+        📡 **Network Log Mode (Experimental)**
 
-        Network Log mode operates in a legal gray area and is intended for personal research use only.
-        This mode will launch a browser window and intercept traffic from your own account.
+        This mode uses headless browser automation to capture detailed search data not available through APIs.
+        Uses free ChatGPT (no login required) for seamless experience.
 
-        **Note:** Currently only ChatGPT network capture is in development. Other providers coming soon.
+        **Additional data captured:**
+        - Actual snippets extracted by the model
+        - Internal relevance scores
+        - Query reformulation steps
+
+        **Note:** Currently only ChatGPT network capture is in development.
         """)
 
-        # Browser session management (placeholder for future implementation)
-        st.info("🚧 Network log capture is not yet fully implemented. This mode will become functional in a future update.")
+        # Implementation status
+        st.warning("🚧 Network log capture implementation is in progress. Toggle will become functional in Phase 2.")
 
     st.divider()
 

@@ -51,21 +51,21 @@ class BaseCapturer(ABC):
         """
         pass
 
-    @abstractmethod
     def authenticate(self) -> bool:
         """
-        Handle user authentication to the provider.
+        Handle authentication to the provider.
 
-        This typically involves navigating to login page and waiting for
-        user to manually log in, or using stored session cookies.
+        For free/public endpoints (like free ChatGPT), this may be a no-op.
+        For authenticated endpoints, implement as needed.
 
         Returns:
-            True if authentication successful, False otherwise
+            True if authentication successful or not required, False otherwise
 
         Raises:
             Exception: If authentication process fails
         """
-        pass
+        # Default: no authentication required (e.g., free ChatGPT)
+        return True
 
     @abstractmethod
     def send_prompt(self, prompt: str, model: str) -> ProviderResponse:

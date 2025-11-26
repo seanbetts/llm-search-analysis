@@ -44,12 +44,12 @@ class ChatGPTCapturer(BaseCapturer):
         """Get list of supported ChatGPT models."""
         return self.SUPPORTED_MODELS
 
-    def start_browser(self, headless: bool = False) -> None:
+    def start_browser(self, headless: bool = True) -> None:
         """
         Start browser instance.
 
         Args:
-            headless: Whether to run in headless mode (not recommended for manual auth)
+            headless: Whether to run in headless mode (default: True for seamless UX)
 
         Raises:
             Exception: If browser fails to start
@@ -94,35 +94,30 @@ class ChatGPTCapturer(BaseCapturer):
         """
         Handle ChatGPT authentication.
 
-        Navigates to ChatGPT and waits for user to manually log in.
+        For free ChatGPT, no authentication is required - just navigate and wait
+        for the chat interface to load.
 
         Returns:
-            True if authentication successful, False otherwise
+            True if chat interface loads successfully, False otherwise
         """
         try:
-            print(f"Navigating to {self.CHATGPT_URL}...")
+            # Navigate to free ChatGPT (no login required)
             self.page.goto(self.CHATGPT_URL)
 
-            print("Please log in to ChatGPT in the browser window...")
-            print("Waiting for authentication (timeout: 120 seconds)...")
-
-            # Wait for chat interface to be available (indicates successful login)
-            # TODO: Update this selector based on actual ChatGPT UI
+            # Wait for chat interface to be available
+            # TODO: Update this selector based on actual free ChatGPT UI
             try:
                 self.page.wait_for_selector(
-                    'textarea[data-id="root"]',  # Placeholder selector
-                    timeout=120000
+                    'textarea',  # Placeholder - update with actual selector
+                    timeout=30000
                 )
-                print("✓ Authentication successful")
                 return True
 
             except PlaywrightTimeout:
-                print("✗ Authentication timeout - please try again")
                 return False
 
         except Exception as e:
-            print(f"✗ Authentication failed: {str(e)}")
-            return False
+            raise Exception(f"Failed to load ChatGPT: {str(e)}")
 
     def send_prompt(self, prompt: str, model: str) -> ProviderResponse:
         """

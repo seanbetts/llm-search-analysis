@@ -43,8 +43,8 @@ network_capture/
 
 1. Navigate to the "Interactive" tab
 2. Toggle "Network Logs (Experimental)" mode
-3. (Once implemented) Browser will launch for manual authentication
-4. Submit prompts normally - network traffic will be captured
+3. Submit prompts normally - headless browser runs invisibly in background
+4. No difference in UX - just richer data captured!
 
 ### Programmatic Usage (Future)
 
@@ -54,15 +54,15 @@ from src.network_capture.chatgpt_capturer import ChatGPTCapturer
 # Create capturer
 capturer = ChatGPTCapturer()
 
-# Start browser (non-headless for auth)
-capturer.start_browser(headless=False)
+# Start browser (headless by default - invisible to user)
+capturer.start_browser()
 
-# Authenticate (manual login)
+# Navigate to free ChatGPT (no auth needed)
 if capturer.authenticate():
     # Send prompt and capture network logs
     response = capturer.send_prompt(
         prompt="What are the latest AI developments?",
-        model="gpt-5.1"
+        model="gpt-5.1"  # Free ChatGPT model
     )
 
     # Response includes network log data
@@ -124,29 +124,42 @@ Beyond what APIs provide, network logs can capture:
 
 To continue development:
 
-1. **Capture real ChatGPT network logs:**
-   - Open ChatGPT in browser
+1. **Capture real free ChatGPT network logs:**
+   - Open https://chatgpt.com (no login)
+   - Open browser DevTools → Network tab
    - Submit a test prompt
-   - Copy chat ID from URL
-   - Use browser DevTools → Network tab
-   - Filter for chat ID
-   - Analyze response structure
+   - Copy chat ID from URL (if present)
+   - Filter network logs for relevant endpoints
+   - Analyze response structure (search queries, snippets, etc.)
+   - Document JSON format
 
 2. **Update `chatgpt_capturer.py`:**
-   - Implement actual UI selectors
-   - Add model switching logic
-   - Implement response completion detection
-   - Extract network response filtering
+   - Find actual textarea selector for prompt input
+   - Implement prompt submission logic
+   - Detect response completion
+   - Filter captured network responses for search data
+   - Extract the relevant response containing snippets/scores
 
 3. **Update `parser.py`:**
-   - Parse actual response format
-   - Extract search queries, snippets, scores
-   - Map to our data model
+   - Parse actual ChatGPT response format
+   - Extract search queries, snippets, internal scores
+   - Map to our ProviderResponse data model
+   - Handle edge cases (no search performed, etc.)
 
 4. **Test end-to-end:**
-   - Submit prompt via UI in network log mode
-   - Verify data captured correctly
-   - Compare with API data for same prompt
+   - Toggle network log mode in UI
+   - Submit test prompt
+   - Verify headless browser captures data correctly
+   - Compare with OpenAI API data for same prompt
+   - Validate network log fields are populated
+
+## Key Advantages of This Approach
+
+1. **Seamless UX:** No visible browser, no manual login, just works
+2. **Free tier:** Uses free ChatGPT, no API costs
+3. **Headless:** Runs in background, user sees no difference
+4. **No auth complexity:** No cookies, sessions, or login flows
+5. **Faster:** No waiting for user authentication
 
 ## Legal & Ethical Notes
 
