@@ -164,7 +164,9 @@ class OpenAIProvider(BaseProvider):
                                                 citations.append(Citation(
                                                     url=annotation.url,
                                                     title=annotation.title if hasattr(annotation, 'title') else None,
-                                                    rank=rank
+                                                    rank=rank,
+                                                    start_index=annotation.start_index if hasattr(annotation, 'start_index') else None,
+                                                    end_index=annotation.end_index if hasattr(annotation, 'end_index') else None
                                                 ))
 
         # Remove duplicate citations

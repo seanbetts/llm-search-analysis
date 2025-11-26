@@ -38,6 +38,8 @@ class Citation:
     title: Optional[str] = None
     text_snippet: Optional[str] = None
     rank: Optional[int] = None  # Rank from original search results (1-indexed)
+    start_index: Optional[int] = None  # Character position where citation starts in response text
+    end_index: Optional[int] = None    # Character position where citation ends in response text
 
 
 @dataclass
