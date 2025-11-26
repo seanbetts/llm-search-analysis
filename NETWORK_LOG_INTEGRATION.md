@@ -3,6 +3,8 @@
 ## Overview
 Hybrid approach allowing users to toggle between API-based analysis and network log interception for deeper insights.
 
+**Key Design Decision:** Uses headless browser with free ChatGPT (no login) for seamless UX. User simply toggles mode and submits prompts - no visible browser, no authentication, no difference in experience. Network capture happens invisibly in background.
+
 ## Architecture
 
 ### Data Collection Modes
@@ -260,45 +262,56 @@ if mode == "Network Logs (Experimental)":
 
 ## Example: ChatGPT Network Log Capture
 
-### Step-by-step user flow:
+### Step-by-step user flow (seamless UX):
 
-1. User toggles "Network Log Mode"
-2. App launches Chrome browser
-3. User navigates to ChatGPT and logs in manually
-4. User returns to Streamlit app and enters prompt
-5. App submits prompt to ChatGPT via browser automation
-6. App intercepts network response containing:
-   ```json
-   {
-     "search_queries": ["query 1", "query 2"],
-     "results": [
-       {
-         "url": "...",
-         "title": "...",
-         "snippet": "...",
-         "rank": 1,
-         "score": 0.95
-       }
-     ]
-   }
-   ```
-7. App parses response and saves with `data_source='network_log'`
-8. UI displays results with indicator: "📡 Network Log Data"
+1. User toggles "Network Log Mode" in UI
+2. User enters prompt in same text box as always
+3. User clicks "Submit Query" button (no difference from API mode)
+4. Behind the scenes (invisible to user):
+   - App starts headless browser if not already running
+   - Navigates to free ChatGPT (no login needed)
+   - Submits prompt programmatically
+   - Intercepts network response containing:
+     ```json
+     {
+       "search_queries": ["query 1", "query 2"],
+       "results": [
+         {
+           "url": "...",
+           "title": "...",
+           "snippet": "...",
+           "rank": 1,
+           "score": 0.95
+         }
+       ]
+     }
+     ```
+   - Parses response and saves with `data_source='network_log'`
+5. UI displays results with indicator: "📡 Network Log Data"
+
+**Key insight:** User sees no browser window, no authentication - identical experience to API mode!
 
 ## Implementation Considerations
 
 ### Authentication Management
-- **Option 1:** User logs in manually in browser each session
-- **Option 2:** Save browser session cookies (more convenient, security concerns)
-- **Option 3:** User provides session tokens (technical, fragile)
+**Decision:** Use free ChatGPT with no authentication required.
 
-**Recommendation:** Start with Option 1 (manual login)
+**Benefits:**
+- No login flow needed
+- No session/cookie management
+- Seamless UX (headless browser invisible to user)
+- Simpler implementation
+- Works immediately without setup
 
 ### Browser Management
-- Keep browser open for entire session
+**Decision:** Run headless browser (invisible to user).
+
+**Approach:**
+- Start browser on first network log request
+- Keep browser alive for session duration
 - Reuse same tab for multiple prompts
-- Clean shutdown on app exit
-- Handle browser crashes gracefully
+- Clean shutdown on app exit or mode switch
+- Handle browser crashes gracefully with fallback to API
 
 ### Rate Limiting
 - Network log mode is slower (browser automation overhead)

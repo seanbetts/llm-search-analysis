@@ -252,27 +252,46 @@ This infrastructure is justified because:
 3. Supports the LinkedIn post use case (understanding search behavior)
 4. Provides ground truth for prompt optimization research
 
+## Design Decisions Made
+
+### Using Free ChatGPT with Headless Browser
+
+**Decision:** Use free ChatGPT (no login) with headless Playwright browser.
+
+**Rationale:**
+- **Seamless UX:** User toggles mode and submits - no visible browser, no extra steps
+- **No authentication:** Free ChatGPT requires no login, eliminating session management
+- **Identical experience:** Only difference is "📡" indicator showing richer data captured
+- **Simpler implementation:** No browser window management, cookies, or auth flows
+- **Free tier:** No API costs for network log mode
+
+**Implementation approach:**
+1. Start headless browser invisibly in background
+2. Navigate to chatgpt.com (no auth needed)
+3. Submit prompt programmatically
+4. Capture network traffic with search data
+5. Parse and return response
+6. Clean up browser
+
+This provides the best of both worlds: rich network log data with API-like UX simplicity.
+
 ## Questions for Next Session
 
 Before starting Phase 2 implementation:
 
-1. **Which provider to prioritize?**
-   - ChatGPT (most documentation available)
-   - Claude (your preference?)
-   - Gemini
+1. **Which provider to prioritize after ChatGPT?**
+   - Claude (if free tier available)
+   - Gemini (if free tier available)
+   - Or continue with API-only for paid tiers
 
-2. **Authentication approach?**
-   - Manual login each session (simple, secure)
-   - Save session cookies (convenient, risky)
-   - User provides tokens (technical, fragile)
-
-3. **Headless vs. visible browser?**
-   - Visible (easier debugging, required for manual auth)
-   - Headless (cleaner UX, harder to debug)
-
-4. **Error handling strategy?**
-   - Fail gracefully and fall back to API
-   - Retry logic for transient failures
+2. **Error handling strategy?**
+   - Fail gracefully and fall back to API mode
+   - Retry logic for transient network failures
    - Clear error messages for user
+
+3. **Browser lifecycle:**
+   - Start/stop browser per request (safer, slower)
+   - Keep browser alive across requests (faster, more complex)
+   - Connection pooling for concurrent requests
 
 Ready to proceed to Phase 2 when you are!
