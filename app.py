@@ -173,7 +173,8 @@ def add_citation_highlights(text, citations):
         cited_text = text[start:end]
 
         # Create highlighted span with superscript number
-        highlighted = f'<mark class="citation-highlight">{cited_text}<sup><a href="#citation-{num}" class="citation-ref">[{num}]</a></sup></mark>'
+        # Use span instead of mark for better Streamlit compatibility, with inline styles as backup
+        highlighted = f'<span style="background-color: #e3f2fd; padding: 0.1rem 0.2rem; border-radius: 0.2rem;">{cited_text}<sup><a href="#citation-{num}" style="color: #1f77b4; text-decoration: none; font-weight: bold; font-size: 0.85em; margin-left: 0.1rem;">[{num}]</a></sup></span>'
 
         # Replace in result
         result = result[:start] + highlighted + result[end:]
