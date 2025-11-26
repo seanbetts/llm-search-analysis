@@ -62,7 +62,7 @@ st.markdown("""
         border: 1px solid #ffd54f;
     }
     .citation-highlight {
-        background-color: #ffffcc;
+        background-color: #e3f2fd;
         padding: 0.1rem 0.2rem;
         border-radius: 0.2rem;
     }
