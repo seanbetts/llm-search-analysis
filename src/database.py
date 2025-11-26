@@ -110,8 +110,6 @@ class SourceUsed(Base):
     url = Column(Text, nullable=False)
     title = Column(Text)
     rank = Column(Integer)  # Rank from original search results (1-indexed)
-    start_index = Column(Integer)  # Character position where citation starts in response text
-    end_index = Column(Integer)    # Character position where citation ends in response text
 
     # Relationships
     response = relationship("Response", back_populates="sources_used")
@@ -232,9 +230,7 @@ class Database:
                     response_id=response_obj.id,
                     url=citation.url,
                     title=citation.title,
-                    rank=citation.rank,
-                    start_index=citation.start_index if hasattr(citation, 'start_index') else None,
-                    end_index=citation.end_index if hasattr(citation, 'end_index') else None
+                    rank=citation.rank
                 )
                 session.add(source_used_obj)
 
