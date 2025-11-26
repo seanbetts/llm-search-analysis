@@ -4,7 +4,7 @@ Database models and operations using SQLAlchemy.
 
 from datetime import datetime
 from typing import List, Optional
-from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, ForeignKey, JSON
+from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, ForeignKey, JSON, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 
@@ -65,6 +65,7 @@ class Response(Base):
     response_time_ms = Column(Integer)  # Response time in milliseconds
     created_at = Column(DateTime, default=datetime.utcnow)
     raw_response_json = Column(JSON)  # Store raw API response
+    data_source = Column(String(20), default='api')  # 'api' or 'network_log'
 
     # Relationships
     prompt = relationship("Prompt", back_populates="response")
@@ -80,6 +81,10 @@ class SearchQuery(Base):
     response_id = Column(Integer, ForeignKey("responses.id"))
     search_query = Column(Text)  # The search query text
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Network log exclusive fields
+    internal_ranking_scores = Column(JSON)  # If available from logs
+    query_reformulations = Column(JSON)  # Query evolution steps
 
     # Relationships
     response = relationship("Response", back_populates="search_queries")
@@ -97,6 +102,11 @@ class SourceModel(Base):
     domain = Column(String(255))
     rank = Column(Integer)  # Position in search results (1-indexed)
 
+    # Network log exclusive fields
+    snippet_text = Column(Text)  # Actual snippet extracted by model
+    internal_score = Column(Float)  # Internal relevance score if available
+    metadata_json = Column(JSON)  # Full metadata from logs
+
     # Relationships
     search_query = relationship("SearchQuery", back_populates="sources")
 
@@ -110,6 +120,10 @@ class SourceUsed(Base):
     url = Column(Text, nullable=False)
     title = Column(Text)
     rank = Column(Integer)  # Rank from original search results (1-indexed)
+
+    # Network log exclusive fields
+    snippet_used = Column(Text)  # Exact snippet cited
+    citation_confidence = Column(Float)  # If available from logs
 
     # Relationships
     response = relationship("Response", back_populates="sources_used")
@@ -160,7 +174,8 @@ class Database:
     def save_interaction(self, provider_name: str, model: str, prompt: str,
                         response_text: str, search_queries: List,
                         sources: List, citations: List,
-                        response_time_ms: int, raw_response: dict):
+                        response_time_ms: int, raw_response: dict,
+                        data_source: str = 'api'):
         """
         Save a complete interaction to the database.
 
@@ -174,6 +189,7 @@ class Database:
             citations: List of Citation objects
             response_time_ms: Response time in milliseconds
             raw_response: Raw API response dictionary
+            data_source: Data collection method ('api' or 'network_log')
         """
         session = self.get_session()
         try:
@@ -199,7 +215,8 @@ class Database:
                 prompt_id=prompt_obj.id,
                 response_text=response_text,
                 response_time_ms=response_time_ms,
-                raw_response_json=raw_response
+                raw_response_json=raw_response,
+                data_source=data_source
             )
             session.add(response_obj)
             session.flush()
@@ -208,7 +225,9 @@ class Database:
             for query in search_queries:
                 search_query_obj = SearchQuery(
                     response_id=response_obj.id,
-                    search_query=query.query
+                    search_query=query.query,
+                    internal_ranking_scores=getattr(query, 'internal_ranking_scores', None),
+                    query_reformulations=getattr(query, 'query_reformulations', None)
                 )
                 session.add(search_query_obj)
                 session.flush()
@@ -220,7 +239,10 @@ class Database:
                         url=source.url,
                         title=source.title,
                         domain=source.domain,
-                        rank=source.rank
+                        rank=source.rank,
+                        snippet_text=getattr(source, 'snippet_text', None),
+                        internal_score=getattr(source, 'internal_score', None),
+                        metadata_json=getattr(source, 'metadata', None)
                     )
                     session.add(source_obj)
 
@@ -230,7 +252,9 @@ class Database:
                     response_id=response_obj.id,
                     url=citation.url,
                     title=citation.title,
-                    rank=citation.rank
+                    rank=citation.rank,
+                    snippet_used=getattr(citation, 'snippet_used', None),
+                    citation_confidence=getattr(citation, 'citation_confidence', None)
                 )
                 session.add(source_used_obj)
 

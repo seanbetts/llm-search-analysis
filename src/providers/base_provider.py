@@ -15,6 +15,9 @@ class SearchQuery:
     query: str
     sources: List['Source'] = None
     timestamp: Optional[str] = None
+    # Network log exclusive fields
+    internal_ranking_scores: Optional[Dict] = None
+    query_reformulations: Optional[List[str]] = None
 
     def __post_init__(self):
         """Initialize sources list if not provided."""
@@ -29,6 +32,10 @@ class Source:
     title: Optional[str] = None
     domain: Optional[str] = None
     rank: Optional[int] = None  # Position in search results (1-indexed)
+    # Network log exclusive fields
+    snippet_text: Optional[str] = None
+    internal_score: Optional[float] = None
+    metadata: Optional[Dict] = None
 
 
 @dataclass
@@ -38,6 +45,9 @@ class Citation:
     title: Optional[str] = None
     text_snippet: Optional[str] = None
     rank: Optional[int] = None  # Rank from original search results (1-indexed)
+    # Network log exclusive fields
+    snippet_used: Optional[str] = None
+    citation_confidence: Optional[float] = None
 
 
 @dataclass

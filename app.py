@@ -77,6 +77,10 @@ def initialize_session_state():
         st.session_state.db.ensure_providers()
     if 'batch_results' not in st.session_state:
         st.session_state.batch_results = []
+    if 'data_collection_mode' not in st.session_state:
+        st.session_state.data_collection_mode = 'api'
+    if 'browser_session_active' not in st.session_state:
+        st.session_state.browser_session_active = False
 
 def get_all_models():
     """Get all available models with provider labels."""
@@ -146,6 +150,11 @@ def display_response(response):
         'gemini-2.5-flash': 'Gemini 2.5 Flash',
         'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite',
     }
+
+    # Data source indicator (if available from database)
+    data_source = getattr(response, 'data_source', 'api')
+    if data_source == 'network_log':
+        st.info("📡 This response was captured from network logs (experimental mode)")
 
     # Response metadata
     st.markdown("### 📊 Response Metadata")
@@ -231,6 +240,37 @@ def display_response(response):
 def tab_interactive():
     """Tab 1: Interactive Prompting."""
     st.markdown("### 💭 Enter Your Prompt")
+
+    # Data collection mode toggle
+    st.markdown("#### 📡 Data Collection Mode")
+    mode_options = ["API (Recommended)", "Network Logs (Experimental)"]
+    selected_mode = st.radio(
+        "Choose data collection method:",
+        mode_options,
+        index=0 if st.session_state.data_collection_mode == 'api' else 1,
+        help="API mode uses official provider APIs. Network Log mode captures browser traffic for deeper insights.",
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+
+    # Update session state based on selection
+    st.session_state.data_collection_mode = 'api' if selected_mode == mode_options[0] else 'network_log'
+
+    # Show warning for network log mode
+    if st.session_state.data_collection_mode == 'network_log':
+        st.warning("""
+        ⚠️ **Experimental Feature**
+
+        Network Log mode operates in a legal gray area and is intended for personal research use only.
+        This mode will launch a browser window and intercept traffic from your own account.
+
+        **Note:** Currently only ChatGPT network capture is in development. Other providers coming soon.
+        """)
+
+        # Browser session management (placeholder for future implementation)
+        st.info("🚧 Network log capture is not yet fully implemented. This mode will become functional in a future update.")
+
+    st.divider()
 
     # Load all available models
     models = get_all_models()
