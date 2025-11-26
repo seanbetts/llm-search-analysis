@@ -29,17 +29,17 @@ class TestAnthropicProvider:
 
         assert isinstance(models, list)
         assert len(models) == 3
-        assert "claude-sonnet-4.5" in models
-        assert "claude-haiku-4.5" in models
-        assert "claude-opus-4.1" in models
+        assert "claude-sonnet-4-5-20250929" in models
+        assert "claude-haiku-4-5-20251001" in models
+        assert "claude-opus-4-1-20250805" in models
 
     def test_validate_model_success(self):
         """Test model validation succeeds for supported models."""
         provider = AnthropicProvider(api_key="test_key")
 
-        assert provider.validate_model("claude-sonnet-4.5") is True
-        assert provider.validate_model("claude-haiku-4.5") is True
-        assert provider.validate_model("claude-opus-4.1") is True
+        assert provider.validate_model("claude-sonnet-4-5-20250929") is True
+        assert provider.validate_model("claude-haiku-4-5-20251001") is True
+        assert provider.validate_model("claude-opus-4-1-20250805") is True
 
     def test_validate_model_failure(self):
         """Test model validation fails for unsupported models."""
@@ -62,6 +62,7 @@ class TestAnthropicProvider:
         mock_content_block = Mock()
         mock_content_block.type = "text"
         mock_content_block.text = "Test response from Claude"
+        mock_content_block.citations = []  # No citations
 
         # Create mock response
         mock_response = Mock()
@@ -74,12 +75,12 @@ class TestAnthropicProvider:
         mock_anthropic_class.return_value = mock_client
 
         provider = AnthropicProvider(api_key="test_key")
-        result = provider.send_prompt("test prompt", "claude-sonnet-4.5")
+        result = provider.send_prompt("test prompt", "claude-sonnet-4-5-20250929")
 
         # Assertions
         assert isinstance(result, ProviderResponse)
         assert result.response_text == "Test response from Claude"
-        assert result.model == "claude-sonnet-4.5"
+        assert result.model == "claude-sonnet-4-5-20250929"
         assert result.provider == "anthropic"
         # MVP: No search integration yet
         assert len(result.search_queries) == 0
@@ -93,10 +94,12 @@ class TestAnthropicProvider:
         mock_block1 = Mock()
         mock_block1.type = "text"
         mock_block1.text = "Part 1. "
+        mock_block1.citations = []  # No citations
 
         mock_block2 = Mock()
         mock_block2.type = "text"
         mock_block2.text = "Part 2."
+        mock_block2.citations = []  # No citations
 
         # Create mock response
         mock_response = Mock()
@@ -109,7 +112,7 @@ class TestAnthropicProvider:
         mock_anthropic_class.return_value = mock_client
 
         provider = AnthropicProvider(api_key="test_key")
-        result = provider.send_prompt("test prompt", "claude-sonnet-4.5")
+        result = provider.send_prompt("test prompt", "claude-sonnet-4-5-20250929")
 
         # Assertions
         assert result.response_text == "Part 1. Part 2."
@@ -125,4 +128,4 @@ class TestAnthropicProvider:
         provider = AnthropicProvider(api_key="test_key")
 
         with pytest.raises(Exception, match="Anthropic API error"):
-            provider.send_prompt("test prompt", "claude-sonnet-4.5")
+            provider.send_prompt("test prompt", "claude-sonnet-4-5-20250929")

@@ -35,8 +35,8 @@ class TestDatabase:
     def test_save_interaction(self, test_db):
         """Test saving a complete interaction to database."""
         # Create test data
-        search_queries = [SearchQuery(query="test query")]
         sources = [Source(url="https://example.com", title="Example", domain="example.com")]
+        search_queries = [SearchQuery(query="test query", sources=sources)]
         citations = [Citation(url="https://example.com", title="Example")]
 
         # Save interaction
@@ -74,21 +74,21 @@ class TestDatabase:
             provider = prompt_session.provider
             assert provider.name == "openai"
 
-            # Check search calls
-            assert len(response.search_calls) >= 1
-            search_call = response.search_calls[0]
-            assert search_call.search_query == "test query"
+            # Check search queries
+            assert len(response.search_queries) >= 1
+            search_query = response.search_queries[0]
+            assert search_query.search_query == "test query"
 
             # Check sources
-            assert len(search_call.sources) == 1
-            source = search_call.sources[0]
+            assert len(search_query.sources) == 1
+            source = search_query.sources[0]
             assert source.url == "https://example.com"
             assert source.title == "Example"
 
-            # Check citations
-            assert len(response.citations) == 1
-            citation = response.citations[0]
-            assert citation.url == "https://example.com"
+            # Check sources used (citations)
+            assert len(response.sources_used) == 1
+            source_used = response.sources_used[0]
+            assert source_used.url == "https://example.com"
 
         finally:
             session.close()
@@ -154,7 +154,7 @@ class TestDatabase:
             model="gemini-3-pro",
             prompt="test",
             response_text="test",
-            search_queries=[SearchQuery(query="test")],
+            search_queries=[SearchQuery(query="test", sources=sources)],
             sources=sources,
             citations=[],
             response_time_ms=800,
@@ -165,7 +165,7 @@ class TestDatabase:
         session = test_db.get_session()
         try:
             response = session.query(Response).filter_by(id=response_id).first()
-            total_sources = sum(len(sc.sources) for sc in response.search_calls)
+            total_sources = sum(len(sq.sources) for sq in response.search_queries)
             assert total_sources == 3
         finally:
             session.close()

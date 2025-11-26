@@ -176,11 +176,19 @@ class AnthropicProvider(BaseProvider):
                             pending_queries[result_index].sources = result_sources
                             result_index += 1
 
+        # Remove duplicate citations
+        seen_urls = set()
+        unique_citations = []
+        for citation in citations:
+            if citation.url not in seen_urls:
+                seen_urls.add(citation.url)
+                unique_citations.append(citation)
+
         return ProviderResponse(
             response_text=response_text,
             search_queries=search_queries,
             sources=sources,
-            citations=citations,
+            citations=unique_citations,
             raw_response=response.model_dump() if hasattr(response, 'model_dump') else {},
             model=model,
             provider=self.get_provider_name(),

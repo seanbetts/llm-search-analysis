@@ -60,7 +60,7 @@ class TestOpenAIProvider:
         """Test send_prompt with mocked API response."""
         # Create mock response
         mock_response = Mock()
-        mock_response.items = [
+        mock_response.output = [
             Mock(
                 type="web_search_call",
                 status="completed",
