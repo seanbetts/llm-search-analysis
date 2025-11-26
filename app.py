@@ -61,6 +61,21 @@ st.markdown("""
         border-radius: 0.25rem;
         border: 1px solid #ffd54f;
     }
+    .citation-highlight {
+        background-color: #ffffcc;
+        padding: 0.1rem 0.2rem;
+        border-radius: 0.2rem;
+    }
+    .citation-ref {
+        color: #1f77b4;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 0.85em;
+        margin-left: 0.1rem;
+    }
+    .citation-ref:hover {
+        text-decoration: underline;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -121,6 +136,51 @@ def get_all_models():
         st.error(f"Error loading models: {str(e)}")
         return {}
 
+def add_citation_highlights(text, citations):
+    """
+    Add inline citation highlighting to response text.
+
+    Args:
+        text: The response text
+        citations: List of Citation objects with start_index, end_index, url, title
+
+    Returns:
+        HTML string with highlighted citations
+    """
+    if not citations:
+        return text
+
+    # Sort citations by start_index to process them in order
+    sorted_citations = sorted(
+        [(i+1, c) for i, c in enumerate(citations)],
+        key=lambda x: x[1].start_index if hasattr(x[1], 'start_index') else 0
+    )
+
+    # Filter out citations without proper indices
+    valid_citations = [(num, c) for num, c in sorted_citations
+                       if hasattr(c, 'start_index') and hasattr(c, 'end_index')]
+
+    if not valid_citations:
+        return text
+
+    # Build highlighted text by processing from end to start (to preserve indices)
+    result = text
+    for num, citation in reversed(valid_citations):
+        start = citation.start_index
+        end = citation.end_index
+
+        # Extract the cited text
+        cited_text = text[start:end]
+
+        # Create highlighted span with superscript number
+        highlighted = f'<mark class="citation-highlight">{cited_text}<sup><a href="#citation-{num}" class="citation-ref">[{num}]</a></sup></mark>'
+
+        # Replace in result
+        result = result[:start] + highlighted + result[end:]
+
+    return result
+
+
 def display_response(response):
     """Display the LLM response with search metadata."""
 
@@ -175,9 +235,13 @@ def display_response(response):
 
     st.divider()
 
-    # Response text
+    # Response text with citation highlights
     st.markdown("### 💬 Response")
-    st.markdown(response.response_text)
+    if response.citations:
+        highlighted_text = add_citation_highlights(response.response_text, response.citations)
+        st.markdown(highlighted_text, unsafe_allow_html=True)
+    else:
+        st.markdown(response.response_text)
     st.divider()
 
     # Search queries with their sources
@@ -222,7 +286,7 @@ def display_response(response):
                 domain = urlparse(citation.url).netloc if citation.url else 'Unknown domain'
                 display_title = citation.title or domain or 'Unknown source'
                 st.markdown(f"""
-                <div class="citation-item">
+                <div class="citation-item" id="citation-{i}">
                     <strong>{i}. {display_title}{rank_display}</strong><br/>
                     <a href="{url_display}" target="_blank">{url_truncated}</a>
                 </div>
