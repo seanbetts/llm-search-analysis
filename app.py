@@ -241,42 +241,6 @@ def tab_interactive():
     """Tab 1: Interactive Prompting."""
     st.markdown("### 💭 Enter Your Prompt")
 
-    # Data collection mode toggle
-    st.markdown("#### 📡 Data Collection Mode")
-    mode_options = ["API (Recommended)", "Network Logs (Experimental)"]
-    selected_mode = st.radio(
-        "Choose data collection method:",
-        mode_options,
-        index=0 if st.session_state.data_collection_mode == 'api' else 1,
-        help="API mode uses official provider APIs. Network Log mode captures browser traffic for deeper insights.",
-        horizontal=True,
-        label_visibility="collapsed"
-    )
-
-    # Update session state based on selection
-    st.session_state.data_collection_mode = 'api' if selected_mode == mode_options[0] else 'network_log'
-
-    # Show info for network log mode
-    if st.session_state.data_collection_mode == 'network_log':
-        st.info("""
-        📡 **Network Log Mode (Experimental)**
-
-        This mode uses headless browser automation to capture detailed search data not available through APIs.
-        Uses free ChatGPT (no login required) for seamless experience.
-
-        **Additional data captured:**
-        - Actual snippets extracted by the model
-        - Internal relevance scores
-        - Query reformulation steps
-
-        **Note:** Currently only ChatGPT network capture is in development.
-        """)
-
-        # Implementation status
-        st.warning("🚧 Network log capture implementation is in progress. Toggle will become functional in Phase 2.")
-
-    st.divider()
-
     # Load all available models
     models = get_all_models()
 
@@ -661,6 +625,37 @@ def tab_history():
 def sidebar_info():
     """Sidebar information."""
     st.sidebar.title("⚙️ Configuration")
+
+    # Data collection mode
+    st.sidebar.markdown("### 📡 Data Collection Mode")
+    mode_options = ["API (Recommended)", "Network Logs (Experimental)"]
+    selected_mode = st.sidebar.radio(
+        "Choose data collection method:",
+        mode_options,
+        index=0 if st.session_state.data_collection_mode == 'api' else 1,
+        help="API mode uses official provider APIs. Network Log mode captures browser traffic for deeper insights.",
+        label_visibility="collapsed"
+    )
+
+    # Update session state based on selection
+    st.session_state.data_collection_mode = 'api' if selected_mode == mode_options[0] else 'network_log'
+
+    # Show info for network log mode
+    if st.session_state.data_collection_mode == 'network_log':
+        st.sidebar.info("""
+        **Experimental Mode**
+
+        Uses headless browser to capture detailed search data not available through APIs.
+
+        **Additional data:**
+        - Actual snippets extracted
+        - Internal relevance scores
+        - Query reformulations
+
+        🚧 Implementation in progress
+        """)
+
+    st.sidebar.divider()
 
     # Info section
     with st.sidebar.expander("ℹ️ About", expanded=False):
