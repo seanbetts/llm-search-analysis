@@ -30,51 +30,145 @@ class NetworkLogParser:
         extracted_response_text: str = ""
     ) -> ProviderResponse:
         """
-        Parse ChatGPT network log response.
+        Parse ChatGPT network log response from event stream format.
 
         Args:
-            network_response: Raw network response dictionary
+            network_response: Raw network response dictionary with 'body' containing SSE data
             model: Model used
             response_time_ms: Response time in milliseconds
             extracted_response_text: Response text extracted from page (optional)
 
         Returns:
-            ProviderResponse object with network log data
-
-        Note:
-            This implementation is a placeholder and will need to be updated
-            based on actual ChatGPT network log format once we capture real data.
+            ProviderResponse object with parsed search data
         """
         search_queries = []
         sources = []
         citations = []
-        response_text = extracted_response_text  # Use extracted text if provided
+        response_text = extracted_response_text
 
-        # TODO: Implement actual parsing logic based on ChatGPT network log format
-        # This will be filled in once we capture and analyze real network logs
+        try:
+            # Get event stream body
+            body = network_response.get('body', '')
+            if not body:
+                return NetworkLogParser._create_empty_response(
+                    response_text, model, response_time_ms
+                )
 
-        # Example structure (to be updated):
-        # if 'search_queries' in network_response:
-        #     for query_data in network_response['search_queries']:
-        #         query_sources = []
-        #         if 'results' in query_data:
-        #             for result in query_data['results']:
-        #                 source = Source(
-        #                     url=result.get('url'),
-        #                     title=result.get('title'),
-        #                     domain=result.get('domain'),
-        #                     rank=result.get('rank'),
-        #                     snippet_text=result.get('snippet'),  # Network log exclusive
-        #                     internal_score=result.get('score'),  # Network log exclusive
-        #                     metadata=result.get('metadata')       # Network log exclusive
-        #                 )
-        #                 query_sources.append(source)
-        #                 sources.append(source)
-        #
-        #         search_queries.append(SearchQuery(
-        #             query=query_data.get('query'),
-        #             sources=query_sources
-        #         ))
+            # Parse Server-Sent Events format
+            search_model_queries = []
+            search_result_groups = []
+
+            # Split by lines and parse JSON data
+            lines = body.split('\n')
+            for line in lines:
+                if not line.startswith('data: '):
+                    continue
+
+                try:
+                    # Extract JSON from "data: {...}"
+                    json_str = line[6:]  # Remove "data: " prefix
+                    data = json.loads(json_str)
+
+                    # Extract search queries
+                    if 'v' in data and 'message' in data['v']:
+                        message = data['v']['message']
+                        metadata = message.get('metadata', {})
+
+                        # Search model queries (what ChatGPT searched for)
+                        if 'search_model_queries' in metadata:
+                            query_data = metadata['search_model_queries']
+                            if 'queries' in query_data:
+                                search_model_queries.extend(query_data['queries'])
+
+                        # Search result groups (search results with sources)
+                        if 'search_result_groups' in metadata:
+                            search_result_groups.extend(metadata['search_result_groups'])
+
+                    # Also check for patch/append operations that add search results
+                    if 'p' in data and 'v' in data:
+                        path = data.get('p', '')
+                        value = data.get('v')
+                        operation = data.get('o', '')
+
+                        # Handle append operations for search_result_groups
+                        if 'search_result_groups' in path:
+                            if isinstance(value, list):
+                                # Direct array of groups
+                                search_result_groups.extend(value)
+                            elif isinstance(value, dict) and value.get('type') == 'search_result_group':
+                                # Single group
+                                search_result_groups.append(value)
+
+                        # Handle append operations for entries within a group
+                        # Path like: "/message/metadata/search_result_groups/1/entries"
+                        if '/entries' in path and 'search_result_groups' in path:
+                            if isinstance(value, list):
+                                # Find the group index from the path
+                                # Path format: "/message/metadata/search_result_groups/1/entries"
+                                parts = path.split('/')
+                                try:
+                                    group_idx = int(parts[parts.index('search_result_groups') + 1])
+                                    # Make sure we have enough groups
+                                    while len(search_result_groups) <= group_idx:
+                                        search_result_groups.append({'entries': []})
+                                    # Add entries to the group
+                                    if 'entries' not in search_result_groups[group_idx]:
+                                        search_result_groups[group_idx]['entries'] = []
+                                    search_result_groups[group_idx]['entries'].extend(value)
+                                except (ValueError, IndexError):
+                                    pass
+
+                except (json.JSONDecodeError, KeyError, TypeError):
+                    continue
+
+            # Parse search queries
+            for query_text in search_model_queries:
+                search_queries.append(SearchQuery(
+                    query=query_text,
+                    sources=[]  # Will populate sources separately
+                ))
+
+            # Parse search results into sources
+            rank = 1
+            for group in search_result_groups:
+                domain = group.get('domain', '')
+                entries = group.get('entries', [])
+
+                for entry in entries:
+                    if entry.get('type') != 'search_result':
+                        continue
+
+                    url = entry.get('url', '')
+                    title = entry.get('title', '')
+                    snippet = entry.get('snippet', '')
+                    pub_date = entry.get('pub_date')
+                    attribution = entry.get('attribution', domain)
+                    ref_id = entry.get('ref_id', {})
+
+                    source = Source(
+                        url=url,
+                        title=title,
+                        domain=attribution,
+                        rank=rank,
+                        snippet_text=snippet,
+                        internal_score=None,  # Not provided in this format
+                        metadata={
+                            'pub_date': pub_date,
+                            'ref_id': ref_id
+                        }
+                    )
+                    sources.append(source)
+                    rank += 1
+
+            # TODO: Extract citations from response text annotations
+            # For now, citations extraction would require parsing the response text
+            # which may have citation markers like [1], [2], etc.
+
+        except Exception as e:
+            print(f"Error parsing ChatGPT event stream: {str(e)}")
+            return NetworkLogParser._create_empty_response(
+                response_text, model, response_time_ms
+            )
 
         return ProviderResponse(
             response_text=response_text,
@@ -82,6 +176,24 @@ class NetworkLogParser:
             sources=sources,
             citations=citations,
             raw_response=network_response,
+            model=model,
+            provider='openai',
+            response_time_ms=response_time_ms
+        )
+
+    @staticmethod
+    def _create_empty_response(
+        response_text: str,
+        model: str,
+        response_time_ms: int
+    ) -> ProviderResponse:
+        """Create an empty ProviderResponse."""
+        return ProviderResponse(
+            response_text=response_text,
+            search_queries=[],
+            sources=[],
+            citations=[],
+            raw_response={},
             model=model,
             provider='openai',
             response_time_ms=response_time_ms

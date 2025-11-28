@@ -20,6 +20,10 @@ class Config:
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
+    # ChatGPT Account Credentials (for network capture mode)
+    CHATGPT_EMAIL = os.getenv("CHATGPT_EMAIL")
+    CHATGPT_PASSWORD = os.getenv("CHATGPT_PASSWORD")
+
     # Database
     DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data/llm_search.db")
 

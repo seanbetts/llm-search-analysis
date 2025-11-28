@@ -122,19 +122,26 @@ class ChatGPTCapturer(BaseCapturer):
         except Exception as e:
             raise Exception(f"Failed to stop browser: {str(e)}")
 
-    def authenticate(self) -> bool:
+    def authenticate(self, email: Optional[str] = None, password: Optional[str] = None) -> bool:
         """
         Handle ChatGPT authentication.
 
-        For free ChatGPT, no authentication is required - just navigate and wait
-        for the chat interface to load.
+        If credentials provided, will login. Otherwise uses anonymous mode.
+
+        Args:
+            email: ChatGPT account email (optional)
+            password: ChatGPT account password (optional)
 
         Returns:
-            True if chat interface loads successfully, False otherwise
+            True if authentication successful, False otherwise
         """
         try:
-            print("🌐 Navigating to ChatGPT...")
-            # Navigate to free ChatGPT (no login required)
+            # If credentials provided, use login flow
+            if email and password:
+                return self._login_with_credentials(email, password)
+
+            # Otherwise use anonymous mode (free ChatGPT)
+            print("🌐 Navigating to ChatGPT (anonymous mode)...")
             self.page.goto(self.CHATGPT_URL, wait_until='domcontentloaded', timeout=30000)
 
             print("⏳ Waiting for page to settle...")
@@ -169,6 +176,246 @@ class ChatGPTCapturer(BaseCapturer):
         except Exception as e:
             print(f"❌ Failed to load ChatGPT: {str(e)}")
             raise Exception(f"Failed to load ChatGPT: {str(e)}")
+
+    def _login_with_credentials(self, email: str, password: str) -> bool:
+        """
+        Login to ChatGPT with email and password.
+
+        Args:
+            email: ChatGPT account email
+            password: ChatGPT account password
+
+        Returns:
+            True if login successful, False otherwise
+        """
+        try:
+            print("🔐 Logging in to ChatGPT...")
+
+            # Navigate to ChatGPT
+            print("🌐 Navigating to ChatGPT...")
+            self.page.goto(self.CHATGPT_URL, wait_until='domcontentloaded', timeout=30000)
+            time.sleep(2)
+
+            # Look for "Log in" button
+            print("🔍 Looking for login button...")
+            login_button_selectors = [
+                'button:has-text("Log in")',
+                'a:has-text("Log in")',
+                '[data-testid="login-button"]'
+            ]
+
+            login_clicked = False
+            for selector in login_button_selectors:
+                try:
+                    button = self.page.locator(selector).first
+                    if button.count() > 0 and button.is_visible():
+                        print(f"  ✓ Found login button: {selector}")
+                        button.click()
+                        login_clicked = True
+                        time.sleep(3)
+                        break
+                except:
+                    continue
+
+            if not login_clicked:
+                print("  ⚠️  Login button not found, may already be at login page")
+
+            # Avoid Google sign-in - look for email/password login option
+            print("🔍 Looking for email/password login option...")
+
+            # Wait for login page to load
+            time.sleep(2)
+
+            # Check if we need to dismiss "Sign in with Google" and use email instead
+            email_login_selectors = [
+                'button:has-text("Continue with email")',
+                'button:has-text("Use email")',
+                'a:has-text("Continue with email")',
+                '[data-provider="email"]',
+            ]
+
+            for selector in email_login_selectors:
+                try:
+                    button = self.page.locator(selector).first
+                    if button.count() > 0 and button.is_visible():
+                        print(f"  ✓ Found email login option: {selector}")
+                        button.click()
+                        time.sleep(2)
+                        break
+                except:
+                    continue
+
+            # Enter email
+            print("📧 Entering email...")
+            email_selectors = [
+                'input[type="email"]',
+                'input[name="email"]',
+                'input[id="email-input"]',
+                'input[placeholder*="email" i]'
+            ]
+
+            email_entered = False
+            for selector in email_selectors:
+                try:
+                    input_field = self.page.locator(selector).first
+                    if input_field.count() > 0:
+                        input_field.wait_for(state='visible', timeout=5000)
+                        input_field.fill(email)
+                        print(f"  ✓ Email entered")
+                        email_entered = True
+                        time.sleep(1)
+                        break
+                except Exception as e:
+                    continue
+
+            if not email_entered:
+                raise Exception("Could not find email input field")
+
+            # Click "Continue" button after entering email (NOT "Continue with Google")
+            print("⏭️  Clicking Continue...")
+
+            # First, try to find the specific Continue button (not Google)
+            continue_clicked = False
+
+            # Try the submit button directly (most reliable)
+            try:
+                # Look for button with type="submit" that's NOT a Google button
+                submit_buttons = self.page.locator('button[type="submit"]')
+                count = submit_buttons.count()
+                print(f"  Found {count} submit button(s)")
+
+                for i in range(count):
+                    button = submit_buttons.nth(i)
+                    button_text = button.inner_text().lower()
+                    print(f"    Button {i+1} text: {button_text}")
+
+                    # Skip Google buttons
+                    if 'google' in button_text or 'microsoft' in button_text or 'apple' in button_text:
+                        print(f"    Skipping (OAuth button)")
+                        continue
+
+                    # This should be the email Continue button
+                    if button.is_visible():
+                        print(f"    ✓ Clicking button {i+1}")
+                        button.click()
+                        continue_clicked = True
+                        time.sleep(3)
+                        break
+            except Exception as e:
+                print(f"  ✗ Error finding submit button: {str(e)[:50]}")
+
+            if not continue_clicked:
+                print("  ⚠️  Continue button not found")
+
+            # Enter password (OpenAI login page, not Google)
+            print("🔑 Entering password...")
+            password_selectors = [
+                'input[type="password"]',
+                'input[name="password"]',
+                'input[id="password"]',
+                '#password'
+            ]
+
+            password_entered = False
+            # Try multiple times in case page is loading
+            for attempt in range(3):
+                if password_entered:
+                    break
+
+                for selector in password_selectors:
+                    try:
+                        input_field = self.page.locator(selector).first
+                        if input_field.count() > 0:
+                            input_field.wait_for(state='visible', timeout=5000)
+                            input_field.fill(password)
+                            print(f"  ✓ Password entered")
+                            password_entered = True
+                            time.sleep(1)
+                            break
+                    except:
+                        continue
+
+                if not password_entered and attempt < 2:
+                    print(f"  Waiting for password field... (attempt {attempt + 1}/3)")
+                    time.sleep(2)
+
+            if not password_entered:
+                # Take screenshot for debugging
+                try:
+                    self.page.screenshot(path='password_not_found.png')
+                    print("📸 Screenshot saved to: password_not_found.png")
+                except:
+                    pass
+                raise Exception("Could not find password input field")
+
+            # Submit login form
+            print("🚀 Submitting login...")
+            submit_selectors = [
+                'button:has-text("Continue")',
+                'button:has-text("Log in")',
+                'button:has-text("Sign in")',
+                'button[type="submit"]'
+            ]
+
+            for selector in submit_selectors:
+                try:
+                    button = self.page.locator(selector).first
+                    if button.count() > 0 and button.is_visible():
+                        button.click()
+                        break
+                except:
+                    continue
+
+            # Wait for login to complete
+            print("⏳ Waiting for login to complete...")
+            time.sleep(5)
+
+            # Check if we're logged in by looking for chat interface
+            print("🔍 Verifying login...")
+            chat_interface_selectors = [
+                '#prompt-textarea',
+                'textarea[placeholder*="Message"]',
+                '[data-testid="composer-input"]'
+            ]
+
+            logged_in = False
+            for selector in chat_interface_selectors:
+                try:
+                    if self.page.locator(selector).count() > 0:
+                        logged_in = True
+                        break
+                except:
+                    continue
+
+            if logged_in:
+                print("✅ Login successful!")
+                return True
+            else:
+                # May need 2FA or additional verification
+                print("⚠️  Login may require additional verification (2FA, CAPTCHA, etc.)")
+                print("    Waiting 30 seconds for manual verification...")
+                time.sleep(30)
+
+                # Check again
+                for selector in chat_interface_selectors:
+                    try:
+                        if self.page.locator(selector).count() > 0:
+                            print("✅ Login successful after verification!")
+                            return True
+                    except:
+                        continue
+
+                raise Exception("Login failed - could not verify chat interface")
+
+        except Exception as e:
+            print(f"❌ Login failed: {str(e)}")
+            # Take screenshot for debugging
+            try:
+                self.page.screenshot(path='login_failed.png')
+                print("📸 Screenshot saved to: login_failed.png")
+            except:
+                pass
+            raise Exception(f"Failed to login: {str(e)}")
 
     def send_prompt(self, prompt: str, model: str) -> ProviderResponse:
         """
@@ -256,41 +503,41 @@ class ChatGPTCapturer(BaseCapturer):
             # Get captured network responses
             captured_responses = self.browser_manager.get_captured_responses()
 
-            # Find the relevant response containing search data
+            # Find the event stream response containing search data
             print(f"📊 Captured {len(captured_responses)} network responses")
 
-            # Look for large JSON responses that likely contain the data
-            relevant_response = None
+            # Look for event-stream response (contains all search data)
+            event_stream_response = None
             for resp in captured_responses:
-                if (resp.get('status') == 200 and
-                    'json' in resp.get('content_type', '') and
-                    resp.get('body_size', 0) > 500):
-                    relevant_response = resp
-                    print(f"Found response: {resp['url'][:80]} ({resp['body_size']} bytes)")
+                if 'event-stream' in resp.get('content_type', ''):
+                    event_stream_response = resp
+                    print(f"✓ Found event stream: {resp['url'][:80]} ({resp.get('body_size', 0)} bytes)")
                     break
 
-            if not relevant_response:
-                print("⚠️  No large JSON responses found in network capture")
+            if not event_stream_response:
+                print("⚠️  No event stream found in network capture")
                 # Return response with extracted text but no search data
                 return ProviderResponse(
-                    response_text=response_text if response_text else "ChatGPT responded but network capture did not find search data. This may indicate free ChatGPT has limitations or the response format has changed.",
+                    response_text=response_text if response_text else "ChatGPT responded but network capture did not find event stream data.",
                     search_queries=[],
                     sources=[],
                     citations=[],
                     raw_response={'captured_responses': len(captured_responses)},
-                    model="ChatGPT (Free)",
+                    model="ChatGPT",
                     provider='openai',
                     response_time_ms=response_time_ms
                 )
 
-            # Parse the network response, including the extracted text
-            # Override model name to indicate this is free tier
+            # Parse the event stream response
+            print("🔍 Parsing event stream for search data...")
             parsed_response = NetworkLogParser.parse_chatgpt_log(
-                network_response=relevant_response,
-                model="ChatGPT (Free)",
+                network_response=event_stream_response,
+                model="ChatGPT",
                 response_time_ms=response_time_ms,
                 extracted_response_text=response_text
             )
+
+            print(f"✓ Parsed: {len(parsed_response.search_queries)} queries, {len(parsed_response.sources)} sources")
 
             return parsed_response
 
