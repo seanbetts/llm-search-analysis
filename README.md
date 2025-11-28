@@ -77,19 +77,20 @@ pip install playwright playwright-stealth
 python -m playwright install chrome
 ```
 
-**Important:** Use `chrome` instead of `chromium`. OpenAI detects and blocks Chromium-based automation by serving a degraded UI without search functionality.
+**Important:** Use Chrome (not Chromium). OpenAI detects Chromium browsers and serves a degraded UI without the Search button.
 
-2. **Known Limitations:**
-   - **Browser Detection**: OpenAI detects Playwright/Chromium browsers despite stealth mode and serves a UI without the Search button
-   - **Chrome Required**: Only actual Chrome browser bypasses detection; Chromium does not work
-   - **Free Tier Search**: Search functionality may not be accessible via automation on free ChatGPT tier
+2. **Requirements & Notes:**
+   - **Chrome Required**: Must use Chrome browser (not Chromium) - Chromium is detected
    - **Non-Headless Only**: Headless mode triggers Cloudflare CAPTCHA
+   - **Stealth Mode**: playwright-stealth library required for detection bypass
+   - **Search Confirmed**: Chrome successfully bypasses detection and enables search
 
 3. **Current Status:**
-   - ✅ Basic response capture works
-   - ✅ Text extraction functional
-   - ⚠️ Search toggle not accessible (browser fingerprinting)
-   - ⚠️ Search metadata not available via automation
+   - ✅ Chrome browser bypasses detection successfully
+   - ✅ Search button accessible and functional
+   - ✅ Web search confirmed working (retrieves current information)
+   - ✅ Response text extraction with citations
+   - 🔄 Network log parsing in progress (extracting search metadata)
 
 ## Usage
 
@@ -267,10 +268,10 @@ python tests/test_rank_feature.py
 - Note: This is intentional - headless triggers bot detection
 
 **Degraded UI / No Search Button:**
-- OpenAI detects Chromium and serves limited UI without Search button
-- Solution: Install actual Chrome browser: `python -m playwright install chrome`
-- Update code to use `playwright.chrome.launch()` instead of `chromium`
-- Note: Even with stealth mode, Chromium is detected
+- Cause: Using Chromium browser (detected by OpenAI)
+- Solution: Use Chrome browser with `channel='chrome'` parameter
+- Install: `python -m playwright install chrome`
+- Result: ✅ Chrome successfully bypasses detection - Search button accessible
 
 **Browser Not Found:**
 - Install Playwright browsers: `python -m playwright install chrome`

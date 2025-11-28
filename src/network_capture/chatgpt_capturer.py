@@ -63,9 +63,11 @@ class ChatGPTCapturer(BaseCapturer):
         try:
             self.playwright = sync_playwright().start()
 
-            # Launch with additional args to reduce detection
+            # Launch Chrome (not Chromium) to reduce detection
+            # Chrome has different fingerprint and may bypass OpenAI's detection
             self.browser = self.playwright.chromium.launch(
                 headless=headless,
+                channel='chrome',  # Use installed Chrome instead of Chromium
                 args=[
                     '--disable-blink-features=AutomationControlled',
                     '--disable-dev-shm-usage',
