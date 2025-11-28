@@ -75,49 +75,6 @@ try:
     for citation in response.citations[:5]:  # Show first 5
         print(f"  - {citation.url}")
 
-    # Save captured network data for analysis
-    print()
-    print("=" * 80)
-    print("Saving captured network data...")
-    print("=" * 80)
-
-    import json
-
-    captured_responses = capturer.browser_manager.get_captured_responses()
-    print(f"Total captured responses: {len(captured_responses)}")
-
-    # Save event streams
-    event_streams = [r for r in captured_responses
-                     if 'event-stream' in r.get('content_type', '')]
-
-    for idx, stream in enumerate(event_streams):
-        filename = f'auth_event_stream_{idx + 1}.txt'
-        with open(filename, 'w') as f:
-            f.write(stream.get('body', ''))
-        print(f"  Saved: {filename} ({len(stream.get('body', ''))} bytes)")
-
-    # Save JSON responses
-    json_responses = []
-    for resp in captured_responses:
-        if resp.get('body') and 'json' in resp.get('content_type', ''):
-            try:
-                data = json.loads(resp['body'])
-                json_responses.append({
-                    'url': resp['url'],
-                    'data': data
-                })
-            except:
-                pass
-
-    for idx, jr in enumerate(json_responses):
-        filename = f'auth_json_{idx + 1}.json'
-        with open(filename, 'w') as f:
-            json.dump(jr, f, indent=2)
-        print(f"  Saved: {filename}")
-
-    print(f"  Total event streams: {len(event_streams)}")
-    print(f"  Total JSON responses: {len(json_responses)}")
-
     print()
     print("=" * 80)
     print("Test complete!")
