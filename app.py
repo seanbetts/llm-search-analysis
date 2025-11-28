@@ -108,6 +108,9 @@ def get_all_models():
             'gemini-3-pro-preview': 'Gemini 3 Pro (Preview)',
             'gemini-2.5-flash': 'Gemini 2.5 Flash',
             'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite',
+            # Network capture
+            'ChatGPT (Free)': 'ChatGPT (Free)',
+            'chatgpt-free': 'ChatGPT (Free)',
         }
 
         for provider_name in ['openai', 'google', 'anthropic']:
@@ -149,6 +152,9 @@ def display_response(response):
         'gemini-3-pro-preview': 'Gemini 3 Pro (Preview)',
         'gemini-2.5-flash': 'Gemini 2.5 Flash',
         'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite',
+        # Network capture
+        'ChatGPT (Free)': 'ChatGPT (Free)',
+        'chatgpt-free': 'ChatGPT (Free)',
     }
 
     # Data source indicator (if available from database)
@@ -283,14 +289,43 @@ def tab_interactive():
         formatted_model = selected_label.split(' - ', 1)[1] if ' - ' in selected_label else selected_model
         with st.spinner(f"Querying {formatted_model}..."):
             try:
-                # Get API keys and create provider
-                api_keys = Config.get_api_keys()
-                provider = ProviderFactory.create_provider(selected_provider, api_keys[selected_provider])
+                # Check data collection mode and route accordingly
+                if st.session_state.data_collection_mode == 'network_log':
+                    # Use network log capture
+                    from src.network_capture.chatgpt_capturer import ChatGPTCapturer
 
-                # Send prompt
-                response = provider.send_prompt(prompt, selected_model)
+                    # Only ChatGPT is supported for network logs currently
+                    if selected_provider != 'openai':
+                        st.error(f"Network log mode is only supported for OpenAI/ChatGPT currently. Selected provider: {selected_provider}")
+                        st.session_state.error = "Network log mode only supports OpenAI/ChatGPT"
+                        return
 
-                # Save to database
+                    # Initialize and use capturer
+                    # Note: headless=False to avoid Cloudflare CAPTCHA
+                    capturer = ChatGPTCapturer()
+                    capturer.start_browser(headless=False)
+
+                    try:
+                        # Authenticate (load ChatGPT page)
+                        if not capturer.authenticate():
+                            raise Exception("Failed to load ChatGPT interface")
+
+                        # Send prompt and capture
+                        response = capturer.send_prompt(prompt, selected_model)
+
+                    finally:
+                        # Always cleanup browser
+                        capturer.stop_browser()
+
+                else:
+                    # Use API-based provider (default)
+                    api_keys = Config.get_api_keys()
+                    provider = ProviderFactory.create_provider(selected_provider, api_keys[selected_provider])
+
+                    # Send prompt
+                    response = provider.send_prompt(prompt, selected_model)
+
+                # Save to database (works for both modes)
                 try:
                     st.session_state.db.save_interaction(
                         provider_name=selected_provider,
@@ -301,7 +336,8 @@ def tab_interactive():
                         sources=response.sources,
                         citations=response.citations,
                         response_time_ms=response.response_time_ms,
-                        raw_response=response.raw_response
+                        raw_response=response.raw_response,
+                        data_source=st.session_state.data_collection_mode
                     )
                 except Exception as db_error:
                     st.warning(f"Response saved but database error occurred: {str(db_error)}")
@@ -405,13 +441,40 @@ def tab_batch():
                 status_text.text(f"Processing run {current_run}/{total_runs}: {model_label} - Prompt {prompt_idx + 1}/{len(prompts)}")
 
                 try:
-                    # Create provider for this model
-                    provider = ProviderFactory.create_provider(provider_name, api_keys[provider_name])
+                    # Check data collection mode and route accordingly
+                    if st.session_state.data_collection_mode == 'network_log':
+                        # Use network log capture
+                        from src.network_capture.chatgpt_capturer import ChatGPTCapturer
 
-                    # Send prompt
-                    response = provider.send_prompt(prompt, model_name)
+                        # Only ChatGPT is supported for network logs currently
+                        if provider_name != 'openai':
+                            raise Exception(f"Network log mode only supports OpenAI/ChatGPT. Skipping {provider_name}")
 
-                    # Save to database
+                        # Initialize and use capturer
+                        # Note: headless=False to avoid Cloudflare CAPTCHA
+                        capturer = ChatGPTCapturer()
+                        capturer.start_browser(headless=False)
+
+                        try:
+                            # Authenticate (load ChatGPT page)
+                            if not capturer.authenticate():
+                                raise Exception("Failed to load ChatGPT interface")
+
+                            # Send prompt and capture
+                            response = capturer.send_prompt(prompt, model_name)
+
+                        finally:
+                            # Always cleanup browser
+                            capturer.stop_browser()
+
+                    else:
+                        # Use API-based provider (default)
+                        provider = ProviderFactory.create_provider(provider_name, api_keys[provider_name])
+
+                        # Send prompt
+                        response = provider.send_prompt(prompt, model_name)
+
+                    # Save to database (works for both modes)
                     try:
                         st.session_state.db.save_interaction(
                             provider_name=provider_name,
@@ -422,7 +485,8 @@ def tab_batch():
                             sources=response.sources,
                             citations=response.citations,
                             response_time_ms=response.response_time_ms,
-                            raw_response=response.raw_response
+                            raw_response=response.raw_response,
+                            data_source=st.session_state.data_collection_mode
                         )
                     except Exception as db_error:
                         st.warning(f"Database error for {model_label} prompt {prompt_idx + 1}: {str(db_error)}")
@@ -643,16 +707,20 @@ def sidebar_info():
     # Show info for network log mode
     if st.session_state.data_collection_mode == 'network_log':
         st.sidebar.info("""
-        **Experimental Mode**
+        **🌐 Experimental: Browser Network Capture**
 
-        Uses headless browser to capture detailed search data not available through APIs.
+        Uses browser automation to capture network data.
 
-        **Additional data:**
-        - Actual snippets extracted
-        - Internal relevance scores
-        - Query reformulations
+        **How it works:**
+        - Opens a Chrome browser window (visible)
+        - Navigates to ChatGPT automatically
+        - Submits your prompt
+        - Captures network traffic
+        - Closes browser when done
 
-        🚧 Implementation in progress
+        **Note:** A browser window will appear during capture. This is normal and avoids CAPTCHA issues.
+
+        **Status:** ✅ Working (non-headless mode)
         """)
 
     st.sidebar.divider()

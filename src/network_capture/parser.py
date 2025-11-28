@@ -26,7 +26,8 @@ class NetworkLogParser:
     def parse_chatgpt_log(
         network_response: Dict[str, Any],
         model: str,
-        response_time_ms: int
+        response_time_ms: int,
+        extracted_response_text: str = ""
     ) -> ProviderResponse:
         """
         Parse ChatGPT network log response.
@@ -35,6 +36,7 @@ class NetworkLogParser:
             network_response: Raw network response dictionary
             model: Model used
             response_time_ms: Response time in milliseconds
+            extracted_response_text: Response text extracted from page (optional)
 
         Returns:
             ProviderResponse object with network log data
@@ -46,7 +48,7 @@ class NetworkLogParser:
         search_queries = []
         sources = []
         citations = []
-        response_text = ""
+        response_text = extracted_response_text  # Use extracted text if provided
 
         # TODO: Implement actual parsing logic based on ChatGPT network log format
         # This will be filled in once we capture and analyze real network logs

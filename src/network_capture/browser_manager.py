@@ -41,26 +41,33 @@ class BrowserManager:
             request_filter: Optional function to filter which requests to capture
             response_filter: Optional function to filter which responses to capture
         """
-        async def handle_request(request):
+        def handle_request(request):
             """Handle outgoing requests."""
             if request_filter is None or request_filter(request):
+                try:
+                    post_data = request.post_data
+                except:
+                    post_data = None
+
                 self.intercepted_requests.append({
                     'url': request.url,
                     'method': request.method,
                     'headers': request.headers,
-                    'post_data': request.post_data
+                    'post_data': post_data
                 })
 
-        async def handle_response(response):
+        def handle_response(response):
             """Handle incoming responses."""
             if response_filter is None or response_filter(response):
                 try:
-                    body = await response.body()
+                    body = response.body()
                     self.intercepted_responses.append({
                         'url': response.url,
                         'status': response.status,
                         'headers': response.headers,
-                        'body': body.decode('utf-8') if body else None
+                        'body': body.decode('utf-8') if body else None,
+                        'body_size': len(body) if body else 0,
+                        'content_type': response.headers.get('content-type', '')
                     })
                 except Exception as e:
                     # Some responses may not have decodable bodies
@@ -69,11 +76,13 @@ class BrowserManager:
                         'status': response.status,
                         'headers': response.headers,
                         'body': None,
+                        'body_size': 0,
+                        'content_type': response.headers.get('content-type', ''),
                         'error': str(e)
                     })
 
-        page.on('request', lambda req: handle_request(req))
-        page.on('response', lambda resp: handle_response(resp))
+        page.on('request', handle_request)
+        page.on('response', handle_response)
 
     def get_captured_responses(self, url_pattern: str = None):
         """

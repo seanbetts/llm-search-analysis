@@ -16,6 +16,7 @@ requests>=2.31.0           # HTTP library for Google redirect resolution
 
 # Browser Automation (for network log capture)
 playwright>=1.40.0         # Browser automation for network interception
+playwright-stealth>=2.0.0  # Stealth mode to avoid bot detection
 
 # Visualization
 plotly>=5.18.0

@@ -14,6 +14,7 @@ This tool provides an interactive web interface to test and analyze how differen
 ### Core Capabilities
 - **Multi-Provider Support**: OpenAI (Responses API), Google Gemini (Search Grounding), Anthropic Claude (Web Search Tool)
 - **9 Models**: Test across 9 different AI models with varying capabilities
+- **Dual Data Collection Modes**: API-based (structured data) and Network Capture (browser automation)
 - **3-Tab Interface**: Interactive prompting, batch analysis, and query history
 - **Database Integration**: SQLite-based persistence for all interactions
 - **Rank Tracking**: Monitor which search result positions sources come from (1-indexed)
@@ -66,6 +67,30 @@ GOOGLE_API_KEY=your_google_key_here
 ANTHROPIC_API_KEY=your_anthropic_key_here
 ```
 
+### Network Capture Mode Setup (Optional)
+
+For capturing ChatGPT interactions via browser automation:
+
+1. Install Playwright with Chrome browser:
+```bash
+pip install playwright playwright-stealth
+python -m playwright install chrome
+```
+
+**Important:** Use `chrome` instead of `chromium`. OpenAI detects and blocks Chromium-based automation by serving a degraded UI without search functionality.
+
+2. **Known Limitations:**
+   - **Browser Detection**: OpenAI detects Playwright/Chromium browsers despite stealth mode and serves a UI without the Search button
+   - **Chrome Required**: Only actual Chrome browser bypasses detection; Chromium does not work
+   - **Free Tier Search**: Search functionality may not be accessible via automation on free ChatGPT tier
+   - **Non-Headless Only**: Headless mode triggers Cloudflare CAPTCHA
+
+3. **Current Status:**
+   - ✅ Basic response capture works
+   - ✅ Text extraction functional
+   - ⚠️ Search toggle not accessible (browser fingerprinting)
+   - ⚠️ Search metadata not available via automation
+
 ## Usage
 
 ### Running the Web Interface
@@ -77,13 +102,33 @@ streamlit run app.py
 
 The interface will open in your browser at `http://localhost:8501`.
 
+### Data Collection Modes
+
+The tool supports two data collection modes:
+
+**API Mode (Default)**
+- Uses official provider APIs (OpenAI Responses API, Google Gemini, Anthropic Claude)
+- Structured data with full search metadata
+- Supports all 9 models
+- Requires API keys
+
+**Network Capture Mode (Experimental)**
+- Browser automation with Playwright
+- Captures ChatGPT interactions via network traffic
+- Currently limited due to browser detection
+- Only supports ChatGPT (Free) model
+- Requires Chrome browser (not Chromium)
+
+Toggle between modes in the sidebar: "Data Collection Mode"
+
 ### Using the Interface
 
 #### Tab 1: Interactive Prompting
-1. **Select Model**: Choose from 9 models across 3 providers
-2. **Enter Prompt**: Type a question that requires current information
-3. **Send**: Click to get results with detailed search analytics
-4. **View Results**: See search queries, sources fetched, sources used, and ranks
+1. **Select Data Mode**: Choose "API" or "Network Log" mode
+2. **Select Model**: Choose from 9 models (API mode) or ChatGPT Free (Network mode)
+3. **Enter Prompt**: Type a question that requires current information
+4. **Send**: Click to get results with detailed search analytics
+5. **View Results**: See search queries, sources fetched, sources used, and ranks
 
 #### Tab 2: Batch Analysis
 1. **Select Models**: Choose one or more models to compare
@@ -135,6 +180,10 @@ llm-search-analysis/
 │   │   ├── openai_provider.py # OpenAI Responses API
 │   │   ├── google_provider.py # Google Gemini with search grounding
 │   │   └── anthropic_provider.py # Anthropic Claude web search
+│   └── network_capture/       # Browser automation (experimental)
+│       ├── browser_manager.py # Playwright browser control
+│       ├── chatgpt_capturer.py # ChatGPT interaction capture
+│       └── parser.py          # Network log parsing
 ├── tests/                     # Unit tests and validation scripts
 │   ├── verify_providers.py   # API verification script
 │   ├── test_rank_feature.py  # Rank tracking validation
@@ -209,6 +258,27 @@ python tests/test_rank_feature.py
 ### Streamlit Issues
 - Clear cache: `streamlit cache clear`
 - Restart the app: Stop with Ctrl+C and run `streamlit run app.py` again
+
+### Network Capture Mode Issues
+
+**Cloudflare CAPTCHA Blocking:**
+- Occurs when using headless mode
+- Solution: Use non-headless mode (headless=False)
+- Note: This is intentional - headless triggers bot detection
+
+**Degraded UI / No Search Button:**
+- OpenAI detects Chromium and serves limited UI without Search button
+- Solution: Install actual Chrome browser: `python -m playwright install chrome`
+- Update code to use `playwright.chrome.launch()` instead of `chromium`
+- Note: Even with stealth mode, Chromium is detected
+
+**Browser Not Found:**
+- Install Playwright browsers: `python -m playwright install chrome`
+- Verify installation: `playwright show browsers`
+
+**Stealth Mode Not Applied:**
+- Install playwright-stealth: `pip install playwright-stealth`
+- Ensure using correct Python environment (check with `which python`)
 
 ## Phase Status
 
