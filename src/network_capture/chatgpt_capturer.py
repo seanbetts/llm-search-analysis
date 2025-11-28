@@ -36,11 +36,25 @@ class ChatGPTCapturer(BaseCapturer):
 
     CHATGPT_URL = "https://chatgpt.com"
 
-    def __init__(self):
-        """Initialize ChatGPT capturer."""
+    def __init__(self, storage_state_path: Optional[str] = None):
+        """Initialize ChatGPT capturer.
+
+        Args:
+            storage_state_path: Path to JSON file storing session data (cookies, localStorage).
+                               If None, uses a default file in the project.
+        """
         super().__init__()
         self.playwright = None
         self.browser_manager = BrowserManager()
+
+        # Set up storage state file path for session persistence
+        if storage_state_path is None:
+            # Use default file in project
+            from pathlib import Path
+            project_root = Path(__file__).parent.parent.parent
+            storage_state_path = str(project_root / 'data' / 'chatgpt_session.json')
+
+        self.storage_state_path = storage_state_path
 
     def get_provider_name(self) -> str:
         """Get provider name."""
@@ -53,6 +67,7 @@ class ChatGPTCapturer(BaseCapturer):
     def start_browser(self, headless: bool = True) -> None:
         """
         Start browser instance with stealth mode to avoid detection.
+        Restores session state from file if available.
 
         Args:
             headless: Whether to run in headless mode (default: True for seamless UX)
@@ -61,10 +76,12 @@ class ChatGPTCapturer(BaseCapturer):
             Exception: If browser fails to start
         """
         try:
+            from pathlib import Path
+            import os
+
             self.playwright = sync_playwright().start()
 
             # Launch Chrome (not Chromium) to reduce detection
-            # Chrome has different fingerprint and may bypass OpenAI's detection
             self.browser = self.playwright.chromium.launch(
                 headless=headless,
                 channel='chrome',  # Use installed Chrome instead of Chromium
@@ -76,10 +93,20 @@ class ChatGPTCapturer(BaseCapturer):
                 ]
             )
 
+            # Check if storage state file exists
+            storage_state = None
+            if os.path.exists(self.storage_state_path):
+                print(f"📁 Found session file: {self.storage_state_path}")
+                storage_state = self.storage_state_path
+            else:
+                print(f"📁 No existing session (will create at: {self.storage_state_path})")
+
             # Create context with realistic viewport and user agent
+            # Load storage state if available
             self.context = self.browser.new_context(
                 viewport={'width': 1920, 'height': 1080},
-                user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+                user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                storage_state=storage_state  # Will be None if file doesn't exist
             )
 
             self.page = self.context.new_page()
@@ -99,7 +126,7 @@ class ChatGPTCapturer(BaseCapturer):
             )
 
             self.is_active = True
-            print(f"✓ Browser started with stealth mode for ChatGPT capture")
+            print(f"✓ Browser started for ChatGPT capture")
 
         except Exception as e:
             raise Exception(f"Failed to start browser: {str(e)}")
@@ -126,7 +153,8 @@ class ChatGPTCapturer(BaseCapturer):
         """
         Handle ChatGPT authentication.
 
-        If credentials provided, will login. Otherwise uses anonymous mode.
+        First checks if already logged in (from persistent session).
+        If credentials provided and not logged in, will login. Otherwise uses anonymous mode.
 
         Args:
             email: ChatGPT account email (optional)
@@ -136,13 +164,34 @@ class ChatGPTCapturer(BaseCapturer):
             True if authentication successful, False otherwise
         """
         try:
+            # Navigate to ChatGPT
+            print("🌐 Navigating to ChatGPT...")
+            self.page.goto(self.CHATGPT_URL, wait_until='domcontentloaded', timeout=30000)
+            time.sleep(2)
+
+            # Check if we're already logged in from saved session
+            print("🔍 Checking for existing session...")
+            if self._is_logged_in():
+                print("✅ Already logged in (session restored from saved state)")
+                # Save session if we're logged in but don't have a session file yet
+                # This handles cases where cookies persist from system Chrome
+                import os
+                if not os.path.exists(self.storage_state_path):
+                    print("💾 Saving current session for future use...")
+                    self._save_session()
+                return True
+
             # If credentials provided, use login flow
             if email and password:
-                return self._login_with_credentials(email, password)
+                print("🔐 Not logged in, attempting to authenticate...")
+                success = self._login_with_credentials(email, password)
+                if success:
+                    # Save session state after successful login
+                    self._save_session()
+                return success
 
             # Otherwise use anonymous mode (free ChatGPT)
-            print("🌐 Navigating to ChatGPT (anonymous mode)...")
-            self.page.goto(self.CHATGPT_URL, wait_until='domcontentloaded', timeout=30000)
+            print("👤 Using anonymous mode (no credentials provided)...")
 
             print("⏳ Waiting for page to settle...")
             time.sleep(2)  # Give page time to fully render
@@ -177,9 +226,77 @@ class ChatGPTCapturer(BaseCapturer):
             print(f"❌ Failed to load ChatGPT: {str(e)}")
             raise Exception(f"Failed to load ChatGPT: {str(e)}")
 
+    def _save_session(self) -> None:
+        """Save current session state (cookies, localStorage) to file."""
+        try:
+            import os
+            from pathlib import Path
+
+            # Create data directory if it doesn't exist
+            os.makedirs(Path(self.storage_state_path).parent, exist_ok=True)
+
+            # Save storage state
+            self.context.storage_state(path=self.storage_state_path)
+            print(f"💾 Session saved to: {self.storage_state_path}")
+
+        except Exception as e:
+            print(f"⚠️  Failed to save session: {str(e)[:50]}")
+
+    def _is_logged_in(self) -> bool:
+        """
+        Check if already logged in by looking for chat interface.
+
+        Returns:
+            True if logged in, False otherwise
+        """
+        try:
+            # Check for chat interface elements
+            chat_interface_selectors = [
+                '#prompt-textarea',
+                'textarea[placeholder*="Message"]',
+                '[data-testid="composer-input"]'
+            ]
+
+            # Also check that login/signup buttons are NOT present
+            login_button_selectors = [
+                'button:has-text("Log in")',
+                'a:has-text("Log in")',
+                'button:has-text("Sign up")',
+                'a:has-text("Sign up")',
+            ]
+
+            # Look for chat interface
+            has_chat_interface = False
+            for selector in chat_interface_selectors:
+                try:
+                    if self.page.locator(selector).count() > 0:
+                        has_chat_interface = True
+                        break
+                except:
+                    continue
+
+            # Look for login buttons
+            has_login_button = False
+            for selector in login_button_selectors:
+                try:
+                    button = self.page.locator(selector).first
+                    if button.count() > 0 and button.is_visible():
+                        has_login_button = True
+                        break
+                except:
+                    continue
+
+            # Logged in if we have chat interface and no login button
+            return has_chat_interface and not has_login_button
+
+        except Exception as e:
+            print(f"  ⚠️  Error checking login status: {str(e)[:50]}")
+            return False
+
     def _login_with_credentials(self, email: str, password: str) -> bool:
         """
         Login to ChatGPT with email and password.
+        Assumes we're already on the ChatGPT page.
 
         Args:
             email: ChatGPT account email
@@ -189,13 +306,6 @@ class ChatGPTCapturer(BaseCapturer):
             True if login successful, False otherwise
         """
         try:
-            print("🔐 Logging in to ChatGPT...")
-
-            # Navigate to ChatGPT
-            print("🌐 Navigating to ChatGPT...")
-            self.page.goto(self.CHATGPT_URL, wait_until='domcontentloaded', timeout=30000)
-            time.sleep(2)
-
             # Look for "Log in" button
             print("🔍 Looking for login button...")
             login_button_selectors = [

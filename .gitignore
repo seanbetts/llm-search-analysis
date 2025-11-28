@@ -55,3 +55,4 @@ htmlcov/
 
 # Streamlit
 .streamlit/secrets.toml
+data/chatgpt_session.json
