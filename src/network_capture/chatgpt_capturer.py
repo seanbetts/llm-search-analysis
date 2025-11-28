@@ -752,50 +752,56 @@ class ChatGPTCapturer(BaseCapturer):
 
     def _enable_search_toggle(self) -> bool:
         """
-        Find and enable the search toggle button in ChatGPT UI.
+        Enable web search in ChatGPT UI via: Add button → More → Web Search.
 
         Returns:
-            True if search toggle was found and clicked, False otherwise
+            True if search was enabled, False otherwise
         """
-        # Possible selectors for the search toggle/button
-        search_selectors = [
-            'button:has-text("Search the web")',
-            'button:has-text("Search")',
-            'button[aria-label*="search"]',
-            'button[aria-label*="Search"]',
-            '[data-testid*="search"]',
-            'button[title*="search"]',
-            'button[title*="Search"]',
-            # Icon buttons near the textarea
-            'button svg[class*="search"]',
-        ]
+        try:
+            # Step 1: Find and click the "Add files and more" button
+            print("  Looking for 'Add' button...")
+            add_button = self.page.locator('button[aria-label*="Add"]').first
 
-        time.sleep(1)  # Give UI time to render
+            if add_button.count() == 0:
+                print("    ⚠️  'Add' button not found")
+                return False
 
-        for selector in search_selectors:
-            try:
-                print(f"  Trying: {selector}")
-                buttons = self.page.locator(selector)
-                count = buttons.count()
+            print(f"    Clicking 'Add files and more' button...")
+            add_button.click()
+            time.sleep(1)
 
-                if count > 0:
-                    print(f"    Found {count} match(es)")
-                    # Try each matching button
-                    for i in range(min(count, 3)):  # Try up to 3 matches
-                        try:
-                            button = buttons.nth(i)
-                            if button.is_visible():
-                                print(f"    Button {i+1} is visible, clicking...")
-                                button.click()
-                                time.sleep(1)  # Wait for toggle to take effect
-                                return True
-                        except Exception as e:
-                            print(f"    Button {i+1} click failed: {str(e)[:50]}")
-                            continue
-            except Exception as e:
-                continue
+            # Step 2: Hover over "More" menuitem to open submenu
+            print("  Looking for 'More' menu item...")
+            # The "More" option is a menuitem that appears after clicking Add
+            # It has aria-haspopup="menu" and needs hover to show submenu
+            more_menuitem = self.page.locator('[role="menuitem"][data-has-submenu]').filter(has_text="More").first
 
-        return False
+            if more_menuitem.count() == 0:
+                print("    ⚠️  'More' menu item not found")
+                return False
+
+            print(f"    Hovering over 'More'...")
+            more_menuitem.hover()
+            time.sleep(1)
+
+            # Step 3: Find and click "Web search" in the submenu
+            print("  Looking for 'Web search' option...")
+            # Note: It's role="menuitemradio" with text "Web search" (lowercase 's')
+            web_search_menuitem = self.page.locator('[role="menuitemradio"]').filter(has_text="Web search").first
+
+            if web_search_menuitem.count() == 0:
+                print("    ⚠️  'Web search' option not found")
+                return False
+
+            print(f"    Clicking 'Web search'...")
+            web_search_menuitem.click()
+            time.sleep(1)
+            print("    ✓ Web search enabled")
+            return True
+
+        except Exception as e:
+            print(f"  ✗ Error enabling search: {str(e)[:50]}")
+            return False
 
     def _dismiss_modals(self):
         """Dismiss any modals or overlays blocking the UI."""
