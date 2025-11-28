@@ -160,9 +160,12 @@ class NetworkLogParser:
                     sources.append(source)
                     rank += 1
 
-            # TODO: Extract citations from response text annotations
-            # For now, citations extraction would require parsing the response text
-            # which may have citation markers like [1], [2], etc.
+            # Extract citations from inline source attributions in response text
+            # ChatGPT uses inline citations like "...content here.\nSource Name" or "...content.\nDomain Name"
+            if response_text and sources:
+                citations = NetworkLogParser._extract_inline_citations(response_text, sources)
+            else:
+                citations = []
 
         except Exception as e:
             print(f"Error parsing ChatGPT event stream: {str(e)}")
@@ -180,6 +183,68 @@ class NetworkLogParser:
             provider='openai',
             response_time_ms=response_time_ms
         )
+
+    @staticmethod
+    def _extract_inline_citations(response_text: str, sources: List[Source]) -> List[Citation]:
+        """
+        Extract citations from inline source attributions in ChatGPT response text.
+
+        ChatGPT includes source attributions as standalone lines after cited content,
+        typically showing the domain or source name.
+
+        Args:
+            response_text: The response text with inline attributions
+            sources: List of sources to match against
+
+        Returns:
+            List of Citation objects
+        """
+        citations = []
+
+        # Create a mapping of domains to sources for quick lookup
+        domain_to_source = {}
+        for source in sources:
+            # Try multiple domain variations
+            domain = source.domain.lower()
+            domain_to_source[domain] = source
+
+            # Also try title if it looks like a source name
+            if source.title:
+                title_lower = source.title.lower()
+                domain_to_source[title_lower] = source
+
+        # Split response into lines to find standalone source attributions
+        lines = response_text.split('\n')
+
+        for i, line in enumerate(lines):
+            line_stripped = line.strip()
+
+            # Skip empty lines, headings (with emojis), and very long lines (likely content)
+            if not line_stripped or len(line_stripped) > 100:
+                continue
+
+            # Skip lines that are clearly content (have sentence structure)
+            if line_stripped.endswith(',') or line_stripped.endswith(';'):
+                continue
+
+            # Check if this line matches any source domain or title
+            line_lower = line_stripped.lower()
+
+            for key, source in domain_to_source.items():
+                # Match if the line is the domain/title (exact or contains)
+                if key in line_lower or line_lower in key:
+                    # Make sure this isn't already a citation for this URL
+                    if not any(c.url == source.url for c in citations):
+                        citation = Citation(
+                            url=source.url,
+                            title=source.title,
+                            rank=source.rank,
+                            snippet_used=line_stripped  # The attribution line
+                        )
+                        citations.append(citation)
+                        break
+
+        return citations
 
     @staticmethod
     def _create_empty_response(
