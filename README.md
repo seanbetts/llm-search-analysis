@@ -305,6 +305,7 @@ python tests/test_rank_feature.py
 - Cause: Platform issue with ChatGPT free tier (bug filed with OpenAI)
 - Status: Search mode activation works correctly, but search execution is unreliable
 - Workaround: Use API mode with OpenAI Responses API for reliable search functionality
+- Note: The assistant may include links in its response that are not present in the captured search results (SSE). Only URLs found in the event-stream `search_result_groups` will appear in "Search Queries & Sources" and "Sources Used". The raw event stream is saved in `raw_response_json` for inspection. "Extra Links" are counted separately in metadata.
 
 **Authentication Issues:**
 - Ensure `CHATGPT_EMAIL` and `CHATGPT_PASSWORD` are set in `.env` file
@@ -337,6 +338,7 @@ python tests/test_rank_feature.py
 - **Rank**: Position in search results (1-indexed)
 - **Average Rank**: Mean rank of cited sources
 - **Response Time**: Model response latency (seconds)
+- **Extra Links**: Links mentioned in the response that were not present in the captured search results (network capture mode)
 
 ## Advanced Features
 

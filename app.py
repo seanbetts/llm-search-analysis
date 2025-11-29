@@ -5,6 +5,7 @@ Interactive web interface for testing and analyzing LLM search capabilities
 across OpenAI, Google Gemini, and Anthropic Claude models.
 """
 
+import re
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -64,6 +65,24 @@ st.markdown("""
         border-radius: 0.25rem;
         border: 1px solid rgba(0,0,0,0.1);
     }
+    /* Constrain images in responses to a small, uniform size and inline layout */
+    .stMarkdown img {
+        width: 140px;
+        height: 90px;
+        object-fit: cover;
+        margin: 4px 8px 4px 0;
+        display: inline-block;
+        vertical-align: top;
+        float: left;
+    }
+    .stMarkdown::after {
+        content: "";
+        display: block;
+        clear: both;
+    }
+    .stMarkdown p {
+        clear: both;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -99,63 +118,34 @@ def format_pub_date(pub_date: str) -> str:
 
 def format_response_text(text: str, citations: list) -> str:
     """
-    Clean streamed response text and render citation markers as superscripts.
-
-    Args:
-        text: Raw response text
-        citations: List of Citation objects with metadata.citation_id
-
-    Returns:
-        HTML-safe string with superscript citation numbers.
+    For now, just return the text as-is so we mirror ChatGPT's rendered markdown/HTML.
     """
+    return text or ""
+
+
+def extract_images_from_response(text: str):
+    """Extract image URLs from markdown or img tags and return cleaned text."""
     if not text:
+        return text, []
+    images = []
+
+    # Markdown images ![alt](url)
+    def md_repl(match):
+        url = match.group(1)
+        if url:
+            images.append(url)
+        return ""  # strip from text
+    text = re.sub(r"!\[[^\]]*\]\(([^) ]+)[^)]*\)", md_repl, text)
+
+    # HTML img tags
+    def html_repl(match):
+        src = match.group(1)
+        if src:
+            images.append(src)
         return ""
+    text = re.sub(r'<img[^>]+src=["\']([^"\']+)["\'][^>]*>', html_repl, text, flags=re.IGNORECASE)
 
-    import re
-
-    # Remove known control tokens
-    cleaned = text
-    cleaned = cleaned.replace("navlist", "")
-    # Drop lines containing image_group metadata
-    lines = []
-    for line in cleaned.splitlines():
-        if "image_group" in line:
-            continue
-        lines.append(line)
-    cleaned = "\n".join(lines)
-
-    # Replace entity tokens with their label
-    def replace_entity(match):
-        return match.group(1)
-    cleaned = re.sub(r'entity\["[^"]+","([^"]+)"[^]]*\]', replace_entity, cleaned)
-
-    # Map citation tokens to numbers in order of appearance
-    token_pattern = r"(turn\d+(?:news|search)\d+|cite\[\d+\]\[\d+\])"
-    token_order = []
-    for match in re.findall(token_pattern, cleaned):
-        tok = match
-        if tok not in token_order:
-            token_order.append(tok)
-
-    # Build token->number map using appearance order
-    token_to_num = {tok: idx + 1 for idx, tok in enumerate(token_order)}
-
-    # Also include any citations not present in text (append after)
-    for cit in citations or []:
-        token = getattr(cit, "metadata", {}) and cit.metadata.get("citation_id")
-        if token and token not in token_to_num:
-            token_to_num[token] = len(token_to_num) + 1
-
-    def replace_token(match):
-        tok = match.group(0)
-        num = token_to_num.get(tok)
-        return f"<sup>[{num}]</sup>" if num else ""
-
-    cleaned = re.sub(token_pattern, replace_token, cleaned)
-
-    # Trim extra whitespace
-    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
-    return cleaned
+    return text.strip(), images
 
 def get_all_models():
     """Get all available models with provider labels."""
@@ -240,7 +230,7 @@ def display_response(response):
 
     # Response metadata
     st.markdown("### 📊 Response Metadata")
-    col1, col2, col3, col4, col5, col6, col7 = st.columns([1.5, 2, 1, 1, 1, 1, 1])
+    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1.5, 2, 1, 1, 1, 1, 1, 1])
 
     with col1:
         st.metric("Provider", provider_names.get(response.provider, response.provider.capitalize()))
@@ -263,12 +253,24 @@ def display_response(response):
             st.metric("Avg. Rank", f"{avg_rank:.1f}")
         else:
             st.metric("Avg. Rank", "N/A")
+    with col8:
+        extra_links = 0
+        if getattr(response, "metadata", None):
+            extra_links = response.metadata.get("extra_links_count", 0) or 0
+        st.metric("Extra Links", extra_links)
 
     st.divider()
 
     # Response text
     st.markdown("### 💬 Response")
     formatted_response = format_response_text(response.response_text, response.citations)
+    formatted_response, extracted_images = extract_images_from_response(formatted_response)
+
+    if extracted_images:
+        # Render images inline with minimal gaps
+        img_html = "".join([f'<img src="{url}" style="width:210px;height:135px;object-fit:cover;margin:4px 6px 4px 0;vertical-align:top;"/>' for url in extracted_images])
+        st.markdown(f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;'>{img_html}</div>", unsafe_allow_html=True)
+
     st.markdown(formatted_response, unsafe_allow_html=True)
     st.divider()
 
@@ -323,7 +325,7 @@ def display_response(response):
         for i, citation in enumerate(response.citations, 1):
             with st.container():
                 url_display = citation.url or 'No URL'
-                url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
+                domain_link = f'<a href="{url_display}" target="_blank">{urlparse(url_display).netloc or url_display}</a>'
                 # Extract query info if present in metadata
                 query_idx = None
                 if getattr(citation, "metadata", None):
@@ -359,7 +361,7 @@ def display_response(response):
                 st.markdown(f"""
                 <div class="citation-item">
                     <strong>{i}. {display_title}{rank_display}</strong><br/>
-                    <a href="{url_display}" target="_blank">{url_truncated}</a>
+                    {domain_link}
                     {snippet_block}
                     {pub_date_block}
                 </div>
@@ -478,7 +480,8 @@ def tab_interactive():
                         citations=response.citations,
                         response_time_ms=response.response_time_ms,
                         raw_response=response.raw_response,
-                        data_source=st.session_state.data_collection_mode
+                        data_source=st.session_state.data_collection_mode,
+                        extra_links_count=response.metadata.get("extra_links_count", 0) if getattr(response, "metadata", None) else 0
                     )
                 except Exception as db_error:
                     st.warning(f"Response saved but database error occurred: {str(db_error)}")
@@ -637,7 +640,8 @@ def tab_batch():
                             citations=response.citations,
                             response_time_ms=response.response_time_ms,
                             raw_response=response.raw_response,
-                            data_source=st.session_state.data_collection_mode
+                            data_source=st.session_state.data_collection_mode,
+                            extra_links_count=response.metadata.get("extra_links_count", 0) if getattr(response, "metadata", None) else 0
                         )
                     except Exception as db_error:
                         st.warning(f"Database error for {model_label} prompt {prompt_idx + 1}: {str(db_error)}")
@@ -764,6 +768,10 @@ def tab_history():
         # Truncate prompt for display
         df['prompt_preview'] = df['prompt'].str[:80] + df['prompt'].apply(lambda x: '...' if len(x) > 80 else '')
 
+        # Ensure extra_links column exists for older rows
+        if 'extra_links' not in df.columns:
+            df['extra_links'] = 0
+
         # Search filter
         search_query = st.text_input("🔍 Search prompts", placeholder="Enter keywords to filter...")
 
@@ -778,10 +786,31 @@ def tab_history():
         # Friendly label for analysis type
         df['analysis_type'] = df['data_source'].apply(lambda x: 'Network Logs' if x == 'network_log' else 'API')
 
-        display_df = df[['timestamp', 'analysis_type', 'prompt_preview', 'provider', 'model', 'searches', 'sources', 'citations', 'avg_rank_display']]
-        display_df.columns = ['Timestamp', 'Analysis Type', 'Prompt', 'Provider', 'Model', 'Searches', 'Sources', 'Sources Used', 'Avg. Rank']
+        display_df = df[['id', 'timestamp', 'analysis_type', 'prompt_preview', 'provider', 'model', 'searches', 'sources', 'citations', 'avg_rank_display', 'extra_links']]
+        display_df.columns = ['ID', 'Timestamp', 'Analysis Type', 'Prompt', 'Provider', 'Model', 'Searches', 'Sources', 'Sources Used', 'Avg. Rank', 'Extra Links']
 
-        st.dataframe(display_df, use_container_width=True, height=400)
+        # Configure column widths and alignment
+        column_config = {
+            "ID": st.column_config.NumberColumn("ID", width="xsmall"),
+            "Timestamp": st.column_config.TextColumn("Timestamp", width="small"),
+            "Analysis Type": st.column_config.TextColumn("Analysis Type", width="medium"),
+            "Prompt": st.column_config.TextColumn("Prompt", width="large"),
+            "Provider": st.column_config.TextColumn("Provider", width="small"),
+            "Model": st.column_config.TextColumn("Model", width="small"),
+            "Searches": st.column_config.NumberColumn("Searches", width="small"),
+            "Sources": st.column_config.NumberColumn("Sources", width="small"),
+            "Sources Used": st.column_config.NumberColumn("Sources Used", width="small"),
+            "Avg. Rank": st.column_config.TextColumn("Avg. Rank", width="small"),
+            "Extra Links": st.column_config.NumberColumn("Extra Links", width="small"),
+        }
+
+        st.dataframe(
+            display_df,
+            use_container_width=True,
+            height=400,
+            hide_index=True,
+            column_config=column_config,
+        )
 
         # Export button
         csv = df.to_csv(index=False)

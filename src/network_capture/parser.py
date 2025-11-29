@@ -45,7 +45,9 @@ class NetworkLogParser:
         search_queries: List[SearchQuery] = []
         sources: List[Source] = []
         citations: List[Citation] = []
-        response_text = extracted_response_text or ""
+        display_text = extracted_response_text or ""
+        # Track links mentioned in response text but not in search results
+        extra_links_count = 0
 
         # Metadata container for provider-specific extras
         response_metadata: Dict[str, Any] = {
@@ -258,7 +260,8 @@ class NetworkLogParser:
                                 'ref_id': ref_id,
                                 'attribution': entry.get('attribution', domain),
                                 'is_safe': url in safe_url_set,
-                                'is_moderated': None
+                                'is_moderated': None,
+                                'query_index': q_idx
                             }
 
                             source = Source(
@@ -275,7 +278,6 @@ class NetworkLogParser:
                         sources.append(source)
                         if isinstance(ref_id, dict) and {'turn_index', 'ref_type', 'ref_index'} <= set(ref_id.keys()):
                             key = f"turn{ref_id.get('turn_index')}{ref_id.get('ref_type')}{ref_id.get('ref_index')}"
-                            metadata["query_index"] = ref_id.get('turn_index')
                             refid_to_source[key] = source
                         rank_counter += 1
 
@@ -287,16 +289,20 @@ class NetworkLogParser:
 
             # Final response text and citations
             assembled_content = ''.join(content_fragments).strip()
-            if assembled_content:
-                response_text = NetworkLogParser._clean_response_text(assembled_content)
-            elif last_assistant_message:
-                flattened = NetworkLogParser._flatten_assistant_message(last_assistant_message)
-                if flattened:
-                    response_text = flattened
+            # Prefer DOM-extracted display text; fallback to assembled stream or flattened message
+            if not display_text:
+                if assembled_content:
+                    display_text = NetworkLogParser._clean_response_text(assembled_content)
+                elif last_assistant_message:
+                    flattened = NetworkLogParser._flatten_assistant_message(last_assistant_message)
+                    if flattened:
+                        display_text = flattened
 
             citations = []
-            if response_text and refid_to_source:
-                citation_keys = NetworkLogParser._extract_citation_keys(response_text)
+            # Use stream content to detect citation markers (DOM usually strips them)
+            citation_source_text = assembled_content or display_text
+            if citation_source_text and refid_to_source:
+                citation_keys = NetworkLogParser._extract_citation_keys(citation_source_text)
                 seen = set()
                 for key in citation_keys:
                     if key in seen:
@@ -323,6 +329,31 @@ class NetworkLogParser:
             response_metadata["classifier"] = classifier
             response_metadata["safe_urls"] = list(safe_url_set)
             response_metadata["image_behavior"] = NetworkLogParser._extract_image_behavior(last_assistant_message) if last_assistant_message else None
+            # Compute extra links: URLs in display text not present in search result URLs
+            extra_links_count = 0
+            if display_text:
+                import re
+                from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
+
+                def normalize(url: str) -> str:
+                    if not url:
+                        return ""
+                    parsed = urlparse(url)
+                    qs = parse_qs(parsed.query)
+                    # Drop tracking params
+                    qs = {k: v for k, v in qs.items() if not k.lower().startswith('utm_') and k.lower() not in ['source']}
+                    # For YouTube, keep the video id
+                    if 'v' in qs:
+                        keep_qs = {'v': qs['v']}
+                    else:
+                        keep_qs = qs
+                    new_query = urlencode(keep_qs, doseq=True)
+                    normalized = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', new_query, ''))
+                    return normalized
+                resp_urls = set(normalize(u) for u in re.findall(r'https?://[^\s)]+', display_text))
+                source_urls = {normalize(s.url) for s in sources if s.url}
+                extra_links_count = len([u for u in resp_urls if u and u not in source_urls])
+            response_metadata["extra_links_count"] = extra_links_count
 
             # Use discovered model slug if present
             if model_slug:
@@ -331,11 +362,11 @@ class NetworkLogParser:
         except Exception as e:
             print(f"Error parsing ChatGPT event stream: {str(e)}")
             return NetworkLogParser._create_empty_response(
-                response_text, model, response_time_ms
+                display_text, model, response_time_ms
             )
 
         return ProviderResponse(
-            response_text=response_text,
+            response_text=display_text,
             search_queries=search_queries,
             sources=sources,
             citations=citations,

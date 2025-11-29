@@ -66,6 +66,7 @@ class Response(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     raw_response_json = Column(JSON)  # Store raw API response
     data_source = Column(String(20), default='api')  # 'api' or 'network_log'
+    extra_links_count = Column(Integer, default=0)  # Links in response not present in search results
 
     # Relationships
     prompt = relationship("Prompt", back_populates="response")
@@ -149,6 +150,7 @@ class Database:
     def create_tables(self):
         """Create all database tables."""
         Base.metadata.create_all(self.engine)
+        self._ensure_extra_links_column()
 
     def get_session(self) -> Session:
         """Get a new database session."""
@@ -174,11 +176,19 @@ class Database:
         finally:
             session.close()
 
+    def _ensure_extra_links_column(self):
+        """Ensure extra_links_count column exists on responses table (for network log metrics)."""
+        with self.engine.connect() as conn:
+            cols = [row[1] for row in conn.exec_driver_sql("PRAGMA table_info(responses)")]
+            if "extra_links_count" not in cols:
+                conn.exec_driver_sql("ALTER TABLE responses ADD COLUMN extra_links_count INTEGER DEFAULT 0")
+
     def save_interaction(self, provider_name: str, model: str, prompt: str,
                         response_text: str, search_queries: List,
                         sources: List, citations: List,
                         response_time_ms: int, raw_response: dict,
-                        data_source: str = 'api'):
+                        data_source: str = 'api',
+                        extra_links_count: int = 0):
         """
         Save a complete interaction to the database.
 
@@ -193,6 +203,7 @@ class Database:
             response_time_ms: Response time in milliseconds
             raw_response: Raw API response dictionary
             data_source: Data collection method ('api' or 'network_log')
+            extra_links_count: Links in response not present in search results
         """
         session = self.get_session()
         try:
@@ -219,7 +230,8 @@ class Database:
                 response_text=response_text,
                 response_time_ms=response_time_ms,
                 raw_response_json=raw_response,
-                data_source=data_source
+                data_source=data_source,
+                extra_links_count=extra_links_count
             )
             session.add(response_obj)
             session.flush()
@@ -297,6 +309,7 @@ class Database:
                     # Calculate average rank from sources used
                     sources_with_rank = [su for su in prompt.response.sources_used if su.rank is not None]
                     avg_rank = sum(su.rank for su in sources_with_rank) / len(sources_with_rank) if sources_with_rank else None
+                    extra_links = getattr(prompt.response, "extra_links_count", 0)
                     data_source = getattr(prompt.response, "data_source", "api")
 
                     results.append({
@@ -309,6 +322,7 @@ class Database:
                         "sources": source_count,
                         "citations": sources_used_count,
                         "avg_rank": avg_rank,
+                        "extra_links": extra_links,
                         "data_source": data_source
                     })
 
@@ -365,6 +379,7 @@ class Database:
                 "provider": prompt.session.provider.display_name,
                 "model": prompt.session.model_used,
                 "response_time_ms": prompt.response.response_time_ms,
+                "extra_links": getattr(prompt.response, "extra_links_count", 0),
                 "search_queries": search_queries,
                 "citations": citations,
                 "created_at": prompt.created_at

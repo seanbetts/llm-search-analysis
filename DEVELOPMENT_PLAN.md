@@ -433,6 +433,11 @@ message = client.messages.create(
 - **Status:** Infrastructure complete, parsing implementation pending
 - **Next Step:** Analyze captured network responses to extract search queries and sources
 
+**3. Assistant-Only Links**
+- **Issue:** Assistant may include links in the response that are not present in the captured search results (SSE)
+- **Impact:** Such links will not appear in "Search Queries & Sources" or "Sources Used"
+- **Status:** "Extra Links" metric now tracks these links separately; raw SSE is stored in `raw_response_json` for inspection
+
 ### Resolved Issues
 
 **✅ Browser Detection (Chromium vs Chrome)**

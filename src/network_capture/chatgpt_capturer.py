@@ -5,6 +5,8 @@ Uses browser automation to capture network logs from ChatGPT.
 """
 
 import time
+import re
+import html
 from typing import Optional, Any
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout, Locator
 
@@ -106,7 +108,8 @@ class ChatGPTCapturer(BaseCapturer):
             self.context = self.browser.new_context(
                 viewport={'width': 1920, 'height': 1080},
                 user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-                storage_state=storage_state  # Will be None if file doesn't exist
+                storage_state=storage_state,  # Will be None if file doesn't exist
+                permissions=["clipboard-read", "clipboard-write"]
             )
 
             self.page = self.context.new_page()
@@ -609,7 +612,7 @@ class ChatGPTCapturer(BaseCapturer):
             print("✓ Response appears complete, extracting response text...")
 
             # Extract the actual response text from the page
-            response_text = self._extract_response_text()
+            response_text, response_html = self._extract_response_text()
 
             # Calculate response time
             response_time_ms = int((time.time() - start_time) * 1000)
@@ -622,11 +625,17 @@ class ChatGPTCapturer(BaseCapturer):
 
             # Look for event-stream response (contains all search data)
             event_stream_response = None
+            largest_stream = None
             for resp in captured_responses:
                 if 'event-stream' in resp.get('content_type', ''):
-                    event_stream_response = resp
-                    print(f"✓ Found event stream: {resp['url'][:80]} ({resp.get('body_size', 0)} bytes)")
-                    break
+                    if not event_stream_response:
+                        event_stream_response = resp
+                    # track largest by body_size
+                    if not largest_stream or resp.get('body_size', 0) > largest_stream.get('body_size', 0):
+                        largest_stream = resp
+
+            if not event_stream_response and largest_stream:
+                event_stream_response = largest_stream
 
             if not event_stream_response:
                 print("⚠️  No event stream found in network capture")
@@ -650,6 +659,8 @@ class ChatGPTCapturer(BaseCapturer):
                 response_time_ms=response_time_ms,
                 extracted_response_text=response_text
             )
+            # Preserve the raw event stream in the response for debugging
+            parsed_response.raw_response = event_stream_response
 
             print(f"✓ Parsed: {len(parsed_response.search_queries)} queries, {len(parsed_response.sources)} sources")
 
@@ -658,14 +669,16 @@ class ChatGPTCapturer(BaseCapturer):
         except Exception as e:
             raise Exception(f"ChatGPT capture error: {str(e)}")
 
-    def _extract_response_text(self) -> str:
-        """Extract ChatGPT's response text from the page."""
+    def _extract_response_text(self):
+        """Extract ChatGPT's response text from the page, preferring the Copy button markdown."""
         try:
             # ChatGPT responses are typically in article or div elements
             # Try to find the last assistant message
             selectors = [
+                '[data-message-author-role="assistant"] article',
                 'article[data-testid^="conversation-turn"]',
                 '.markdown',
+                '[data-testid="conversation-turn"]',
                 '[data-message-author-role="assistant"]'
             ]
 
@@ -676,23 +689,50 @@ class ChatGPTCapturer(BaseCapturer):
                     if count > 0:
                         # Get the last one (most recent response)
                         last_elem = elements.nth(count - 1)
-                        text = last_elem.inner_text()
-                        if text and len(text) > 10:  # Sanity check
-                            # Remove "ChatGPT said:" prefix if present
-                            text = text.replace("ChatGPT said:", "").strip()
-                            # Also remove common prefixes
-                            text = text.replace("ChatGPT:", "").strip()
-                            print(f"  ✓ Extracted {len(text)} characters of response text")
-                            return text
+                        # Try to click the Copy button inside this block
+                        copy_btn = last_elem.locator('button[data-testid="copy-turn-action-button"]')
+                        clipboard_text = ""
+                        try:
+                            if copy_btn.count() > 0:
+                                btn = copy_btn.first
+                                btn.wait_for(state="visible", timeout=5000)
+                                btn.click(timeout=2000)
+                                self.page.wait_for_timeout(500)
+                                clipboard_text = self.page.evaluate("navigator.clipboard.readText()")
+                        except Exception as e:
+                            print(f"  ⚠️  Copy button fetch failed: {str(e)[:50]}")
+
+                        html_content = last_elem.inner_html()
+                        text_content = last_elem.inner_text()
+
+                        if clipboard_text and len(clipboard_text) > 5:
+                            print("  ✓ Extracted response via Copy button")
+                            return clipboard_text.strip(), ""
+
+                        # Fallback: convert anchor tags in HTML to markdown to preserve URLs
+                        if html_content and len(html_content) > 10:
+                            md = html_content
+                            md = re.sub(r'<a [^>]*href="([^"]+)"[^>]*>(.*?)</a>', r'[\2](\1)', md, flags=re.IGNORECASE|re.DOTALL)
+                            md = re.sub(r'<[^>]+>', '', md)  # strip other tags
+                            md = html.unescape(md).strip()
+                            if md:
+                                print("  ✓ Extracted response via HTML fallback")
+                                return md, ""
+
+                        # Final fallback to plain text
+                        if text_content and len(text_content) > 10:
+                            text_content = text_content.replace("ChatGPT said:", "").replace("ChatGPT:", "").strip()
+                            print(f"  ✓ Extracted response text (fallback)")
+                            return text_content or "", ""
                 except:
                     continue
 
             print("  ⚠️  Could not extract response text from page")
-            return ""
+            return "", ""
 
         except Exception as e:
             print(f"  ✗ Error extracting response: {str(e)[:50]}")
-            return ""
+            return "", ""
 
     def _wait_for_response_complete(self, max_wait: int = 60):
         """
