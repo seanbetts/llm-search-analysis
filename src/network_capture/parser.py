@@ -121,13 +121,7 @@ class NetworkLogParser:
                 except (json.JSONDecodeError, KeyError, TypeError):
                     continue
 
-            # Parse search queries
-            for query_text in search_model_queries:
-                search_queries.append(SearchQuery(
-                    query=query_text,
-                    sources=[]  # Will populate sources separately
-                ))
-
+            # Parse sources first (need them for queries)
             # Parse search results into sources
             rank = 1
             for group in search_result_groups:
@@ -159,6 +153,14 @@ class NetworkLogParser:
                     )
                     sources.append(source)
                     rank += 1
+
+            # Parse search queries and associate all sources with each query
+            # (ChatGPT network logs don't clearly distinguish which sources came from which query)
+            for query_text in search_model_queries:
+                search_queries.append(SearchQuery(
+                    query=query_text,
+                    sources=sources  # Associate all sources with each query
+                ))
 
             # Extract citations from inline source attributions in response text
             # ChatGPT uses inline citations like "...content here.\nSource Name" or "...content.\nDomain Name"
