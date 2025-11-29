@@ -576,20 +576,31 @@ class ChatGPTCapturer(BaseCapturer):
                     "Consider using API mode instead, or try with a logged-in account."
                 )
 
-            # Enter the prompt BEFORE enabling search
-            print(f"✍️  Typing prompt...")
-            textarea.fill(prompt)
-            time.sleep(0.5)
+            # Try to enable search using /search command first (simpler and more reliable)
+            print("🔍 Enabling web search...")
+            print("  Method 1: Trying /search command...")
+            textarea.fill(f"/search {prompt}")
+            time.sleep(1)
 
-            # Enable search toggle AFTER typing prompt
-            print("🔍 Enabling search toggle...")
-            search_enabled = self._enable_search_toggle()
-            if search_enabled:
-                print("  ✓ Search toggle enabled (after typing)")
+            # Check if /search activated search mode (look for search indicator in UI)
+            search_activated = self._check_search_activated()
+
+            if search_activated:
+                print("  ✓ Search enabled via /search command")
             else:
-                print("  ⚠️  Search toggle not found")
+                print("  ⚠️  /search command didn't activate search, trying menu method...")
+                # Clear the /search prefix and revert to plain prompt
+                textarea.fill(prompt)
+                time.sleep(0.5)
 
-            # Wait a moment for search mode to activate
+                # Fallback: Try menu-based search toggle
+                search_enabled = self._enable_search_toggle()
+                if search_enabled:
+                    print("  ✓ Search enabled via menu")
+                else:
+                    print("  ⚠️  Menu method also failed, proceeding without search")
+
+            # Wait a moment for search mode to fully activate
             time.sleep(1)
 
             # Submit the prompt
@@ -750,9 +761,48 @@ class ChatGPTCapturer(BaseCapturer):
             print("  No generation indicator found, waiting 15s...")
             time.sleep(15)
 
+    def _check_search_activated(self) -> bool:
+        """
+        Check if web search mode is activated in the UI.
+
+        Looks for visual indicators that search is enabled, such as:
+        - "Web search" label or badge in the composer
+        - Search icon indicators
+        - aria-checked="true" on search menuitemradio
+
+        Returns:
+            True if search appears to be activated, False otherwise
+        """
+        try:
+            # Check for active search indicators in the UI
+            search_indicators = [
+                # Check if Web search menuitemradio is checked
+                '[role="menuitemradio"][aria-checked="true"]',
+                # Check for "Web search" label in composer
+                'text="Web search"',
+                'text="Searching"',
+                # Check for search badge/pill
+                '[data-testid*="search"]',
+            ]
+
+            for indicator in search_indicators:
+                try:
+                    if self.page.locator(indicator).count() > 0:
+                        return True
+                except:
+                    continue
+
+            return False
+
+        except Exception as e:
+            print(f"  ⚠️  Error checking search activation: {str(e)[:50]}")
+            return False
+
     def _enable_search_toggle(self) -> bool:
         """
-        Enable web search in ChatGPT UI via: Add button → More → Web Search.
+        Enable web search in ChatGPT UI via: Add button → More → Web search.
+
+        This is a fallback method when /search command doesn't work.
 
         Returns:
             True if search was enabled, False otherwise
