@@ -2,12 +2,17 @@
 
 This module provides browser automation and network traffic interception capabilities to capture detailed search data that is not available through official provider APIs.
 
-## Status: Phase 1 Complete (Infrastructure)
+## Status: Phase 2 Complete (ChatGPT Infrastructure)
 
 ✅ Database schema updated with network log fields
 ✅ Base classes and module structure created
 ✅ UI toggle for mode selection implemented
-🚧 ChatGPT capture implementation (placeholder - needs real network log analysis)
+✅ ChatGPT browser automation with Chrome
+✅ Session persistence with storageState API
+✅ Automatic login and session restoration
+✅ Web search enablement (/search command + menu fallback)
+✅ Response text extraction with inline citations
+⚠️ Network log parsing not implemented (search metadata extraction pending)
 ⏳ Claude capture (not started)
 ⏳ Gemini capture (not started)
 
@@ -28,13 +33,26 @@ network_capture/
 
 ### Prerequisites
 
-1. Install Playwright:
+1. Install Playwright with Chrome browser:
    ```bash
-   pip install playwright
-   playwright install chromium
+   pip install playwright playwright-stealth
+   python -m playwright install chrome
    ```
 
-2. Migrate existing database (if you have one):
+   **Important:** Use Chrome (not Chromium) - Chromium is detected by OpenAI.
+
+2. Configure ChatGPT authentication in `.env`:
+   ```bash
+   CHATGPT_EMAIL=your_email@example.com
+   CHATGPT_PASSWORD=your_password_here
+   ```
+
+   **Session Persistence:**
+   - Login state saved to `data/chatgpt_session.json` (auto-created, ~190KB)
+   - Subsequent runs skip authentication if session valid
+   - Delete session file to force fresh login
+
+3. Migrate existing database (if you have one):
    ```bash
    python migrations/add_network_log_fields.py
    ```
@@ -46,29 +64,32 @@ network_capture/
 3. Submit prompts normally - headless browser runs invisibly in background
 4. No difference in UX - just richer data captured!
 
-### Programmatic Usage (Future)
+### Programmatic Usage
 
 ```python
 from src.network_capture.chatgpt_capturer import ChatGPTCapturer
 
-# Create capturer
-capturer = ChatGPTCapturer()
+# Create capturer (optionally specify session file path)
+capturer = ChatGPTCapturer()  # Uses default: data/chatgpt_session.json
 
-# Start browser (headless by default - invisible to user)
-capturer.start_browser()
+# Start browser (non-headless for CAPTCHA bypass, uses Chrome)
+capturer.start_browser(headless=False)
 
-# Navigate to free ChatGPT (no auth needed)
+# Authenticate (auto-restores session if valid, otherwise logs in)
+# Requires CHATGPT_EMAIL and CHATGPT_PASSWORD in .env
 if capturer.authenticate():
-    # Send prompt and capture network logs
+    # Send prompt with web search enabled
     response = capturer.send_prompt(
         prompt="What are the latest AI developments?",
-        model="gpt-5.1"  # Free ChatGPT model
+        model="chatgpt-free",
+        enable_search=True  # Uses /search command + menu fallback
     )
 
-    # Response includes network log data
-    print(f"Search queries: {len(response.search_queries)}")
-    for source in response.sources:
-        print(f"Snippet: {source.snippet_text}")  # Only in network logs!
+    # Response includes text and inline citations
+    print(f"Response: {response.response_text}")
+    print(f"Citations found: {len(response.sources_used)}")
+
+    # Note: Network log parsing for search metadata not yet implemented
 
 # Cleanup
 capturer.stop_browser()
@@ -100,17 +121,24 @@ Beyond what APIs provide, network logs can capture:
 - [x] UI mode toggle
 - [x] Migration script
 
-### Phase 2: ChatGPT Capture 🚧
-- [ ] Analyze actual ChatGPT network traffic
-- [ ] Identify relevant API endpoints
-- [ ] Implement UI interaction (prompt submission)
-- [ ] Extract chat ID from URL
-- [ ] Parse network responses
-- [ ] Map to standardized format
-- [ ] Test with real prompts
+### Phase 2: ChatGPT Capture ✅
+- [x] Chrome browser integration (bypasses detection)
+- [x] Session persistence with storageState API
+- [x] Automatic login and session restoration
+- [x] Login detection (check for chat interface + absence of login buttons)
+- [x] UI interaction (prompt submission)
+- [x] Web search enablement via /search command
+- [x] Fallback menu navigation (Add → More → Web search)
+- [x] Search activation detection
+- [x] Response text extraction
+- [x] Inline citation parsing from response text
+- [ ] Network log parsing (search metadata extraction - pending)
 
 ### Phase 3: Parsing & Analysis ⏳
-- [ ] Complete ChatGPT parser implementation
+- [ ] Complete ChatGPT network log parser implementation
+- [ ] Extract search queries from network responses
+- [ ] Extract sources with snippets and internal scores
+- [ ] Map queries to their corresponding results
 - [ ] Validate data accuracy
 - [ ] Add error handling for format changes
 - [ ] Create comparison views (API vs Network Log)
@@ -155,11 +183,12 @@ To continue development:
 
 ## Key Advantages of This Approach
 
-1. **Seamless UX:** No visible browser, no manual login, just works
-2. **Free tier:** Uses free ChatGPT, no API costs
-3. **Headless:** Runs in background, user sees no difference
-4. **No auth complexity:** No cookies, sessions, or login flows
-5. **Faster:** No waiting for user authentication
+1. **Session Persistence:** Login once, sessions persist across runs (storageState API)
+2. **Free tier:** Uses ChatGPT account, no API costs
+3. **Dual Search Methods:** /search command (primary) + menu navigation (fallback)
+4. **Automatic Login:** Credentials from .env, manual 2FA/CAPTCHA when needed
+5. **Detection Bypass:** Chrome browser successfully bypasses OpenAI detection
+6. **Rich Data:** Response text + inline citations (network log parsing pending)
 
 ## Legal & Ethical Notes
 

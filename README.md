@@ -62,9 +62,14 @@ pip install -r requirements.txt
 3. Create a `.env` file in the project root:
 ```bash
 # .env
+# API Keys (for API mode)
 OPENAI_API_KEY=your_openai_key_here
 GOOGLE_API_KEY=your_google_key_here
 ANTHROPIC_API_KEY=your_anthropic_key_here
+
+# ChatGPT Credentials (for Network Capture mode - optional)
+CHATGPT_EMAIL=your_email@example.com
+CHATGPT_PASSWORD=your_password_here
 ```
 
 ### Network Capture Mode Setup (Optional)
@@ -79,18 +84,32 @@ python -m playwright install chrome
 
 **Important:** Use Chrome (not Chromium). OpenAI detects Chromium browsers and serves a degraded UI without the Search button.
 
-2. **Requirements & Notes:**
+2. Configure ChatGPT authentication in `.env` file:
+```bash
+# Required for ChatGPT network capture
+CHATGPT_EMAIL=your_email@example.com
+CHATGPT_PASSWORD=your_password_here
+```
+
+**Session Persistence:**
+- Login state is saved to `data/chatgpt_session.json` (single JSON file, ~190KB)
+- Subsequent runs skip authentication if session is valid
+- Sessions are automatically saved after successful login
+
+3. **Requirements & Notes:**
    - **Chrome Required**: Must use Chrome browser (not Chromium) - Chromium is detected
    - **Non-Headless Only**: Headless mode triggers Cloudflare CAPTCHA
    - **Stealth Mode**: playwright-stealth library required for detection bypass
-   - **Search Confirmed**: Chrome successfully bypasses detection and enables search
+   - **Authentication**: Requires ChatGPT account credentials in .env file
+   - **Search Enablement**: Uses `/search` command + menu fallback (Add → More → Web search)
 
-3. **Current Status:**
+4. **Current Status:**
    - ✅ Chrome browser bypasses detection successfully
-   - ✅ Search button accessible and functional
-   - ✅ Web search confirmed working (retrieves current information)
-   - ✅ Response text extraction with citations
-   - 🔄 Network log parsing in progress (extracting search metadata)
+   - ✅ Session persistence with automatic login/restore
+   - ✅ Web search enablement via /search command
+   - ✅ Fallback menu navigation for search toggle
+   - ✅ Response text extraction with inline citations
+   - ⚠️ Known Issue: ChatGPT free tier search execution unreliable (platform issue, bug filed)
 
 ## Usage
 
@@ -280,6 +299,17 @@ python tests/test_rank_feature.py
 **Stealth Mode Not Applied:**
 - Install playwright-stealth: `pip install playwright-stealth`
 - Ensure using correct Python environment (check with `which python`)
+
+**ChatGPT Search Not Executing:**
+- Issue: Web search mode can be enabled, but ChatGPT doesn't always execute searches
+- Cause: Platform issue with ChatGPT free tier (bug filed with OpenAI)
+- Status: Search mode activation works correctly, but search execution is unreliable
+- Workaround: Use API mode with OpenAI Responses API for reliable search functionality
+
+**Authentication Issues:**
+- Ensure `CHATGPT_EMAIL` and `CHATGPT_PASSWORD` are set in `.env` file
+- Delete `data/chatgpt_session.json` if login fails
+- Manual CAPTCHA/2FA verification may be required (browser will pause for user input)
 
 ## Phase Status
 

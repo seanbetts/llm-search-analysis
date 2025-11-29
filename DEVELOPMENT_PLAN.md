@@ -29,17 +29,17 @@ A comparative analysis tool for evaluating web search capabilities across OpenAI
 - ✅ Modal dismissal automation
 - ✅ UI routing for dual modes
 
-### ⚠️ Partially Working / In Progress
-
 **Network Capture - ChatGPT:**
 - ✅ Basic browser automation works
+- ✅ Chrome browser successfully bypasses detection
+- ✅ Session persistence with storageState API
+- ✅ Automatic login and session restoration
 - ✅ Prompt submission successful
-- ✅ Response text extraction functional
-- ✅ **Chrome browser successfully bypasses detection**
-- ✅ **Search toggle accessible and functional**
-- ✅ **Web search confirmed working** (retrieves current news)
-- ✅ Citations visible in responses
-- 🔄 **Next**: Parse network responses to extract search metadata
+- ✅ Web search enablement via /search command
+- ✅ Fallback menu navigation (Add → More → Web search)
+- ✅ Search activation detection
+- ✅ Response text extraction with inline citations
+- ⚠️ **Known Issue**: ChatGPT free tier search execution unreliable (platform issue, bug filed)
 
 ### 📊 Test Results: 52 Passing Tests
 
@@ -418,21 +418,46 @@ message = client.messages.create(
 
 ## Known Issues & Limitations
 
-### Current Blockers
+### Current Issues
 
-**1. Browser Detection**
-- **Issue:** OpenAI detects Chromium browsers
-- **Impact:** Search toggle not accessible
-- **Status:** Testing Chrome as alternative
-- **Workaround:** Use API mode for OpenAI search
+**1. ChatGPT Free Tier Search Unreliable**
+- **Issue:** Web search mode enables successfully, but ChatGPT doesn't always execute searches
+- **Impact:** Network capture can activate search, but results inconsistent
+- **Status:** Platform issue (bug filed with OpenAI)
+- **Workaround:** Use API mode with OpenAI Responses API for reliable search
+- **Note:** Our code correctly enables search mode - execution is ChatGPT's responsibility
 
-**2. Network Log Parsing**
-- **Issue:** Format not yet fully understood
-- **Impact:** Can't extract search metadata
-- **Status:** Awaiting successful search capture
-- **Dependency:** Requires solving browser detection first
+**2. Network Log Parsing Not Implemented**
+- **Issue:** Search metadata extraction from network logs not yet implemented
+- **Impact:** Network mode captures response text and citations only
+- **Status:** Infrastructure complete, parsing implementation pending
+- **Next Step:** Analyze captured network responses to extract search queries and sources
 
 ### Resolved Issues
+
+**✅ Browser Detection (Chromium vs Chrome)**
+- **Solution:** Use Chrome browser with `channel='chrome'` parameter
+- **Impact:** Search toggle accessible, web search functional
+
+**✅ Session Persistence File Bloat**
+- **Solution:** Switch from persistent profile (696 files) to storageState API (1 file)
+- **Impact:** 99.3% reduction in storage (29MB → 190KB)
+
+**✅ Login Detection False Positives**
+- **Solution:** Check for both "Log in" and "Sign up" buttons
+- **Impact:** Accurate logged-in state detection
+
+**✅ Web Search Toggle Not Working**
+- **Solution:** Updated selectors for new ChatGPT UI (Add → More → Web search)
+- **Impact:** Menu-based search toggle functional
+
+**✅ /search Command Not Activating**
+- **Solution:** Use keyboard simulation (`type()` + `press("Space")`) instead of `fill()`
+- **Impact:** Primary search enablement method working
+
+**✅ Search Activation Not Detected**
+- **Solution:** Look for "Web search" text indicators (15+ matches when active)
+- **Impact:** Reliable detection of search mode activation
 
 **✅ Cloudflare CAPTCHA**
 - **Solution:** Non-headless mode
@@ -614,3 +639,19 @@ playwright-stealth>=2.0.0
 **Result:** ✅ SUCCESS - Chrome bypasses OpenAI detection completely
 **Impact:** Search button accessible, web search functional, current news retrieved
 **Implementation:** `channel='chrome'` parameter in `playwright.chromium.launch()`
+
+### 2024-11-29: Session Persistence with storageState API
+**Decision:** Use Playwright's storageState API instead of persistent Chrome profiles
+**Reason:** Persistent profiles created 696 files (29MB) - excessive overhead
+**Result:** ✅ SUCCESS - Single JSON file (190KB, 99.3% reduction)
+**Impact:** Fast session persistence, automatic login/restore, no file bloat
+**Implementation:** `context.storage_state(path=...)` to save, `new_context(storage_state=...)` to restore
+**Trade-off:** Requires storing session file vs. cleaner but heavier profile approach
+
+### 2024-11-29: /search Command as Primary Search Method
+**Decision:** Use `/search` slash command as primary method, menu navigation as fallback
+**Reason:** ChatGPT UI changed - new menu structure (Add → More → Web search) more fragile
+**Result:** ✅ SUCCESS - Slash command more reliable than menu navigation
+**Impact:** Faster search enablement, fewer UI interaction failures
+**Implementation:** Type `/search ` (with space) in textarea, detect activation, fallback to menu if needed
+**Trade-off:** Depends on ChatGPT supporting slash command vs. pure UI automation
