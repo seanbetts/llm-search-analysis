@@ -884,8 +884,11 @@ def tab_history():
         # Convert to DataFrame
         df = pd.DataFrame(interactions)
 
-        # Format timestamp
-        df['timestamp'] = pd.to_datetime(df['timestamp']).dt.strftime('%Y-%m-%d %H:%M:%S')
+        # Sort by timestamp desc, then format
+        df['_ts_dt'] = pd.to_datetime(df['timestamp'])
+        df = df.sort_values(by='_ts_dt', ascending=False)
+        df['timestamp'] = df['_ts_dt'].dt.strftime('%Y-%m-%d %H:%M:%S')
+        df = df.drop(columns=['_ts_dt'])
 
         # Truncate prompt for display
         df['prompt_preview'] = df['prompt'].str[:80] + df['prompt'].apply(lambda x: '...' if len(x) > 80 else '')
@@ -935,7 +938,8 @@ def tab_history():
         )
 
         # Export button
-        csv = df.to_csv(index=False)
+        # Export matches visible columns/order
+        csv = display_df.to_csv(index=False)
         st.download_button(
             label="📥 Export History as CSV",
             data=csv,
