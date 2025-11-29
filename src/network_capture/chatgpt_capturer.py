@@ -771,32 +771,48 @@ class ChatGPTCapturer(BaseCapturer):
         """
         Check if web search mode is activated in the UI.
 
-        Looks for visual indicators that search is enabled, such as:
-        - "Web search" label or badge in the composer
-        - Search icon indicators
-        - aria-checked="true" on search menuitemradio
+        Looks for visual indicators that search is enabled after /search command, such as:
+        - "Web search" label/badge near the textarea
+        - Globe icon or search indicators
+        - Composer having search-related attributes
 
         Returns:
             True if search appears to be activated, False otherwise
         """
         try:
+            # Give UI a moment to update
+            time.sleep(0.3)
+
             # Check for active search indicators in the UI
             search_indicators = [
-                # Check if Web search menuitemradio is checked
-                '[role="menuitemradio"][aria-checked="true"]',
-                # Check for "Web search" label in composer
-                'text="Web search"',
-                'text="Searching"',
-                # Check for search badge/pill
-                '[data-testid*="search"]',
+                # Text indicators
+                '*:has-text("Web search")',
+                '*:has-text("Searching the web")',
+                # Icon/visual indicators near composer
+                'svg[class*="globe"]',
+                'svg[aria-label*="search"]',
+                # Check composer area for search-related elements
+                '[data-testid="composer"] *:has-text("Web")',
+                '[data-testid="composer"] *:has-text("search")',
             ]
 
             for indicator in search_indicators:
                 try:
-                    if self.page.locator(indicator).count() > 0:
+                    count = self.page.locator(indicator).count()
+                    if count > 0:
+                        print(f"    Found search indicator: {indicator} ({count} matches)")
                         return True
-                except:
+                except Exception as e:
                     continue
+
+            # Debug: Print what's actually in the composer area
+            try:
+                composer = self.page.locator('[data-testid="composer"]').first
+                if composer.count() > 0:
+                    text = composer.inner_text()
+                    print(f"    Composer text: {text[:100]}")
+            except:
+                pass
 
             return False
 
