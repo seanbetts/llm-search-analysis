@@ -306,6 +306,9 @@ def tab_interactive():
                         st.session_state.error = "Missing ChatGPT credentials"
                         return
 
+                    # Notify user that network mode uses free ChatGPT
+                    st.info("🌐 Network Capture Mode: Using free ChatGPT (model selection not available for free accounts)")
+
                     # Initialize and use capturer
                     # Note: headless=False to avoid Cloudflare CAPTCHA
                     capturer = ChatGPTCapturer()
@@ -321,7 +324,8 @@ def tab_interactive():
                             raise Exception("Failed to authenticate with ChatGPT")
 
                         # Send prompt and capture
-                        response = capturer.send_prompt(prompt, selected_model)
+                        # Always use 'chatgpt-free' for network capture (free accounts don't have model selection)
+                        response = capturer.send_prompt(prompt, 'chatgpt-free')
 
                     finally:
                         # Always cleanup browser
@@ -479,7 +483,8 @@ def tab_batch():
                                 raise Exception("Failed to authenticate with ChatGPT")
 
                             # Send prompt and capture
-                            response = capturer.send_prompt(prompt, model_name)
+                            # Always use 'chatgpt-free' for network capture (free accounts don't have model selection)
+                            response = capturer.send_prompt(prompt, 'chatgpt-free')
 
                         finally:
                             # Always cleanup browser
