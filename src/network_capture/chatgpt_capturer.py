@@ -581,18 +581,18 @@ class ChatGPTCapturer(BaseCapturer):
             print("  Method 1: Trying /search command...")
             # Type "/search" and then press Space to activate the command
             textarea.type("/search")
-            time.sleep(0.2)
+            time.sleep(0.3)
             textarea.press("Space")  # Press Space key to trigger /search recognition
-            time.sleep(0.5)  # Wait for /search to be recognized
-            # Now type the actual prompt
-            textarea.type(prompt)
-            time.sleep(1)
+            time.sleep(1.0)  # Wait longer for /search to be recognized and UI to update
 
             # Check if /search activated search mode (look for search indicator in UI)
             search_activated = self._check_search_activated()
 
             if search_activated:
                 print("  ✓ Search enabled via /search command")
+                # Now type the actual prompt
+                textarea.type(prompt)
+                time.sleep(0.5)
             else:
                 print("  ⚠️  /search command didn't activate search, trying menu method...")
                 # Clear the /search prefix and revert to plain prompt
@@ -771,36 +771,30 @@ class ChatGPTCapturer(BaseCapturer):
         """
         Check if web search mode is activated in the UI.
 
-        Looks for visual indicators that search is enabled after /search command, such as:
-        - "Web search" label/badge near the textarea
-        - Globe icon or search indicators
-        - Composer having search-related attributes
+        Looks for the Search pill/badge button that appears when search is enabled.
+        The button has aria-label="Search, click to remove" and class="__composer-pill".
 
         Returns:
             True if search appears to be activated, False otherwise
         """
         try:
-            # Give UI a moment to update
-            time.sleep(0.3)
+            # Give UI more time to update after /search command
+            time.sleep(0.5)
 
-            # Check for active search indicators in the UI
-            search_indicators = [
-                # Text indicators
-                '*:has-text("Web search")',
-                '*:has-text("Searching the web")',
-                # Icon/visual indicators near composer
-                'svg[class*="globe"]',
-                'svg[aria-label*="search"]',
-                # Check composer area for search-related elements
-                '[data-testid="composer"] *:has-text("Web")',
-                '[data-testid="composer"] *:has-text("search")',
+            # Primary indicator: Search pill button with specific aria-label
+            # This appears when /search command or menu toggle activates search
+            search_pill_selectors = [
+                'button[aria-label="Search, click to remove"]',  # Most specific
+                'button.__composer-pill:has-text("Search")',     # Class + text
+                'button[aria-label*="Search"][class*="composer-pill"]',  # Flexible
             ]
 
-            for indicator in search_indicators:
+            print("    Checking for search pill button...")
+            for selector in search_pill_selectors:
                 try:
-                    count = self.page.locator(indicator).count()
+                    count = self.page.locator(selector).count()
                     if count > 0:
-                        print(f"    Found search indicator: {indicator} ({count} matches)")
+                        print(f"    ✓ Found search pill: {selector} ({count} matches)")
                         return True
                 except Exception as e:
                     continue
