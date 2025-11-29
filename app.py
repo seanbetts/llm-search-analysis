@@ -116,11 +116,39 @@ def format_pub_date(pub_date: str) -> str:
         return pub_date
 
 
+def sanitize_response_markdown(text: str) -> str:
+    """Remove heavy dividers and downscale large headings so they don't exceed the section title."""
+    if not text:
+        return ""
+
+    cleaned_lines = []
+    divider_pattern = re.compile(r"^\s*[-_*]{3,}\s*$")
+    heading_pattern = re.compile(r"^(#{1,6})\s+(.*)$")
+
+    for line in text.splitlines():
+        # Drop markdown horizontal rules
+        if divider_pattern.match(line):
+            continue
+
+        # Normalize headings: ensure none are larger than level 3
+        m = heading_pattern.match(line)
+        if m:
+            hashes, content = m.groups()
+            # Downscale: any heading becomes at most level 4 to stay below section titles
+            line = f"#### {content}"
+        cleaned_lines.append(line)
+
+    cleaned = "\n".join(cleaned_lines)
+    # Remove simple HTML <hr> tags as well
+    cleaned = re.sub(r"<\s*hr\s*/?\s*>", "", cleaned, flags=re.IGNORECASE)
+    return cleaned.strip()
+
+
 def format_response_text(text: str, citations: list) -> str:
     """
     For now, just return the text as-is so we mirror ChatGPT's rendered markdown/HTML.
     """
-    return text or ""
+    return sanitize_response_markdown(text or "")
 
 
 def extract_images_from_response(text: str):
@@ -229,7 +257,7 @@ def display_response(response):
         st.info("📡 This response was captured from network logs (experimental mode)")
 
     # Response metadata
-    st.markdown("### 📊 Response Metadata")
+        st.markdown("### 📊 Response Metadata")
     col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1.5, 2, 1, 1, 1, 1, 1, 1])
 
     with col1:
@@ -262,7 +290,7 @@ def display_response(response):
     st.divider()
 
     # Response text
-    st.markdown("### 💬 Response")
+    st.markdown("### 💬 Response:")
     formatted_response = format_response_text(response.response_text, response.citations)
     formatted_response, extracted_images = extract_images_from_response(formatted_response)
 
@@ -271,14 +299,19 @@ def display_response(response):
         img_html = "".join([f'<img src="{url}" style="width:210px;height:135px;object-fit:cover;margin:4px 6px 4px 0;vertical-align:top;"/>' for url in extracted_images])
         st.markdown(f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;'>{img_html}</div>", unsafe_allow_html=True)
 
-    st.markdown(formatted_response, unsafe_allow_html=True)
+    st.markdown(
+        "<div style='margin-left:18px; padding-left:12px; border-left:2px solid #d0d0d0;'>"
+        f"{formatted_response}"
+        "</div>",
+        unsafe_allow_html=True,
+    )
     st.divider()
 
     # Search queries with their sources (only render if there is data)
     queries_with_content = [q for q in response.search_queries if (getattr(q, "query", None) or getattr(q, "sources", []))]
     if queries_with_content:
         url_to_source = {s.url: s for q in queries_with_content for s in q.sources if s.url}
-        st.markdown("### 🔍 Search Queries & Sources")
+        st.markdown("### 🔍 Search Queries & Sources:")
         for i, query in enumerate(queries_with_content, 1):
             query_index = getattr(query, "order_index", None)
             label_num = query_index + 1 if query_index is not None else i
@@ -316,7 +349,7 @@ def display_response(response):
 
     # Sources used (from web search)
     if response.citations:
-        st.markdown(f"### 📝 Sources Used ({len(response.citations)})")
+        st.markdown(f"### 📝 Sources Used ({len(response.citations)}):")
         st.caption("Sources the model consulted via web search")
 
         # Build URL -> source lookup for metadata fallback
@@ -791,8 +824,8 @@ def tab_history():
 
         # Configure column widths and alignment
         column_config = {
-            "ID": st.column_config.NumberColumn("ID", width="xsmall"),
-            "Timestamp": st.column_config.TextColumn("Timestamp", width="small"),
+            "ID": st.column_config.NumberColumn("ID", width="small"),
+            "Timestamp": st.column_config.TextColumn("Timestamp", width="medium"),
             "Analysis Type": st.column_config.TextColumn("Analysis Type", width="medium"),
             "Prompt": st.column_config.TextColumn("Prompt", width="large"),
             "Provider": st.column_config.TextColumn("Provider", width="small"),
@@ -822,7 +855,7 @@ def tab_history():
         )
 
         # View details
-        st.markdown("#### View Interaction Details")
+        st.markdown("### 🧾 View Interaction Details")
         selected_id = st.selectbox(
             "Select an interaction to view details",
             options=df['id'].tolist(),
@@ -833,35 +866,91 @@ def tab_history():
             details = st.session_state.db.get_interaction_details(selected_id)
             if details:
                 st.divider()
-                st.markdown(f"**Prompt:** {details['prompt']}")
+                # Prompt header
+                st.markdown(f"### 🗣️ Prompt:  *“{details['prompt']}”*")
 
                 # Calculate metrics
                 num_searches = len(details['search_queries'])
                 num_sources = sum(len(query['sources']) for query in details['search_queries'])
                 num_sources_used = len(details['citations'])
-
                 citations_with_rank = [c for c in details['citations'] if c.get('rank') is not None]
                 avg_rank_display = f"{sum(c['rank'] for c in citations_with_rank) / len(citations_with_rank):.1f}" if citations_with_rank else "N/A"
-
-                # Convert response time to seconds
                 response_time_s = f"{details['response_time_ms'] / 1000:.1f}s"
+                extra_links_count = details.get('extra_links', 0)
+                analysis_type = 'Network Logs' if details.get('data_source') == 'network_log' else 'API'
 
-                st.markdown(f"**Provider:** {details['provider']} | **Model:** {details['model']} | **Time:** {response_time_s}")
-                st.markdown(f"**Searches:** {num_searches} | **Sources:** {num_sources} | **Sources Used:** {num_sources_used} | **Avg. Rank:** {avg_rank_display}")
+                # Metadata bar
+                # Metadata table (2 rows: labels and values)
+                meta_labels = [
+                    "Provider",
+                    "Model",
+                    "Analysis",
+                    "Time",
+                    "Searches",
+                    "Sources",
+                    "Sources Used",
+                    "Avg. Rank",
+                    "Extra Links",
+                ]
+                meta_values = [
+                    details['provider'],
+                    details['model'],
+                    analysis_type,
+                    response_time_s,
+                    num_searches,
+                    num_sources,
+                    num_sources_used,
+                    avg_rank_display,
+                    extra_links_count,
+                ]
+                header_cells = "".join([f"<th style='padding:6px;'>{label}</th>" for label in meta_labels])
+                value_cells = "".join([f"<td style='padding:6px;'>{value}</td>" for value in meta_values])
+                meta_table = (
+                    "<table style='width:100%; text-align:center;'>"
+                    f"<tr>{header_cells}</tr>"
+                    f"<tr>{value_cells}</tr>"
+                    "</table>"
+                )
+                st.markdown(meta_table, unsafe_allow_html=True)
 
-                st.markdown("**Response:**")
-                st.markdown(details['response_text'])
+                st.divider()
+
+                st.markdown("### 💬 Response:")
+                sanitized_detail_response = sanitize_response_markdown(details['response_text'])
+                st.markdown(
+                    "<div style='margin-left:18px; padding-left:12px; border-left:2px solid #d0d0d0;'>"
+                    f"{sanitized_detail_response}"
+                    "</div>",
+                    unsafe_allow_html=True,
+                )
+
+                st.divider()
 
                 if details['search_queries']:
-                    st.markdown(f"**Search Queries ({len(details['search_queries'])}):**")
+                    st.markdown(f"### 🔍 Search Queries & Sources ({len(details['search_queries'])}):")
                     for i, query in enumerate(details['search_queries'], 1):
-                        st.markdown(f"{i}. {query['query']} ({len(query['sources'])} sources)")
+                        with st.expander(f"Query {i}: {query['query']} ({len(query['sources'])} sources)", expanded=False):
+                            for j, src in enumerate(query['sources'], 1):
+                                domain_link = f"[{urlparse(src['url']).netloc or 'Open source'}]({src['url']})" if src.get('url') else (src.get('domain') or 'Unknown domain')
+                                snippet = src.get('title') or domain_link
+                                st.markdown(f"{j}. {snippet} — {domain_link}")
+
+                if details['search_queries'] and details['citations']:
+                    st.divider()
 
                 if details['citations']:
-                    st.markdown(f"**Sources Used ({len(details['citations'])}):**")
+                    st.markdown(f"### 📝 Sources Used ({len(details['citations'])}):")
                     for i, citation in enumerate(details['citations'], 1):
-                        rank_display = f" (Rank {citation['rank']})" if citation.get('rank') else ""
-                        # Extract domain from URL for fallback
+                        q_idx = citation.get('query_index')
+                        rank = citation.get('rank')
+                        if q_idx is not None and rank:
+                            rank_display = f" (Query {q_idx + 1}, Rank {rank})"
+                        elif q_idx is not None:
+                            rank_display = f" (Query {q_idx + 1})"
+                        elif rank:
+                            rank_display = f" (Rank {rank})"
+                        else:
+                            rank_display = ""
                         domain = urlparse(citation['url']).netloc if citation.get('url') else 'Unknown domain'
                         display_title = citation.get('title') or domain or 'Unknown source'
                         st.markdown(f"{i}. [{display_title}]({citation['url']}){rank_display}")

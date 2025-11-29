@@ -368,7 +368,10 @@ class Database:
                 {
                     "url": source_used.url,
                     "title": source_used.title,
-                    "rank": source_used.rank
+                    "rank": source_used.rank,
+                    "query_index": (source_used.metadata_json or {}).get("query_index") if isinstance(source_used.metadata_json, dict) else None,
+                    "pub_date": (source_used.metadata_json or {}).get("pub_date") if isinstance(source_used.metadata_json, dict) else None,
+                    "snippet": (source_used.metadata_json or {}).get("snippet") if isinstance(source_used.metadata_json, dict) else None,
                 }
                 for source_used in prompt.response.sources_used
             ]
