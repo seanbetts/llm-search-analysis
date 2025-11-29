@@ -871,8 +871,6 @@ def tab_batch():
 def tab_history():
     """Tab 3: Query History."""
     st.markdown("### 📜 Query History")
-    st.caption("View and search past interactions")
-
     # Get recent interactions
     try:
         interactions = st.session_state.db.get_recent_interactions(limit=100)
@@ -897,36 +895,72 @@ def tab_history():
         if 'extra_links' not in df.columns:
             df['extra_links'] = 0
 
-        # Search filter
-        search_query = st.text_input("🔍 Search prompts", placeholder="Enter keywords to filter...")
-
-        if search_query:
-            df = df[df['prompt'].str.contains(search_query, case=False, na=False)]
-            st.caption(f"Showing {len(df)} matching results")
+        # Friendly label for analysis type
+        df['analysis_type'] = df['data_source'].apply(lambda x: 'Network Logs' if x == 'network_log' else 'API')
 
         # Format average rank for display
         df['avg_rank_display'] = df['avg_rank'].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "N/A")
 
-        # Display table
-        # Friendly label for analysis type
-        df['analysis_type'] = df['data_source'].apply(lambda x: 'Network Logs' if x == 'network_log' else 'API')
+        # Filters and sorting layout
+        col_search, col_analysis, col_provider, col_model = st.columns([1.2, 1, 1, 1])
+
+        with col_search:
+            search_query = st.text_input("🔍 Search prompts", placeholder="Enter keywords to filter...")
+
+        with col_analysis:
+            analysis_options = sorted(df['analysis_type'].dropna().unique().tolist())
+            selected_analysis = st.multiselect(
+                "Analysis type",
+                options=analysis_options,
+                default=analysis_options,
+            ) if analysis_options else []
+
+        with col_provider:
+            provider_options = sorted(df['provider'].dropna().unique().tolist())
+            selected_providers = st.multiselect(
+                "Provider",
+                options=provider_options,
+                default=provider_options,
+            ) if provider_options else []
+
+        with col_model:
+            model_options = sorted(df['model'].dropna().unique().tolist())
+            selected_models = st.multiselect(
+                "Model",
+                options=model_options,
+                default=model_options,
+            ) if model_options else []
+
+        # Apply filters
+        if search_query:
+            df = df[df['prompt'].str.contains(search_query, case=False, na=False)]
+        if selected_analysis:
+            df = df[df['analysis_type'].isin(selected_analysis)]
+        if selected_providers:
+            df = df[df['provider'].isin(selected_providers)]
+        if selected_models:
+            df = df[df['model'].isin(selected_models)]
+
+        # Default sort (newest first); users can re-sort via table headers
+        df = df.sort_values(by="timestamp", ascending=False, na_position="last")
 
         display_df = df[['id', 'timestamp', 'analysis_type', 'prompt_preview', 'provider', 'model', 'searches', 'sources', 'citations', 'avg_rank_display', 'extra_links']]
         display_df.columns = ['ID', 'Timestamp', 'Analysis Type', 'Prompt', 'Provider', 'Model', 'Searches', 'Sources', 'Sources Used', 'Avg. Rank', 'Extra Links']
 
         # Configure column widths and alignment
+        # Let Streamlit autosize columns; avoid fixed widths
         column_config = {
-            "ID": st.column_config.NumberColumn("ID", width="small"),
-            "Timestamp": st.column_config.TextColumn("Timestamp", width="medium"),
-            "Analysis Type": st.column_config.TextColumn("Analysis Type", width="medium"),
-            "Prompt": st.column_config.TextColumn("Prompt", width="large"),
-            "Provider": st.column_config.TextColumn("Provider", width="small"),
-            "Model": st.column_config.TextColumn("Model", width="small"),
-            "Searches": st.column_config.NumberColumn("Searches", width="small"),
-            "Sources": st.column_config.NumberColumn("Sources", width="small"),
-            "Sources Used": st.column_config.NumberColumn("Sources Used", width="small"),
-            "Avg. Rank": st.column_config.TextColumn("Avg. Rank", width="small"),
-            "Extra Links": st.column_config.NumberColumn("Extra Links", width="small"),
+            "ID": st.column_config.NumberColumn("ID"),
+            "Timestamp": st.column_config.TextColumn("Timestamp"),
+            "Analysis Type": st.column_config.TextColumn("Analysis Type"),
+            "Prompt": st.column_config.TextColumn("Prompt"),
+            "Provider": st.column_config.TextColumn("Provider"),
+            "Model": st.column_config.TextColumn("Model"),
+            "Searches": st.column_config.NumberColumn("Searches"),
+            "Sources": st.column_config.NumberColumn("Sources"),
+            "Sources Used": st.column_config.NumberColumn("Sources Used"),
+            "Avg. Rank": st.column_config.TextColumn("Avg. Rank"),
+            "Extra Links": st.column_config.NumberColumn("Extra Links"),
         }
 
         st.dataframe(
@@ -961,30 +995,34 @@ def tab_history():
             if details:
                 # Download interaction as markdown (placed directly after selector)
                 md_export = build_interaction_markdown(details, selected_id)
-                st.download_button(
-                    label="📥 Download as Markdown",
-                    data=md_export,
-                    file_name=f"interaction_{selected_id}.md",
-                    mime="text/markdown",
-                    use_container_width=False,
-                )
-                # Delete interaction
-                if st.button("🗑️ Delete Interaction", type="secondary"):
-                    try:
-                        deleted = st.session_state.db.delete_interaction(selected_id)
-                        if deleted:
-                            st.success(f"Interaction ID {selected_id} deleted.")
+                btn_wrap, _ = st.columns([1, 4])
+                with btn_wrap:
+                    btn_col1, btn_col2 = st.columns(2, gap="small")
+                    with btn_col1:
+                        st.download_button(
+                            label="📥 Download as Markdown",
+                            data=md_export,
+                            file_name=f"interaction_{selected_id}.md",
+                            mime="text/markdown",
+                            use_container_width=True,
+                        )
+                    with btn_col2:
+                        if st.button("🗑️ Delete Interaction", type="secondary", use_container_width=True):
                             try:
-                                # Streamlit >=1.22 uses st.rerun
-                                rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
-                                if rerun:
-                                    rerun()
-                            except Exception:
-                                pass
-                        else:
-                            st.warning("Interaction not found.")
-                    except Exception as del_err:
-                        st.error(f"Failed to delete interaction: {del_err}")
+                                deleted = st.session_state.db.delete_interaction(selected_id)
+                                if deleted:
+                                    st.success(f"Interaction ID {selected_id} deleted.")
+                                    try:
+                                        # Streamlit >=1.22 uses st.rerun
+                                        rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
+                                        if rerun:
+                                            rerun()
+                                    except Exception:
+                                        pass
+                                else:
+                                    st.warning("Interaction not found.")
+                            except Exception as del_err:
+                                st.error(f"Failed to delete interaction: {del_err}")
 
                 st.divider()
                 # Prompt header
