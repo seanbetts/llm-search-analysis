@@ -300,15 +300,25 @@ def tab_interactive():
                         st.session_state.error = "Network log mode only supports OpenAI/ChatGPT"
                         return
 
+                    # Check if ChatGPT credentials are configured
+                    if not Config.CHATGPT_EMAIL or not Config.CHATGPT_PASSWORD:
+                        st.error("ChatGPT credentials not found. Please add CHATGPT_EMAIL and CHATGPT_PASSWORD to your .env file.")
+                        st.session_state.error = "Missing ChatGPT credentials"
+                        return
+
                     # Initialize and use capturer
                     # Note: headless=False to avoid Cloudflare CAPTCHA
                     capturer = ChatGPTCapturer()
                     capturer.start_browser(headless=False)
 
                     try:
-                        # Authenticate (load ChatGPT page)
-                        if not capturer.authenticate():
-                            raise Exception("Failed to load ChatGPT interface")
+                        # Authenticate with credentials from Config
+                        # Session persistence will restore saved sessions automatically
+                        if not capturer.authenticate(
+                            email=Config.CHATGPT_EMAIL,
+                            password=Config.CHATGPT_PASSWORD
+                        ):
+                            raise Exception("Failed to authenticate with ChatGPT")
 
                         # Send prompt and capture
                         response = capturer.send_prompt(prompt, selected_model)
@@ -450,15 +460,23 @@ def tab_batch():
                         if provider_name != 'openai':
                             raise Exception(f"Network log mode only supports OpenAI/ChatGPT. Skipping {provider_name}")
 
+                        # Check if ChatGPT credentials are configured
+                        if not Config.CHATGPT_EMAIL or not Config.CHATGPT_PASSWORD:
+                            raise Exception("ChatGPT credentials not found. Please add CHATGPT_EMAIL and CHATGPT_PASSWORD to your .env file.")
+
                         # Initialize and use capturer
                         # Note: headless=False to avoid Cloudflare CAPTCHA
                         capturer = ChatGPTCapturer()
                         capturer.start_browser(headless=False)
 
                         try:
-                            # Authenticate (load ChatGPT page)
-                            if not capturer.authenticate():
-                                raise Exception("Failed to load ChatGPT interface")
+                            # Authenticate with credentials from Config
+                            # Session persistence will restore saved sessions automatically
+                            if not capturer.authenticate(
+                                email=Config.CHATGPT_EMAIL,
+                                password=Config.CHATGPT_PASSWORD
+                            ):
+                                raise Exception("Failed to authenticate with ChatGPT")
 
                             # Send prompt and capture
                             response = capturer.send_prompt(prompt, model_name)
