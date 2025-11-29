@@ -971,15 +971,17 @@ def tab_history():
             column_config=column_config,
         )
 
-        # Export button
-        # Export matches visible columns/order
+        # Export button (aligned width with action buttons)
         csv = display_df.to_csv(index=False)
-        st.download_button(
-            label="📥 Export History as CSV",
-            data=csv,
-            file_name=f"query_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-            mime="text/csv"
-        )
+        export_col, _export_spacer = st.columns([1, 4])
+        with export_col:
+            st.download_button(
+                label="📥 Export History as CSV",
+                data=csv,
+                file_name=f"query_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
         st.divider()
 
         # View details
@@ -1062,15 +1064,12 @@ def tab_history():
                     avg_rank_display,
                     extra_links_count,
                 ]
-                header_cells = "".join([f"<th style='padding:6px;'>{label}</th>" for label in meta_labels])
-                value_cells = "".join([f"<td style='padding:6px;'>{value}</td>" for value in meta_values])
-                meta_table = (
-                    "<table style='width:100%; text-align:center;'>"
-                    f"<tr>{header_cells}</tr>"
-                    f"<tr>{value_cells}</tr>"
-                    "</table>"
+                meta_df = pd.DataFrame([meta_values], columns=meta_labels)
+                st.dataframe(
+                    meta_df,
+                    hide_index=True,
+                    use_container_width=True,
                 )
-                st.markdown(meta_table, unsafe_allow_html=True)
 
                 st.divider()
 
