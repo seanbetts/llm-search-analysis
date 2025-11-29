@@ -82,6 +82,17 @@ def initialize_session_state():
     if 'browser_session_active' not in st.session_state:
         st.session_state.browser_session_active = False
 
+
+def format_pub_date(pub_date: str) -> str:
+    """Format ISO pub_date to a friendly string."""
+    if not pub_date:
+        return ""
+    try:
+        dt = datetime.fromisoformat(pub_date)
+        return dt.strftime("%b %d, %Y %H:%M UTC")
+    except Exception:
+        return pub_date
+
 def get_all_models():
     """Get all available models with provider labels."""
     try:
@@ -146,6 +157,7 @@ def display_response(response):
         'claude-opus-4-1-20250805': 'Claude Opus 4.1',
         # OpenAI
         'gpt-5.1': 'GPT-5.1',
+        'gpt-5-1': 'GPT-5.1',
         'gpt-5-mini': 'GPT-5 Mini',
         'gpt-5-nano': 'GPT-5 Nano',
         # Google
@@ -195,14 +207,17 @@ def display_response(response):
     st.markdown(response.response_text)
     st.divider()
 
-    # Search queries with their sources
-    if response.search_queries:
+    # Search queries with their sources (only render if there is data)
+    queries_with_content = [q for q in response.search_queries if (getattr(q, "query", None) or getattr(q, "sources", []))]
+    if queries_with_content:
         st.markdown("### 🔍 Search Queries & Sources")
-        for i, query in enumerate(response.search_queries, 1):
+        for i, query in enumerate(queries_with_content, 1):
+            query_index = getattr(query, "order_index", None)
+            label_num = query_index + 1 if query_index is not None else i
             # Display query
             st.markdown(f"""
             <div class="search-query">
-                <strong>Query {i}:</strong> {query.query}
+                <strong>Query {label_num}:</strong> {query.query}
             </div>
             """, unsafe_allow_html=True)
 
@@ -214,11 +229,19 @@ def display_response(response):
                         url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
                         # Use domain as title fallback when title is missing
                         display_title = source.title or source.domain or 'Unknown source'
+                        snippet = getattr(source, "snippet_text", None)
+                        pub_date = getattr(source, "pub_date", None)
+                        snippet_display = snippet if snippet else "N/A"
+                        pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
+                        snippet_block = f"<br/><small>Snippet: {snippet_display}</small>"
+                        pub_date_block = f"<br/><small>Published: {pub_date_fmt}</small>"
                         st.markdown(f"""
                         <div class="source-item">
                             <strong>{j}. {display_title}</strong><br/>
                             <small>{source.domain or 'Unknown domain'}</small><br/>
                             <a href="{url_display}" target="_blank">{url_truncated}</a>
+                            {snippet_block}
+                            {pub_date_block}
                         </div>
                         """, unsafe_allow_html=True)
         st.divider()
@@ -236,10 +259,13 @@ def display_response(response):
                 # Extract domain from URL for fallback
                 domain = urlparse(citation.url).netloc if citation.url else 'Unknown domain'
                 display_title = citation.title or domain or 'Unknown source'
+                snippet_used = getattr(citation, "snippet_used", None)
+                snippet_block = f"<br/><em>{snippet_used}</em>" if snippet_used else ""
                 st.markdown(f"""
                 <div class="citation-item">
                     <strong>{i}. {display_title}{rank_display}</strong><br/>
                     <a href="{url_display}" target="_blank">{url_truncated}</a>
+                    {snippet_block}
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -345,9 +371,10 @@ def tab_interactive():
 
                 # Save to database (works for both modes)
                 try:
+                    model_to_save = getattr(response, "model", None) or selected_model
                     st.session_state.db.save_interaction(
                         provider_name=selected_provider,
-                        model=selected_model,
+                        model=model_to_save,
                         prompt=prompt,
                         response_text=response.response_text,
                         search_queries=response.search_queries,
@@ -503,9 +530,10 @@ def tab_batch():
 
                     # Save to database (works for both modes)
                     try:
+                        model_to_save = getattr(response, "model", None) or model_name
                         st.session_state.db.save_interaction(
                             provider_name=provider_name,
-                            model=model_name,
+                            model=model_to_save,
                             prompt=prompt,
                             response_text=response.response_text,
                             search_queries=response.search_queries,
@@ -651,8 +679,11 @@ def tab_history():
         df['avg_rank_display'] = df['avg_rank'].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "N/A")
 
         # Display table
-        display_df = df[['timestamp', 'prompt_preview', 'provider', 'model', 'searches', 'sources', 'citations', 'avg_rank_display']]
-        display_df.columns = ['Timestamp', 'Prompt', 'Provider', 'Model', 'Searches', 'Sources', 'Sources Used', 'Avg. Rank']
+        # Friendly label for analysis type
+        df['analysis_type'] = df['data_source'].apply(lambda x: 'Network Logs' if x == 'network_log' else 'API')
+
+        display_df = df[['timestamp', 'analysis_type', 'prompt_preview', 'provider', 'model', 'searches', 'sources', 'citations', 'avg_rank_display']]
+        display_df.columns = ['Timestamp', 'Analysis Type', 'Prompt', 'Provider', 'Model', 'Searches', 'Sources', 'Sources Used', 'Avg. Rank']
 
         st.dataframe(display_df, use_container_width=True, height=400)
 

@@ -5,7 +5,7 @@ Database models and operations using SQLAlchemy.
 from datetime import datetime
 from typing import List, Optional
 from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, ForeignKey, JSON, Float
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 
 from .config import Config
@@ -81,6 +81,7 @@ class SearchQuery(Base):
     response_id = Column(Integer, ForeignKey("responses.id"))
     search_query = Column(Text)  # The search query text
     created_at = Column(DateTime, default=datetime.utcnow)
+    order_index = Column(Integer, default=0)  # Order of the query in the sequence
 
     # Network log exclusive fields
     internal_ranking_scores = Column(JSON)  # If available from logs
@@ -101,6 +102,7 @@ class SourceModel(Base):
     title = Column(Text)
     domain = Column(String(255))
     rank = Column(Integer)  # Position in search results (1-indexed)
+    pub_date = Column(String(50))  # ISO-formatted publication date if available
 
     # Network log exclusive fields
     snippet_text = Column(Text)  # Actual snippet extracted by model
@@ -124,6 +126,7 @@ class SourceUsed(Base):
     # Network log exclusive fields
     snippet_used = Column(Text)  # Exact snippet cited
     citation_confidence = Column(Float)  # If available from logs
+    metadata_json = Column(JSON)  # Additional citation metadata (e.g., citation_id)
 
     # Relationships
     response = relationship("Response", back_populates="sources_used")
@@ -226,6 +229,7 @@ class Database:
                 search_query_obj = SearchQuery(
                     response_id=response_obj.id,
                     search_query=query.query,
+                    order_index=getattr(query, 'order_index', 0),
                     internal_ranking_scores=getattr(query, 'internal_ranking_scores', None),
                     query_reformulations=getattr(query, 'query_reformulations', None)
                 )
@@ -240,6 +244,7 @@ class Database:
                         title=source.title,
                         domain=source.domain,
                         rank=source.rank,
+                        pub_date=getattr(source, 'pub_date', None),
                         snippet_text=getattr(source, 'snippet_text', None),
                         internal_score=getattr(source, 'internal_score', None),
                         metadata_json=getattr(source, 'metadata', None)
@@ -254,7 +259,8 @@ class Database:
                     title=citation.title,
                     rank=citation.rank,
                     snippet_used=getattr(citation, 'snippet_used', None),
-                    citation_confidence=getattr(citation, 'citation_confidence', None)
+                    citation_confidence=getattr(citation, 'citation_confidence', None),
+                    metadata_json=getattr(citation, 'metadata', None)
                 )
                 session.add(source_used_obj)
 
@@ -291,6 +297,7 @@ class Database:
                     # Calculate average rank from sources used
                     sources_with_rank = [su for su in prompt.response.sources_used if su.rank is not None]
                     avg_rank = sum(su.rank for su in sources_with_rank) / len(sources_with_rank) if sources_with_rank else None
+                    data_source = getattr(prompt.response, "data_source", "api")
 
                     results.append({
                         "id": prompt.id,
@@ -302,6 +309,7 @@ class Database:
                         "sources": source_count,
                         "citations": sources_used_count,
                         "avg_rank": avg_rank,
+                        "data_source": data_source
                     })
 
             return results

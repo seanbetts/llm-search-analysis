@@ -8,6 +8,7 @@ import json
 from typing import Dict, Any, List
 import sys
 from pathlib import Path
+from datetime import datetime, timezone
 
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
@@ -41,133 +42,216 @@ class NetworkLogParser:
         Returns:
             ProviderResponse object with parsed search data
         """
-        search_queries = []
-        sources = []
-        citations = []
-        response_text = extracted_response_text
+        search_queries: List[SearchQuery] = []
+        sources: List[Source] = []
+        citations: List[Citation] = []
+        response_text = extracted_response_text or ""
+
+        # Metadata container for provider-specific extras
+        response_metadata: Dict[str, Any] = {
+            "default_model_slug": None,
+            "image_behavior": None,
+            "classifier": None,
+            "safe_urls": [],
+            "citation_ids": []
+        }
 
         try:
-            # Get event stream body
             body = network_response.get('body', '')
             if not body:
                 return NetworkLogParser._create_empty_response(
                     response_text, model, response_time_ms
                 )
 
-            # Parse Server-Sent Events format
-            search_model_queries = []
-            search_result_groups = []
+            # Temporary accumulators
+            search_model_queries: List[str] = []
+            search_result_groups: List[Dict[str, Any]] = []
+            safe_urls: List[str] = []
+            model_slug = None
+            default_model_slug = None
+            classifier = None
+            last_assistant_message: Dict[str, Any] = {}
 
-            # Split by lines and parse JSON data
+            # Parse Server-Sent Events lines
             lines = body.split('\n')
             for line in lines:
                 if not line.startswith('data: '):
                     continue
 
                 try:
-                    # Extract JSON from "data: {...}"
-                    json_str = line[6:]  # Remove "data: " prefix
-                    data = json.loads(json_str)
-
-                    # Extract search queries
-                    if 'v' in data and 'message' in data['v']:
-                        message = data['v']['message']
-                        metadata = message.get('metadata', {})
-
-                        # Search model queries (what ChatGPT searched for)
-                        if 'search_model_queries' in metadata:
-                            query_data = metadata['search_model_queries']
-                            if 'queries' in query_data:
-                                search_model_queries.extend(query_data['queries'])
-
-                        # Search result groups (search results with sources)
-                        if 'search_result_groups' in metadata:
-                            search_result_groups.extend(metadata['search_result_groups'])
-
-                    # Also check for patch/append operations that add search results
-                    if 'p' in data and 'v' in data:
-                        path = data.get('p', '')
-                        value = data.get('v')
-                        operation = data.get('o', '')
-
-                        # Handle append operations for search_result_groups
-                        if 'search_result_groups' in path:
-                            if isinstance(value, list):
-                                # Direct array of groups
-                                search_result_groups.extend(value)
-                            elif isinstance(value, dict) and value.get('type') == 'search_result_group':
-                                # Single group
-                                search_result_groups.append(value)
-
-                        # Handle append operations for entries within a group
-                        # Path like: "/message/metadata/search_result_groups/1/entries"
-                        if '/entries' in path and 'search_result_groups' in path:
-                            if isinstance(value, list):
-                                # Find the group index from the path
-                                # Path format: "/message/metadata/search_result_groups/1/entries"
-                                parts = path.split('/')
-                                try:
-                                    group_idx = int(parts[parts.index('search_result_groups') + 1])
-                                    # Make sure we have enough groups
-                                    while len(search_result_groups) <= group_idx:
-                                        search_result_groups.append({'entries': []})
-                                    # Add entries to the group
-                                    if 'entries' not in search_result_groups[group_idx]:
-                                        search_result_groups[group_idx]['entries'] = []
-                                    search_result_groups[group_idx]['entries'].extend(value)
-                                except (ValueError, IndexError):
-                                    pass
-
-                except (json.JSONDecodeError, KeyError, TypeError):
+                    data = json.loads(line[6:])
+                except (json.JSONDecodeError, TypeError):
                     continue
 
-            # Parse sources first (need them for queries)
-            # Parse search results into sources
-            rank = 1
-            for group in search_result_groups:
-                domain = group.get('domain', '')
-                entries = group.get('entries', [])
+                # Message payloads
+                if isinstance(data, dict) and 'v' in data and isinstance(data.get('v'), dict):
+                    payload = data['v']
+                    message = payload.get('message')
 
-                for entry in entries:
-                    if entry.get('type') != 'search_result':
-                        continue
+                    if message:
+                        author = message.get('author', {})
+                        metadata = message.get('metadata', {})
 
-                    url = entry.get('url', '')
-                    title = entry.get('title', '')
-                    snippet = entry.get('snippet', '')
-                    pub_date = entry.get('pub_date')
-                    attribution = entry.get('attribution', domain)
-                    ref_id = entry.get('ref_id', {})
+                        # Capture model info if present
+                        model_slug = metadata.get('model_slug', model_slug)
+                        default_model_slug = metadata.get('default_model_slug', default_model_slug)
 
-                    source = Source(
-                        url=url,
-                        title=title,
-                        domain=attribution,
-                        rank=rank,
-                        snippet_text=snippet,
-                        internal_score=None,  # Not provided in this format
-                        metadata={
-                            'pub_date': pub_date,
-                            'ref_id': ref_id
-                        }
-                    )
-                    sources.append(source)
-                    rank += 1
+                        # Capture classifier block if present
+                        if metadata.get('sonic_classification_result'):
+                            classifier = metadata['sonic_classification_result']
 
-            # Parse search queries and associate all sources with each query
-            # (ChatGPT network logs don't clearly distinguish which sources came from which query)
-            for query_text in search_model_queries:
-                search_queries.append(SearchQuery(
-                    query=query_text,
-                    sources=sources  # Associate all sources with each query
-                ))
+                        # Capture search queries
+                        smq = metadata.get('search_model_queries')
+                        if smq and isinstance(smq, dict):
+                            for q in smq.get('queries', []):
+                                if isinstance(q, str):
+                                    search_model_queries.append(q)
 
-            # Extract citations from inline source attributions in response text
-            # ChatGPT uses inline citations like "...content here.\nSource Name" or "...content.\nDomain Name"
-            if response_text and sources:
-                citations = NetworkLogParser._extract_inline_citations(response_text, sources)
+                        # Capture search result groups if present
+                        if metadata.get('search_result_groups'):
+                            groups = metadata['search_result_groups']
+                            if isinstance(groups, list):
+                                search_result_groups.extend(groups)
+
+                        # Track assistant message for final response/citations
+                        if author.get('role') == 'assistant':
+                            last_assistant_message = message
+
+                    # Some payloads have a list of groups directly in v
+                    if isinstance(payload, list):
+                        for item in payload:
+                            if isinstance(item, dict) and item.get('type') == 'search_result_group':
+                                search_result_groups.append(item)
+
+                # Patch/append operations
+                if isinstance(data, dict) and 'p' in data and 'v' in data:
+                    path = data.get('p', '')
+                    value = data.get('v')
+                    operation = data.get('o', '')
+
+                    # Safe URL updates
+                    if 'safe_urls' in path and isinstance(value, list):
+                        safe_urls.extend(value)
+
+                    # Entire group additions
+                    if 'search_result_groups' in path and '/entries' not in path:
+                        if isinstance(value, list):
+                            search_result_groups.extend(value)
+                        elif isinstance(value, dict) and value.get('type') == 'search_result_group':
+                            search_result_groups.append(value)
+
+                    # Entry-level additions
+                    if 'search_result_groups' in path and '/entries' in path:
+                        if not isinstance(value, list):
+                            continue
+                        parts = path.split('/')
+                        try:
+                            group_idx = int(parts[parts.index('search_result_groups') + 1])
+                        except (ValueError, IndexError):
+                            continue
+
+                        while len(search_result_groups) <= group_idx:
+                            search_result_groups.append({'entries': []})
+
+                        if 'entries' not in search_result_groups[group_idx]:
+                            search_result_groups[group_idx]['entries'] = []
+
+                        # Replace vs append
+                        if operation == 'replace':
+                            search_result_groups[group_idx]['entries'] = value
+                        else:
+                            search_result_groups[group_idx]['entries'].extend(value)
+
+            # Build sources with ranks per query
+            # Map safe URLs for moderation info
+            safe_url_set = set(safe_urls)
+
+            def to_iso(ts: Any) -> str:
+                try:
+                    if ts is None:
+                        return None
+                    ts_float = float(ts)
+                    return datetime.fromtimestamp(ts_float, tz=timezone.utc).isoformat()
+                except Exception:
+                    return None
+
+            # Distribute result groups to queries sequentially
+            if search_model_queries:
+                grouped_results: List[List[Dict[str, Any]]] = []
+                # Chunk groups roughly evenly across queries
+                total_groups = len(search_result_groups)
+                num_queries = len(search_model_queries)
+                chunk_size = max(1, (total_groups + num_queries - 1) // num_queries)
+                for i in range(num_queries):
+                    start = i * chunk_size
+                    end = start + chunk_size
+                    grouped_results.append(search_result_groups[start:end])
+
+                # Build SearchQuery objects with associated sources
+                for q_idx, query_text in enumerate(search_model_queries):
+                    query_sources: List[Source] = []
+                    rank_counter = 1
+                    groups_for_query = grouped_results[q_idx] if q_idx < len(grouped_results) else []
+
+                    for group in groups_for_query:
+                        domain = group.get('domain') or group.get('attribution') or ''
+                        entries = group.get('entries', [])
+                        for entry in entries:
+                            if entry.get('type') != 'search_result':
+                                continue
+                            url = entry.get('url', '')
+                            title = entry.get('title', '')
+                            snippet = entry.get('snippet', '')
+                            pub_date_iso = to_iso(entry.get('pub_date'))
+                            ref_id = entry.get('ref_id', {})
+
+                            metadata = {
+                                'ref_id': ref_id,
+                                'attribution': entry.get('attribution', domain),
+                                'is_safe': url in safe_url_set,
+                                'is_moderated': None
+                            }
+
+                            source = Source(
+                                url=url,
+                                title=title,
+                                domain=entry.get('attribution', domain),
+                                rank=rank_counter,
+                                pub_date=pub_date_iso,
+                                snippet_text=snippet,
+                                internal_score=None,
+                                metadata=metadata
+                            )
+                            query_sources.append(source)
+                            sources.append(source)
+                            rank_counter += 1
+
+                    search_queries.append(SearchQuery(
+                        query=query_text,
+                        sources=query_sources,
+                        order_index=q_idx
+                    ))
+
+            # Final response text and citations
+            if last_assistant_message:
+                flattened = NetworkLogParser._flatten_assistant_message(last_assistant_message)
+                if flattened:
+                    response_text = flattened
+                # Placeholder citation extraction: map by ref_id/url if encoded IDs are found
+                # This sample log does not include explicit citation markers; keep best-effort empty list
+                citations = []
             else:
                 citations = []
+
+            # Metadata assembly
+            response_metadata["default_model_slug"] = default_model_slug
+            response_metadata["classifier"] = classifier
+            response_metadata["safe_urls"] = list(safe_url_set)
+            response_metadata["image_behavior"] = NetworkLogParser._extract_image_behavior(last_assistant_message) if last_assistant_message else None
+
+            # Use discovered model slug if present
+            if model_slug:
+                model = model_slug
 
         except Exception as e:
             print(f"Error parsing ChatGPT event stream: {str(e)}")
@@ -183,7 +267,8 @@ class NetworkLogParser:
             raw_response=network_response,
             model=model,
             provider='openai',
-            response_time_ms=response_time_ms
+            response_time_ms=response_time_ms,
+            metadata=response_metadata
         )
 
     @staticmethod
@@ -247,6 +332,39 @@ class NetworkLogParser:
                         break
 
         return citations
+
+    @staticmethod
+    def _flatten_assistant_message(message: Dict[str, Any]) -> str:
+        """Flatten assistant message content into plain text."""
+        if not message:
+            return ""
+        content = message.get('content', {})
+        # Web UI uses parts under "parts" when content_type=text; also support other shapes
+        parts = content.get('parts') if isinstance(content, dict) else content
+        if parts is None:
+            return ""
+        if isinstance(parts, list):
+            return "".join([str(p) for p in parts])
+        return str(parts)
+
+    @staticmethod
+    def _extract_image_behavior(message: Dict[str, Any]) -> Dict[str, Any]:
+        """Detect image groups or carousels from assistant message content."""
+        if not message:
+            return {"has_image_group": False, "image_groups": []}
+        content = message.get('content', {})
+        parts = content.get('parts') if isinstance(content, dict) else content
+        image_groups = []
+        if isinstance(parts, list):
+            for part in parts:
+                if isinstance(part, dict):
+                    img_group = part.get('image_group') or part.get('images')
+                    if img_group:
+                        image_groups.append(img_group)
+        return {
+            "has_image_group": bool(image_groups),
+            "image_groups": image_groups
+        }
 
     @staticmethod
     def _create_empty_response(

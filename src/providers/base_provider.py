@@ -15,6 +15,7 @@ class SearchQuery:
     query: str
     sources: List['Source'] = None
     timestamp: Optional[str] = None
+    order_index: int = 0
     # Network log exclusive fields
     internal_ranking_scores: Optional[Dict] = None
     query_reformulations: Optional[List[str]] = None
@@ -32,6 +33,7 @@ class Source:
     title: Optional[str] = None
     domain: Optional[str] = None
     rank: Optional[int] = None  # Position in search results (1-indexed)
+    pub_date: Optional[str] = None  # ISO-formatted publication date if available
     # Network log exclusive fields
     snippet_text: Optional[str] = None
     internal_score: Optional[float] = None
@@ -45,6 +47,7 @@ class Citation:
     title: Optional[str] = None
     text_snippet: Optional[str] = None
     rank: Optional[int] = None  # Rank from original search results (1-indexed)
+    metadata: Optional[Dict] = None  # Additional citation metadata (e.g., citation_id)
     # Network log exclusive fields
     snippet_used: Optional[str] = None
     citation_confidence: Optional[float] = None
@@ -61,6 +64,7 @@ class ProviderResponse:
     model: str
     provider: str
     response_time_ms: Optional[int] = None
+    metadata: Optional[Dict[str, Any]] = None  # Additional provider-specific metadata
 
 
 class BaseProvider(ABC):

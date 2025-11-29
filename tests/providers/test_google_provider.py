@@ -2,8 +2,14 @@
 Tests for Google Gemini provider implementation.
 """
 
+import importlib.util
 import pytest
 from unittest.mock import Mock, patch
+
+# Skip if google-genai is not installed in the current environment
+if importlib.util.find_spec("google.genai") is None:
+    pytest.skip("google.genai not installed; skipping Google provider tests", allow_module_level=True)
+
 from src.providers.google_provider import GoogleProvider
 from src.providers.base_provider import ProviderResponse
 

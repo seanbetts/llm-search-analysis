@@ -2,7 +2,14 @@
 Tests for provider factory.
 """
 
+import importlib.util
 import pytest
+
+# Skip Google-dependent imports if google-genai is not installed
+google_missing = importlib.util.find_spec("google.genai") is None
+if google_missing:
+    pytest.skip("google.genai not installed; skipping provider factory tests", allow_module_level=True)
+
 from src.providers.provider_factory import ProviderFactory
 from src.providers.openai_provider import OpenAIProvider
 from src.providers.google_provider import GoogleProvider
