@@ -254,16 +254,23 @@ def tab_interactive():
         st.error("No API keys configured. Please set up your .env file with at least one provider API key.")
         return
 
-    # Model selection
-    model_labels = list(models.keys())
-    selected_label = st.selectbox(
-        "Select Model",
-        model_labels,
-        help="Choose a model from any available provider"
-    )
+    # Model selection (hide in network log mode since it always uses chatgpt-free)
+    if st.session_state.data_collection_mode == 'network_log':
+        st.info("🌐 **Network Capture Mode**: Using free ChatGPT (model selection not available)")
+        # Fixed model for network capture
+        selected_provider = 'openai'
+        selected_model = 'chatgpt-free'
+        selected_label = '🟢 OpenAI - ChatGPT (Free)'
+    else:
+        model_labels = list(models.keys())
+        selected_label = st.selectbox(
+            "Select Model",
+            model_labels,
+            help="Choose a model from any available provider"
+        )
 
-    # Extract provider and model from selection
-    selected_provider, selected_model = models[selected_label]
+        # Extract provider and model from selection
+        selected_provider, selected_model = models[selected_label]
 
     # Prompt input
     prompt = st.text_area(
@@ -305,9 +312,6 @@ def tab_interactive():
                         st.error("ChatGPT credentials not found. Please add CHATGPT_EMAIL and CHATGPT_PASSWORD to your .env file.")
                         st.session_state.error = "Missing ChatGPT credentials"
                         return
-
-                    # Notify user that network mode uses free ChatGPT
-                    st.info("🌐 Network Capture Mode: Using free ChatGPT (model selection not available for free accounts)")
 
                     # Initialize and use capturer
                     # Note: headless=False to avoid Cloudflare CAPTCHA
