@@ -38,5 +38,6 @@ def test_parse_chatgpt_log_fixture():
     # Safe URLs captured
     assert isinstance(response.metadata.get("safe_urls"), list)
 
-    # No crash on citations/image metadata
-    assert response.citations == []
+    # Citations from streamed markers
+    assert len(response.citations) > 0
+    assert response.metadata.get("citation_ids")

@@ -71,12 +71,14 @@ class NetworkLogParser:
             default_model_slug = None
             classifier = None
             last_assistant_message: Dict[str, Any] = {}
+            content_fragments: List[str] = []
 
             # Parse Server-Sent Events lines
             lines = body.split('\n')
             for line in lines:
                 if not line.startswith('data: '):
                     continue
+                payload = None
 
                 try:
                     data = json.loads(line[6:])
@@ -118,10 +120,51 @@ class NetworkLogParser:
                             last_assistant_message = message
 
                     # Some payloads have a list of groups directly in v
-                    if isinstance(payload, list):
-                        for item in payload:
-                            if isinstance(item, dict) and item.get('type') == 'search_result_group':
-                                search_result_groups.append(item)
+                if isinstance(payload, list):
+                    for item in payload:
+                        if isinstance(item, dict) and item.get('type') == 'search_result_group':
+                            search_result_groups.append(item)
+
+                # Patch/append operations or batched patches in list
+                if isinstance(data, dict) and isinstance(data.get('v'), list):
+                    for item in data.get('v', []):
+                        if not isinstance(item, dict):
+                            continue
+                        path = item.get('p', '')
+                        value = item.get('v')
+                        operation = item.get('o', '')
+
+                        if 'safe_urls' in path and isinstance(value, list):
+                            safe_urls.extend(value)
+
+                        if path.endswith('/message/content/parts/0') and isinstance(value, str):
+                            content_fragments.append(value)
+
+                        if 'search_result_groups' in path and '/entries' not in path:
+                            if isinstance(value, list):
+                                search_result_groups.extend(value)
+                            elif isinstance(value, dict) and value.get('type') == 'search_result_group':
+                                search_result_groups.append(value)
+
+                        if 'search_result_groups' in path and '/entries' in path:
+                            if not isinstance(value, list):
+                                continue
+                            parts = path.split('/')
+                            try:
+                                group_idx = int(parts[parts.index('search_result_groups') + 1])
+                            except (ValueError, IndexError):
+                                continue
+
+                            while len(search_result_groups) <= group_idx:
+                                search_result_groups.append({'entries': []})
+
+                            if 'entries' not in search_result_groups[group_idx]:
+                                search_result_groups[group_idx]['entries'] = []
+
+                            if operation == 'replace':
+                                search_result_groups[group_idx]['entries'] = value
+                            else:
+                                search_result_groups[group_idx]['entries'].extend(value)
 
                 # Patch/append operations
                 if isinstance(data, dict) and 'p' in data and 'v' in data:
@@ -132,6 +175,10 @@ class NetworkLogParser:
                     # Safe URL updates
                     if 'safe_urls' in path and isinstance(value, list):
                         safe_urls.extend(value)
+
+                    # Capture streamed content parts for assistant message
+                    if path.endswith('/message/content/parts/0') and isinstance(value, str):
+                        content_fragments.append(value)
 
                     # Entire group additions
                     if 'search_result_groups' in path and '/entries' not in path:
@@ -174,6 +221,8 @@ class NetworkLogParser:
                     return datetime.fromtimestamp(ts_float, tz=timezone.utc).isoformat()
                 except Exception:
                     return None
+
+            refid_to_source = {}
 
             # Distribute result groups to queries sequentially
             if search_model_queries:
@@ -218,13 +267,17 @@ class NetworkLogParser:
                                 domain=entry.get('attribution', domain),
                                 rank=rank_counter,
                                 pub_date=pub_date_iso,
-                                snippet_text=snippet,
-                                internal_score=None,
-                                metadata=metadata
-                            )
-                            query_sources.append(source)
-                            sources.append(source)
-                            rank_counter += 1
+                            snippet_text=snippet,
+                            internal_score=None,
+                            metadata=metadata
+                        )
+                        query_sources.append(source)
+                        sources.append(source)
+                        if isinstance(ref_id, dict) and {'turn_index', 'ref_type', 'ref_index'} <= set(ref_id.keys()):
+                            key = f"turn{ref_id.get('turn_index')}{ref_id.get('ref_type')}{ref_id.get('ref_index')}"
+                            metadata["query_index"] = ref_id.get('turn_index')
+                            refid_to_source[key] = source
+                        rank_counter += 1
 
                     search_queries.append(SearchQuery(
                         query=query_text,
@@ -233,15 +286,37 @@ class NetworkLogParser:
                     ))
 
             # Final response text and citations
-            if last_assistant_message:
+            assembled_content = ''.join(content_fragments).strip()
+            if assembled_content:
+                response_text = NetworkLogParser._clean_response_text(assembled_content)
+            elif last_assistant_message:
                 flattened = NetworkLogParser._flatten_assistant_message(last_assistant_message)
                 if flattened:
                     response_text = flattened
-                # Placeholder citation extraction: map by ref_id/url if encoded IDs are found
-                # This sample log does not include explicit citation markers; keep best-effort empty list
-                citations = []
-            else:
-                citations = []
+
+            citations = []
+            if response_text and refid_to_source:
+                citation_keys = NetworkLogParser._extract_citation_keys(response_text)
+                seen = set()
+                for key in citation_keys:
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    source = refid_to_source.get(key)
+                    if source:
+                        citations.append(Citation(
+                            url=source.url,
+                            title=source.title,
+                            rank=source.rank,
+                            metadata={
+                                "citation_id": key,
+                                "ref_id": getattr(source, "metadata", {}).get("ref_id"),
+                                "query_index": getattr(source, "metadata", {}).get("query_index"),
+                                "snippet": getattr(source, "snippet_text", None),
+                                "pub_date": source.pub_date
+                            }
+                        ))
+                        response_metadata["citation_ids"].append(key)
 
             # Metadata assembly
             response_metadata["default_model_slug"] = default_model_slug
@@ -346,6 +421,18 @@ class NetworkLogParser:
         if isinstance(parts, list):
             return "".join([str(p) for p in parts])
         return str(parts)
+
+    @staticmethod
+    def _clean_response_text(text: str) -> str:
+        """Remove private-use markers and tidy streamed content."""
+        cleaned = ''.join(ch for ch in text if not (0xE000 <= ord(ch) <= 0xF8FF))
+        return cleaned.strip()
+
+    @staticmethod
+    def _extract_citation_keys(text: str) -> List[str]:
+        """Extract citation ids like turn0news4 from streamed content."""
+        import re
+        return re.findall(r"turn\d+(?:news|search)\d+", text)
 
     @staticmethod
     def _extract_image_behavior(message: Dict[str, Any]) -> Dict[str, Any]:

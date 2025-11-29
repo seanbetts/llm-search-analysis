@@ -96,6 +96,67 @@ def format_pub_date(pub_date: str) -> str:
     except Exception:
         return pub_date
 
+
+def format_response_text(text: str, citations: list) -> str:
+    """
+    Clean streamed response text and render citation markers as superscripts.
+
+    Args:
+        text: Raw response text
+        citations: List of Citation objects with metadata.citation_id
+
+    Returns:
+        HTML-safe string with superscript citation numbers.
+    """
+    if not text:
+        return ""
+
+    import re
+
+    # Remove known control tokens
+    cleaned = text
+    cleaned = cleaned.replace("navlist", "")
+    # Drop lines containing image_group metadata
+    lines = []
+    for line in cleaned.splitlines():
+        if "image_group" in line:
+            continue
+        lines.append(line)
+    cleaned = "\n".join(lines)
+
+    # Replace entity tokens with their label
+    def replace_entity(match):
+        return match.group(1)
+    cleaned = re.sub(r'entity\["[^"]+","([^"]+)"[^]]*\]', replace_entity, cleaned)
+
+    # Map citation tokens to numbers in order of appearance
+    token_pattern = r"(turn\d+(?:news|search)\d+|cite\[\d+\]\[\d+\])"
+    token_order = []
+    for match in re.findall(token_pattern, cleaned):
+        tok = match
+        if tok not in token_order:
+            token_order.append(tok)
+
+    # Build token->number map using appearance order
+    token_to_num = {tok: idx + 1 for idx, tok in enumerate(token_order)}
+
+    # Also include any citations not present in text (append after)
+    for cit in citations or []:
+        token = getattr(cit, "metadata", {}) and cit.metadata.get("citation_id")
+        if token and token not in token_to_num:
+            token_to_num[token] = len(token_to_num) + 1
+
+    def replace_token(match):
+        tok = match.group(0)
+        num = token_to_num.get(tok)
+        return f"<sup>[{num}]</sup>" if num else ""
+
+    cleaned = re.sub(token_pattern, replace_token, cleaned)
+
+    # Trim extra whitespace
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    return cleaned
+
 def get_all_models():
     """Get all available models with provider labels."""
     try:
@@ -207,12 +268,14 @@ def display_response(response):
 
     # Response text
     st.markdown("### 💬 Response")
-    st.markdown(response.response_text)
+    formatted_response = format_response_text(response.response_text, response.citations)
+    st.markdown(formatted_response, unsafe_allow_html=True)
     st.divider()
 
     # Search queries with their sources (only render if there is data)
     queries_with_content = [q for q in response.search_queries if (getattr(q, "query", None) or getattr(q, "sources", []))]
     if queries_with_content:
+        url_to_source = {s.url: s for q in queries_with_content for s in q.sources if s.url}
         st.markdown("### 🔍 Search Queries & Sources")
         for i, query in enumerate(queries_with_content, 1):
             query_index = getattr(query, "order_index", None)
@@ -254,21 +317,51 @@ def display_response(response):
         st.markdown(f"### 📝 Sources Used ({len(response.citations)})")
         st.caption("Sources the model consulted via web search")
 
+        # Build URL -> source lookup for metadata fallback
+        url_to_source = {s.url: s for s in response.sources if getattr(s, "url", None)}
+
         for i, citation in enumerate(response.citations, 1):
             with st.container():
                 url_display = citation.url or 'No URL'
                 url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
-                rank_display = f" (Rank {citation.rank})" if citation.rank else ""
+                # Extract query info if present in metadata
+                query_idx = None
+                if getattr(citation, "metadata", None):
+                    ref_id = citation.metadata.get("ref_id")
+                    if isinstance(ref_id, dict):
+                        try:
+                            query_idx = int(ref_id.get("turn_index", 0)) + 1
+                        except Exception:
+                            query_idx = None
+                    # fallback explicit query index in metadata
+                    if query_idx is None and citation.metadata.get("query_index") is not None:
+                        try:
+                            query_idx = int(citation.metadata.get("query_index")) + 1
+                        except Exception:
+                            query_idx = None
+                rank_label = citation.rank if citation.rank else None
+                if query_idx and rank_label:
+                    rank_display = f" (Query {query_idx}, Rank {rank_label})"
+                elif rank_label:
+                    rank_display = f" (Rank {rank_label})"
+                else:
+                    rank_display = ""
                 # Extract domain from URL for fallback
                 domain = urlparse(citation.url).netloc if citation.url else 'Unknown domain'
                 display_title = citation.title or domain or 'Unknown source'
                 snippet_used = getattr(citation, "snippet_used", None)
-                snippet_block = f"<br/><em>{snippet_used}</em>" if snippet_used else ""
+                source_fallback = url_to_source.get(citation.url)
+                snippet = snippet_used or (citation.metadata.get("snippet") if getattr(citation, "metadata", None) else None) or (getattr(source_fallback, "snippet_text", None))
+                pub_date_val = (citation.metadata.get("pub_date") if getattr(citation, "metadata", None) else None) or (getattr(source_fallback, "pub_date", None))
+                snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>"
+                pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"
+                pub_date_block = f"<br/><small><strong>Published:</strong> {pub_date_fmt}</small>"
                 st.markdown(f"""
                 <div class="citation-item">
                     <strong>{i}. {display_title}{rank_display}</strong><br/>
                     <a href="{url_display}" target="_blank">{url_truncated}</a>
                     {snippet_block}
+                    {pub_date_block}
                 </div>
                 """, unsafe_allow_html=True)
 
