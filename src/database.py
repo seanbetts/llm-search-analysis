@@ -156,6 +156,44 @@ class Database:
         """Get a new database session."""
         return self.SessionLocal()
 
+    def delete_interaction(self, response_id: int) -> bool:
+        """
+        Delete an interaction (response + prompt + related records) by response ID.
+        Returns True if deleted, False if not found.
+        """
+        session = self.get_session()
+        try:
+            resp = session.query(Response).filter_by(id=response_id).first()
+            if not resp:
+                return False
+
+            # Delete sources used
+            session.query(SourceUsed).filter_by(response_id=response_id).delete()
+
+            # Delete sources and search queries
+            queries = session.query(SearchQuery).filter_by(response_id=response_id).all()
+            for q in queries:
+                session.query(SourceModel).filter_by(search_query_id=q.id).delete()
+            session.query(SearchQuery).filter_by(response_id=response_id).delete()
+
+            # Delete response
+            prompt_id = resp.prompt_id
+            session.delete(resp)
+
+            # Delete prompt (orphan)
+            if prompt_id:
+                prompt_obj = session.query(Prompt).filter_by(id=prompt_id).first()
+                if prompt_obj:
+                    session.delete(prompt_obj)
+
+            session.commit()
+            return True
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
     def ensure_providers(self):
         """Ensure default providers exist in database."""
         session = self.get_session()

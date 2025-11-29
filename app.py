@@ -92,7 +92,7 @@ def initialize_session_state():
         st.session_state.response = None
     if 'error' not in st.session_state:
         st.session_state.error = None
-    if 'db' not in st.session_state:
+    if 'db' not in st.session_state or not hasattr(st.session_state.db, "delete_interaction"):
         # Initialize database
         st.session_state.db = Database()
         st.session_state.db.create_tables()
@@ -142,6 +142,95 @@ def sanitize_response_markdown(text: str) -> str:
     # Remove simple HTML <hr> tags as well
     cleaned = re.sub(r"<\s*hr\s*/?\s*>", "", cleaned, flags=re.IGNORECASE)
     return cleaned.strip()
+
+
+def build_interaction_markdown(details: dict, interaction_id: int = None) -> str:
+    """Build a formatted markdown export of an interaction."""
+    lines = []
+    if interaction_id is not None:
+        lines.append(f"# Interaction {interaction_id}")
+        lines.append("")
+
+    # Prompt
+    lines.append("## Prompt")
+    lines.append(f"> {details.get('prompt', '')}")
+    lines.append("")
+
+    # Metadata
+    num_searches = len(details.get('search_queries', []))
+    num_sources = sum(len(q.get('sources', [])) for q in details.get('search_queries', []))
+    num_sources_used = len(details.get('citations', []))
+    citations_with_rank = [c for c in details.get('citations', []) if c.get('rank') is not None]
+    avg_rank_display = f"{sum(c['rank'] for c in citations_with_rank) / len(citations_with_rank):.1f}" if citations_with_rank else "N/A"
+    response_time_ms = details.get('response_time_ms')
+    response_time_s = f"{response_time_ms / 1000:.1f}s" if response_time_ms else "N/A"
+    extra_links = details.get('extra_links', 0)
+    analysis_type = 'Network Logs' if details.get('data_source') == 'network_log' else 'API'
+
+    lines.append("## Metadata")
+    lines.append(f"- Provider: {details.get('provider', 'Unknown')}")
+    lines.append(f"- Model: {details.get('model', 'Unknown')}")
+    lines.append(f"- Analysis: {analysis_type}")
+    lines.append(f"- Response Time: {response_time_s}")
+    lines.append(f"- Searches: {num_searches}")
+    lines.append(f"- Sources: {num_sources}")
+    lines.append(f"- Sources Used: {num_sources_used}")
+    lines.append(f"- Avg. Rank: {avg_rank_display}")
+    lines.append(f"- Extra Links: {extra_links}")
+    lines.append("")
+
+    # Response
+    lines.append("## Response")
+    response_text = sanitize_response_markdown(details.get('response_text', ''))
+    lines.append(response_text or "_No response text available._")
+    lines.append("")
+
+    # Search queries and sources
+    search_queries = details.get('search_queries', [])
+    if search_queries:
+        lines.append("## Search Queries & Sources")
+        for idx, query in enumerate(search_queries, 1):
+            q_text = query.get('query') or ''
+            sources = query.get('sources', [])
+            lines.append(f"### Query {idx}: {q_text} ({len(sources)} sources)")
+            for s_idx, src in enumerate(sources, 1):
+                title = src.get('title') or src.get('domain') or 'Unknown source'
+                url = src.get('url') or ''
+                domain = src.get('domain') or ''
+                snippet = src.get('snippet') or 'N/A'
+                if snippet == 'N/A' and src.get('title'):
+                    snippet = src.get('title')
+                pub_date = src.get('pub_date')
+                pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
+                lines.append(f"{s_idx}. [{title}]({url}) ({domain})")
+                lines.append(f"   - Snippet: {snippet}")
+                lines.append(f"   - Published: {pub_date_fmt}")
+        lines.append("")
+
+    # Sources used
+    citations = details.get('citations', [])
+    if citations:
+        lines.append("## Sources Used")
+        for c_idx, citation in enumerate(citations, 1):
+            title = citation.get('title') or 'Unknown source'
+            url = citation.get('url') or ''
+            domain = urlparse(url).netloc if url else ''
+            q_idx = citation.get('query_index')
+            rank = citation.get('rank')
+            rank_bits = []
+            if q_idx is not None:
+                rank_bits.append(f"Query {q_idx + 1}")
+            if rank:
+                rank_bits.append(f"Rank {rank}")
+            rank_display = f" ({', '.join(rank_bits)})" if rank_bits else ""
+            snippet = citation.get('snippet') or 'N/A'
+            pub_date = citation.get('pub_date')
+            pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
+            lines.append(f"{c_idx}. [{title}]({url}) ({domain}){rank_display}")
+            lines.append(f"   - Snippet: {snippet}")
+            lines.append(f"   - Published: {pub_date_fmt}")
+
+    return "\n".join(lines).strip() + "\n"
 
 
 def format_response_text(text: str, citations: list) -> str:
@@ -853,6 +942,7 @@ def tab_history():
             file_name=f"query_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
             mime="text/csv"
         )
+        st.divider()
 
         # View details
         st.markdown("### 🧾 View Interaction Details")
@@ -865,6 +955,33 @@ def tab_history():
         if selected_id:
             details = st.session_state.db.get_interaction_details(selected_id)
             if details:
+                # Download interaction as markdown (placed directly after selector)
+                md_export = build_interaction_markdown(details, selected_id)
+                st.download_button(
+                    label="📥 Download as Markdown",
+                    data=md_export,
+                    file_name=f"interaction_{selected_id}.md",
+                    mime="text/markdown",
+                    use_container_width=False,
+                )
+                # Delete interaction
+                if st.button("🗑️ Delete Interaction", type="secondary"):
+                    try:
+                        deleted = st.session_state.db.delete_interaction(selected_id)
+                        if deleted:
+                            st.success(f"Interaction ID {selected_id} deleted.")
+                            try:
+                                # Streamlit >=1.22 uses st.rerun
+                                rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
+                                if rerun:
+                                    rerun()
+                            except Exception:
+                                pass
+                        else:
+                            st.warning("Interaction not found.")
+                    except Exception as del_err:
+                        st.error(f"Failed to delete interaction: {del_err}")
+
                 st.divider()
                 # Prompt header
                 st.markdown(f"### 🗣️ Prompt:  *“{details['prompt']}”*")
