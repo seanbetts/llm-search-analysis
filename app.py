@@ -103,6 +103,8 @@ def initialize_session_state():
         st.session_state.data_collection_mode = 'api'
     if 'browser_session_active' not in st.session_state:
         st.session_state.browser_session_active = False
+    if 'network_headless' not in st.session_state:
+        st.session_state.network_headless = False
 
 
 def format_pub_date(pub_date: str) -> str:
@@ -510,10 +512,11 @@ def tab_interactive():
     # Model selection (hide in network log mode since it always uses chatgpt-free)
     if st.session_state.data_collection_mode == 'network_log':
         st.info("🌐 **Network Capture Mode**: Using free ChatGPT (model selection not available)")
+        st.checkbox("Run browser headless (experimental, may hit CAPTCHA)", value=st.session_state.network_headless, key="network_headless")
         # Fixed model for network capture
         selected_provider = 'openai'
         selected_model = 'chatgpt-free'
-        selected_label = '🟢 OpenAI - ChatGPT (Free)'
+        selected_label = '🟢 OpenAI - ChatGPT'
     else:
         model_labels = list(models.keys())
         selected_label = st.selectbox(
@@ -525,22 +528,12 @@ def tab_interactive():
         # Extract provider and model from selection
         selected_provider, selected_model = models[selected_label]
 
-    # Prompt input
-    prompt = st.text_area(
-        "Prompt",
-        placeholder="What are the latest developments in artificial intelligence this week?",
-        height=100,
-        label_visibility="collapsed"
-    )
+    # Prompt input (Enter submits, Shift+Enter for newline)
+    prompt = st.chat_input("Prompt (Enter to send, Shift+Enter for new line)")
 
-    # Submit button
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        submit_button = st.button("🚀 Submit Query", type="primary", use_container_width=True)
-
-    # Handle submission
-    if submit_button:
-        if not prompt:
+    # Handle submission when chat_input returns a value
+    if prompt is not None:
+        if not prompt.strip():
             st.warning("Please enter a prompt")
             return
 
@@ -567,9 +560,8 @@ def tab_interactive():
                         return
 
                     # Initialize and use capturer
-                    # Note: headless=False to avoid Cloudflare CAPTCHA
                     capturer = ChatGPTCapturer()
-                    capturer.start_browser(headless=False)
+                    capturer.start_browser(headless=st.session_state.network_headless)
 
                     try:
                         # Authenticate with credentials from Config

@@ -98,7 +98,8 @@ class SourceModel(Base):
     __tablename__ = "sources"
 
     id = Column(Integer, primary_key=True)
-    search_query_id = Column(Integer, ForeignKey("search_queries.id"))
+    search_query_id = Column(Integer, ForeignKey("search_queries.id"), nullable=True)  # Nullable for network logs
+    response_id = Column(Integer, ForeignKey("responses.id"), nullable=True)  # For network log sources without query association
     url = Column(Text, nullable=False)
     title = Column(Text)
     domain = Column(String(255))
@@ -112,6 +113,7 @@ class SourceModel(Base):
 
     # Relationships
     search_query = relationship("SearchQuery", back_populates="sources")
+    response = relationship("Response", foreign_keys=[response_id])
 
 
 class SourceUsed(Base):
