@@ -116,6 +116,13 @@ def format_pub_date(pub_date: str) -> str:
         return pub_date
 
 
+def normalize_model_id(model: str) -> str:
+    """Normalize model identifiers for consistency."""
+    if model == "gpt-5-1":
+        return "gpt-5.1"
+    return model
+
+
 def sanitize_response_markdown(text: str) -> str:
     """Remove heavy dividers and downscale large headings so they don't exceed the section title."""
     if not text:
@@ -591,7 +598,7 @@ def tab_interactive():
 
                 # Save to database (works for both modes)
                 try:
-                    model_to_save = getattr(response, "model", None) or selected_model
+                    model_to_save = normalize_model_id(getattr(response, "model", None) or selected_model)
                     st.session_state.db.save_interaction(
                         provider_name=selected_provider,
                         model=model_to_save,
@@ -751,7 +758,7 @@ def tab_batch():
 
                     # Save to database (works for both modes)
                     try:
-                        model_to_save = getattr(response, "model", None) or model_name
+                        model_to_save = normalize_model_id(getattr(response, "model", None) or model_name)
                         st.session_state.db.save_interaction(
                             provider_name=provider_name,
                             model=model_to_save,

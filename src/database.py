@@ -243,6 +243,10 @@ class Database:
             data_source: Data collection method ('api' or 'network_log')
             extra_links_count: Links in response not present in search results
         """
+        # Normalize model naming (e.g., gpt-5-1 -> gpt-5.1)
+        if model == "gpt-5-1":
+            model = "gpt-5.1"
+
         session = self.get_session()
         try:
             # Get or create provider
