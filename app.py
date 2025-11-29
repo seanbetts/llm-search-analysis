@@ -41,25 +41,28 @@ st.markdown("""
         margin: 0.5rem 0;
     }
     .search-query {
-        background-color: #e8f4f8;
+        background-color: var(--secondary-background-color, #e8f4f8);
+        color: var(--text-color, #000);
         padding: 0.5rem 1rem;
         border-left: 4px solid #1f77b4;
         margin: 0.5rem 0;
         border-radius: 0.25rem;
     }
     .source-item {
-        background-color: #f9f9f9;
+        background-color: var(--secondary-background-color, #f9f9f9);
+        color: var(--text-color, #000);
         padding: 0.75rem;
         margin: 0.5rem 0;
         border-radius: 0.25rem;
-        border: 1px solid #e0e0e0;
+        border: 1px solid rgba(0,0,0,0.1);
     }
     .citation-item {
-        background-color: #fff8e1;
+        background-color: var(--secondary-background-color, #fff8e1);
+        color: var(--text-color, #000);
         padding: 0.75rem;
         margin: 0.5rem 0;
         border-radius: 0.25rem;
-        border: 1px solid #ffd54f;
+        border: 1px solid rgba(0,0,0,0.1);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -89,7 +92,7 @@ def format_pub_date(pub_date: str) -> str:
         return ""
     try:
         dt = datetime.fromisoformat(pub_date)
-        return dt.strftime("%b %d, %Y %H:%M UTC")
+        return dt.strftime("%a, %b %d, %Y %H:%M UTC")
     except Exception:
         return pub_date
 
@@ -233,13 +236,13 @@ def display_response(response):
                         pub_date = getattr(source, "pub_date", None)
                         snippet_display = snippet if snippet else "N/A"
                         pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
-                        snippet_block = f"<br/><small>Snippet: {snippet_display}</small>"
-                        pub_date_block = f"<br/><small>Published: {pub_date_fmt}</small>"
+                        snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
+                        pub_date_block = f"<br/><small><strong>Published:</strong> {pub_date_fmt}</small>"
+                        domain_link = f'<a href="{url_display}" target="_blank">{source.domain or "Open source"}</a>'
                         st.markdown(f"""
                         <div class="source-item">
                             <strong>{j}. {display_title}</strong><br/>
-                            <small>{source.domain or 'Unknown domain'}</small><br/>
-                            <a href="{url_display}" target="_blank">{url_truncated}</a>
+                            <small>{domain_link}</small>
                             {snippet_block}
                             {pub_date_block}
                         </div>

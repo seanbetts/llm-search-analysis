@@ -210,9 +210,6 @@ class ChatGPTCapturer(BaseCapturer):
                     if self.page.locator(selector).count() > 0:
                         print("⚠️  CAPTCHA detected!")
                         print("    Cloudflare is blocking automated access.")
-                        print("    Waiting 30 seconds for manual CAPTCHA solve...")
-                        print("    (If running headless, this will fail)")
-                        time.sleep(30)
                         break
                 except:
                     continue
@@ -503,17 +500,7 @@ class ChatGPTCapturer(BaseCapturer):
             else:
                 # May need 2FA or additional verification
                 print("⚠️  Login may require additional verification (2FA, CAPTCHA, etc.)")
-                print("    Waiting 30 seconds for manual verification...")
-                time.sleep(30)
-
-                # Check again
-                for selector in chat_interface_selectors:
-                    try:
-                        if self.page.locator(selector).count() > 0:
-                            print("✅ Login successful after verification!")
-                            return True
-                    except:
-                        continue
+                # Fall through to failure if not already logged in
 
                 raise Exception("Login failed - could not verify chat interface")
 
