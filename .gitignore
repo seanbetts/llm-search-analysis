@@ -56,3 +56,6 @@ htmlcov/
 # Streamlit
 .streamlit/secrets.toml
 data/chatgpt_session.json
+
+# Network capture logs
+data/network_logs/
