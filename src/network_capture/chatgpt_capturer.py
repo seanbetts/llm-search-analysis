@@ -579,7 +579,13 @@ class ChatGPTCapturer(BaseCapturer):
             # Try to enable search using /search command first (simpler and more reliable)
             print("🔍 Enabling web search...")
             print("  Method 1: Trying /search command...")
-            textarea.fill(f"/search {prompt}")
+            # Type "/search" and then press Space to activate the command
+            textarea.type("/search")
+            time.sleep(0.2)
+            textarea.press("Space")  # Press Space key to trigger /search recognition
+            time.sleep(0.5)  # Wait for /search to be recognized
+            # Now type the actual prompt
+            textarea.type(prompt)
             time.sleep(1)
 
             # Check if /search activated search mode (look for search indicator in UI)
