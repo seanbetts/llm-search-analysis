@@ -405,7 +405,6 @@ def display_response(response, prompt=None):
     # Display prompt if provided
     if prompt:
         st.markdown(f"### 🗣️ *\"{prompt}\"*")
-        st.divider()
 
     # Provider display names
     provider_names = {
