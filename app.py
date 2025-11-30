@@ -194,7 +194,8 @@ def build_interaction_markdown(details: dict, interaction_id: int = None) -> str
 
     # Response
     lines.append("## Response")
-    response_text = sanitize_response_markdown(details.get('response_text', ''))
+    # Format response text (convert citation references to inline links)
+    response_text = format_response_text(details.get('response_text', ''), details.get('citations', []))
     lines.append(response_text or "_No response text available._")
     lines.append("")
 
@@ -467,12 +468,8 @@ def display_response(response):
         img_html = "".join([f'<img src="{url}" style="width:210px;height:135px;object-fit:cover;margin:4px 6px 4px 0;vertical-align:top;"/>' for url in extracted_images])
         st.markdown(f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;'>{img_html}</div>", unsafe_allow_html=True)
 
-    st.markdown(
-        "<div style='margin-left:18px; padding-left:12px; border-left:2px solid #d0d0d0;'>"
-        f"{formatted_response}"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    # Render markdown directly (without HTML wrapper) to allow markdown formatting (bold, italic, etc.)
+    st.markdown(formatted_response)
     st.divider()
 
     # Search queries and sources display
@@ -1181,20 +1178,22 @@ def tab_history():
                 st.divider()
 
                 st.markdown("### 💬 Response:")
-                sanitized_detail_response = sanitize_response_markdown(details['response_text'])
-                st.markdown(
-                    "<div style='margin-left:18px; padding-left:12px; border-left:2px solid #d0d0d0;'>"
-                    f"{sanitized_detail_response}"
-                    "</div>",
-                    unsafe_allow_html=True,
-                )
+                # Format response text (convert citation references to inline links)
+                formatted_detail_response = format_response_text(details['response_text'], details.get('citations', []))
+                # Render markdown directly (without HTML wrapper) to allow markdown formatting (bold, italic, etc.)
+                st.markdown(formatted_detail_response)
 
                 st.divider()
 
                 if details['search_queries']:
-                    st.markdown(f"### 🔍 Search Queries ({len(details['search_queries'])}):")
+                    st.markdown("### 🔍 Search Queries:")
                     for i, query in enumerate(details['search_queries'], 1):
-                        st.markdown(f"**{i}.** {query['query']}")
+                        # Display query with same styling as interactive tab
+                        st.markdown(f"""
+                        <div class="search-query">
+                            <strong>Query {i}:</strong> {query['query']}
+                        </div>
+                        """, unsafe_allow_html=True)
 
                     st.divider()
 
@@ -1228,20 +1227,56 @@ def tab_history():
 
                 if details['citations']:
                     st.markdown(f"### 📝 Sources Used ({len(details['citations'])}):")
+                    st.caption("Sources the model consulted via web search")
+
+                    # Build URL -> source lookup for metadata fallback
+                    all_sources = details.get('all_sources', [])
+                    url_to_source = {src['url']: src for src in all_sources if src.get('url')}
+
                     for i, citation in enumerate(details['citations'], 1):
-                        q_idx = citation.get('query_index')
-                        rank = citation.get('rank')
-                        if q_idx is not None and rank:
-                            rank_display = f" (Query {q_idx + 1}, Rank {rank})"
-                        elif q_idx is not None:
-                            rank_display = f" (Query {q_idx + 1})"
-                        elif rank:
-                            rank_display = f" (Rank {rank})"
-                        else:
-                            rank_display = ""
-                        domain = urlparse(citation['url']).netloc if citation.get('url') else 'Unknown domain'
-                        display_title = citation.get('title') or domain or 'Unknown source'
-                        st.markdown(f"{i}. [{display_title}]({citation['url']}){rank_display}")
+                        with st.container():
+                            url_display = citation.get('url') or 'No URL'
+                            domain_link = f'<a href="{url_display}" target="_blank">{urlparse(url_display).netloc or url_display}</a>'
+
+                            # Extract query info and rank
+                            q_idx = citation.get('query_index')
+                            rank = citation.get('rank')
+                            if q_idx is not None and rank:
+                                rank_display = f" (Query {q_idx + 1}, Rank {rank})"
+                            elif q_idx is not None:
+                                rank_display = f" (Query {q_idx + 1})"
+                            elif rank:
+                                rank_display = f" (Rank {rank})"
+                            else:
+                                rank_display = ""
+
+                            # Extract domain from URL for fallback
+                            domain = urlparse(url_display).netloc if url_display != 'No URL' else 'Unknown domain'
+                            display_title = citation.get('title') or domain or 'Unknown source'
+
+                            # Get snippet and pub_date from citation metadata or source fallback
+                            snippet = citation.get('snippet')
+                            pub_date_val = citation.get('pub_date')
+
+                            # Fallback to source data if available
+                            if not snippet or not pub_date_val:
+                                source_fallback = url_to_source.get(url_display)
+                                if source_fallback:
+                                    snippet = snippet or source_fallback.get('snippet')
+                                    pub_date_val = pub_date_val or source_fallback.get('pub_date')
+
+                            snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>"
+                            pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"
+                            pub_date_block = f"<br/><small><strong>Published:</strong> {pub_date_fmt}</small>"
+
+                            st.markdown(f"""
+                            <div class="citation-item">
+                                <strong>{i}. {display_title}{rank_display}</strong><br/>
+                                {domain_link}
+                                {snippet_block}
+                                {pub_date_block}
+                            </div>
+                            """, unsafe_allow_html=True)
 
     except Exception as e:
         st.error(f"Error loading history: {str(e)}")
