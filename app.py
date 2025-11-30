@@ -439,7 +439,14 @@ def display_response(response):
     with col4:
         st.metric("Search Queries", len(response.search_queries))
     with col5:
-        st.metric("Sources Found", len(response.sources))
+        # Count sources differently for API vs network logs
+        data_source = getattr(response, 'data_source', 'api')
+        if data_source == 'network_log':
+            sources_count = len(response.sources)
+        else:
+            # API: count sources from all queries
+            sources_count = sum(len(q.sources) for q in response.search_queries)
+        st.metric("Sources Found", sources_count)
     with col6:
         st.metric("Sources Used", len(response.citations))
     with col7:
@@ -552,7 +559,14 @@ def display_response(response):
         st.caption("Sources the model consulted via web search")
 
         # Build URL -> source lookup for metadata fallback
-        url_to_source = {s.url: s for s in response.sources if getattr(s, "url", None)}
+        # For API: sources are in query.sources; for network logs: sources are in response.sources
+        data_source = getattr(response, 'data_source', 'api')
+        if data_source == 'network_log':
+            url_to_source = {s.url: s for s in response.sources if getattr(s, "url", None)}
+        else:
+            # API: gather sources from all queries
+            all_sources = [s for q in response.search_queries for s in q.sources]
+            url_to_source = {s.url: s for s in all_sources if getattr(s, "url", None)}
 
         for i, citation in enumerate(response.citations, 1):
             with st.container():

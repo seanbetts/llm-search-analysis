@@ -71,6 +71,7 @@ class Response(Base):
     # Relationships
     prompt = relationship("Prompt", back_populates="response")
     search_queries = relationship("SearchQuery", back_populates="response")
+    sources = relationship("SourceModel", foreign_keys="[SourceModel.response_id]", back_populates="response")
     sources_used = relationship("SourceUsed", back_populates="response")
 
 
@@ -113,7 +114,7 @@ class SourceModel(Base):
 
     # Relationships
     search_query = relationship("SearchQuery", back_populates="sources")
-    response = relationship("Response", foreign_keys=[response_id])
+    response = relationship("Response", foreign_keys=[response_id], back_populates="sources")
 
 
 class SourceUsed(Base):
