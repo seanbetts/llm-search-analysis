@@ -389,12 +389,15 @@ class Database:
                         # For API data, sources are in query.sources
                         source_count = sum(len(sq.sources) for sq in prompt.response.search_queries)
 
-                    sources_used_count = len(prompt.response.sources_used)
-
-                    # Calculate average rank from sources used
+                    # Count only sources used with ranks (from search results)
                     sources_with_rank = [su for su in prompt.response.sources_used if su.rank is not None]
+                    sources_used_count = len(sources_with_rank)
+
+                    # Calculate average rank from sources used (those with ranks)
                     avg_rank = sum(su.rank for su in sources_with_rank) / len(sources_with_rank) if sources_with_rank else None
-                    extra_links = getattr(prompt.response, "extra_links_count", 0)
+
+                    # Count extra links (sources used without ranks)
+                    extra_links = len([su for su in prompt.response.sources_used if su.rank is None])
                     data_source = getattr(prompt.response, "data_source", "api")
 
                     results.append({

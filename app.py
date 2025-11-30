@@ -177,12 +177,14 @@ def build_interaction_markdown(details: dict, interaction_id: int = None) -> str
         num_sources = len(details.get('all_sources', []))
     else:
         num_sources = sum(len(q.get('sources', [])) for q in details.get('search_queries', []))
-    num_sources_used = len(details.get('citations', []))
+    # Count only citations with ranks (from search results)
     citations_with_rank = [c for c in details.get('citations', []) if c.get('rank') is not None]
+    num_sources_used = len(citations_with_rank)
     avg_rank_display = f"{sum(c['rank'] for c in citations_with_rank) / len(citations_with_rank):.1f}" if citations_with_rank else "N/A"
     response_time_ms = details.get('response_time_ms')
     response_time_s = f"{response_time_ms / 1000:.1f}s" if response_time_ms else "N/A"
-    extra_links = details.get('extra_links', 0)
+    # Count citations without ranks (extra links)
+    extra_links = len([c for c in details.get('citations', []) if not c.get('rank')])
     analysis_type = 'Network Logs' if details.get('data_source') == 'network_log' else 'API'
 
     lines.append("## Metadata")
@@ -452,19 +454,19 @@ def display_response(response):
             sources_count = sum(len(q.sources) for q in response.search_queries)
         st.metric("Sources Found", sources_count)
     with col6:
-        st.metric("Sources Used", len(response.citations))
-    with col7:
-        # Calculate average rank from sources used (citations)
+        # Count only citations with ranks (from search results)
         sources_with_rank = [c for c in response.citations if c.rank]
+        st.metric("Sources Used", len(sources_with_rank))
+    with col7:
+        # Calculate average rank from sources used (citations with ranks)
         if sources_with_rank:
             avg_rank = sum(c.rank for c in sources_with_rank) / len(sources_with_rank)
             st.metric("Avg. Rank", f"{avg_rank:.1f}")
         else:
             st.metric("Avg. Rank", "N/A")
     with col8:
-        extra_links = 0
-        if getattr(response, "metadata", None):
-            extra_links = response.metadata.get("extra_links_count", 0) or 0
+        # Count citations without ranks (extra links)
+        extra_links = len([c for c in response.citations if not c.rank])
         st.metric("Extra Links", extra_links)
 
     st.divider()
@@ -559,9 +561,10 @@ def display_response(response):
                     """, unsafe_allow_html=True)
             st.divider()
 
-    # Sources used (from web search)
-    if response.citations:
-        st.markdown(f"### 📝 Sources Used ({len(response.citations)}):")
+    # Sources used (from web search) - only citations with ranks
+    citations_with_rank = [c for c in response.citations if c.rank]
+    if citations_with_rank:
+        st.markdown(f"### 📝 Sources Used ({len(citations_with_rank)}):")
         st.caption("Sources the model consulted via web search")
 
         # Build URL -> source lookup for metadata fallback
@@ -573,7 +576,7 @@ def display_response(response):
             all_sources = [s for q in response.search_queries for s in q.sources]
             url_to_source = {s.url: s for s in all_sources if getattr(s, "url", None)}
 
-        for i, citation in enumerate(response.citations, 1):
+        for i, citation in enumerate(citations_with_rank, 1):
             with st.container():
                 url_display = citation.url or 'No URL'
                 domain_link = f'<a href="{url_display}" target="_blank">{urlparse(url_display).netloc or url_display}</a>'
@@ -593,12 +596,8 @@ def display_response(response):
                         except Exception:
                             query_idx = None
                 rank_label = citation.rank if citation.rank else None
-                if query_idx and rank_label:
-                    rank_display = f" (Query {query_idx}, Rank {rank_label})"
-                elif rank_label:
-                    rank_display = f" (Rank {rank_label})"
-                else:
-                    rank_display = ""
+                # Display rank in parentheses after title
+                rank_display = f" (Rank {rank_label})" if rank_label else ""
                 # Extract domain from URL for fallback
                 domain = urlparse(citation.url).netloc if citation.url else 'Unknown domain'
                 display_title = citation.title or domain or 'Unknown source'
@@ -750,7 +749,7 @@ def tab_interactive():
                         response_time_ms=response.response_time_ms,
                         raw_response=response.raw_response,
                         data_source=st.session_state.data_collection_mode,
-                        extra_links_count=response.metadata.get("extra_links_count", 0) if getattr(response, "metadata", None) else 0
+                        extra_links_count=getattr(response, "extra_links_count", 0)
                     )
                 except Exception as db_error:
                     st.warning(f"Response saved but database error occurred: {str(db_error)}")
@@ -910,7 +909,7 @@ def tab_batch():
                             response_time_ms=response.response_time_ms,
                             raw_response=response.raw_response,
                             data_source=st.session_state.data_collection_mode,
-                            extra_links_count=response.metadata.get("extra_links_count", 0) if getattr(response, "metadata", None) else 0
+                            extra_links_count=getattr(response, "extra_links_count", 0)
                         )
                     except Exception as db_error:
                         st.warning(f"Database error for {model_label} prompt {prompt_idx + 1}: {str(db_error)}")
@@ -1184,11 +1183,13 @@ def tab_history():
                     num_sources = len(details.get('all_sources', []))
                 else:
                     num_sources = sum(len(query['sources']) for query in details['search_queries'])
-                num_sources_used = len(details['citations'])
+                # Count only citations with ranks (from search results)
                 citations_with_rank = [c for c in details['citations'] if c.get('rank') is not None]
+                num_sources_used = len(citations_with_rank)
                 avg_rank_display = f"{sum(c['rank'] for c in citations_with_rank) / len(citations_with_rank):.1f}" if citations_with_rank else "N/A"
                 response_time_s = f"{details['response_time_ms'] / 1000:.1f}s"
-                extra_links_count = details.get('extra_links', 0)
+                # Count citations without ranks (extra links)
+                extra_links_count = len([c for c in details['citations'] if not c.get('rank')])
                 analysis_type = 'Network Logs' if details.get('data_source') == 'network_log' else 'API'
 
                 # Metadata bar
@@ -1273,33 +1274,25 @@ def tab_history():
                                     snippet = src.get('title') or domain_link
                                     st.markdown(f"{j}. {snippet} — {domain_link}")
 
-                if details['citations']:
+                # Sources used (from web search) - only citations with ranks
+                citations_with_rank = [c for c in details['citations'] if c.get('rank')]
+                if citations_with_rank:
                     st.divider()
-
-                if details['citations']:
-                    st.markdown(f"### 📝 Sources Used ({len(details['citations'])}):")
+                    st.markdown(f"### 📝 Sources Used ({len(citations_with_rank)}):")
                     st.caption("Sources the model consulted via web search")
 
                     # Build URL -> source lookup for metadata fallback
                     all_sources = details.get('all_sources', [])
                     url_to_source = {src['url']: src for src in all_sources if src.get('url')}
 
-                    for i, citation in enumerate(details['citations'], 1):
+                    for i, citation in enumerate(citations_with_rank, 1):
                         with st.container():
                             url_display = citation.get('url') or 'No URL'
                             domain_link = f'<a href="{url_display}" target="_blank">{urlparse(url_display).netloc or url_display}</a>'
 
-                            # Extract query info and rank
-                            q_idx = citation.get('query_index')
+                            # Extract rank and display in parentheses
                             rank = citation.get('rank')
-                            if q_idx is not None and rank:
-                                rank_display = f" (Query {q_idx + 1}, Rank {rank})"
-                            elif q_idx is not None:
-                                rank_display = f" (Query {q_idx + 1})"
-                            elif rank:
-                                rank_display = f" (Rank {rank})"
-                            else:
-                                rank_display = ""
+                            rank_display = f" (Rank {rank})" if rank else ""
 
                             # Extract domain from URL for fallback
                             domain = urlparse(url_display).netloc if url_display != 'No URL' else 'Unknown domain'
