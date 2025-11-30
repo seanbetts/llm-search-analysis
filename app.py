@@ -1236,7 +1236,7 @@ def tab_history():
                 with col7:
                     st.metric("Avg. Rank", avg_rank_display)
                 with col8:
-                    st.metric("Extra Links", getattr(prompt.response, "extra_links_count", extra_links_count))
+                    st.metric("Extra Links", extra_links_count)
 
                 st.divider()
 

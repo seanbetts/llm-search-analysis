@@ -464,8 +464,8 @@ class NetworkLogParser:
                     }
                 ))
 
-        # 2) Inline markdown links: [text](URL)
-        inline_pattern = r'\[([^\]]+)\]\((https?://[^\s)]+)\)'
+        # 2) Inline markdown links: [text](URL) -- ignore image markdown ![...](...)
+        inline_pattern = r'(?<!!)\[([^\]]+)\]\((https?://[^\s)]+)\)'
         for match in re.finditer(inline_pattern, response_text):
             link_text, url = match.group(1), match.group(2)
             norm = clean_url(url)
