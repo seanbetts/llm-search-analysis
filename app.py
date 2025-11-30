@@ -440,8 +440,7 @@ def display_response(response):
         st.metric("Search Queries", len(response.search_queries))
     with col5:
         # Count sources differently for API vs network logs
-        data_source = getattr(response, 'data_source', 'api')
-        if data_source == 'network_log':
+        if getattr(response, 'data_source', 'api') == 'network_log':
             sources_count = len(response.sources)
         else:
             # API: count sources from all queries
@@ -495,9 +494,7 @@ def display_response(response):
         st.divider()
 
         # Display sources - different handling for API vs Network Log
-        data_source = getattr(response, 'data_source', 'api')
-
-        if data_source == 'api':
+        if getattr(response, 'data_source', 'api') == 'api':
             # API: Sources are associated with queries
             queries_with_sources = [q for q in response.search_queries if q.sources]
             if queries_with_sources:
@@ -560,8 +557,7 @@ def display_response(response):
 
         # Build URL -> source lookup for metadata fallback
         # For API: sources are in query.sources; for network logs: sources are in response.sources
-        data_source = getattr(response, 'data_source', 'api')
-        if data_source == 'network_log':
+        if getattr(response, 'data_source', 'api') == 'network_log':
             url_to_source = {s.url: s for s in response.sources if getattr(s, "url", None)}
         else:
             # API: gather sources from all queries

@@ -66,6 +66,7 @@ class ProviderResponse:
     response_time_ms: Optional[int] = None
     metadata: Optional[Dict[str, Any]] = None  # Additional provider-specific metadata
     extra_links_count: int = 0  # Citations not from search results (network log only)
+    data_source: str = 'api'  # 'api' or 'network_log'
 
 
 class BaseProvider(ABC):
