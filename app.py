@@ -83,6 +83,11 @@ st.markdown("""
     .stMarkdown p {
         clear: both;
     }
+    .response-container {
+        margin-left: 18px;
+        padding-left: 12px;
+        border-left: 2px solid #d0d0d0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -474,13 +479,17 @@ def display_response(response):
         img_html = "".join([f'<img src="{url}" style="width:210px;height:135px;object-fit:cover;margin:4px 6px 4px 0;vertical-align:top;"/>' for url in extracted_images])
         st.markdown(f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;'>{img_html}</div>", unsafe_allow_html=True)
 
-    # Render markdown directly (without HTML wrapper) to allow markdown formatting (bold, italic, etc.)
-    st.markdown(formatted_response)
+    # Render markdown with indented container styling
+    # Use newlines around content to ensure markdown processing works inside the div
+    st.markdown(
+        f'<div class="response-container">\n\n{formatted_response}\n\n</div>',
+        unsafe_allow_html=True
+    )
     st.divider()
 
     # Search queries and sources display
     if response.search_queries:
-        st.markdown("### 🔍 Search Queries:")
+        st.markdown(f"### 🔍 Search Queries ({len(response.search_queries)}):")
         for i, query in enumerate(response.search_queries, 1):
             query_index = getattr(query, "order_index", None)
             label_num = query_index + 1 if query_index is not None else i
@@ -511,7 +520,7 @@ def display_response(response):
                         snippet_display = snippet if snippet else "N/A"
                         pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
                         snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
-                        pub_date_block = f"<br/><small><strong>Published:</strong> {pub_date_fmt}</small>"
+                        pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
                         domain_link = f'<a href="{url_display}" target="_blank">{source.domain or "Open source"}</a>'
                         st.markdown(f"""
                         <div class="source-item">
@@ -538,7 +547,7 @@ def display_response(response):
                     snippet_display = snippet if snippet else "N/A"
                     pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
                     snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
-                    pub_date_block = f"<br/><small><strong>Published:</strong> {pub_date_fmt}</small>"
+                    pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
                     domain_link = f'<a href="{url_display}" target="_blank">{source.domain or "Open source"}</a>'
                     st.markdown(f"""
                     <div class="source-item">
@@ -599,13 +608,41 @@ def display_response(response):
                 pub_date_val = (citation.metadata.get("pub_date") if getattr(citation, "metadata", None) else None) or (getattr(source_fallback, "pub_date", None))
                 snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>"
                 pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"
-                pub_date_block = f"<br/><small><strong>Published:</strong> {pub_date_fmt}</small>"
+                pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
                 st.markdown(f"""
                 <div class="citation-item">
                     <strong>{i}. {display_title}{rank_display}</strong><br/>
                     {domain_link}
                     {snippet_block}
                     {pub_date_block}
+                </div>
+                """, unsafe_allow_html=True)
+
+    # Extra links (citations not from search results)
+    extra_links = [c for c in response.citations if not c.rank]
+    if extra_links:
+        st.divider()
+        st.markdown(f"### 🔗 Extra Links ({len(extra_links)}):")
+        st.caption("Links mentioned in the response that weren't from search results")
+
+        for i, citation in enumerate(extra_links, 1):
+            with st.container():
+                url_display = citation.url or 'No URL'
+                domain_link = f'<a href="{url_display}" target="_blank">{urlparse(url_display).netloc or url_display}</a>'
+                domain = urlparse(citation.url).netloc if citation.url else 'Unknown domain'
+                display_title = citation.title or domain or 'Unknown source'
+
+                # Get snippet from metadata if available
+                snippet = None
+                if getattr(citation, "metadata", None):
+                    snippet = citation.metadata.get("snippet")
+                snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>" if snippet else ""
+
+                st.markdown(f"""
+                <div class="citation-item">
+                    <strong>{i}. {display_title}</strong><br/>
+                    {domain_link}
+                    {snippet_block}
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -1190,8 +1227,12 @@ def tab_history():
                 st.markdown("### 💬 Response:")
                 # Format response text (convert citation references to inline links)
                 formatted_detail_response = format_response_text(details['response_text'], details.get('citations', []))
-                # Render markdown directly (without HTML wrapper) to allow markdown formatting (bold, italic, etc.)
-                st.markdown(formatted_detail_response)
+                # Render markdown with indented container styling
+                # Use newlines around content to ensure markdown processing works inside the div
+                st.markdown(
+                    f'<div class="response-container">\n\n{formatted_detail_response}\n\n</div>',
+                    unsafe_allow_html=True
+                )
 
                 st.divider()
 
@@ -1277,7 +1318,7 @@ def tab_history():
 
                             snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>"
                             pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"
-                            pub_date_block = f"<br/><small><strong>Published:</strong> {pub_date_fmt}</small>"
+                            pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
 
                             st.markdown(f"""
                             <div class="citation-item">
@@ -1285,6 +1326,32 @@ def tab_history():
                                 {domain_link}
                                 {snippet_block}
                                 {pub_date_block}
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                # Extra links (citations not from search results)
+                extra_links = [c for c in details['citations'] if not c.get('rank')]
+                if extra_links:
+                    st.divider()
+                    st.markdown(f"### 🔗 Extra Links ({len(extra_links)}):")
+                    st.caption("Links mentioned in the response that weren't from search results")
+
+                    for i, citation in enumerate(extra_links, 1):
+                        with st.container():
+                            url_display = citation.get('url') or 'No URL'
+                            domain_link = f'<a href="{url_display}" target="_blank">{urlparse(url_display).netloc or url_display}</a>'
+                            domain = urlparse(url_display).netloc if url_display != 'No URL' else 'Unknown domain'
+                            display_title = citation.get('title') or domain or 'Unknown source'
+
+                            # Get snippet if available
+                            snippet = citation.get('snippet')
+                            snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>" if snippet else ""
+
+                            st.markdown(f"""
+                            <div class="citation-item">
+                                <strong>{i}. {display_title}</strong><br/>
+                                {domain_link}
+                                {snippet_block}
                             </div>
                             """, unsafe_allow_html=True)
 
