@@ -95,6 +95,8 @@ def initialize_session_state():
     """Initialize session state variables."""
     if 'response' not in st.session_state:
         st.session_state.response = None
+    if 'prompt' not in st.session_state:
+        st.session_state.prompt = None
     if 'error' not in st.session_state:
         st.session_state.error = None
     if 'db' not in st.session_state or not hasattr(st.session_state.db, "delete_interaction"):
@@ -397,8 +399,13 @@ def get_all_models():
         st.error(f"Error loading models: {str(e)}")
         return {}
 
-def display_response(response):
+def display_response(response, prompt=None):
     """Display the LLM response with search metadata."""
+
+    # Display prompt if provided
+    if prompt:
+        st.markdown(f"### 🗣️ *\"{prompt}\"*")
+        st.divider()
 
     # Provider display names
     provider_names = {
@@ -436,7 +443,7 @@ def display_response(response):
     col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1.5, 2, 1, 1, 1, 1, 1, 1])
 
     with col1:
-        st.metric("Provider", provider_names.get(response.provider, response.provider.capitalize()))
+        st.metric("Provider", provider_names.get(response.provider.lower(), response.provider))
     with col2:
         st.metric("Model", model_names.get(response.model, response.model))
     with col3:
@@ -755,6 +762,7 @@ def tab_interactive():
 
                 # Store in session state
                 st.session_state.response = response
+                st.session_state.prompt = prompt
                 st.session_state.error = None
 
             except Exception as e:
@@ -767,7 +775,7 @@ def tab_interactive():
 
     if st.session_state.response:
         st.divider()
-        display_response(st.session_state.response)
+        display_response(st.session_state.response, st.session_state.get('prompt'))
 
 def tab_batch():
     """Tab 2: Batch Analysis."""
@@ -1173,7 +1181,7 @@ def tab_history():
 
                 st.divider()
                 # Prompt header
-                st.markdown(f"### 🗣️ Prompt:  *“{details['prompt']}”*")
+                st.markdown(f"### 🗣️ *\"{details['prompt']}\"*")
 
                 # Calculate metrics
                 num_searches = len(details['search_queries'])
@@ -1221,7 +1229,7 @@ def tab_history():
                 }
 
                 with col1:
-                    st.metric("Provider", provider_names.get(details['provider'], details['provider'].capitalize()))
+                    st.metric("Provider", provider_names.get(details['provider'].lower(), details['provider']))
                 with col2:
                     st.metric("Model", model_names.get(details['model'], details['model']))
                 with col3:
@@ -1242,6 +1250,13 @@ def tab_history():
                 st.markdown("### 💬 Response:")
                 # Format response text (convert citation references to inline links)
                 formatted_detail_response = format_response_text(details['response_text'], details.get('citations', []))
+                formatted_detail_response, extracted_images = extract_images_from_response(formatted_detail_response)
+
+                if extracted_images:
+                    # Render images inline with minimal gaps
+                    img_html = "".join([f'<img src="{url}" style="width:210px;height:135px;object-fit:cover;margin:4px 6px 4px 0;vertical-align:top;"/>' for url in extracted_images])
+                    st.markdown(f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;'>{img_html}</div>", unsafe_allow_html=True)
+
                 # Render markdown with indented container styling
                 # Use newlines around content to ensure markdown processing works inside the div
                 st.markdown(
