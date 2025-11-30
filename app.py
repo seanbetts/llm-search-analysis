@@ -473,7 +473,8 @@ def display_response(response, prompt=None):
     st.divider()
 
     # Response text
-    st.markdown("### 💬 Response:")
+    response_time_label = response_time if response_time else "N/A"
+    st.markdown(f"### 💬 Response ({response_time_label}):")
     formatted_response = format_response_text(response.response_text, response.citations)
     formatted_response, extracted_images = extract_images_from_response(formatted_response)
 
@@ -1237,7 +1238,7 @@ def tab_history():
 
                 st.divider()
 
-                st.markdown("### 💬 Response:")
+                st.markdown(f"### 💬 Response ({response_time_s}):")
                 # Format response text (convert citation references to inline links)
                 formatted_detail_response = format_response_text(details['response_text'], details.get('citations', []))
                 formatted_detail_response, extracted_images = extract_images_from_response(formatted_detail_response)
@@ -1408,18 +1409,25 @@ def sidebar_info():
         st.sidebar.info("""
         **🌐 Experimental: Browser Network Capture**
 
-        Uses browser automation to capture network data.
+        Uses browser automation to capture network data for deeper insights.
 
         **How it works:**
-        - Opens a Chrome browser window (visible)
+        - Opens a Chrome browser window
         - Navigates to ChatGPT automatically
         - Submits your prompt
-        - Captures network traffic
+        - Captures network traffic with metadata
         - Closes browser when done
 
-        **Note:** A browser window will appear during capture. This is normal and avoids CAPTCHA issues.
+        **Features:**
+        - Session persistence (stays logged in)
+        - Captures internal ranking scores
+        - Records query reformulations
+        - Headless mode available (may hit CAPTCHA)
 
-        **Status:** ✅ Working (non-headless mode)
+        **Additional Metadata:**
+        Network logs provide internal scores, snippet text, and query reformulation data not available via API.
+
+        **Status:** ✅ Working
         """)
 
     st.sidebar.divider()
@@ -1438,31 +1446,38 @@ def sidebar_info():
         - Anthropic Claude (Web Search Tool)
         """)
 
-    # Understanding Sources Used section
-    with st.sidebar.expander("📚 Understanding Sources Used", expanded=False):
+    # Understanding Metrics section
+    with st.sidebar.expander("📊 Understanding Metrics", expanded=False):
         st.markdown("""
-        **Important Nuances:**
+        **Key Metrics Explained:**
 
-        **"Sources Used"** tracks sources the model actually searched for via web search APIs, not all URLs in the response.
+        **Sources Found**
+        - Total sources retrieved from web search
+        - Represents the model's search results
 
-        **Three scenarios you may see:**
+        **Sources Used**
+        - Citations from search results (have rank numbers)
+        - Only sources actually from the web search
+        - Used to calculate Average Rank
 
-        1. **Source used + URL in response**
-           - Normal case: model searched and cited
+        **Extra Links**
+        - Citations NOT from search results
+        - URLs mentioned from model's training data
+        - No rank number (weren't in search results)
+        - Counted separately from Sources Used
 
-        2. **Source used + No URL in response**
-           - Model used search but didn't show URL in text
-           - Still counted as source used
+        **Average Rank**
+        - Mean position of cited sources in search results
+        - Lower = model prefers higher-ranked sources
+        - Only calculated from Sources Used
 
-        3. **No source used + URL in response**
-           - Model mentioned URL from training knowledge
-           - Not counted (didn't actually search for it)
+        **Important:**
+        The model can cite URLs from two places:
+        1. Web search results → counted as "Sources Used"
+        2. Training knowledge → counted as "Extra Links"
 
         **For Google:**
-        - Sources Used = 0 (cannot distinguish from Sources Found)
-        - Google's API doesn't separate them
-
-        This means "Sources Used" measures **sources consulted via search**, not **URLs mentioned in text**.
+        Sources Used may show 0 as Google's API doesn't separate citations from search results.
         """)
 
 def main():
