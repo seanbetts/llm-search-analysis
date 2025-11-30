@@ -503,7 +503,25 @@ class ChatGPTCapturer(BaseCapturer):
             else:
                 # May need 2FA or additional verification
                 print("⚠️  Login may require additional verification (2FA, CAPTCHA, etc.)")
-                # Fall through to failure if not already logged in
+                print("   Waiting 10 seconds for manual verification...")
+                try:
+                    self.page.wait_for_timeout(10000)
+                except Exception:
+                    pass
+
+                # Re-check login after manual verification
+                logged_in = False
+                for selector in chat_interface_selectors:
+                    try:
+                        if self.page.locator(selector).count() > 0:
+                            logged_in = True
+                            break
+                    except:
+                        continue
+
+                if logged_in:
+                    print("✅ Login successful after manual verification!")
+                    return True
 
                 raise Exception("Login failed - could not verify chat interface")
 
@@ -693,12 +711,16 @@ class ChatGPTCapturer(BaseCapturer):
                         copy_btn = last_elem.locator('button[data-testid="copy-turn-action-button"]')
                         clipboard_text = ""
                         try:
-                            if copy_btn.count() > 0:
-                                btn = copy_btn.first
-                                btn.wait_for(state="visible", timeout=5000)
-                                btn.click(timeout=2000)
+                            for attempt in range(3):
+                                if copy_btn.count() > 0:
+                                    btn = copy_btn.first
+                                    btn.wait_for(state="visible", timeout=5000)
+                                    btn.click(timeout=2000)
+                                    self.page.wait_for_timeout(500)
+                                    clipboard_text = self.page.evaluate("navigator.clipboard.readText()")
+                                    if clipboard_text:
+                                        break
                                 self.page.wait_for_timeout(500)
-                                clipboard_text = self.page.evaluate("navigator.clipboard.readText()")
                         except Exception as e:
                             print(f"  ⚠️  Copy button fetch failed: {str(e)[:50]}")
 

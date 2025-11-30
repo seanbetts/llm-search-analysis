@@ -251,11 +251,62 @@ class NetworkLogParser:
                 normalized = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', new_query, ''))
                 return normalized
 
-            # Parse all sources from search result groups
+            # Collect additional entries directly from the SSE body to avoid missing groups
+            def extract_entries_from_body(body_text: str) -> List[Dict[str, Any]]:
+                entries: List[Dict[str, Any]] = []
+                lines = body_text.split('\n')
+                for line in lines:
+                    if not line.startswith('data: '):
+                        continue
+                    try:
+                        payload = json.loads(line[6:])
+                    except Exception:
+                        continue
+                    if not isinstance(payload, dict):
+                        continue
+
+                    # Helper to append any groups found
+                    def add_groups(groups):
+                        if isinstance(groups, list):
+                            for g in groups:
+                                if isinstance(g, dict):
+                                    entries.extend(g.get('entries', []) or [])
+                        elif isinstance(groups, dict):
+                            entries.extend(groups.get('entries', []) or [])
+
+                    v = payload.get('v')
+                    if isinstance(v, dict) and 'message' in v:
+                        meta = v['message'].get('metadata', {})
+                        add_groups(meta.get('search_result_groups'))
+                    if isinstance(v, list):
+                        for item in v:
+                            if isinstance(item, dict) and item.get('type') == 'search_result_group':
+                                add_groups(item)
+                    if isinstance(payload.get('v'), list):
+                        for item in payload['v']:
+                            if not isinstance(item, dict):
+                                continue
+                            path = item.get('p', '')
+                            val = item.get('v')
+                            if 'search_result_groups' in path:
+                                add_groups(val)
+                    if 'p' in payload:
+                        path = payload.get('p', '')
+                        val = payload.get('v')
+                        if 'search_result_groups' in path:
+                            add_groups(val)
+
+                return [e for e in entries if isinstance(e, dict)]
+
+            # Parse all sources from search result groups plus any missed entries in the body
+            extra_entries = extract_entries_from_body(body)
             rank_counter = 1
             seen_urls = set()  # Deduplicate sources by URL
+            combined_groups = list(search_result_groups)  # shallow copy
+            if extra_entries:
+                combined_groups.append({'entries': extra_entries})
 
-            for group in search_result_groups:
+            for group in combined_groups:
                 domain = group.get('domain') or group.get('attribution') or ''
                 entries = group.get('entries', [])
 
@@ -368,53 +419,84 @@ class NetworkLogParser:
                 return ""
             parsed = urlparse(url)
             qs = parse_qs(parsed.query)
-            # Drop tracking params
             qs = {k: v for k, v in qs.items() if not k.lower().startswith('utm_') and k.lower() not in ['source']}
             new_query = urlencode(qs, doseq=True)
-            normalized = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', new_query, ''))
-            return normalized
+            return urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', new_query, ''))
 
-        # Parse markdown reference links: [N]: URL "Title"
-        link_pattern = r'\[(\d+)\]:\s*(https?://[^\s\"]+)(?:\s+"([^"]*)")?'
-        reference_links = re.findall(link_pattern, response_text)
-
-        # Create URL mapping from sources for quick lookup
+        # Build URL mapping from sources for quick lookup
         source_map = {clean_url(s.url): s for s in sources}
 
-        citations = []
+        citations: List[Citation] = []
         extra_links_count = 0
+        seen_norm_urls = set()
 
-        for ref_num, url, title in reference_links:
-            clean = clean_url(url)
+        # 1) Reference-style definitions: [N]: URL "Title"
+        ref_def_pattern = r'^\[(\d+)\]:\s*(https?://[^\s"]+)(?:\s+"([^"]*)")?\s*$'
+        for match in re.finditer(ref_def_pattern, response_text, flags=re.MULTILINE):
+            ref_num, url, title = match.group(1), match.group(2), match.group(3) or ""
+            norm = clean_url(url)
+            if norm in seen_norm_urls:
+                continue
+            seen_norm_urls.add(norm)
 
-            if clean in source_map:
-                # Source used - came from search results
-                source = source_map[clean]
-                citation = Citation(
-                    url=source.url,
-                    title=source.title or title,
-                    rank=source.rank,
+            if norm in source_map:
+                src = source_map[norm]
+                citations.append(Citation(
+                    url=src.url,
+                    title=src.title or title,
+                    rank=src.rank,
                     metadata={
                         "citation_number": int(ref_num),
                         "query_index": None,  # Network logs don't provide query association
-                        "snippet": source.snippet_text,
-                        "pub_date": source.pub_date
+                        "snippet": src.snippet_text,
+                        "pub_date": src.pub_date
                     }
-                )
-                citations.append(citation)
+                ))
             else:
-                # Extra link - NOT from search results (training data or other sources)
                 extra_links_count += 1
-                citation = Citation(
+                citations.append(Citation(
                     url=url,
                     title=title or "",
-                    rank=None,  # No rank since it's not from search results
+                    rank=None,
                     metadata={
                         "citation_number": int(ref_num),
                         "is_extra_link": True
                     }
-                )
-                citations.append(citation)
+                ))
+
+        # 2) Inline markdown links: [text](URL)
+        inline_pattern = r'\[([^\]]+)\]\((https?://[^\s)]+)\)'
+        for match in re.finditer(inline_pattern, response_text):
+            link_text, url = match.group(1), match.group(2)
+            norm = clean_url(url)
+            if norm in seen_norm_urls:
+                continue
+            seen_norm_urls.add(norm)
+
+            if norm in source_map:
+                src = source_map[norm]
+                citations.append(Citation(
+                    url=src.url,
+                    title=src.title or link_text,
+                    rank=src.rank,
+                    metadata={
+                        "citation_number": None,
+                        "query_index": None,
+                        "snippet": src.snippet_text,
+                        "pub_date": src.pub_date
+                    }
+                ))
+            else:
+                extra_links_count += 1
+                citations.append(Citation(
+                    url=url,
+                    title=link_text,
+                    rank=None,
+                    metadata={
+                        "citation_number": None,
+                        "is_extra_link": True
+                    }
+                ))
 
         return citations, extra_links_count
 

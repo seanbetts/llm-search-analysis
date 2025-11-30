@@ -466,8 +466,10 @@ def display_response(response, prompt=None):
         else:
             st.metric("Avg. Rank", "N/A")
     with col8:
-        # Count citations without ranks (extra links)
-        extra_links = len([c for c in response.citations if not c.rank])
+        # Use parser-provided extra_links_count if available; fallback to citations without ranks
+        extra_links = getattr(response, "extra_links_count", None)
+        if extra_links is None:
+            extra_links = len([c for c in response.citations if not c.rank])
         st.metric("Extra Links", extra_links)
 
     st.divider()
@@ -1191,8 +1193,8 @@ def tab_history():
                 num_sources_used = len(citations_with_rank)
                 avg_rank_display = f"{sum(c['rank'] for c in citations_with_rank) / len(citations_with_rank):.1f}" if citations_with_rank else "N/A"
                 response_time_s = f"{details['response_time_ms'] / 1000:.1f}s"
-                # Count citations without ranks (extra links)
-                extra_links_count = len([c for c in details['citations'] if not c.get('rank')])
+                # Extra links from stored value; fallback to citations without rank
+                extra_links_count = details.get('extra_links', len([c for c in details['citations'] if not c.get('rank')]))
                 # Response metadata
                 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1.5, 2, 1, 1, 1, 1, 1, 1])
 
@@ -1234,7 +1236,7 @@ def tab_history():
                 with col7:
                     st.metric("Avg. Rank", avg_rank_display)
                 with col8:
-                    st.metric("Extra Links", extra_links_count)
+                    st.metric("Extra Links", getattr(prompt.response, "extra_links_count", extra_links_count))
 
                 st.divider()
 

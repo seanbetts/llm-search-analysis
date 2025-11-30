@@ -334,18 +334,37 @@ class Database:
                         )
                         session.add(source_obj)
 
-            # Create sources used
-            for citation in citations:
-                source_used_obj = SourceUsed(
-                    response_id=response_obj.id,
-                    url=citation.url,
-                    title=citation.title,
-                    rank=citation.rank,
-                    snippet_used=getattr(citation, 'snippet_used', None),
-                    citation_confidence=getattr(citation, 'citation_confidence', None),
-                    metadata_json=getattr(citation, 'metadata', None)
-                )
-                session.add(source_used_obj)
+            # Create sources used and derive extra links for network logs
+            if data_source == 'network_log':
+                # Only treat citations with a rank as matched sources; others are extra links
+                matched_citations = [c for c in citations if c.rank is not None]
+                extras = [c for c in citations if c.rank is None]
+                # If caller provided extra_links_count, keep the higher of derived vs provided
+                derived_extra = len(extras)
+                response_obj.extra_links_count = max(response_obj.extra_links_count or 0, derived_extra)
+                for citation in matched_citations:
+                    source_used_obj = SourceUsed(
+                        response_id=response_obj.id,
+                        url=citation.url,
+                        title=citation.title,
+                        rank=citation.rank,
+                        snippet_used=getattr(citation, 'snippet_used', None),
+                        citation_confidence=getattr(citation, 'citation_confidence', None),
+                        metadata_json=getattr(citation, 'metadata', None)
+                    )
+                    session.add(source_used_obj)
+            else:
+                for citation in citations:
+                    source_used_obj = SourceUsed(
+                        response_id=response_obj.id,
+                        url=citation.url,
+                        title=citation.title,
+                        rank=citation.rank,
+                        snippet_used=getattr(citation, 'snippet_used', None),
+                        citation_confidence=getattr(citation, 'citation_confidence', None),
+                        metadata_json=getattr(citation, 'metadata', None)
+                    )
+                    session.add(source_used_obj)
 
             session.commit()
             return response_obj.id
@@ -396,8 +415,10 @@ class Database:
                     # Calculate average rank from sources used (those with ranks)
                     avg_rank = sum(su.rank for su in sources_with_rank) / len(sources_with_rank) if sources_with_rank else None
 
-                    # Count extra links (sources used without ranks)
-                    extra_links = len([su for su in prompt.response.sources_used if su.rank is None])
+                    # Extra links: prefer stored response.extra_links_count; fallback to rank-less sources_used
+                    extra_links = getattr(prompt.response, "extra_links_count", None)
+                    if extra_links is None:
+                        extra_links = len([su for su in prompt.response.sources_used if su.rank is None])
                     data_source = getattr(prompt.response, "data_source", "api")
 
                     results.append({
