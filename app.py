@@ -434,11 +434,6 @@ def display_response(response, prompt=None):
         'chatgpt-free': 'ChatGPT (Free)',
     }
 
-    # Data source indicator (if available from database)
-    data_source = getattr(response, 'data_source', 'api')
-    if data_source == 'network_log':
-        st.info("📡 This response was captured from network logs (experimental mode)")
-
     # Response metadata
     col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1.5, 2, 1, 1, 1, 1, 1, 1])
 
@@ -1197,11 +1192,6 @@ def tab_history():
                 response_time_s = f"{details['response_time_ms'] / 1000:.1f}s"
                 # Count citations without ranks (extra links)
                 extra_links_count = len([c for c in details['citations'] if not c.get('rank')])
-                # Data source indicator
-                data_source = details.get('data_source', 'api')
-                if data_source == 'network_log':
-                    st.info("📡 This response was captured from network logs (experimental mode)")
-
                 # Response metadata
                 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1.5, 2, 1, 1, 1, 1, 1, 1])
 
