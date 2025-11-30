@@ -176,6 +176,10 @@ class Database:
             queries = session.query(SearchQuery).filter_by(response_id=response_id).all()
             for q in queries:
                 session.query(SourceModel).filter_by(search_query_id=q.id).delete()
+
+            # Delete sources associated with response (network logs)
+            session.query(SourceModel).filter_by(response_id=response_id).delete()
+
             session.query(SearchQuery).filter_by(response_id=response_id).delete()
 
             # Delete response
@@ -307,6 +311,28 @@ class Database:
                     )
                     session.add(source_obj)
 
+            # For network logs: save sources without query association
+            # (sources passed at top level that aren't in any query.sources)
+            if data_source == 'network_log' and sources:
+                # Check if sources are already saved (by seeing if any query has sources)
+                has_query_sources = any(query.sources for query in search_queries)
+                if not has_query_sources:
+                    # Save sources with response_id, not query_id
+                    for source in sources:
+                        source_obj = SourceModel(
+                            search_query_id=None,  # No query association for network logs
+                            response_id=response_obj.id,  # Associate with response instead
+                            url=source.url,
+                            title=source.title,
+                            domain=source.domain,
+                            rank=source.rank,
+                            pub_date=getattr(source, 'pub_date', None),
+                            snippet_text=getattr(source, 'snippet_text', None),
+                            internal_score=getattr(source, 'internal_score', None),
+                            metadata_json=getattr(source, 'metadata', None)
+                        )
+                        session.add(source_obj)
+
             # Create sources used
             for citation in citations:
                 source_used_obj = SourceUsed(
@@ -347,7 +373,21 @@ class Database:
             for prompt in prompts:
                 if prompt.response:
                     search_count = len(prompt.response.search_queries)
-                    source_count = sum(len(sq.sources) for sq in prompt.response.search_queries)
+
+                    # Count sources: for API data, they're in query.sources
+                    # For network logs, they're associated with response directly
+                    if prompt.response.data_source == 'network_log':
+                        # For network logs, try new schema first (response_id)
+                        source_count = session.query(SourceModel).filter_by(
+                            response_id=prompt.response.id
+                        ).count()
+                        # If no sources found, try old schema (search_query_id)
+                        if source_count == 0:
+                            source_count = sum(len(sq.sources) for sq in prompt.response.search_queries)
+                    else:
+                        # For API data, sources are in query.sources
+                        source_count = sum(len(sq.sources) for sq in prompt.response.search_queries)
+
                     sources_used_count = len(prompt.response.sources_used)
 
                     # Calculate average rank from sources used
@@ -392,6 +432,8 @@ class Database:
 
             # Build search queries with their sources
             search_queries = []
+            all_sources = []  # For network logs where sources aren't query-associated
+
             for search_query in prompt.response.search_queries:
                 sources = [
                     {
@@ -406,6 +448,31 @@ class Database:
                     "query": search_query.search_query,
                     "sources": sources
                 })
+
+            # For network logs, fetch sources associated with response
+            if prompt.response.data_source == 'network_log':
+                # Try new schema first (response_id)
+                response_sources = session.query(SourceModel).filter_by(
+                    response_id=prompt.response.id
+                ).all()
+
+                # If no sources found, try old schema (search_query_id)
+                # This handles data saved before the schema migration
+                if not response_sources:
+                    for search_query in prompt.response.search_queries:
+                        response_sources.extend(search_query.sources)
+
+                all_sources = [
+                    {
+                        "url": source.url,
+                        "title": source.title,
+                        "domain": source.domain,
+                        "rank": source.rank,
+                        "snippet": source.snippet_text,
+                        "pub_date": source.pub_date
+                    }
+                    for source in response_sources
+                ]
 
             # Build sources used
             citations = [
@@ -427,7 +494,9 @@ class Database:
                 "model": prompt.session.model_used,
                 "response_time_ms": prompt.response.response_time_ms,
                 "extra_links": getattr(prompt.response, "extra_links_count", 0),
+                "data_source": prompt.response.data_source,
                 "search_queries": search_queries,
+                "all_sources": all_sources,  # For network logs (sources not associated with specific queries)
                 "citations": citations,
                 "created_at": prompt.created_at
             }

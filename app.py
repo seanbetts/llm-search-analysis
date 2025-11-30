@@ -167,7 +167,11 @@ def build_interaction_markdown(details: dict, interaction_id: int = None) -> str
 
     # Metadata
     num_searches = len(details.get('search_queries', []))
-    num_sources = sum(len(q.get('sources', [])) for q in details.get('search_queries', []))
+    # For network logs, sources are in all_sources; for API, they're in query.sources
+    if details.get('data_source') == 'network_log':
+        num_sources = len(details.get('all_sources', []))
+    else:
+        num_sources = sum(len(q.get('sources', [])) for q in details.get('search_queries', []))
     num_sources_used = len(details.get('citations', []))
     citations_with_rank = [c for c in details.get('citations', []) if c.get('rank') is not None]
     avg_rank_display = f"{sum(c['rank'] for c in citations_with_rank) / len(citations_with_rank):.1f}" if citations_with_rank else "N/A"
@@ -182,7 +186,7 @@ def build_interaction_markdown(details: dict, interaction_id: int = None) -> str
     lines.append(f"- Analysis: {analysis_type}")
     lines.append(f"- Response Time: {response_time_s}")
     lines.append(f"- Searches: {num_searches}")
-    lines.append(f"- Sources: {num_sources}")
+    lines.append(f"- Sources Found: {num_sources}")
     lines.append(f"- Sources Used: {num_sources_used}")
     lines.append(f"- Avg. Rank: {avg_rank_display}")
     lines.append(f"- Extra Links: {extra_links}")
@@ -196,24 +200,51 @@ def build_interaction_markdown(details: dict, interaction_id: int = None) -> str
 
     # Search queries and sources
     search_queries = details.get('search_queries', [])
+    data_source = details.get('data_source', 'api')
+
     if search_queries:
-        lines.append("## Search Queries & Sources")
+        lines.append("## Search Queries")
         for idx, query in enumerate(search_queries, 1):
             q_text = query.get('query') or ''
-            sources = query.get('sources', [])
-            lines.append(f"### Query {idx}: {q_text} ({len(sources)} sources)")
-            for s_idx, src in enumerate(sources, 1):
-                title = src.get('title') or src.get('domain') or 'Unknown source'
-                url = src.get('url') or ''
-                domain = src.get('domain') or ''
-                snippet = src.get('snippet') or 'N/A'
-                if snippet == 'N/A' and src.get('title'):
-                    snippet = src.get('title')
-                pub_date = src.get('pub_date')
-                pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
-                lines.append(f"{s_idx}. [{title}]({url}) ({domain})")
-                lines.append(f"   - Snippet: {snippet}")
-                lines.append(f"   - Published: {pub_date_fmt}")
+            lines.append(f"### Query {idx}: {q_text}")
+
+        lines.append("")
+
+        # For API data, sources are associated with queries
+        if data_source == 'api':
+            lines.append("## Sources (by Query)")
+            for idx, query in enumerate(search_queries, 1):
+                sources = query.get('sources', [])
+                lines.append(f"### Query {idx} Sources ({len(sources)})")
+                for s_idx, src in enumerate(sources, 1):
+                    title = src.get('title') or src.get('domain') or 'Unknown source'
+                    url = src.get('url') or ''
+                    domain = src.get('domain') or ''
+                    snippet = src.get('snippet') or 'N/A'
+                    if snippet == 'N/A' and src.get('title'):
+                        snippet = src.get('title')
+                    pub_date = src.get('pub_date')
+                    pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
+                    lines.append(f"{s_idx}. [{title}]({url}) ({domain})")
+        # For network logs, sources aren't associated with specific queries
+        else:
+            all_sources = details.get('all_sources', [])
+            if all_sources:
+                lines.append(f"## Sources Found ({len(all_sources)})")
+                lines.append("_Note: Network logs don't provide reliable query-to-source mapping._")
+                lines.append("")
+                for s_idx, src in enumerate(all_sources, 1):
+                    title = src.get('title') or src.get('domain') or 'Unknown source'
+                    url = src.get('url') or ''
+                    domain = src.get('domain') or ''
+                    snippet = src.get('snippet') or 'N/A'
+                    if snippet == 'N/A' and src.get('title'):
+                        snippet = src.get('title')
+                    pub_date = src.get('pub_date')
+                    pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
+                    lines.append(f"{s_idx}. [{title}]({url}) ({domain})")
+                    lines.append(f"   - Snippet: {snippet}")
+                    lines.append(f"   - Published: {pub_date_fmt}")
         lines.append("")
 
     # Sources used
@@ -244,9 +275,48 @@ def build_interaction_markdown(details: dict, interaction_id: int = None) -> str
 
 def format_response_text(text: str, citations: list) -> str:
     """
-    For now, just return the text as-is so we mirror ChatGPT's rendered markdown/HTML.
+    Format response text by converting reference-style citation links to inline links.
+
+    ChatGPT includes markdown reference links at the bottom like:
+    [1]: URL "Title"
+    [2]: URL "Title"
+
+    And uses them inline like: [Text][1]
+
+    We convert these to inline markdown links: [Text](URL)
+    Then remove the reference definitions.
     """
-    return sanitize_response_markdown(text or "")
+    if not text:
+        return ""
+
+    # Step 1: Extract reference-style link definitions into a mapping
+    # Pattern: [N]: URL "Title" or [N]: URL
+    # Handle titles with escaped quotes by matching everything after URL to end of line
+    reference_pattern = r'^\[(\d+)\]:\s+(https?://\S+)(?:\s+.*)?$'
+    references = {}
+    for match in re.finditer(reference_pattern, text, flags=re.MULTILINE):
+        ref_num = match.group(1)
+        url = match.group(2)
+        references[ref_num] = url
+
+    # Step 2: Replace reference-style links with inline links
+    # Pattern: [text][N] where N is a number
+    def replace_reference_link(match):
+        link_text = match.group(1)
+        ref_num = match.group(2)
+        if ref_num in references:
+            return f"[{link_text}]({references[ref_num]})"
+        return match.group(0)  # Keep original if reference not found
+
+    text = re.sub(r'\[([^\]]+)\]\[(\d+)\]', replace_reference_link, text)
+
+    # Step 3: Remove the reference definitions from the bottom
+    text = re.sub(reference_pattern, '', text, flags=re.MULTILINE)
+
+    # Step 4: Clean up any resulting multiple newlines
+    text = re.sub(r'\n{3,}', '\n\n', text)
+
+    return sanitize_response_markdown(text.strip())
 
 
 def extract_images_from_response(text: str):
@@ -368,7 +438,7 @@ def display_response(response):
     with col4:
         st.metric("Search Queries", len(response.search_queries))
     with col5:
-        st.metric("Sources Fetched", len(response.sources))
+        st.metric("Sources Found", len(response.sources))
     with col6:
         st.metric("Sources Used", len(response.citations))
     with col7:
@@ -405,12 +475,10 @@ def display_response(response):
     )
     st.divider()
 
-    # Search queries with their sources (only render if there is data)
-    queries_with_content = [q for q in response.search_queries if (getattr(q, "query", None) or getattr(q, "sources", []))]
-    if queries_with_content:
-        url_to_source = {s.url: s for q in queries_with_content for s in q.sources if s.url}
-        st.markdown("### 🔍 Search Queries & Sources:")
-        for i, query in enumerate(queries_with_content, 1):
+    # Search queries and sources display
+    if response.search_queries:
+        st.markdown("### 🔍 Search Queries:")
+        for i, query in enumerate(response.search_queries, 1):
             query_index = getattr(query, "order_index", None)
             label_num = query_index + 1 if query_index is not None else i
             # Display query
@@ -420,10 +488,46 @@ def display_response(response):
             </div>
             """, unsafe_allow_html=True)
 
-            # Display sources for this query in collapsible section
-            if query.sources:
-                with st.expander(f"📚 Sources from Query {i} ({len(query.sources)} sources)", expanded=False):
-                    for j, source in enumerate(query.sources, 1):
+        st.divider()
+
+        # Display sources - different handling for API vs Network Log
+        data_source = getattr(response, 'data_source', 'api')
+
+        if data_source == 'api':
+            # API: Sources are associated with queries
+            queries_with_sources = [q for q in response.search_queries if q.sources]
+            if queries_with_sources:
+                st.markdown("### 📚 Sources (by Query):")
+                for i, query in enumerate(queries_with_sources, 1):
+                    with st.expander(f"📚 Sources from Query {i} ({len(query.sources)} sources)", expanded=False):
+                        for j, source in enumerate(query.sources, 1):
+                            url_display = source.url or 'No URL'
+                            url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
+                            # Use domain as title fallback when title is missing
+                            display_title = source.title or source.domain or 'Unknown source'
+                            snippet = getattr(source, "snippet_text", None)
+                            pub_date = getattr(source, "pub_date", None)
+                            snippet_display = snippet if snippet else "N/A"
+                            pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
+                            snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
+                            pub_date_block = f"<br/><small><strong>Published:</strong> {pub_date_fmt}</small>"
+                            domain_link = f'<a href="{url_display}" target="_blank">{source.domain or "Open source"}</a>'
+                            st.markdown(f"""
+                            <div class="source-item">
+                                <strong>{j}. {display_title}</strong><br/>
+                                <small>{domain_link}</small>
+                                {snippet_block}
+                                {pub_date_block}
+                            </div>
+                            """, unsafe_allow_html=True)
+                st.divider()
+        else:
+            # Network Log: Sources aren't associated with specific queries
+            if response.sources:
+                st.markdown(f"### 📚 Sources Found ({len(response.sources)}):")
+                st.caption("_Note: Network logs don't provide reliable query-to-source mapping._")
+                with st.expander(f"View all {len(response.sources)} sources", expanded=False):
+                    for j, source in enumerate(response.sources, 1):
                         url_display = source.url or 'No URL'
                         url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
                         # Use domain as title fallback when title is missing
@@ -443,7 +547,7 @@ def display_response(response):
                             {pub_date_block}
                         </div>
                         """, unsafe_allow_html=True)
-        st.divider()
+                st.divider()
 
     # Sources used (from web search)
     if response.citations:
@@ -844,7 +948,7 @@ def tab_batch():
             # Select and rename columns for display
             display_df = df_results[['prompt', 'model', 'searches', 'sources', 'sources_used',
                                      'avg_rank_display', 'response_time_display']]
-            display_df.columns = ['Prompt', 'Model', 'Searches', 'Sources', 'Sources Used',
+            display_df.columns = ['Prompt', 'Model', 'Searches', 'Sources Found', 'Sources Used',
                                  'Avg. Rank', 'Response Time']
 
             st.dataframe(display_df, use_container_width=True)
@@ -944,7 +1048,7 @@ def tab_history():
         df = df.sort_values(by="timestamp", ascending=False, na_position="last")
 
         display_df = df[['id', 'timestamp', 'analysis_type', 'prompt_preview', 'provider', 'model', 'searches', 'sources', 'citations', 'avg_rank_display', 'extra_links']]
-        display_df.columns = ['ID', 'Timestamp', 'Analysis Type', 'Prompt', 'Provider', 'Model', 'Searches', 'Sources', 'Sources Used', 'Avg. Rank', 'Extra Links']
+        display_df.columns = ['ID', 'Timestamp', 'Analysis Type', 'Prompt', 'Provider', 'Model', 'Searches', 'Sources Found', 'Sources Used', 'Avg. Rank', 'Extra Links']
 
         # Configure column widths and alignment
         # Let Streamlit autosize columns; avoid fixed widths
@@ -956,7 +1060,7 @@ def tab_history():
             "Provider": st.column_config.TextColumn("Provider"),
             "Model": st.column_config.TextColumn("Model"),
             "Searches": st.column_config.NumberColumn("Searches"),
-            "Sources": st.column_config.NumberColumn("Sources"),
+            "Sources Found": st.column_config.NumberColumn("Sources Found"),
             "Sources Used": st.column_config.NumberColumn("Sources Used"),
             "Avg. Rank": st.column_config.TextColumn("Avg. Rank"),
             "Extra Links": st.column_config.NumberColumn("Extra Links"),
@@ -1031,7 +1135,11 @@ def tab_history():
 
                 # Calculate metrics
                 num_searches = len(details['search_queries'])
-                num_sources = sum(len(query['sources']) for query in details['search_queries'])
+                # For network logs, sources are in all_sources; for API, they're in query.sources
+                if details.get('data_source') == 'network_log':
+                    num_sources = len(details.get('all_sources', []))
+                else:
+                    num_sources = sum(len(query['sources']) for query in details['search_queries'])
                 num_sources_used = len(details['citations'])
                 citations_with_rank = [c for c in details['citations'] if c.get('rank') is not None]
                 avg_rank_display = f"{sum(c['rank'] for c in citations_with_rank) / len(citations_with_rank):.1f}" if citations_with_rank else "N/A"
@@ -1047,7 +1155,7 @@ def tab_history():
                     "Analysis",
                     "Time",
                     "Searches",
-                    "Sources",
+                    "Sources Found",
                     "Sources Used",
                     "Avg. Rank",
                     "Extra Links",
@@ -1084,15 +1192,38 @@ def tab_history():
                 st.divider()
 
                 if details['search_queries']:
-                    st.markdown(f"### 🔍 Search Queries & Sources ({len(details['search_queries'])}):")
+                    st.markdown(f"### 🔍 Search Queries ({len(details['search_queries'])}):")
                     for i, query in enumerate(details['search_queries'], 1):
-                        with st.expander(f"Query {i}: {query['query']} ({len(query['sources'])} sources)", expanded=False):
-                            for j, src in enumerate(query['sources'], 1):
-                                domain_link = f"[{urlparse(src['url']).netloc or 'Open source'}]({src['url']})" if src.get('url') else (src.get('domain') or 'Unknown domain')
-                                snippet = src.get('title') or domain_link
-                                st.markdown(f"{j}. {snippet} — {domain_link}")
+                        st.markdown(f"**{i}.** {query['query']}")
 
-                if details['search_queries'] and details['citations']:
+                    st.divider()
+
+                    # Display sources differently for API vs Network Log
+                    data_source = details.get('data_source', 'api')
+                    if data_source == 'api':
+                        # API: Sources are associated with queries
+                        st.markdown(f"### 📚 Sources (by Query):")
+                        for i, query in enumerate(details['search_queries'], 1):
+                            query_sources = query.get('sources', [])
+                            if query_sources:
+                                with st.expander(f"Query {i} ({len(query_sources)} sources)", expanded=False):
+                                    for j, src in enumerate(query_sources, 1):
+                                        domain_link = f"[{urlparse(src['url']).netloc or 'Open source'}]({src['url']})" if src.get('url') else (src.get('domain') or 'Unknown domain')
+                                        snippet = src.get('title') or domain_link
+                                        st.markdown(f"{j}. {snippet} — {domain_link}")
+                    else:
+                        # Network Log: Sources aren't associated with specific queries
+                        all_sources = details.get('all_sources', [])
+                        if all_sources:
+                            st.markdown(f"### 📚 Sources Found ({len(all_sources)}):")
+                            st.caption("_Note: Network logs don't provide reliable query-to-source mapping._")
+                            with st.expander(f"View all {len(all_sources)} sources", expanded=False):
+                                for j, src in enumerate(all_sources, 1):
+                                    domain_link = f"[{urlparse(src['url']).netloc or 'Open source'}]({src['url']})" if src.get('url') else (src.get('domain') or 'Unknown domain')
+                                    snippet = src.get('title') or domain_link
+                                    st.markdown(f"{j}. {snippet} — {domain_link}")
+
+                if details['citations']:
                     st.divider()
 
                 if details['citations']:
@@ -1189,7 +1320,7 @@ def sidebar_info():
            - Not counted (didn't actually search for it)
 
         **For Google:**
-        - Sources Used = 0 (cannot distinguish from Sources Fetched)
+        - Sources Used = 0 (cannot distinguish from Sources Found)
         - Google's API doesn't separate them
 
         This means "Sources Used" measures **sources consulted via search**, not **URLs mentioned in text**.

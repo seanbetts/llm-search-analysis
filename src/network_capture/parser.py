@@ -2,10 +2,16 @@
 Network log parsers for different providers.
 
 Parses captured network responses into standardized ProviderResponse format.
+
+IMPORTANT NOTE ON CHATGPT NETWORK LOGS:
+ChatGPT network logs do NOT provide reliable mapping between search queries
+and their results. Sources are tracked separately from queries. See
+NETWORK_LOG_FINDINGS.md for full analysis.
 """
 
 import json
-from typing import Dict, Any, List
+import re
+from typing import Dict, Any, List, Tuple
 import sys
 from pathlib import Path
 from datetime import datetime, timezone
@@ -211,8 +217,16 @@ class NetworkLogParser:
                         else:
                             search_result_groups[group_idx]['entries'].extend(value)
 
-            # Build sources with ranks per query
-            # Map safe URLs for moderation info
+            # Build search queries WITHOUT source association
+            # (Network logs don't provide reliable query-to-source mapping)
+            for q_idx, query_text in enumerate(search_model_queries):
+                search_queries.append(SearchQuery(
+                    query=query_text,
+                    sources=[],  # No source association for network logs
+                    order_index=q_idx
+                ))
+
+            # Build sources independently (associate with response, not individual queries)
             safe_url_set = set(safe_urls)
 
             def to_iso(ts: Any) -> str:
@@ -224,70 +238,66 @@ class NetworkLogParser:
                 except Exception:
                     return None
 
-            refid_to_source = {}
+            def clean_url(url: str) -> str:
+                """Normalize URL for comparison (remove tracking params)."""
+                from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
+                if not url:
+                    return ""
+                parsed = urlparse(url)
+                qs = parse_qs(parsed.query)
+                # Drop tracking params
+                qs = {k: v for k, v in qs.items() if not k.lower().startswith('utm_') and k.lower() not in ['source']}
+                new_query = urlencode(qs, doseq=True)
+                normalized = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', new_query, ''))
+                return normalized
 
-            # Distribute result groups to queries sequentially
-            if search_model_queries:
-                grouped_results: List[List[Dict[str, Any]]] = []
-                # Chunk groups roughly evenly across queries
-                total_groups = len(search_result_groups)
-                num_queries = len(search_model_queries)
-                chunk_size = max(1, (total_groups + num_queries - 1) // num_queries)
-                for i in range(num_queries):
-                    start = i * chunk_size
-                    end = start + chunk_size
-                    grouped_results.append(search_result_groups[start:end])
+            # Parse all sources from search result groups
+            rank_counter = 1
+            seen_urls = set()  # Deduplicate sources by URL
 
-                # Build SearchQuery objects with associated sources
-                for q_idx, query_text in enumerate(search_model_queries):
-                    query_sources: List[Source] = []
-                    rank_counter = 1
-                    groups_for_query = grouped_results[q_idx] if q_idx < len(grouped_results) else []
+            for group in search_result_groups:
+                domain = group.get('domain') or group.get('attribution') or ''
+                entries = group.get('entries', [])
 
-                    for group in groups_for_query:
-                        domain = group.get('domain') or group.get('attribution') or ''
-                        entries = group.get('entries', [])
-                        for entry in entries:
-                            if entry.get('type') != 'search_result':
-                                continue
-                            url = entry.get('url', '')
-                            title = entry.get('title', '')
-                            snippet = entry.get('snippet', '')
-                            pub_date_iso = to_iso(entry.get('pub_date'))
-                            ref_id = entry.get('ref_id', {})
+                for entry in entries:
+                    if entry.get('type') != 'search_result':
+                        continue
 
-                            metadata = {
-                                'ref_id': ref_id,
-                                'attribution': entry.get('attribution', domain),
-                                'is_safe': url in safe_url_set,
-                                'is_moderated': None,
-                                'query_index': q_idx
-                            }
+                    url = entry.get('url', '')
+                    if not url:
+                        continue
 
-                            source = Source(
-                                url=url,
-                                title=title,
-                                domain=entry.get('attribution', domain),
-                                rank=rank_counter,
-                                pub_date=pub_date_iso,
-                            snippet_text=snippet,
-                            internal_score=None,
-                            metadata=metadata
-                        )
-                        query_sources.append(source)
-                        sources.append(source)
-                        if isinstance(ref_id, dict) and {'turn_index', 'ref_type', 'ref_index'} <= set(ref_id.keys()):
-                            key = f"turn{ref_id.get('turn_index')}{ref_id.get('ref_type')}{ref_id.get('ref_index')}"
-                            refid_to_source[key] = source
-                        rank_counter += 1
+                    # Deduplicate by normalized URL
+                    clean = clean_url(url)
+                    if clean in seen_urls:
+                        continue
+                    seen_urls.add(clean)
 
-                    search_queries.append(SearchQuery(
-                        query=query_text,
-                        sources=query_sources,
-                        order_index=q_idx
-                    ))
+                    title = entry.get('title', '')
+                    snippet = entry.get('snippet', '')
+                    pub_date_iso = to_iso(entry.get('pub_date'))
+                    ref_id = entry.get('ref_id', {})
 
-            # Final response text and citations
+                    metadata = {
+                        'ref_id': ref_id,
+                        'attribution': entry.get('attribution', domain),
+                        'is_safe': url in safe_url_set
+                    }
+
+                    source = Source(
+                        url=url,
+                        title=title,
+                        domain=entry.get('attribution', domain),
+                        rank=rank_counter,
+                        pub_date=pub_date_iso,
+                        snippet_text=snippet,
+                        internal_score=None,
+                        metadata=metadata
+                    )
+                    sources.append(source)
+                    rank_counter += 1
+
+            # Final response text
             assembled_content = ''.join(content_fragments).strip()
             # Prefer DOM-extracted display text; fallback to assembled stream or flattened message
             if not display_text:
@@ -298,61 +308,16 @@ class NetworkLogParser:
                     if flattened:
                         display_text = flattened
 
-            citations = []
-            # Use stream content to detect citation markers (DOM usually strips them)
-            citation_source_text = assembled_content or display_text
-            if citation_source_text and refid_to_source:
-                citation_keys = NetworkLogParser._extract_citation_keys(citation_source_text)
-                seen = set()
-                for key in citation_keys:
-                    if key in seen:
-                        continue
-                    seen.add(key)
-                    source = refid_to_source.get(key)
-                    if source:
-                        citations.append(Citation(
-                            url=source.url,
-                            title=source.title,
-                            rank=source.rank,
-                            metadata={
-                                "citation_id": key,
-                                "ref_id": getattr(source, "metadata", {}).get("ref_id"),
-                                "query_index": getattr(source, "metadata", {}).get("query_index"),
-                                "snippet": getattr(source, "snippet_text", None),
-                                "pub_date": source.pub_date
-                            }
-                        ))
-                        response_metadata["citation_ids"].append(key)
+            # Extract citations from markdown reference links: [N]: URL "Title"
+            citations, extra_links_count = NetworkLogParser._extract_markdown_citations(
+                display_text, sources
+            )
 
             # Metadata assembly
             response_metadata["default_model_slug"] = default_model_slug
             response_metadata["classifier"] = classifier
             response_metadata["safe_urls"] = list(safe_url_set)
             response_metadata["image_behavior"] = NetworkLogParser._extract_image_behavior(last_assistant_message) if last_assistant_message else None
-            # Compute extra links: URLs in display text not present in search result URLs
-            extra_links_count = 0
-            if display_text:
-                import re
-                from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
-
-                def normalize(url: str) -> str:
-                    if not url:
-                        return ""
-                    parsed = urlparse(url)
-                    qs = parse_qs(parsed.query)
-                    # Drop tracking params
-                    qs = {k: v for k, v in qs.items() if not k.lower().startswith('utm_') and k.lower() not in ['source']}
-                    # For YouTube, keep the video id
-                    if 'v' in qs:
-                        keep_qs = {'v': qs['v']}
-                    else:
-                        keep_qs = qs
-                    new_query = urlencode(keep_qs, doseq=True)
-                    normalized = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', new_query, ''))
-                    return normalized
-                resp_urls = set(normalize(u) for u in re.findall(r'https?://[^\s)]+', display_text))
-                source_urls = {normalize(s.url) for s in sources if s.url}
-                extra_links_count = len([u for u in resp_urls if u and u not in source_urls])
             response_metadata["extra_links_count"] = extra_links_count
 
             # Use discovered model slug if present
@@ -374,70 +339,83 @@ class NetworkLogParser:
             model=model,
             provider='openai',
             response_time_ms=response_time_ms,
-            metadata=response_metadata
+            metadata=response_metadata,
+            extra_links_count=extra_links_count
         )
 
     @staticmethod
-    def _extract_inline_citations(response_text: str, sources: List[Source]) -> List[Citation]:
+    def _extract_markdown_citations(response_text: str, sources: List[Source]) -> Tuple[List[Citation], int]:
         """
-        Extract citations from inline source attributions in ChatGPT response text.
+        Extract citations from markdown reference links in ChatGPT response text.
 
-        ChatGPT includes source attributions as standalone lines after cited content,
-        typically showing the domain or source name.
+        ChatGPT uses markdown reference format: [N]: URL "Title"
 
         Args:
-            response_text: The response text with inline attributions
-            sources: List of sources to match against
+            response_text: The response text with markdown reference links
+            sources: List of sources fetched from search results
 
         Returns:
-            List of Citation objects
+            Tuple of (List of Citation objects, extra_links_count)
+            - Citations include both sources used (from search) and extra links
+            - extra_links_count is the number of citations NOT from search results
         """
+        from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
+
+        def clean_url(url: str) -> str:
+            """Normalize URL for comparison (remove tracking params)."""
+            if not url:
+                return ""
+            parsed = urlparse(url)
+            qs = parse_qs(parsed.query)
+            # Drop tracking params
+            qs = {k: v for k, v in qs.items() if not k.lower().startswith('utm_') and k.lower() not in ['source']}
+            new_query = urlencode(qs, doseq=True)
+            normalized = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', new_query, ''))
+            return normalized
+
+        # Parse markdown reference links: [N]: URL "Title"
+        link_pattern = r'\[(\d+)\]:\s*(https?://[^\s\"]+)(?:\s+"([^"]*)")?'
+        reference_links = re.findall(link_pattern, response_text)
+
+        # Create URL mapping from sources for quick lookup
+        source_map = {clean_url(s.url): s for s in sources}
+
         citations = []
+        extra_links_count = 0
 
-        # Create a mapping of domains to sources for quick lookup
-        domain_to_source = {}
-        for source in sources:
-            # Try multiple domain variations
-            domain = source.domain.lower()
-            domain_to_source[domain] = source
+        for ref_num, url, title in reference_links:
+            clean = clean_url(url)
 
-            # Also try title if it looks like a source name
-            if source.title:
-                title_lower = source.title.lower()
-                domain_to_source[title_lower] = source
+            if clean in source_map:
+                # Source used - came from search results
+                source = source_map[clean]
+                citation = Citation(
+                    url=source.url,
+                    title=source.title or title,
+                    rank=source.rank,
+                    metadata={
+                        "citation_number": int(ref_num),
+                        "query_index": None,  # Network logs don't provide query association
+                        "snippet": source.snippet_text,
+                        "pub_date": source.pub_date
+                    }
+                )
+                citations.append(citation)
+            else:
+                # Extra link - NOT from search results (training data or other sources)
+                extra_links_count += 1
+                citation = Citation(
+                    url=url,
+                    title=title or "",
+                    rank=None,  # No rank since it's not from search results
+                    metadata={
+                        "citation_number": int(ref_num),
+                        "is_extra_link": True
+                    }
+                )
+                citations.append(citation)
 
-        # Split response into lines to find standalone source attributions
-        lines = response_text.split('\n')
-
-        for i, line in enumerate(lines):
-            line_stripped = line.strip()
-
-            # Skip empty lines, headings (with emojis), and very long lines (likely content)
-            if not line_stripped or len(line_stripped) > 100:
-                continue
-
-            # Skip lines that are clearly content (have sentence structure)
-            if line_stripped.endswith(',') or line_stripped.endswith(';'):
-                continue
-
-            # Check if this line matches any source domain or title
-            line_lower = line_stripped.lower()
-
-            for key, source in domain_to_source.items():
-                # Match if the line is the domain/title (exact or contains)
-                if key in line_lower or line_lower in key:
-                    # Make sure this isn't already a citation for this URL
-                    if not any(c.url == source.url for c in citations):
-                        citation = Citation(
-                            url=source.url,
-                            title=source.title,
-                            rank=source.rank,
-                            snippet_used=line_stripped  # The attribution line
-                        )
-                        citations.append(citation)
-                        break
-
-        return citations
+        return citations, extra_links_count
 
     @staticmethod
     def _flatten_assistant_message(message: Dict[str, Any]) -> str:
