@@ -493,42 +493,15 @@ def display_response(response):
 
         st.divider()
 
-        # Display sources - different handling for API vs Network Log
-        if getattr(response, 'data_source', 'api') == 'api':
-            # API: Sources are associated with queries
-            queries_with_sources = [q for q in response.search_queries if q.sources]
-            if queries_with_sources:
-                st.markdown("### 📚 Sources (by Query):")
-                for i, query in enumerate(queries_with_sources, 1):
-                    with st.expander(f"📚 Sources from Query {i} ({len(query.sources)} sources)", expanded=False):
-                        for j, source in enumerate(query.sources, 1):
-                            url_display = source.url or 'No URL'
-                            url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
-                            # Use domain as title fallback when title is missing
-                            display_title = source.title or source.domain or 'Unknown source'
-                            snippet = getattr(source, "snippet_text", None)
-                            pub_date = getattr(source, "pub_date", None)
-                            snippet_display = snippet if snippet else "N/A"
-                            pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
-                            snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
-                            pub_date_block = f"<br/><small><strong>Published:</strong> {pub_date_fmt}</small>"
-                            domain_link = f'<a href="{url_display}" target="_blank">{source.domain or "Open source"}</a>'
-                            st.markdown(f"""
-                            <div class="source-item">
-                                <strong>{j}. {display_title}</strong><br/>
-                                <small>{domain_link}</small>
-                                {snippet_block}
-                                {pub_date_block}
-                            </div>
-                            """, unsafe_allow_html=True)
-                st.divider()
-        else:
-            # Network Log: Sources aren't associated with specific queries
-            if response.sources:
-                st.markdown(f"### 📚 Sources Found ({len(response.sources)}):")
-                st.caption("_Note: Network logs don't provide reliable query-to-source mapping._")
-                with st.expander(f"View all {len(response.sources)} sources", expanded=False):
-                    for j, source in enumerate(response.sources, 1):
+    # Display sources - different handling for API vs Network Log
+    if getattr(response, 'data_source', 'api') == 'api':
+        # API: Sources are associated with queries
+        queries_with_sources = [q for q in response.search_queries if q.sources]
+        if queries_with_sources:
+            st.markdown("### 📚 Sources (by Query):")
+            for i, query in enumerate(queries_with_sources, 1):
+                with st.expander(f"📚 Sources from Query {i} ({len(query.sources)} sources)", expanded=False):
+                    for j, source in enumerate(query.sources, 1):
                         url_display = source.url or 'No URL'
                         url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
                         # Use domain as title fallback when title is missing
@@ -548,7 +521,34 @@ def display_response(response):
                             {pub_date_block}
                         </div>
                         """, unsafe_allow_html=True)
-                st.divider()
+            st.divider()
+    else:
+        # Network Log: Sources aren't associated with specific queries
+        if response.sources:
+            st.markdown(f"### 📚 Sources Found ({len(response.sources)}):")
+            st.caption("_Note: Network logs don't provide reliable query-to-source mapping._")
+            with st.expander(f"View all {len(response.sources)} sources", expanded=False):
+                for j, source in enumerate(response.sources, 1):
+                    url_display = source.url or 'No URL'
+                    url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
+                    # Use domain as title fallback when title is missing
+                    display_title = source.title or source.domain or 'Unknown source'
+                    snippet = getattr(source, "snippet_text", None)
+                    pub_date = getattr(source, "pub_date", None)
+                    snippet_display = snippet if snippet else "N/A"
+                    pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
+                    snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
+                    pub_date_block = f"<br/><small><strong>Published:</strong> {pub_date_fmt}</small>"
+                    domain_link = f'<a href="{url_display}" target="_blank">{source.domain or "Open source"}</a>'
+                    st.markdown(f"""
+                    <div class="source-item">
+                        <strong>{j}. {display_title}</strong><br/>
+                        <small>{domain_link}</small>
+                        {snippet_block}
+                        {pub_date_block}
+                    </div>
+                    """, unsafe_allow_html=True)
+            st.divider()
 
     # Sources used (from web search)
     if response.citations:
