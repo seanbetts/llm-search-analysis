@@ -433,7 +433,6 @@ def display_response(response):
         st.info("📡 This response was captured from network logs (experimental mode)")
 
     # Response metadata
-        st.markdown("### 📊 Response Metadata")
     col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1.5, 2, 1, 1, 1, 1, 1, 1])
 
     with col1:
@@ -1190,38 +1189,53 @@ def tab_history():
                 response_time_s = f"{details['response_time_ms'] / 1000:.1f}s"
                 # Count citations without ranks (extra links)
                 extra_links_count = len([c for c in details['citations'] if not c.get('rank')])
-                analysis_type = 'Network Logs' if details.get('data_source') == 'network_log' else 'API'
+                # Data source indicator
+                data_source = details.get('data_source', 'api')
+                if data_source == 'network_log':
+                    st.info("📡 This response was captured from network logs (experimental mode)")
 
-                # Metadata bar
-                # Metadata table (2 rows: labels and values)
-                meta_labels = [
-                    "Provider",
-                    "Model",
-                    "Analysis",
-                    "Time",
-                    "Searches",
-                    "Sources Found",
-                    "Sources Used",
-                    "Avg. Rank",
-                    "Extra Links",
-                ]
-                meta_values = [
-                    details['provider'],
-                    details['model'],
-                    analysis_type,
-                    response_time_s,
-                    num_searches,
-                    num_sources,
-                    num_sources_used,
-                    avg_rank_display,
-                    extra_links_count,
-                ]
-                meta_df = pd.DataFrame([meta_values], columns=meta_labels)
-                st.dataframe(
-                    meta_df,
-                    hide_index=True,
-                    use_container_width=True,
-                )
+                # Response metadata
+                col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1.5, 2, 1, 1, 1, 1, 1, 1])
+
+                # Provider display names
+                provider_names = {
+                    'openai': 'OpenAI',
+                    'google': 'Google',
+                    'anthropic': 'Anthropic'
+                }
+
+                # Model display names
+                model_names = {
+                    'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
+                    'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
+                    'claude-opus-4-1-20250805': 'Claude Opus 4.1',
+                    'gpt-5.1': 'GPT-5.1',
+                    'gpt-5-1': 'GPT-5.1',
+                    'gpt-5-mini': 'GPT-5 Mini',
+                    'gpt-5-nano': 'GPT-5 Nano',
+                    'gemini-3-pro-preview': 'Gemini 3 Pro (Preview)',
+                    'gemini-2.5-flash': 'Gemini 2.5 Flash',
+                    'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite',
+                    'ChatGPT (Free)': 'ChatGPT (Free)',
+                    'chatgpt-free': 'ChatGPT (Free)',
+                }
+
+                with col1:
+                    st.metric("Provider", provider_names.get(details['provider'], details['provider'].capitalize()))
+                with col2:
+                    st.metric("Model", model_names.get(details['model'], details['model']))
+                with col3:
+                    st.metric("Response Time", response_time_s)
+                with col4:
+                    st.metric("Search Queries", num_searches)
+                with col5:
+                    st.metric("Sources Found", num_sources)
+                with col6:
+                    st.metric("Sources Used", num_sources_used)
+                with col7:
+                    st.metric("Avg. Rank", avg_rank_display)
+                with col8:
+                    st.metric("Extra Links", extra_links_count)
 
                 st.divider()
 
@@ -1238,7 +1252,7 @@ def tab_history():
                 st.divider()
 
                 if details['search_queries']:
-                    st.markdown("### 🔍 Search Queries:")
+                    st.markdown(f"### 🔍 Search Queries ({len(details['search_queries'])}):")
                     for i, query in enumerate(details['search_queries'], 1):
                         # Display query with same styling as interactive tab
                         st.markdown(f"""
@@ -1270,9 +1284,24 @@ def tab_history():
                             st.caption("_Note: Network logs don't provide reliable query-to-source mapping._")
                             with st.expander(f"View all {len(all_sources)} sources", expanded=False):
                                 for j, src in enumerate(all_sources, 1):
-                                    domain_link = f"[{urlparse(src['url']).netloc or 'Open source'}]({src['url']})" if src.get('url') else (src.get('domain') or 'Unknown domain')
-                                    snippet = src.get('title') or domain_link
-                                    st.markdown(f"{j}. {snippet} — {domain_link}")
+                                    url_display = src.get('url') or 'No URL'
+                                    # Use domain as title fallback when title is missing
+                                    display_title = src.get('title') or src.get('domain') or 'Unknown source'
+                                    snippet = src.get('snippet')
+                                    pub_date = src.get('pub_date')
+                                    snippet_display = snippet if snippet else "N/A"
+                                    pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
+                                    snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
+                                    pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
+                                    domain_link = f'<a href="{url_display}" target="_blank">{src.get("domain") or "Open source"}</a>'
+                                    st.markdown(f"""
+                                    <div class="source-item">
+                                        <strong>{j}. {display_title}</strong><br/>
+                                        <small>{domain_link}</small>
+                                        {snippet_block}
+                                        {pub_date_block}
+                                    </div>
+                                    """, unsafe_allow_html=True)
 
                 # Sources used (from web search) - only citations with ranks
                 citations_with_rank = [c for c in details['citations'] if c.get('rank')]
