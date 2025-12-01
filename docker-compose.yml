@@ -1,0 +1,81 @@
+services:
+  # FastAPI Backend Service
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: llm-search-api
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount database directory for persistence
+      - ./backend/data:/app/data
+    environment:
+      # Application Settings
+      - APP_NAME=${APP_NAME:-LLM Search Analysis API}
+      - VERSION=${VERSION:-1.0.0}
+      - DEBUG=${DEBUG:-false}
+      # Server Settings
+      - HOST=0.0.0.0
+      - PORT=8000
+      # CORS - allow frontend to connect
+      - CORS_ORIGINS=http://localhost:8501,http://frontend:8501
+      # Database
+      - DATABASE_URL=sqlite:///./data/llm_search.db
+      # LLM Provider API Keys
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      # Network Capture Settings
+      - CHATGPT_SESSION_FILE=./data/chatgpt_session.json
+      - NETWORK_LOGS_DIR=./data/network_logs
+      - BROWSER_HEADLESS=${BROWSER_HEADLESS:-true}
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    networks:
+      - llm-search-network
+
+  # Streamlit Frontend Service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: llm-search-frontend
+    ports:
+      - "8501:8501"
+    volumes:
+      # Mount data directory for session files
+      - ./data:/app/data
+    environment:
+      # Point frontend to backend API via Docker network
+      - API_BASE_URL=http://api:8000
+      # LLM Provider API Keys (needed for direct API calls)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      # Network Capture Settings
+      - CHATGPT_SESSION_FILE=./data/chatgpt_session.json
+      - BROWSER_HEADLESS=${BROWSER_HEADLESS:-true}
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - llm-search-network
+
+networks:
+  llm-search-network:
+    driver: bridge

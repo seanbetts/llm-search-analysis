@@ -113,11 +113,150 @@ CHATGPT_PASSWORD=your_password_here
    - ✅ Response text extraction with inline citations
    - ⚠️ Known Issue: ChatGPT free tier search execution unreliable (platform issue, bug filed)
 
+## Deployment
+
+### Option 1: Docker (Recommended)
+
+Docker provides the easiest way to run this application with zero configuration hassle.
+
+#### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) (Mac/Windows) or Docker Engine (Linux)
+- At least one LLM provider API key
+
+#### Quick Start
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd llm-search-analysis
+```
+
+2. Create `.env` file with your API keys:
+```bash
+cp .env.example .env
+# Edit .env and add your API keys:
+# OPENAI_API_KEY=your_key_here
+# GOOGLE_API_KEY=your_key_here
+# ANTHROPIC_API_KEY=your_key_here
+```
+
+3. Start the application:
+```bash
+docker compose up -d
+```
+
+4. Access the interface:
+- Frontend (Streamlit): http://localhost:8501
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+
+5. Stop the application:
+```bash
+docker compose down
+```
+
+#### Docker Architecture
+
+The Docker setup includes:
+- **Backend (API)**: FastAPI server on port 8000
+- **Frontend**: Streamlit UI on port 8501
+- **Database**: SQLite with persistent volume mount
+- **Networking**: Isolated Docker network for inter-service communication
+- **Data Persistence**: Database and session files persist across container restarts
+
+#### Docker Commands
+
+```bash
+# Build and start services
+docker compose up --build -d
+
+# View logs
+docker compose logs -f
+
+# Stop services (keeps data)
+docker compose down
+
+# Stop services and remove volumes (deletes data)
+docker compose down -v
+
+# Rebuild a specific service
+docker compose build api
+docker compose up -d api
+
+# Access a service shell
+docker compose exec api bash
+docker compose exec frontend bash
+```
+
+#### Environment Variables
+
+All environment variables are configured in the `.env` file. Key variables:
+
+**Required:**
+- `OPENAI_API_KEY` - OpenAI API key
+- `GOOGLE_API_KEY` - Google AI API key
+- `ANTHROPIC_API_KEY` - Anthropic API key
+
+**Optional:**
+- `BROWSER_HEADLESS=true` - Browser mode for network capture
+- `LOG_LEVEL=INFO` - Logging level (DEBUG, INFO, WARNING, ERROR)
+- `DEBUG=false` - Enable debug mode
+
+See `.env.example` for complete configuration options.
+
+### Option 2: Local Development
+
+For development work, you can run the services locally without Docker.
+
+#### Prerequisites
+- Python 3.11+
+- API keys for at least one provider
+
+#### Setup
+
+1. Install backend dependencies:
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+2. Install frontend dependencies:
+```bash
+cd ..  # Back to root
+pip install -r requirements.txt
+```
+
+3. Create `.env` file (see Docker section above)
+
+4. Start the backend:
+```bash
+cd backend
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+5. Start the frontend (in a new terminal):
+```bash
+streamlit run app.py --server.port 8501
+```
+
+6. Configure frontend to connect to backend:
+```bash
+export API_BASE_URL=http://localhost:8000
+```
+
 ## Usage
 
 ### Running the Web Interface
 
-Start the Streamlit app:
+**With Docker:**
+```bash
+docker compose up -d
+```
+Access at http://localhost:8501
+
+**Without Docker:**
 ```bash
 streamlit run app.py
 ```
@@ -196,29 +335,84 @@ Toggle between modes in the sidebar: "Data Collection Mode"
 
 ```
 llm-search-analysis/
-├── app.py                      # Streamlit web interface (3 tabs)
-├── src/
-│   ├── config.py              # Configuration and API key management
-│   ├── database.py            # SQLAlchemy models and operations
-│   ├── analyzer.py            # Statistical analysis functions
-│   ├── providers/
-│   │   ├── base_provider.py   # Abstract base class
-│   │   ├── provider_factory.py # Provider selection
-│   │   ├── openai_provider.py # OpenAI Responses API
-│   │   ├── google_provider.py # Google Gemini with search grounding
-│   │   └── anthropic_provider.py # Anthropic Claude web search
-│   └── network_capture/       # Browser automation (experimental)
-│       ├── browser_manager.py # Playwright browser control
-│       ├── chatgpt_capturer.py # ChatGPT interaction capture
-│       └── parser.py          # Network log parsing
-├── tests/                     # Unit tests and validation scripts
-│   ├── verify_providers.py   # API verification script
-│   ├── test_rank_feature.py  # Rank tracking validation
+├── app.py                        # Streamlit web interface (3 tabs)
+├── Dockerfile                    # Frontend Docker image
+├── docker-compose.yml            # Multi-container orchestration
+├── .env.example                  # Environment variables template
+├── .dockerignore                 # Docker build exclusions
+├── requirements.txt              # Frontend Python dependencies
+│
+├── backend/                      # FastAPI backend service
+│   ├── Dockerfile                # Backend Docker image
+│   ├── .dockerignore             # Backend build exclusions
+│   ├── requirements.txt          # Backend Python dependencies
+│   ├── .env.example              # Backend env template
+│   ├── app/
+│   │   ├── main.py               # FastAPI application entry
+│   │   ├── config.py             # Settings and configuration
+│   │   ├── models/
+│   │   │   └── database.py       # SQLAlchemy ORM models
+│   │   ├── repositories/
+│   │   │   └── interaction_repository.py  # Data access layer
+│   │   ├── services/
+│   │   │   ├── interaction_service.py     # Business logic
+│   │   │   ├── provider_service.py        # LLM provider orchestration
+│   │   │   └── providers/                 # Provider implementations
+│   │   │       ├── base_provider.py       # Abstract base class
+│   │   │       ├── provider_factory.py    # Provider selection
+│   │   │       ├── openai_provider.py     # OpenAI Responses API
+│   │   │       ├── google_provider.py     # Google Gemini
+│   │   │       └── anthropic_provider.py  # Anthropic Claude
+│   │   ├── api/
+│   │   │   └── v1/
+│   │   │       ├── routes/               # API endpoint routes
+│   │   │       └── schemas/              # Pydantic request/response schemas
+│   │   └── core/
+│   │       ├── database.py               # Database connection
+│   │       └── utils.py                  # Utility functions
+│   ├── data/                             # Database and session files
+│   │   └── llm_search.db                 # SQLite database (auto-created)
+│   └── tests/                            # Backend unit tests
+│
+├── src/                          # Legacy frontend modules (deprecated)
+│   └── network_capture/          # Browser automation (experimental)
+│       ├── browser_manager.py    # Playwright browser control
+│       ├── chatgpt_capturer.py   # ChatGPT interaction capture
+│       └── parser.py             # Network log parsing
+│
+├── tests/                        # Frontend and integration tests
+│   ├── verify_providers.py       # API verification script
+│   ├── test_rank_feature.py      # Rank tracking validation
 │   └── ... (52 passing tests)
-├── llm_search_analysis.db     # SQLite database (auto-created)
-├── requirements.txt           # Python dependencies
-└── README.md                  # This file
+│
+├── data/                         # Frontend data directory
+│   ├── chatgpt_session.json      # ChatGPT session persistence
+│   └── network_logs/             # Network capture logs
+│
+└── README.md                     # This file
 ```
+
+### Architecture Overview
+
+The application uses a **client-server architecture**:
+
+**Frontend (Streamlit):**
+- User interface with 3 tabs (Interactive, Batch, History)
+- Communicates with backend via REST API
+- Handles browser automation for network capture mode
+- Port: 8501
+
+**Backend (FastAPI):**
+- RESTful API with automatic OpenAPI docs
+- LLM provider integrations (OpenAI, Google, Anthropic)
+- Database operations via SQLAlchemy ORM
+- Business logic and data validation
+- Port: 8000
+
+**Database (SQLite):**
+- Persistent storage for all interactions
+- Volume-mounted in Docker for data persistence
+- Schema supports both API and network capture modes
 
 ### Database Schema
 
