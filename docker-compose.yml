@@ -19,7 +19,7 @@ services:
       - HOST=0.0.0.0
       - PORT=8000
       # CORS - allow frontend to connect
-      - CORS_ORIGINS=http://localhost:8501,http://frontend:8501
+      - CORS_ORIGINS=["http://localhost:8501","http://frontend:8501"]
       # Database
       - DATABASE_URL=sqlite:///./data/llm_search.db
       # LLM Provider API Keys

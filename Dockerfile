@@ -36,7 +36,7 @@ RUN playwright install chromium && \
 
 # Copy application code
 COPY app.py .
-COPY .streamlit .streamlit 2>/dev/null || true
+COPY .streamlit .streamlit
 
 # Create data directory
 RUN mkdir -p /app/data
