@@ -4,10 +4,19 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
+import logging
 
 from app.config import settings
 from app.api.v1.endpoints import interactions, providers
 from app.dependencies import engine
+from app.core.exceptions import APIException, DatabaseError, ValidationError
+
+# Configure logging
+logging.basicConfig(
+  level=logging.INFO,
+  format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
   title="LLM Search Analysis API",
@@ -75,40 +84,122 @@ async def health_check():
 
 
 # Exception handlers for consistent error responses
+
+@app.exception_handler(APIException)
+async def api_exception_handler(request: Request, exc: APIException):
+  """Handle custom API exceptions with error codes.
+
+  This handler catches all custom APIException instances and returns
+  a consistent JSON response with error code, message, and details.
+  """
+  logger.error(
+    f"API Exception: {exc.error_code} - {exc.message}",
+    extra={
+      "error_code": exc.error_code,
+      "status_code": exc.status_code,
+      "path": request.url.path,
+      "method": request.method,
+      "details": exc.details,
+    }
+  )
+
+  return JSONResponse(
+    status_code=exc.status_code,
+    content=exc.to_dict(),
+  )
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-  """Handle Pydantic validation errors (422)"""
+  """Handle Pydantic validation errors (422).
+
+  Converts Pydantic validation errors into user-friendly format
+  with field-level error details.
+  """
+  # Extract field errors
+  errors = []
+  for error in exc.errors():
+    field_path = " -> ".join(str(loc) for loc in error["loc"])
+    errors.append({
+      "field": field_path,
+      "message": error["msg"],
+      "type": error["type"],
+    })
+
+  logger.warning(
+    f"Validation error on {request.url.path}",
+    extra={
+      "path": request.url.path,
+      "method": request.method,
+      "errors": errors,
+    }
+  )
+
   return JSONResponse(
     status_code=422,
     content={
-      "status": "error",
-      "message": "Validation error",
-      "detail": exc.errors(),
+      "error": {
+        "message": "Request validation failed",
+        "code": "VALIDATION_ERROR",
+        "details": {
+          "errors": errors,
+        },
+      }
     },
   )
 
 
 @app.exception_handler(SQLAlchemyError)
 async def database_exception_handler(request: Request, exc: SQLAlchemyError):
-  """Handle database errors (500)"""
-  return JSONResponse(
-    status_code=500,
-    content={
-      "status": "error",
-      "message": "Database error",
-      "detail": str(exc) if settings.DEBUG else "A database error occurred",
+  """Handle database errors (500).
+
+  Wraps SQLAlchemy errors in our custom DatabaseError format.
+  Hides sensitive database details in production.
+  """
+  logger.error(
+    f"Database error on {request.url.path}: {str(exc)}",
+    extra={
+      "path": request.url.path,
+      "method": request.method,
+      "error_type": type(exc).__name__,
     },
+    exc_info=True,
+  )
+
+  db_error = DatabaseError(
+    message="A database error occurred",
+    details={"error_type": type(exc).__name__} if settings.DEBUG else None,
+  )
+
+  return JSONResponse(
+    status_code=db_error.status_code,
+    content=db_error.to_dict(),
   )
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-  """Global exception handler for unhandled errors (500)"""
-  return JSONResponse(
-    status_code=500,
-    content={
-      "status": "error",
-      "message": "Internal server error",
-      "detail": str(exc) if settings.DEBUG else "An error occurred",
+  """Global exception handler for unhandled errors (500).
+
+  This is the last line of defense - catches any unexpected errors
+  that aren't handled by more specific handlers.
+  """
+  logger.exception(
+    f"Unhandled exception on {request.url.path}",
+    extra={
+      "path": request.url.path,
+      "method": request.method,
+      "error_type": type(exc).__name__,
     },
+  )
+
+  from app.core.exceptions import InternalServerError
+  error = InternalServerError(
+    message="An unexpected error occurred",
+    details={"error_type": type(exc).__name__, "error": str(exc)} if settings.DEBUG else None,
+  )
+
+  return JSONResponse(
+    status_code=error.status_code,
+    content=error.to_dict(),
   )

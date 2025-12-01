@@ -1,7 +1,7 @@
 """Interactions API endpoints."""
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.api.v1.schemas.requests import SendPromptRequest
 from app.api.v1.schemas.responses import (
@@ -11,6 +11,13 @@ from app.api.v1.schemas.responses import (
 from app.services.interaction_service import InteractionService
 from app.services.provider_service import ProviderService
 from app.dependencies import get_interaction_service, get_provider_service
+from app.core.exceptions import (
+  ProviderError,
+  ModelNotSupportedError,
+  APIKeyMissingError,
+  InteractionNotFoundError,
+  InternalServerError,
+)
 
 router = APIRouter(prefix="/interactions", tags=["interactions"])
 
@@ -50,22 +57,24 @@ async def send_prompt(
     )
     return response
   except ValueError as e:
-    # Model not supported or API key missing
-    raise HTTPException(
-      status_code=status.HTTP_400_BAD_REQUEST,
-      detail=str(e)
-    )
+    # Parse ValueError to determine specific error type
+    error_msg = str(e).lower()
+    if "not supported" in error_msg or "invalid model" in error_msg:
+      raise ModelNotSupportedError(request.model)
+    elif "api key" in error_msg or "missing" in error_msg:
+      # Extract provider name from error message if possible
+      raise APIKeyMissingError(request.model.split('-')[0] if request.model else "unknown")
+    else:
+      # Generic invalid request
+      from app.core.exceptions import InvalidRequestError
+      raise InvalidRequestError(str(e))
   except Exception as e:
-    # Provider API error or other unexpected error
-    if "API error" in str(e):
-      raise HTTPException(
-        status_code=status.HTTP_502_BAD_GATEWAY,
-        detail=f"Provider API error: {str(e)}"
-      )
-    raise HTTPException(
-      status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-      detail=f"Internal server error: {str(e)}"
-    )
+    # Check if it's a provider API error
+    if "API error" in str(e) or "provider" in str(e).lower():
+      provider_name = request.model.split('-')[0] if request.model else "unknown"
+      raise ProviderError(provider_name, str(e))
+    # Otherwise, let global handler catch it
+    raise
 
 
 @router.get(
@@ -95,17 +104,11 @@ async def get_recent_interactions(
   Raises:
     500: Internal server error
   """
-  try:
-    interactions = interaction_service.get_recent_interactions(
-      limit=limit,
-      data_source=data_source
-    )
-    return interactions
-  except Exception as e:
-    raise HTTPException(
-      status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-      detail=f"Error retrieving interactions: {str(e)}"
-    )
+  interactions = interaction_service.get_recent_interactions(
+    limit=limit,
+    data_source=data_source
+  )
+  return interactions
 
 
 @router.get(
@@ -133,21 +136,10 @@ async def get_interaction_details(
     404: Interaction not found
     500: Internal server error
   """
-  try:
-    interaction = interaction_service.get_interaction_details(interaction_id)
-    if not interaction:
-      raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"Interaction {interaction_id} not found"
-      )
-    return interaction
-  except HTTPException:
-    raise
-  except Exception as e:
-    raise HTTPException(
-      status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-      detail=f"Error retrieving interaction: {str(e)}"
-    )
+  interaction = interaction_service.get_interaction_details(interaction_id)
+  if not interaction:
+    raise InteractionNotFoundError(interaction_id)
+  return interaction
 
 
 @router.delete(
@@ -174,18 +166,7 @@ async def delete_interaction(
     404: Interaction not found
     500: Internal server error
   """
-  try:
-    deleted = interaction_service.delete_interaction(interaction_id)
-    if not deleted:
-      raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"Interaction {interaction_id} not found"
-      )
-    return None
-  except HTTPException:
-    raise
-  except Exception as e:
-    raise HTTPException(
-      status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-      detail=f"Error deleting interaction: {str(e)}"
-    )
+  deleted = interaction_service.delete_interaction(interaction_id)
+  if not deleted:
+    raise InteractionNotFoundError(interaction_id)
+  return None
