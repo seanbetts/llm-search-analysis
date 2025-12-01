@@ -136,13 +136,13 @@ Streamlit → FastAPI API → Services → Repository → SQLite
 
 ---
 
-### Days 5-8: Build Services & Repositories
+### Days 5-8: Build Services & Repositories ✅
 
 **Goal:** Extract business logic and data access into clean layers
 
-#### Day 5-6: Repository Layer
+#### Day 5-6: Repository Layer ✅
 
-- [ ] Create `backend/app/repositories/interaction_repository.py`
+- [x] Create `backend/app/repositories/interaction_repository.py`
   ```python
   class InteractionRepository:
       def save(interaction: Interaction) -> int
@@ -151,20 +151,21 @@ Streamlit → FastAPI API → Services → Repository → SQLite
       def delete(id: int) -> bool
   ```
 
-- [ ] Implement with SQLAlchemy
+- [x] Implement with SQLAlchemy
   - Use existing database models from `src/database.py`
   - Copy models to `backend/app/models/database.py`
-  - Add eager loading to prevent N+1 queries
+  - Add eager loading to prevent N+1 queries (using joinedload)
   - Connection management with dependency injection
 
-- [ ] Add unit tests for repository
+- [x] Add unit tests for repository
   - Use in-memory SQLite for testing
   - Test CRUD operations
   - Test eager loading works
+  - 11 passing tests
 
-#### Day 7-8: Service Layer
+#### Day 7-8: Service Layer ✅
 
-- [ ] Create `backend/app/services/interaction_service.py`
+- [x] Create `backend/app/services/interaction_service.py`
   ```python
   class InteractionService:
       def save_interaction(response: ProviderResponse, prompt: str) -> int
@@ -173,32 +174,34 @@ Streamlit → FastAPI API → Services → Repository → SQLite
       def delete_interaction(id: int) -> bool
   ```
 
-- [ ] Implement business logic
+- [x] Implement business logic
   - Model name normalization (gpt-5-1 → gpt-5.1)
   - Citation classification (Sources Used vs Extra Links)
   - Average rank calculation
   - Domain extraction from URLs
 
-- [ ] Create `backend/app/services/provider_service.py`
+- [x] Create `backend/app/services/provider_service.py`
   ```python
   class ProviderService:
-      def get_provider(provider_name: str, data_mode: str) -> Provider
-      def send_prompt(provider: Provider, prompt: str, model: str) -> ProviderResponse
-      def get_available_providers() -> List[str]
-      def get_available_models(provider: str) -> List[str]
+      def send_prompt(prompt: str, model: str) -> SendPromptResponse
+      def get_available_providers() -> List[ProviderInfo]
+      def get_available_models() -> List[str]
+      def get_provider_for_model(model: str) -> str
   ```
 
-- [ ] Move provider code from `src/providers/` to backend
-  - Copy provider classes
-  - Adapt for async if needed
+- [x] Move provider code from `src/providers/` to backend
+  - Copy provider classes (OpenAI, Google, Anthropic)
   - Maintain existing functionality
+  - Add to backend/app/services/providers/
 
-- [ ] Add unit tests for services
+- [x] Add unit tests for services
   - Mock repository layer
   - Test business logic in isolation
   - Test error handling
+  - 21 passing tests for services + utilities
 
-**Deliverable:** Working services & repositories with tests
+**Deliverable:** Working services & repositories with tests ✅
+**Test Summary:** 61 total tests passing (11 repository + 29 schema + 21 service)
 
 ---
 
@@ -592,8 +595,8 @@ Streamlit → FastAPI API → Services → Repository → SQLite
 ### Week 1-2: FastAPI Backend 🚧
 - [x] Days 1-2: Project structure & setup ✅
 - [x] Days 3-4: API contracts (Pydantic) ✅
-- [ ] Days 5-8: Services & repositories 🚧 IN PROGRESS
-- [ ] Days 9-10: API endpoints
+- [x] Days 5-8: Services & repositories ✅
+- [ ] Days 9-10: API endpoints 🚧 NEXT
 
 ### Week 3: Streamlit API Client
 - [ ] Days 11-12: API client library
