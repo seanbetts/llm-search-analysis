@@ -300,17 +300,23 @@ stealth.apply_stealth_sync(page)
 
 ### High Priority
 
-**1. Complete Network Capture**
-- [ ] Switch to Chrome browser
-- [ ] Test search functionality
-- [ ] Parse search metadata from network responses
-- [ ] Extract citations and sources from network logs
-- [ ] Map search queries to results
+**1. ✅ Complete Network Capture - DONE**
+- [x] Switch to Chrome browser
+- [x] Test search functionality
+- [x] Parse search metadata from network responses
+- [x] Extract citations and sources from network logs
+- [x] Map search queries to results (via response_id)
+- [x] Citation classification (Sources Used vs Extra Links)
+- [x] Internal scores and metadata extraction
 
-**2. Enhanced Analysis**
-- [ ] Compare API vs Network data side-by-side
-- [ ] Identify what network logs reveal that APIs don't
-- [ ] Network-exclusive insights visualization
+**2. Enhanced Analysis - IN PROGRESS**
+- [x] Identify what network logs reveal that APIs don't
+  - Internal ranking scores
+  - Query reformulations
+  - Citation confidence scores
+  - Snippet text
+- [ ] Compare API vs Network data side-by-side visualization
+- [ ] Network-exclusive insights dashboard
 
 **3. Multi-Provider Network Capture**
 - [ ] Claude network capture
@@ -320,10 +326,16 @@ stealth.apply_stealth_sync(page)
 ### Medium Priority
 
 **UI Improvements:**
+- [x] Citation classification display (Sources Used vs Extra Links)
+- [x] Extra Links section in UI
+- [x] Prompt display on Interactive tab
+- [x] Consistent UI between Interactive and History tabs
+- [x] Image extraction and display
+- [x] Response time in heading
+- [x] Provider name capitalization (OpenAI)
 - [ ] Real-time progress for network capture
 - [ ] Browser session status indicator
 - [ ] Data source badges in results
-- [ ] Network log data preview
 
 **Analysis Features:**
 - [ ] Snippet content analysis
@@ -432,16 +444,19 @@ message = client.messages.create(
 - **Workaround:** Use API mode with OpenAI Responses API for reliable search
 - **Note:** Our code correctly enables search mode - execution is ChatGPT's responsibility
 
-**2. Network Log Parsing Not Implemented**
-- **Issue:** Search metadata extraction from network logs not yet implemented
-- **Impact:** Network mode captures response text and citations only
-- **Status:** Infrastructure complete, parsing implementation pending
-- **Next Step:** Analyze captured network responses to extract search queries and sources
+**2. ✅ Network Log Parsing - RESOLVED**
+- **Previous Issue:** Search metadata extraction from network logs not yet implemented
+- **Solution:** Complete parser implementation with search query extraction, source parsing, and citation classification
+- **Status:** ✅ COMPLETE - Network logs provide full metadata including internal scores and query reformulations
+- **Architecture:** Sources stored with `response_id` for accurate citation tracking
 
-**3. Assistant-Only Links**
-- **Issue:** Assistant may include links in the response that are not present in the captured search results (SSE)
-- **Impact:** Such links will not appear in "Search Queries & Sources" or "Sources Used"
-- **Status:** "Extra Links" metric now tracks these links separately; raw SSE is stored in `raw_response_json` for inspection
+**3. ✅ Citation Classification - RESOLVED**
+- **Previous Issue:** Assistant-included links not distinguished from search results
+- **Solution:** Implemented "Extra Links" metric to classify citations
+- **Status:** ✅ COMPLETE - Citations classified as:
+  - **Sources Used**: Citations from search results (have rank numbers)
+  - **Extra Links**: Citations from training data (no rank numbers)
+- **UI:** Separate sections display both types with clear labeling
 
 ### Resolved Issues
 
@@ -534,17 +549,22 @@ python tests/verify_providers.py
 - Batch analysis
 - Query history
 
-### Phase 2: 🔄 In Progress
-- Network capture infrastructure
-- Browser automation
-- Response extraction
-- **BLOCKED:** Search toggle access
+### Phase 2: ✅ Complete
+- ✅ Network capture infrastructure
+- ✅ Browser automation (Chrome with session persistence)
+- ✅ Response extraction
+- ✅ Search toggle access (Chrome bypasses detection)
+- ✅ Network log parsing
+- ✅ Search metadata extraction
+- ✅ Citation classification (Sources Used vs Extra Links)
+- ✅ Internal scores and metadata capture
+- ✅ UI consistency improvements
 
-### Phase 3: Not Started
-- Network log parsing
-- Search metadata extraction
-- API vs Network comparison
-- Extended to all providers
+### Phase 3: 🔄 In Progress
+- [x] Network log parsing for ChatGPT - COMPLETE
+- [x] Citation classification - COMPLETE
+- [ ] API vs Network comparison visualization
+- [ ] Extended to other providers (Claude, Gemini)
 
 ## Risk Mitigation
 
@@ -599,11 +619,14 @@ playwright-stealth>=2.0.0
 - [x] Document findings - Chrome bypasses detection
 - [x] Decision: proceed with network log parsing
 
-### Short Term (1-2 Weeks)
-- [ ] If Chrome works: Parse network responses
-- [ ] Extract search metadata
-- [ ] Map queries to sources
-- [ ] Test with various prompts
+### Short Term (1-2 Weeks) - ✅ COMPLETE
+- [x] Chrome working: Parse network responses
+- [x] Extract search metadata
+- [x] Map sources to responses (via response_id)
+- [x] Test with various prompts
+- [x] Citation classification implementation
+- [x] UI improvements for consistency
+- [x] Documentation updates
 
 ### Medium Term (1 Month)
 - [ ] Extend to Claude/Gemini
@@ -619,12 +642,14 @@ playwright-stealth>=2.0.0
 
 ## Open Questions
 
-1. **Chrome vs Chromium:** Will Chrome bypass detection?
-2. **Logged-in accounts:** Worth the complexity?
-3. **Rate limiting:** What are the actual limits for network mode?
-4. **Multi-tab support:** Can we capture multiple prompts in parallel?
-5. **Session persistence:** How long to keep browser alive?
+1. **✅ Chrome vs Chromium:** ~~Will Chrome bypass detection?~~ - ANSWERED: Yes, Chrome successfully bypasses detection
+2. **✅ Logged-in accounts:** ~~Worth the complexity?~~ - ANSWERED: Yes, session persistence works well with storageState API
+3. **✅ Session persistence:** ~~How long to keep browser alive?~~ - ANSWERED: Start/stop per interaction, session persists via JSON file
+4. **Rate limiting:** What are the actual limits for network mode?
+5. **Multi-tab support:** Can we capture multiple prompts in parallel?
 6. **Privacy:** What safeguards for sensitive data?
+7. **Citation mapping:** How to handle query-to-source mapping in network logs? - ANSWERED: Use response_id for network logs
+8. **Citation classification:** How to distinguish search results from training data? - ANSWERED: Rank presence indicates search results
 
 ## Decision Log
 
@@ -665,3 +690,29 @@ playwright-stealth>=2.0.0
 **Impact:** Faster search enablement, fewer UI interaction failures
 **Implementation:** Type `/search ` (with space) in textarea, detect activation, fallback to menu if needed
 **Trade-off:** Depends on ChatGPT supporting slash command vs. pure UI automation
+
+### 2024-12-01: Network Log Source-to-Response Mapping
+**Decision:** Store sources with `response_id` instead of `search_query_id` for network logs
+**Reason:** ChatGPT network logs don't provide reliable query-to-source mapping
+**Result:** ✅ SUCCESS - Accurate citation tracking while acknowledging limitation
+**Impact:** Sources displayed under response rather than individual queries for network logs
+**Implementation:**
+- API mode: Sources linked to `search_query_id` (query-level granularity)
+- Network mode: Sources linked to `response_id` (response-level granularity)
+**Trade-off:** Loss of query-level source mapping vs. accurate citation display
+**Note:** Displayed with clear caption explaining the limitation
+
+### 2024-12-01: Citation Classification (Sources Used vs Extra Links)
+**Decision:** Classify citations into two categories based on presence of rank
+**Reason:** Models can cite URLs from search results OR from training data
+**Result:** ✅ SUCCESS - Clear distinction between citation sources
+**Metrics:**
+- **Sources Used**: Citations WITH ranks (from search results)
+- **Extra Links**: Citations WITHOUT ranks (from training data)
+- **Average Rank**: Calculated only from Sources Used
+**Impact:**
+- More accurate understanding of model behavior
+- Reveals when models use pre-existing knowledge vs search
+- Fixed bug where all citations counted as "Sources Used"
+**UI:** Separate sections for Sources Used and Extra Links with clear labels
+**Trade-off:** Slightly more complex UI vs. much better insight
