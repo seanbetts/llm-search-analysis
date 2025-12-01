@@ -10,12 +10,29 @@ from app.config import settings
 from app.api.v1.endpoints import interactions, providers
 from app.dependencies import engine
 from app.core.exceptions import APIException, DatabaseError, ValidationError
+from app.core.middleware import LoggingMiddleware, get_correlation_id
 
-# Configure logging
+
+class CorrelationIdFilter(logging.Filter):
+  """Add default correlation_id to all log records."""
+
+  def filter(self, record):
+    if not hasattr(record, 'correlation_id'):
+      record.correlation_id = 'no-correlation-id'
+    return True
+
+
+# Configure logging with more detailed format
 logging.basicConfig(
-  level=logging.INFO,
-  format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
+  format='%(asctime)s - %(name)s - %(levelname)s - [%(correlation_id)s] - %(message)s',
+  datefmt='%Y-%m-%d %H:%M:%S'
 )
+
+# Add correlation ID filter to all handlers
+for handler in logging.root.handlers:
+  handler.addFilter(CorrelationIdFilter())
+
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
@@ -34,6 +51,9 @@ app.add_middleware(
   allow_methods=["*"],
   allow_headers=["*"],
 )
+
+# Add logging middleware for request/response tracking and correlation IDs
+app.add_middleware(LoggingMiddleware)
 
 # Include API routers
 app.include_router(interactions.router, prefix="/api/v1")
@@ -95,6 +115,7 @@ async def api_exception_handler(request: Request, exc: APIException):
   logger.error(
     f"API Exception: {exc.error_code} - {exc.message}",
     extra={
+      "correlation_id": get_correlation_id(request),
       "error_code": exc.error_code,
       "status_code": exc.status_code,
       "path": request.url.path,
@@ -129,6 +150,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
   logger.warning(
     f"Validation error on {request.url.path}",
     extra={
+      "correlation_id": get_correlation_id(request),
       "path": request.url.path,
       "method": request.method,
       "errors": errors,
@@ -159,6 +181,7 @@ async def database_exception_handler(request: Request, exc: SQLAlchemyError):
   logger.error(
     f"Database error on {request.url.path}: {str(exc)}",
     extra={
+      "correlation_id": get_correlation_id(request),
       "path": request.url.path,
       "method": request.method,
       "error_type": type(exc).__name__,
@@ -187,6 +210,7 @@ async def global_exception_handler(request: Request, exc: Exception):
   logger.exception(
     f"Unhandled exception on {request.url.path}",
     extra={
+      "correlation_id": get_correlation_id(request),
       "path": request.url.path,
       "method": request.method,
       "error_type": type(exc).__name__,
