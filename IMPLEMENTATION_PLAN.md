@@ -589,10 +589,10 @@ Streamlit → FastAPI API → Services → Repository → SQLite
 
 ## Progress Tracking
 
-### Week 1-2: FastAPI Backend ✅
-- [ ] Days 1-2: Project structure & setup
-- [ ] Days 3-4: API contracts (Pydantic)
-- [ ] Days 5-8: Services & repositories
+### Week 1-2: FastAPI Backend 🚧
+- [x] Days 1-2: Project structure & setup ✅
+- [x] Days 3-4: API contracts (Pydantic) ✅
+- [ ] Days 5-8: Services & repositories 🚧 IN PROGRESS
 - [ ] Days 9-10: API endpoints
 
 ### Week 3: Streamlit API Client
