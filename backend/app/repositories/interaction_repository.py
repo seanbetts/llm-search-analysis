@@ -172,6 +172,7 @@ class InteractionRepository:
         joinedload(Response.search_queries)
         .joinedload(SearchQuery.sources),
         joinedload(Response.sources_used),
+        joinedload(Response.sources),  # Load direct sources for network_log mode
       )
       .filter_by(id=response_id)
       .first()
@@ -201,6 +202,7 @@ class InteractionRepository:
         joinedload(Response.search_queries)
         .joinedload(SearchQuery.sources),
         joinedload(Response.sources_used),
+        joinedload(Response.sources),  # Load direct sources for network_log mode
       )
       .order_by(Response.created_at.desc())
     )

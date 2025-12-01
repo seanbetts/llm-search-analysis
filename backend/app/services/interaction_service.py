@@ -115,7 +115,12 @@ class InteractionService:
     for response in responses:
       # Calculate counts
       search_query_count = len(response.search_queries)
-      source_count = sum(len(q.sources) for q in response.search_queries)
+      # For network_log: sources are linked directly to response
+      # For api: sources are linked to search queries
+      if response.data_source == 'network_log':
+        source_count = len(response.sources) if response.sources else 0
+      else:
+        source_count = sum(len(q.sources) for q in response.search_queries)
       citation_count = len(response.sources_used)
 
       # Calculate average rank
