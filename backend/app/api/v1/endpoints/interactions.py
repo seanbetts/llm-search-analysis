@@ -29,6 +29,89 @@ router = APIRouter(prefix="/interactions", tags=["interactions"])
   summary="Send prompt to LLM provider",
   description="Send a prompt to an LLM provider and get response with search data. "
   "The interaction is saved to the database for history tracking.",
+  responses={
+    400: {
+      "description": "Invalid request (unsupported model or missing API key)",
+      "content": {
+        "application/json": {
+          "examples": {
+            "model_not_supported": {
+              "summary": "Model not supported",
+              "value": {
+                "error": {
+                  "message": "Model 'invalid-model' is not supported",
+                  "code": "INVALID_REQUEST",
+                  "details": {"model": "invalid-model"}
+                }
+              }
+            },
+            "api_key_missing": {
+              "summary": "API key missing",
+              "value": {
+                "error": {
+                  "message": "API key for openai is not configured",
+                  "code": "INVALID_REQUEST",
+                  "details": {
+                    "provider": "openai",
+                    "solution": "Add the API key to your .env file"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    422: {
+      "description": "Validation error",
+      "content": {
+        "application/json": {
+          "example": {
+            "error": {
+              "message": "Request validation failed",
+              "code": "VALIDATION_ERROR",
+              "details": {
+                "errors": [
+                  {
+                    "field": "body -> prompt",
+                    "message": "Field required",
+                    "type": "missing"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    500: {
+      "description": "Internal server error",
+      "content": {
+        "application/json": {
+          "example": {
+            "error": {
+              "message": "An unexpected error occurred",
+              "code": "INTERNAL_SERVER_ERROR"
+            }
+          }
+        }
+      }
+    },
+    502: {
+      "description": "Provider API error",
+      "content": {
+        "application/json": {
+          "example": {
+            "error": {
+              "message": "openai provider error: API rate limit exceeded",
+              "code": "EXTERNAL_SERVICE_ERROR",
+              "details": {"service": "openai provider"}
+            }
+          }
+        }
+      }
+    }
+  }
 )
 async def send_prompt(
   request: SendPromptRequest,
@@ -117,6 +200,38 @@ async def get_recent_interactions(
   status_code=status.HTTP_200_OK,
   summary="Get interaction details",
   description="Get full details of a specific interaction including all search queries, sources, and citations.",
+  responses={
+    404: {
+      "description": "Interaction not found",
+      "content": {
+        "application/json": {
+          "example": {
+            "error": {
+              "message": "Interaction with ID 999 not found",
+              "code": "RESOURCE_NOT_FOUND",
+              "details": {
+                "resource_type": "Interaction",
+                "resource_id": "999"
+              }
+            }
+          }
+        }
+      }
+    },
+    500: {
+      "description": "Internal server error",
+      "content": {
+        "application/json": {
+          "example": {
+            "error": {
+              "message": "An unexpected error occurred",
+              "code": "INTERNAL_SERVER_ERROR"
+            }
+          }
+        }
+      }
+    }
+  }
 )
 async def get_interaction_details(
   interaction_id: int,
@@ -147,6 +262,38 @@ async def get_interaction_details(
   status_code=status.HTTP_204_NO_CONTENT,
   summary="Delete interaction",
   description="Delete an interaction and all associated data (search queries, sources, citations).",
+  responses={
+    404: {
+      "description": "Interaction not found",
+      "content": {
+        "application/json": {
+          "example": {
+            "error": {
+              "message": "Interaction with ID 999 not found",
+              "code": "RESOURCE_NOT_FOUND",
+              "details": {
+                "resource_type": "Interaction",
+                "resource_id": "999"
+              }
+            }
+          }
+        }
+      }
+    },
+    500: {
+      "description": "Internal server error",
+      "content": {
+        "application/json": {
+          "example": {
+            "error": {
+              "message": "An unexpected error occurred",
+              "code": "INTERNAL_SERVER_ERROR"
+            }
+          }
+        }
+      }
+    }
+  }
 )
 async def delete_interaction(
   interaction_id: int,
