@@ -1,0 +1,412 @@
+"""
+API Client for LLM Search Analysis Backend.
+
+This module provides a client library for interacting with the FastAPI backend.
+"""
+
+import time
+from typing import Dict, List, Optional, Any
+import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
+
+class APIClientError(Exception):
+  """Base exception for API client errors."""
+  pass
+
+
+class APITimeoutError(APIClientError):
+  """Exception raised when API request times out."""
+  pass
+
+
+class APIConnectionError(APIClientError):
+  """Exception raised when connection to API fails."""
+  pass
+
+
+class APIValidationError(APIClientError):
+  """Exception raised when request validation fails."""
+  pass
+
+
+class APINotFoundError(APIClientError):
+  """Exception raised when resource is not found."""
+  pass
+
+
+class APIServerError(APIClientError):
+  """Exception raised when server encounters an error."""
+  pass
+
+
+class APIClient:
+  """
+  Client for interacting with the LLM Search Analysis FastAPI backend.
+
+  Features:
+  - Connection pooling for efficient HTTP requests
+  - Automatic retry with exponential backoff for transient failures
+  - Configurable timeouts per operation type
+  - User-friendly error messages
+
+  Example:
+    >>> client = APIClient(base_url="http://localhost:8000")
+    >>> providers = client.get_providers()
+    >>> response = client.send_prompt(
+    ...     prompt="What is AI?",
+    ...     provider="openai",
+    ...     model="gpt-5.1"
+    ... )
+  """
+
+  def __init__(
+    self,
+    base_url: str = "http://localhost:8000",
+    timeout_default: float = 30.0,
+    timeout_send_prompt: float = 120.0,
+    max_retries: int = 3,
+    pool_connections: int = 10,
+    pool_maxsize: int = 20,
+  ):
+    """
+    Initialize API client.
+
+    Args:
+      base_url: Base URL of the FastAPI backend (default: http://localhost:8000)
+      timeout_default: Default timeout for API requests in seconds (default: 30.0)
+      timeout_send_prompt: Timeout for send_prompt requests in seconds (default: 120.0)
+      max_retries: Maximum number of retry attempts for transient failures (default: 3)
+      pool_connections: Number of connection pools to cache (default: 10)
+      pool_maxsize: Maximum number of connections to save in the pool (default: 20)
+    """
+    self.base_url = base_url.rstrip("/")
+    self.timeout_default = timeout_default
+    self.timeout_send_prompt = timeout_send_prompt
+    self.max_retries = max_retries
+
+    # Create httpx client with connection pooling
+    limits = httpx.Limits(
+      max_connections=pool_maxsize,
+      max_keepalive_connections=pool_connections
+    )
+
+    self.client = httpx.Client(
+      base_url=self.base_url,
+      limits=limits,
+      timeout=httpx.Timeout(timeout_default)
+    )
+
+  def __del__(self):
+    """Clean up HTTP client on deletion."""
+    if hasattr(self, 'client'):
+      self.client.close()
+
+  def close(self):
+    """Explicitly close the HTTP client."""
+    self.client.close()
+
+  def _handle_response(self, response: httpx.Response) -> Dict[str, Any]:
+    """
+    Handle HTTP response and raise appropriate exceptions.
+
+    Args:
+      response: httpx Response object
+
+    Returns:
+      Parsed JSON response, or empty dict for 204 No Content
+
+    Raises:
+      APIValidationError: For 422 validation errors
+      APINotFoundError: For 404 not found errors
+      APIServerError: For 500+ server errors
+      APIClientError: For other error responses
+    """
+    try:
+      response.raise_for_status()
+      # Handle 204 No Content responses
+      if response.status_code == 204:
+        return {}
+      return response.json()
+    except httpx.HTTPStatusError as e:
+      status_code = e.response.status_code
+
+      try:
+        error_data = e.response.json()
+        error_message = error_data.get("detail", str(e))
+        if isinstance(error_message, list):
+          # Validation errors return a list
+          error_message = "; ".join([f"{err.get('loc', '')}: {err.get('msg', '')}" for err in error_message])
+      except Exception:
+        error_message = str(e)
+
+      if status_code == 422:
+        raise APIValidationError(f"Validation error: {error_message}")
+      elif status_code == 404:
+        raise APINotFoundError(f"Resource not found: {error_message}")
+      elif status_code >= 500:
+        raise APIServerError(f"Server error: {error_message}")
+      else:
+        raise APIClientError(f"API error ({status_code}): {error_message}")
+
+  @retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=10),
+    retry=retry_if_exception_type((httpx.ConnectError, httpx.TimeoutException)),
+    reraise=True
+  )
+  def _request(
+    self,
+    method: str,
+    path: str,
+    timeout: Optional[float] = None,
+    **kwargs
+  ) -> Dict[str, Any]:
+    """
+    Make HTTP request with retry logic.
+
+    Args:
+      method: HTTP method (GET, POST, DELETE, etc.)
+      path: API endpoint path (e.g., "/api/v1/providers")
+      timeout: Optional timeout override
+      **kwargs: Additional arguments for httpx request
+
+    Returns:
+      Parsed JSON response
+
+    Raises:
+      APITimeoutError: If request times out
+      APIConnectionError: If connection fails
+      Various APIClientError subclasses for other errors
+    """
+    try:
+      # Use custom timeout if provided, otherwise use default from client
+      if timeout is not None:
+        kwargs['timeout'] = timeout
+
+      response = self.client.request(method, path, **kwargs)
+      return self._handle_response(response)
+
+    except httpx.TimeoutException as e:
+      raise APITimeoutError(f"Request timed out: {str(e)}")
+    except httpx.ConnectError as e:
+      raise APIConnectionError(f"Failed to connect to API: {str(e)}")
+    except (APIClientError, APIValidationError, APINotFoundError, APIServerError):
+      # Re-raise our custom exceptions
+      raise
+    except Exception as e:
+      raise APIClientError(f"Unexpected error: {str(e)}")
+
+  def send_prompt(
+    self,
+    prompt: str,
+    provider: str,
+    model: str,
+    data_mode: str = "api",
+    headless: bool = True
+  ) -> Dict[str, Any]:
+    """
+    Send a prompt to an LLM provider and get the response.
+
+    Args:
+      prompt: The prompt text to send (1-10000 characters)
+      provider: Provider name (openai, google, anthropic, chatgpt)
+      model: Model identifier (e.g., "gpt-5.1", "gemini-2.5-flash")
+      data_mode: Data collection mode - "api" or "network_log" (default: "api")
+      headless: Run browser in headless mode for network_log mode (default: True)
+
+    Returns:
+      Dictionary containing:
+        - interaction_id: ID of saved interaction
+        - response_text: LLM response text
+        - search_queries: List of search queries made
+        - citations: List of citations in response
+        - provider: Provider used
+        - model: Model used
+        - response_time_ms: Response time in milliseconds
+        - created_at: Timestamp of interaction
+        - And more...
+
+    Raises:
+      APIValidationError: If prompt/provider/model is invalid
+      APIServerError: If backend or LLM API fails
+      APITimeoutError: If request takes longer than timeout
+
+    Example:
+      >>> response = client.send_prompt(
+      ...     prompt="What is quantum computing?",
+      ...     provider="openai",
+      ...     model="gpt-5.1"
+      ... )
+      >>> print(response["response_text"])
+    """
+    payload = {
+      "prompt": prompt,
+      "provider": provider,
+      "model": model,
+      "data_mode": data_mode,
+      "headless": headless
+    }
+
+    return self._request(
+      "POST",
+      "/api/v1/interactions/send",
+      json=payload,
+      timeout=self.timeout_send_prompt
+    )
+
+  def get_recent_interactions(
+    self,
+    limit: int = 50,
+    data_source: Optional[str] = None
+  ) -> List[Dict[str, Any]]:
+    """
+    Get recent interactions with optional filtering.
+
+    Args:
+      limit: Maximum number of interactions to return (1-1000, default: 50)
+      data_source: Optional filter by data source ("api" or "network_log")
+
+    Returns:
+      List of interaction summaries, each containing:
+        - interaction_id: Unique interaction ID
+        - prompt: The prompt text
+        - provider: Provider used
+        - model: Model used
+        - response_time_ms: Response time
+        - data_source: Data source (api/network_log)
+        - created_at: Timestamp
+        - search_queries_count: Number of search queries
+        - sources_count: Number of sources
+        - citations_count: Number of citations
+        - extra_links_count: Number of extra links
+        - average_rank: Average rank of sources
+
+    Raises:
+      APIServerError: If backend fails
+
+    Example:
+      >>> interactions = client.get_recent_interactions(limit=10, data_source="api")
+      >>> for interaction in interactions:
+      ...     print(f"{interaction['model']}: {interaction['prompt'][:50]}")
+    """
+    params = {"limit": limit}
+    if data_source:
+      params["data_source"] = data_source
+
+    return self._request("GET", "/api/v1/interactions/recent", params=params)
+
+  def get_interaction(self, interaction_id: int) -> Dict[str, Any]:
+    """
+    Get full details of a specific interaction.
+
+    Args:
+      interaction_id: The interaction ID
+
+    Returns:
+      Full interaction details including:
+        - All fields from get_recent_interactions()
+        - response_text: Full LLM response
+        - search_queries: Detailed search query data with sources
+        - citations: Detailed citation data
+        - raw_response: Raw API response (if available)
+
+    Raises:
+      APINotFoundError: If interaction doesn't exist
+      APIServerError: If backend fails
+
+    Example:
+      >>> interaction = client.get_interaction(123)
+      >>> print(interaction["response_text"])
+      >>> for query in interaction["search_queries"]:
+      ...     print(f"Query: {query['query']}")
+      ...     for source in query["sources"]:
+      ...         print(f"  - {source['title']}: {source['url']}")
+    """
+    return self._request("GET", f"/api/v1/interactions/{interaction_id}")
+
+  def delete_interaction(self, interaction_id: int) -> bool:
+    """
+    Delete an interaction and all associated data.
+
+    Args:
+      interaction_id: The interaction ID to delete
+
+    Returns:
+      True if deletion was successful
+
+    Raises:
+      APINotFoundError: If interaction doesn't exist
+      APIServerError: If backend fails
+
+    Example:
+      >>> success = client.delete_interaction(123)
+      >>> if success:
+      ...     print("Interaction deleted successfully")
+    """
+    try:
+      self._request("DELETE", f"/api/v1/interactions/{interaction_id}")
+      return True
+    except APINotFoundError:
+      raise
+    except Exception as e:
+      raise APIServerError(f"Failed to delete interaction: {str(e)}")
+
+  def get_providers(self) -> List[Dict[str, Any]]:
+    """
+    Get list of available LLM providers with their supported models.
+
+    Returns:
+      List of provider information, each containing:
+        - name: Provider internal name (openai, google, anthropic)
+        - display_name: Human-readable provider name
+        - is_active: Whether provider is currently active (has API key)
+        - supported_models: List of model identifiers
+
+    Raises:
+      APIServerError: If backend fails
+
+    Example:
+      >>> providers = client.get_providers()
+      >>> for provider in providers:
+      ...     print(f"{provider['display_name']}:")
+      ...     for model in provider['supported_models']:
+      ...         print(f"  - {model}")
+    """
+    return self._request("GET", "/api/v1/providers")
+
+  def get_models(self) -> List[str]:
+    """
+    Get list of all available models across all providers.
+
+    Returns:
+      List of model identifiers
+
+    Raises:
+      APIServerError: If backend fails
+
+    Example:
+      >>> models = client.get_models()
+      >>> print(f"Available models: {', '.join(models)}")
+    """
+    return self._request("GET", "/api/v1/providers/models")
+
+  def health_check(self) -> Dict[str, Any]:
+    """
+    Check API health and database connectivity.
+
+    Returns:
+      Health status containing:
+        - status: "healthy" or "unhealthy"
+        - version: API version
+        - database: "connected" or "error"
+
+    Raises:
+      APIConnectionError: If cannot connect to API
+
+    Example:
+      >>> health = client.health_check()
+      >>> if health["status"] == "healthy":
+      ...     print("API is operational")
+    """
+    return self._request("GET", "/health")

@@ -1,8 +1,12 @@
 from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from fastapi import Depends
 
 from app.config import settings
+from app.repositories.interaction_repository import InteractionRepository
+from app.services.interaction_service import InteractionService
+from app.services.provider_service import ProviderService
 
 # Create database engine
 engine = create_engine(
@@ -31,3 +35,46 @@ def get_db() -> Generator[Session, None, None]:
     yield db
   finally:
     db.close()
+
+
+def get_interaction_repository(db: Session = Depends(get_db)) -> InteractionRepository:
+  """
+  Get InteractionRepository instance with database session.
+
+  Args:
+    db: Database session from get_db dependency
+
+  Returns:
+    InteractionRepository instance
+  """
+  return InteractionRepository(db)
+
+
+def get_interaction_service(
+  repository: InteractionRepository = Depends(get_interaction_repository)
+) -> InteractionService:
+  """
+  Get InteractionService instance with repository.
+
+  Args:
+    repository: InteractionRepository from get_interaction_repository dependency
+
+  Returns:
+    InteractionService instance
+  """
+  return InteractionService(repository)
+
+
+def get_provider_service(
+  interaction_service: InteractionService = Depends(get_interaction_service)
+) -> ProviderService:
+  """
+  Get ProviderService instance with interaction service.
+
+  Args:
+    interaction_service: InteractionService from get_interaction_service dependency
+
+  Returns:
+    ProviderService instance
+  """
+  return ProviderService(interaction_service)

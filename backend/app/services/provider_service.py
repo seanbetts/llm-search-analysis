@@ -193,7 +193,7 @@ class ProviderService:
       providers.append(ProviderInfo(
         name="openai",
         display_name="OpenAI",
-        is_available=True,
+        is_active=True,
         supported_models=[
           "gpt-5.1",
           "gpt-5-mini",
@@ -206,7 +206,7 @@ class ProviderService:
       providers.append(ProviderInfo(
         name="google",
         display_name="Google",
-        is_available=True,
+        is_active=True,
         supported_models=[
           "gemini-3-pro-preview",
           "gemini-2.5-flash",
@@ -219,7 +219,7 @@ class ProviderService:
       providers.append(ProviderInfo(
         name="anthropic",
         display_name="Anthropic",
-        is_available=True,
+        is_active=True,
         supported_models=[
           "claude-sonnet-4-5-20250929",
           "claude-haiku-4-5-20251001",
@@ -240,7 +240,7 @@ class ProviderService:
     providers = self.get_available_providers()
 
     for provider in providers:
-      if provider.is_available:
+      if provider.is_active:
         models.extend(provider.supported_models)
 
     return models
