@@ -1077,7 +1077,8 @@ def tab_history():
             'search_query_count': 'searches',
             'source_count': 'sources',
             'citation_count': 'citations',
-            'average_rank': 'avg_rank'
+            'average_rank': 'avg_rank',
+            'extra_links_count': 'extra_links'
         })
 
         # Sort by timestamp desc, then format

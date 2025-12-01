@@ -138,6 +138,7 @@ class InteractionService:
         source_count=source_count,
         citation_count=citation_count,
         average_rank=average_rank,
+        extra_links_count=response.extra_links_count or 0,
         response_time_ms=response.response_time_ms,
         data_source=response.data_source,
         created_at=response.created_at,

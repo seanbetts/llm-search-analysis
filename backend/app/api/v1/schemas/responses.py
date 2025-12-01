@@ -160,6 +160,7 @@ class InteractionSummary(BaseModel):
   source_count: int = Field(default=0, ge=0, description="Number of sources found")
   citation_count: int = Field(default=0, ge=0, description="Number of citations used")
   average_rank: Optional[float] = Field(None, description="Average rank of citations")
+  extra_links_count: int = Field(default=0, ge=0, description="Number of extra links not from search")
 
   response_time_ms: Optional[int] = Field(None, ge=0, description="Response time in milliseconds")
   data_source: str = Field(default="api", description="Data collection mode")
