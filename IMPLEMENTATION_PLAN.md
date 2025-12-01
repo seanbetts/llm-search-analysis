@@ -101,35 +101,38 @@ Streamlit → FastAPI API → Services → Repository → SQLite
 
 ---
 
-### Days 3-4: Define API Contracts (Pydantic Schemas)
+### Days 3-4: Define API Contracts (Pydantic Schemas) ✅
 
 **Goal:** Define all request/response schemas for API endpoints
 
-- [ ] Create `backend/app/api/v1/schemas/requests.py`
+- [x] Create `backend/app/api/v1/schemas/requests.py`
   - `SendPromptRequest` (prompt, provider, model, data_mode, headless)
   - `BatchRequest` (prompts list, models list)
   - Input validation with Pydantic validators
 
-- [ ] Create `backend/app/api/v1/schemas/responses.py`
+- [x] Create `backend/app/api/v1/schemas/responses.py`
   - `Source` schema
   - `SearchQuery` schema
   - `Citation` schema
   - `SendPromptResponse` schema (full interaction data)
   - `InteractionSummary` schema (for list views)
   - `BatchStatus` schema
+  - `ProviderInfo`, `HealthResponse`, `ErrorResponse` schemas
 
-- [ ] Add validation rules
+- [x] Add validation rules
   - Prompt length limits (1-10000 chars)
   - XSS prevention (no <script> tags, etc.)
-  - Provider validation (openai, google, anthropic)
-  - Model validation (check against known models)
+  - Provider validation (openai, google, anthropic, chatgpt)
+  - Data mode validation (api, network_log)
+  - Case-insensitive provider matching
 
-- [ ] Test schemas with pytest
+- [x] Test schemas with pytest
   - Valid inputs pass
   - Invalid inputs raise ValidationError
   - Edge cases handled
+  - 29 passing tests
 
-**Deliverable:** Complete API contract definitions with validation
+**Deliverable:** Complete API contract definitions with validation ✅
 
 ---
 
