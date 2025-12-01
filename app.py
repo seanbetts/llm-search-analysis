@@ -761,8 +761,9 @@ def tab_interactive():
                     # Convert citations
                     citations = [SimpleNamespace(**citation) for citation in response_data.get('citations', [])]
 
-                    # Convert sources (may be empty for API mode, but needed for network mode later)
-                    sources = [SimpleNamespace(**src) for src in response_data.get('sources', [])]
+                    # Convert sources - use all_sources for network_log, sources for API
+                    # For network_log mode, sources are in all_sources field
+                    sources = [SimpleNamespace(**src) for src in response_data.get('all_sources') or response_data.get('sources', [])]
 
                     # Create response object
                     response = SimpleNamespace(
@@ -1323,7 +1324,7 @@ def tab_history():
                     data_source = details.get('data_source', 'api')
                     if data_source == 'api':
                         # API: Sources are associated with queries
-                        st.markdown(f"### 📚 Sources (by Query):")
+                        st.markdown(f"### 📚 Sources Found (by Query):")
                         for i, query in enumerate(details['search_queries'], 1):
                             query_sources = query.get('sources', [])
                             if query_sources:
@@ -1343,7 +1344,7 @@ def tab_history():
                                     url_display = src.get('url') or 'No URL'
                                     # Use domain as title fallback when title is missing
                                     display_title = src.get('title') or src.get('domain') or 'Unknown source'
-                                    snippet = src.get('snippet')
+                                    snippet = src.get('snippet_text') or src.get('snippet')
                                     pub_date = src.get('pub_date')
                                     snippet_display = snippet if snippet else "N/A"
                                     pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
@@ -1391,7 +1392,7 @@ def tab_history():
                             if not snippet or not pub_date_val:
                                 source_fallback = url_to_source.get(url_display)
                                 if source_fallback:
-                                    snippet = snippet or source_fallback.get('snippet')
+                                    snippet = snippet or source_fallback.get('snippet_text') or source_fallback.get('snippet')
                                     pub_date_val = pub_date_val or source_fallback.get('pub_date')
 
                             snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>"
