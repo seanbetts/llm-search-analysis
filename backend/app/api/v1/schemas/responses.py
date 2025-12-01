@@ -101,6 +101,7 @@ class SendPromptResponse(BaseModel):
   """Full response from sending a prompt to an LLM."""
 
   # Core response data
+  prompt: str = Field(..., description="The original prompt text")
   response_text: str = Field(..., description="The LLM's response text")
   search_queries: List[SearchQuery] = Field(
     default_factory=list,

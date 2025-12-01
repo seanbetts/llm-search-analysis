@@ -163,6 +163,7 @@ class ProviderService:
       ]
 
       return SendPromptResponse(
+        prompt=prompt,
         response_text=provider_response.response_text,
         search_queries=search_queries_schema,
         citations=citations_schema,

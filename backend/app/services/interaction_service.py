@@ -206,6 +206,7 @@ class InteractionService:
     average_rank = calculate_average_rank(response.sources_used)
 
     return SendPromptResponse(
+      prompt=response.prompt.prompt_text if response.prompt else "",
       response_text=response.response_text,
       search_queries=search_queries,
       citations=citations,
