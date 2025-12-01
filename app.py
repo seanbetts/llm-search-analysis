@@ -1070,6 +1070,16 @@ def tab_history():
         # Convert to DataFrame
         df = pd.DataFrame(interactions)
 
+        # Rename API response columns to match expected column names
+        df = df.rename(columns={
+            'interaction_id': 'id',
+            'created_at': 'timestamp',
+            'search_query_count': 'searches',
+            'source_count': 'sources',
+            'citation_count': 'citations',
+            'average_rank': 'avg_rank'
+        })
+
         # Sort by timestamp desc, then format
         df['_ts_dt'] = pd.to_datetime(df['timestamp'])
         df = df.sort_values(by='_ts_dt', ascending=False)
