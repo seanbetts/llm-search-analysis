@@ -226,12 +226,14 @@ class TestResponseSchemas:
   def test_send_prompt_response_schema(self):
     """Test SendPromptResponse schema."""
     response = SendPromptResponse(
+      prompt="What is AI?",
       response_text="AI is...",
       provider="openai",
       model="gpt-4o",
       response_time_ms=1500,
       data_source="api"
     )
+    assert response.prompt == "What is AI?"
     assert response.response_text == "AI is..."
     assert response.response_time_ms == 1500
 

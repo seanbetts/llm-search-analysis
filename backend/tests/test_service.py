@@ -227,6 +227,7 @@ class TestInteractionService:
 
     # Mock prompt/session/provider
     mock_response.prompt = MagicMock()
+    mock_response.prompt.prompt_text = "What is the future of AI?"
     mock_response.prompt.session = MagicMock()
     mock_response.prompt.session.provider = MagicMock()
     mock_response.prompt.session.provider.name = "google"

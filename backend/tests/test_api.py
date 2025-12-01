@@ -176,8 +176,9 @@ class TestInteractionsEndpoints:
 
     assert response.status_code == 422
     data = response.json()
-    assert data["status"] == "error"
-    assert data["message"] == "Validation error"
+    assert "error" in data
+    assert data["error"]["code"] == "VALIDATION_ERROR"
+    assert "Request validation failed" in data["error"]["message"]
 
   def test_send_prompt_unsupported_model(self, client):
     """Test POST /api/v1/interactions/send with unsupported model."""
@@ -193,7 +194,9 @@ class TestInteractionsEndpoints:
     # Unsupported model returns 400 Bad Request
     assert response.status_code == 400
     data = response.json()
-    assert "detail" in data
+    assert "error" in data
+    assert data["error"]["code"] == "INVALID_REQUEST"
+    assert "unsupported-model-xyz" in data["error"]["message"]
 
   def test_get_recent_interactions_empty(self, client):
     """Test GET /api/v1/interactions/recent with no interactions."""
@@ -263,7 +266,9 @@ class TestInteractionsEndpoints:
     response = client.get("/api/v1/interactions/99999")
     assert response.status_code == 404
     data = response.json()
-    assert "detail" in data
+    assert "error" in data
+    assert data["error"]["code"] == "RESOURCE_NOT_FOUND"
+    assert "99999" in data["error"]["message"]
 
   @patch('app.services.providers.openai_provider.OpenAIProvider.send_prompt')
   def test_get_interaction_details_success(self, mock_send_prompt, client):
@@ -331,7 +336,9 @@ class TestInteractionsEndpoints:
     response = client.delete("/api/v1/interactions/99999")
     assert response.status_code == 404
     data = response.json()
-    assert "detail" in data
+    assert "error" in data
+    assert data["error"]["code"] == "RESOURCE_NOT_FOUND"
+    assert "99999" in data["error"]["message"]
 
   @patch('app.services.providers.openai_provider.OpenAIProvider.send_prompt')
   def test_delete_interaction_success(self, mock_send_prompt, client):
@@ -384,6 +391,7 @@ class TestErrorHandling:
 
     assert response.status_code == 422
     data = response.json()
-    assert data["status"] == "error"
-    assert data["message"] == "Validation error"
-    assert "detail" in data
+    assert "error" in data
+    assert data["error"]["code"] == "VALIDATION_ERROR"
+    assert "Request validation failed" in data["error"]["message"]
+    assert "errors" in data["error"]["details"]

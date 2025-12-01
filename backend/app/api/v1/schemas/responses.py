@@ -139,6 +139,7 @@ class SendPromptResponse(BaseModel):
     "json_schema_extra": {
       "examples": [
         {
+          "prompt": "What are the latest developments in AI?",
           "response_text": "Artificial intelligence has seen rapid development...",
           "search_queries": [],
           "citations": [],
