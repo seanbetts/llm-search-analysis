@@ -662,7 +662,7 @@ def tab_interactive():
     # Model selection (hide in network log mode since it always uses chatgpt-free)
     if st.session_state.data_collection_mode == 'network_log':
         st.info("🌐 **Network Capture Mode**: Using free ChatGPT (model selection not available)")
-        st.checkbox("Run browser headless (experimental, may hit CAPTCHA)", value=st.session_state.network_headless, key="network_headless")
+        st.checkbox("Run browser headless", value=st.session_state.network_headless, key="network_headless")
         # Fixed model for network capture
         selected_provider = 'openai'
         selected_model = 'chatgpt-free'
