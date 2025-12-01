@@ -272,38 +272,53 @@ Streamlit → FastAPI API → Services → Repository → SQLite
 
 ## Stage 2: Streamlit API Client (Week 3)
 
-### Days 11-12: Create API Client
+### Days 11-12: Create API Client ✅
 
 **Goal:** Build client library for Streamlit to call FastAPI
 
-- [ ] Create `frontend/api_client.py`
+- [x] Create `frontend/api_client.py`
   ```python
   class APIClient:
-      def __init__(base_url: str)
+      def __init__(base_url: str, timeout_default, timeout_send_prompt, max_retries, pool_connections, pool_maxsize)
       def send_prompt(...) -> dict
       def get_recent_interactions(...) -> List[dict]
       def get_interaction(...) -> dict
       def delete_interaction(...) -> bool
       def get_providers() -> List[dict]
+      def get_models() -> List[str]
+      def health_check() -> dict
   ```
 
-- [ ] Implement with `requests` or `httpx`
-  - Connection pooling
-  - Timeout configuration
-  - Retry logic for transient failures
-  - Error handling and user-friendly messages
+- [x] Implement with httpx (420 lines)
+  - Connection pooling with configurable limits
+  - Timeout configuration (120s for send_prompt, 30s default)
+  - Retry logic with exponential backoff (tenacity)
+  - Custom exception hierarchy for user-friendly error messages
+  - Comprehensive docstrings with examples
+  - Type hints throughout
 
-- [ ] Add response caching (optional)
-  - Cache provider/model lists
-  - Cache interaction details
-  - Use @st.cache_data
+- [x] Custom exceptions implemented
+  - `APIClientError` (base)
+  - `APITimeoutError`
+  - `APIConnectionError`
+  - `APIValidationError`
+  - `APINotFoundError`
+  - `APIServerError`
 
-- [ ] Test API client
-  - Mock HTTP responses
-  - Test error handling
-  - Test retries
+- [x] Test API client
+  - 23 unit tests using respx for HTTP mocking
+  - Mock HTTP responses for all endpoints
+  - Test error handling (404, 422, 500, timeout, connection)
+  - Test retries and cleanup
+  - All tests passing ✅
 
-**Deliverable:** Robust API client for Streamlit
+- [x] Live testing with FastAPI backend
+  - Health check working
+  - Provider/model endpoints working
+  - Error handling verified
+
+**Deliverable:** Robust API client for Streamlit ✅
+**Test Summary:** 23 unit tests passing (initialization, methods, error handling)
 
 ---
 
@@ -607,8 +622,8 @@ Streamlit → FastAPI API → Services → Repository → SQLite
 - [x] Days 9-10: API endpoints ✅
 
 ### Week 3: Streamlit API Client 🚧
-- [ ] Days 11-12: API client library 🚧 NEXT
-- [ ] Days 13-14: Update Streamlit UI
+- [x] Days 11-12: API client library ✅
+- [ ] Days 13-14: Update Streamlit UI 🚧 NEXT
 
 ### Week 4: Polish & Deploy
 - [ ] Days 15-16: Docker & local dev

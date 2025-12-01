@@ -11,8 +11,7 @@ import pandas as pd
 from datetime import datetime
 from urllib.parse import urlparse
 from src.config import Config
-from src.providers.provider_factory import ProviderFactory
-from src.database import Database
+from frontend.api_client import APIClient, APIClientError, APINotFoundError
 
 # Page config
 st.set_page_config(
@@ -99,11 +98,12 @@ def initialize_session_state():
         st.session_state.prompt = None
     if 'error' not in st.session_state:
         st.session_state.error = None
-    if 'db' not in st.session_state or not hasattr(st.session_state.db, "delete_interaction"):
-        # Initialize database
-        st.session_state.db = Database()
-        st.session_state.db.create_tables()
-        st.session_state.db.ensure_providers()
+    if 'api_client' not in st.session_state:
+        # Initialize API client
+        st.session_state.api_client = APIClient(
+            base_url="http://localhost:8000",
+            timeout_send_prompt=120.0
+        )
     if 'batch_results' not in st.session_state:
         st.session_state.batch_results = []
     if 'data_collection_mode' not in st.session_state:
@@ -356,7 +356,10 @@ def extract_images_from_response(text: str):
 def get_all_models():
     """Get all available models with provider labels."""
     try:
-        api_keys = Config.get_api_keys()
+        # Get providers from API
+        api_client = st.session_state.api_client
+        providers = api_client.get_providers()
+
         models = {}
 
         provider_labels = {
@@ -384,10 +387,10 @@ def get_all_models():
             'chatgpt-free': 'ChatGPT (Free)',
         }
 
-        for provider_name in ['openai', 'google', 'anthropic']:
-            if api_keys.get(provider_name):
-                provider = ProviderFactory.create_provider(provider_name, api_keys[provider_name])
-                for model in provider.get_supported_models():
+        for provider in providers:
+            if provider['is_active']:
+                provider_name = provider['name']
+                for model in provider['supported_models']:
                     # Get formatted model name
                     formatted_model = model_names.get(model, model)
                     # Create label: "🟢 OpenAI - GPT-5.1"
@@ -731,39 +734,72 @@ def tab_interactive():
                         capturer.stop_browser()
 
                 else:
-                    # Use API-based provider (default)
-                    api_keys = Config.get_api_keys()
-                    provider = ProviderFactory.create_provider(selected_provider, api_keys[selected_provider])
-
-                    # Send prompt
-                    response = provider.send_prompt(prompt, selected_model)
-
-                # Save to database (works for both modes)
-                try:
-                    model_to_save = normalize_model_id(getattr(response, "model", None) or selected_model)
-                    st.session_state.db.save_interaction(
-                        provider_name=selected_provider,
-                        model=model_to_save,
+                    # Use API client to send prompt (handles provider call AND database save)
+                    response_data = st.session_state.api_client.send_prompt(
                         prompt=prompt,
-                        response_text=response.response_text,
-                        search_queries=response.search_queries,
-                        sources=response.sources,
-                        citations=response.citations,
-                        response_time_ms=response.response_time_ms,
-                        raw_response=response.raw_response,
-                        data_source=st.session_state.data_collection_mode,
-                        extra_links_count=getattr(response, "extra_links_count", 0)
+                        provider=selected_provider,
+                        model=selected_model,
+                        data_mode="api",
+                        headless=True
                     )
-                except Exception as db_error:
-                    st.warning(f"Response saved but database error occurred: {str(db_error)}")
+
+                    # Convert API response dict to object for display_response function
+                    from types import SimpleNamespace
+
+                    # Convert search queries
+                    search_queries = []
+                    for query_data in response_data.get('search_queries', []):
+                        sources = [SimpleNamespace(**src) for src in query_data.get('sources', [])]
+                        search_query = SimpleNamespace(
+                            query=query_data.get('query'),
+                            sources=sources,
+                            timestamp=query_data.get('timestamp'),
+                            order_index=query_data.get('order_index')
+                        )
+                        search_queries.append(search_query)
+
+                    # Convert citations
+                    citations = [SimpleNamespace(**citation) for citation in response_data.get('citations', [])]
+
+                    # Convert sources (may be empty for API mode, but needed for network mode later)
+                    sources = [SimpleNamespace(**src) for src in response_data.get('sources', [])]
+
+                    # Create response object
+                    response = SimpleNamespace(
+                        provider=response_data.get('provider'),
+                        model=response_data.get('model'),
+                        response_text=response_data.get('response_text'),
+                        search_queries=search_queries,
+                        sources=sources,
+                        citations=citations,
+                        response_time_ms=response_data.get('response_time_ms'),
+                        data_source=response_data.get('data_source', 'api'),
+                        extra_links_count=response_data.get('extra_links_count', 0),
+                        raw_response=response_data.get('raw_response', {})
+                    )
 
                 # Store in session state
                 st.session_state.response = response
                 st.session_state.prompt = prompt
                 st.session_state.error = None
 
+            except APINotFoundError as e:
+                st.session_state.error = f"Resource not found: {str(e)}"
+                st.session_state.response = None
+            except APIClientError as e:
+                # Handle various API client errors with user-friendly messages
+                error_msg = str(e)
+                if "timed out" in error_msg.lower():
+                    st.session_state.error = f"Request timed out. The model may be taking too long to respond. Please try again."
+                elif "connect" in error_msg.lower() or "connection" in error_msg.lower():
+                    st.session_state.error = f"Cannot connect to API server. Please ensure the backend is running on http://localhost:8000"
+                elif "validation" in error_msg.lower():
+                    st.session_state.error = f"Invalid request: {error_msg}"
+                else:
+                    st.session_state.error = f"API error: {error_msg}"
+                st.session_state.response = None
             except Exception as e:
-                st.session_state.error = str(e)
+                st.session_state.error = f"Unexpected error: {str(e)}"
                 st.session_state.response = None
 
     # Display results
@@ -843,9 +879,6 @@ def tab_batch():
         progress_bar = st.progress(0)
         status_text = st.empty()
 
-        # Get API keys
-        api_keys = Config.get_api_keys()
-
         # Calculate total runs
         total_runs = len(prompts) * len(selected_models)
         current_run = 0
@@ -893,45 +926,50 @@ def tab_batch():
                             capturer.stop_browser()
 
                     else:
-                        # Use API-based provider (default)
-                        provider = ProviderFactory.create_provider(provider_name, api_keys[provider_name])
-
-                        # Send prompt
-                        response = provider.send_prompt(prompt, model_name)
-
-                    # Save to database (works for both modes)
-                    try:
-                        model_to_save = normalize_model_id(getattr(response, "model", None) or model_name)
-                        st.session_state.db.save_interaction(
-                            provider_name=provider_name,
-                            model=model_to_save,
+                        # Use API client to send prompt (handles provider call AND database save)
+                        response_data = st.session_state.api_client.send_prompt(
                             prompt=prompt,
-                            response_text=response.response_text,
-                            search_queries=response.search_queries,
-                            sources=response.sources,
-                            citations=response.citations,
-                            response_time_ms=response.response_time_ms,
-                            raw_response=response.raw_response,
-                            data_source=st.session_state.data_collection_mode,
-                            extra_links_count=getattr(response, "extra_links_count", 0)
+                            provider=provider_name,
+                            model=model_name,
+                            data_mode="api",
+                            headless=True
                         )
-                    except Exception as db_error:
-                        st.warning(f"Database error for {model_label} prompt {prompt_idx + 1}: {str(db_error)}")
 
-                    # Calculate average rank
-                    citations_with_rank = [c for c in response.citations if c.rank]
-                    avg_rank = sum(c.rank for c in citations_with_rank) / len(citations_with_rank) if citations_with_rank else None
+                    # For batch results, work with the API response dict directly
+                    # Calculate average rank from citations
+                    if st.session_state.data_collection_mode == 'api':
+                        citations = response_data.get('citations', [])
+                        citations_with_rank = [c for c in citations if c.get('rank')]
+                        avg_rank = sum(c.get('rank') for c in citations_with_rank) / len(citations_with_rank) if citations_with_rank else None
+                    else:
+                        citations = response.citations
+                        citations_with_rank = [c for c in citations if c.rank]
+                        avg_rank = sum(c.rank for c in citations_with_rank) / len(citations_with_rank) if citations_with_rank else None
 
-                    # Store result
-                    st.session_state.batch_results.append({
-                        'prompt': prompt,
-                        'model': model_label,
-                        'searches': len(response.search_queries),
-                        'sources': len(response.sources),
-                        'sources_used': len(response.citations),
-                        'avg_rank': avg_rank,
-                        'response_time_s': response.response_time_ms / 1000
-                    })
+                    # Store result (handle both API response dict and network log response object)
+                    if st.session_state.data_collection_mode == 'api':
+                        # For API mode, count sources from all queries
+                        sources_count = sum(len(q.get('sources', [])) for q in response_data.get('search_queries', []))
+                        st.session_state.batch_results.append({
+                            'prompt': prompt,
+                            'model': model_label,
+                            'searches': len(response_data.get('search_queries', [])),
+                            'sources': sources_count,
+                            'sources_used': len(response_data.get('citations', [])),
+                            'avg_rank': avg_rank,
+                            'response_time_s': response_data.get('response_time_ms', 0) / 1000
+                        })
+                    else:
+                        # For network log mode, use response object
+                        st.session_state.batch_results.append({
+                            'prompt': prompt,
+                            'model': model_label,
+                            'searches': len(response.search_queries),
+                            'sources': len(response.sources),
+                            'sources_used': len(response.citations),
+                            'avg_rank': avg_rank,
+                            'response_time_s': response.response_time_ms / 1000
+                        })
 
                 except Exception as e:
                     st.session_state.batch_results.append({
@@ -1023,7 +1061,7 @@ def tab_history():
     st.markdown("### 📜 Query History")
     # Get recent interactions
     try:
-        interactions = st.session_state.db.get_recent_interactions(limit=100)
+        interactions = st.session_state.api_client.get_recent_interactions(limit=100)
 
         if not interactions:
             st.info("No interactions recorded yet. Start by submitting prompts in the Interactive tab!")
@@ -1143,7 +1181,7 @@ def tab_history():
         )
 
         if selected_id:
-            details = st.session_state.db.get_interaction_details(selected_id)
+            details = st.session_state.api_client.get_interaction(selected_id)
             if details:
                 # Download interaction as markdown (placed directly after selector)
                 md_export = build_interaction_markdown(details, selected_id)
@@ -1161,7 +1199,7 @@ def tab_history():
                     with btn_col2:
                         if st.button("🗑️ Delete Interaction", type="secondary", use_container_width=True):
                             try:
-                                deleted = st.session_state.db.delete_interaction(selected_id)
+                                deleted = st.session_state.api_client.delete_interaction(selected_id)
                                 if deleted:
                                     st.success(f"Interaction ID {selected_id} deleted.")
                                     try:
