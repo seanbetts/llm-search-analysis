@@ -111,6 +111,10 @@ class SendPromptResponse(BaseModel):
     default_factory=list,
     description="Citations used in the response"
   )
+  all_sources: Optional[List[Source]] = Field(
+    default=None,
+    description="All sources (for network_log mode, where sources are not linked to search queries)"
+  )
 
   # Metadata
   provider: str = Field(..., description="LLM provider name")

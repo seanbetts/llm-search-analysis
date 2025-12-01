@@ -207,6 +207,23 @@ class InteractionService:
       for c in response.sources_used
     ]
 
+    # For network_log mode, convert direct sources to schemas
+    all_sources = None
+    if response.data_source == 'network_log' and response.sources:
+      all_sources = [
+        SourceSchema(
+          url=s.url,
+          title=s.title,
+          domain=s.domain,
+          rank=s.rank,
+          pub_date=s.pub_date,
+          snippet_text=s.snippet_text,
+          internal_score=s.internal_score,
+          metadata=s.metadata_json,
+        )
+        for s in response.sources
+      ]
+
     # Calculate average rank
     average_rank = calculate_average_rank(response.sources_used)
 
@@ -215,6 +232,7 @@ class InteractionService:
       response_text=response.response_text,
       search_queries=search_queries,
       citations=citations,
+      all_sources=all_sources,
       provider=response.prompt.session.provider.name if response.prompt and response.prompt.session else "",
       model=response.prompt.session.model_used if response.prompt and response.prompt.session else "",
       response_time_ms=response.response_time_ms,
