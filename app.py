@@ -5,6 +5,7 @@ Interactive web interface for testing and analyzing LLM search capabilities
 across OpenAI, Google Gemini, and Anthropic Claude models.
 """
 
+import os
 import re
 import streamlit as st
 import pandas as pd
@@ -100,8 +101,10 @@ def initialize_session_state():
         st.session_state.error = None
     if 'api_client' not in st.session_state:
         # Initialize API client
+        # Use API_BASE_URL from environment (Docker) or default to localhost (local dev)
+        api_base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
         st.session_state.api_client = APIClient(
-            base_url="http://localhost:8000",
+            base_url=api_base_url,
             timeout_send_prompt=120.0
         )
     if 'batch_results' not in st.session_state:
