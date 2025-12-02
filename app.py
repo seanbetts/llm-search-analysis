@@ -1234,19 +1234,19 @@ def tab_history():
                 st.markdown(f"### 🗣️ *\"{details['prompt']}\"*")
 
                 # Calculate metrics
-                num_searches = len(details['search_queries'])
+                num_searches = len(details.get('search_queries', []))
                 # For network logs, sources are in all_sources; for API, they're in query.sources
                 if details.get('data_source') == 'network_log':
                     num_sources = len(details.get('all_sources', []))
                 else:
-                    num_sources = sum(len(query['sources']) for query in details['search_queries'])
+                    num_sources = sum(len(query.get('sources', [])) for query in details.get('search_queries', []))
                 # Count only citations with ranks (from search results)
-                citations_with_rank = [c for c in details['citations'] if c.get('rank') is not None]
+                citations_with_rank = [c for c in details.get('citations', []) if c.get('rank') is not None]
                 num_sources_used = len(citations_with_rank)
                 avg_rank_display = f"{sum(c['rank'] for c in citations_with_rank) / len(citations_with_rank):.1f}" if citations_with_rank else "N/A"
                 response_time_s = f"{details['response_time_ms'] / 1000:.1f}s"
                 # Extra links from stored value; fallback to citations without rank
-                extra_links_count = details.get('extra_links', len([c for c in details['citations'] if not c.get('rank')]))
+                extra_links_count = details.get('extra_links', len([c for c in details.get('citations', []) if not c.get('rank')]))
                 # Response metadata
                 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1.5, 2, 1, 1, 1, 1, 1, 1])
 
@@ -1311,9 +1311,9 @@ def tab_history():
 
                 st.divider()
 
-                if details['search_queries']:
-                    st.markdown(f"### 🔍 Search Queries ({len(details['search_queries'])}):")
-                    for i, query in enumerate(details['search_queries'], 1):
+                if details.get('search_queries'):
+                    st.markdown(f"### 🔍 Search Queries ({len(details.get('search_queries', []))}):")
+                    for i, query in enumerate(details.get('search_queries', []), 1):
                         # Display query with same styling as interactive tab
                         st.markdown(f"""
                         <div class="search-query">
@@ -1328,7 +1328,7 @@ def tab_history():
                     if data_source == 'api':
                         # API: Sources are associated with queries
                         st.markdown(f"### 📚 Sources Found (by Query):")
-                        for i, query in enumerate(details['search_queries'], 1):
+                        for i, query in enumerate(details.get('search_queries', []), 1):
                             query_sources = query.get('sources', [])
                             if query_sources:
                                 with st.expander(f"Query {i} ({len(query_sources)} sources)", expanded=False):
@@ -1364,7 +1364,7 @@ def tab_history():
                                     """, unsafe_allow_html=True)
 
                 # Sources used (from web search) - only citations with ranks
-                citations_with_rank = [c for c in details['citations'] if c.get('rank')]
+                citations_with_rank = [c for c in details.get('citations', []) if c.get('rank')]
                 if citations_with_rank:
                     st.divider()
                     st.markdown(f"### 📝 Sources Used ({len(citations_with_rank)}):")
@@ -1412,7 +1412,7 @@ def tab_history():
                             """, unsafe_allow_html=True)
 
                 # Extra links (citations not from search results)
-                extra_links = [c for c in details['citations'] if not c.get('rank')]
+                extra_links = [c for c in details.get('citations', []) if not c.get('rank')]
                 if extra_links:
                     st.divider()
                     st.markdown(f"### 🔗 Extra Links ({len(extra_links)}):")
