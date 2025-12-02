@@ -26,6 +26,9 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      # ChatGPT Credentials (for network capture)
+      - CHATGPT_EMAIL=${CHATGPT_EMAIL}
+      - CHATGPT_PASSWORD=${CHATGPT_PASSWORD}
       # Network Capture Settings
       - CHATGPT_SESSION_FILE=./data/chatgpt_session.json
       - NETWORK_LOGS_DIR=./data/network_logs
@@ -44,6 +47,7 @@ services:
 
   # Streamlit Frontend Service
   frontend:
+    platform: linux/amd64  # Force x86_64 for Chrome support (ARM64 not supported)
     build:
       context: .
       dockerfile: Dockerfile
@@ -60,6 +64,9 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      # ChatGPT Credentials (for network capture)
+      - CHATGPT_EMAIL=${CHATGPT_EMAIL}
+      - CHATGPT_PASSWORD=${CHATGPT_PASSWORD}
       # Network Capture Settings
       - CHATGPT_SESSION_FILE=./data/chatgpt_session.json
       - BROWSER_HEADLESS=${BROWSER_HEADLESS:-true}

@@ -8,7 +8,7 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Install system dependencies for Playwright
+# Install system dependencies for Playwright and Chrome
 RUN apt-get update && apt-get install -y \
   wget \
   gnupg \
@@ -30,9 +30,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
   pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright browsers (Chromium for network log capture)
-RUN playwright install chromium && \
-  playwright install-deps chromium
+# Install Playwright with Chrome (not Chromium) to avoid OpenAI bot detection
+RUN playwright install chrome && \
+  playwright install-deps chrome
 
 # Copy application code
 COPY app.py .
