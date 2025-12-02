@@ -69,13 +69,18 @@ class ChatGPTCapturer(BaseCapturer):
     def start_browser(self, headless: bool = True) -> None:
         """
         Start browser instance with stealth mode to avoid detection.
+        Supports two modes:
+        1. CDP Mode (Docker): Connect to Chrome running on host Mac via CDP
+        2. Launch Mode (Local): Launch Chrome locally
+
         Restores session state from file if available.
 
         Args:
             headless: Whether to run in headless mode (default: True for seamless UX)
+                     Note: Ignored in CDP mode (headless controlled by host Chrome)
 
         Raises:
-            Exception: If browser fails to start
+            Exception: If browser fails to start or connect
         """
         try:
             from pathlib import Path
@@ -83,20 +88,30 @@ class ChatGPTCapturer(BaseCapturer):
 
             self.playwright = sync_playwright().start()
 
-            # Launch Chrome (not Chromium) to reduce detection
-            self.browser = self.playwright.chromium.launch(
-                headless=headless,
-                channel='chrome',  # Use installed Chrome instead of Chromium
-                args=[
-                    '--disable-blink-features=AutomationControlled',
-                    '--disable-dev-shm-usage',
-                    '--disable-web-security',
-                    '--no-sandbox',
-                    '--disable-gpu',  # Helps with stability under QEMU emulation
-                    '--disable-software-rasterizer',
-                    '--disable-setuid-sandbox'
-                ]
-            )
+            # Check if we should connect via CDP (Docker mode)
+            cdp_url = os.getenv('CHROME_CDP_URL')
+
+            if cdp_url:
+                # CDP Mode: Connect to Chrome running on host
+                print(f"🔗 Connecting to Chrome via CDP at {cdp_url}")
+                self.browser = self.playwright.chromium.connect_over_cdp(cdp_url)
+                print("✅ Connected to host Chrome successfully")
+            else:
+                # Launch Mode: Start Chrome locally (for non-Docker environments)
+                print("🚀 Launching Chrome locally")
+                self.browser = self.playwright.chromium.launch(
+                    headless=headless,
+                    channel='chrome',  # Use installed Chrome instead of Chromium
+                    args=[
+                        '--disable-blink-features=AutomationControlled',
+                        '--disable-dev-shm-usage',
+                        '--disable-web-security',
+                        '--no-sandbox',
+                        '--disable-gpu',
+                        '--disable-software-rasterizer',
+                        '--disable-setuid-sandbox'
+                    ]
+                )
 
             # Check if storage state file exists
             storage_state = None

@@ -47,7 +47,6 @@ services:
 
   # Streamlit Frontend Service
   frontend:
-    platform: linux/amd64  # Force x86_64 for Chrome support (ARM64 not supported)
     build:
       context: .
       dockerfile: Dockerfile
@@ -57,11 +56,6 @@ services:
     volumes:
       # Mount data directory for session files
       - ./data:/app/data
-    # Chrome requires larger shared memory under QEMU emulation
-    shm_size: '2gb'
-    # Add capabilities for Chrome to run properly
-    cap_add:
-      - SYS_ADMIN
     environment:
       # Point frontend to backend API via Docker network
       - API_BASE_URL=http://api:8000
@@ -75,6 +69,8 @@ services:
       # Network Capture Settings
       - CHATGPT_SESSION_FILE=./data/chatgpt_session.json
       - BROWSER_HEADLESS=${BROWSER_HEADLESS:-true}
+      # Chrome CDP endpoint (Chrome running on host Mac)
+      - CHROME_CDP_URL=${CHROME_CDP_URL:-http://host.docker.internal:9222}
     depends_on:
       api:
         condition: service_healthy

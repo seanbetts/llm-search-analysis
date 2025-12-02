@@ -8,19 +8,9 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Install system dependencies for Playwright and Chrome
+# Install system dependencies (minimal - no Chrome needed)
 RUN apt-get update && apt-get install -y \
   wget \
-  gnupg \
-  ca-certificates \
-  fonts-liberation \
-  libnss3 \
-  libatk-bridge2.0-0 \
-  libdrm2 \
-  libxkbcommon0 \
-  libgbm1 \
-  libasound2 \
-  libxshmfence1 \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file
@@ -30,9 +20,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
   pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright with Chrome (not Chromium) to avoid OpenAI bot detection
-RUN playwright install chrome && \
-  playwright install-deps chrome
+# Note: Chrome runs natively on macOS host
+# Playwright connects to it via CDP (Chrome DevTools Protocol)
 
 # Copy application code
 COPY app.py .
