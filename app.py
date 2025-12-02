@@ -7,6 +7,7 @@ across OpenAI, Google Gemini, and Anthropic Claude models.
 
 import os
 import re
+import traceback
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -179,7 +180,7 @@ def build_interaction_markdown(details: dict, interaction_id: int = None) -> str
     num_searches = len(details.get('search_queries', []))
     # For network logs, sources are in all_sources; for API, they're in query.sources
     if details.get('data_source') == 'network_log':
-        num_sources = len(details.get('all_sources', []))
+        num_sources = len(details.get('all_sources') or [])
     else:
         num_sources = sum(len(q.get('sources', [])) for q in details.get('search_queries', []))
     # Count only citations with ranks (from search results)
@@ -241,7 +242,7 @@ def build_interaction_markdown(details: dict, interaction_id: int = None) -> str
                     lines.append(f"{s_idx}. [{title}]({url}) ({domain})")
         # For network logs, sources aren't associated with specific queries
         else:
-            all_sources = details.get('all_sources', [])
+            all_sources = details.get('all_sources') or []
             if all_sources:
                 lines.append(f"## Sources Found ({len(all_sources)})")
                 lines.append("_Note: Network logs don't provide reliable query-to-source mapping._")
@@ -1237,7 +1238,7 @@ def tab_history():
                 num_searches = len(details.get('search_queries', []))
                 # For network logs, sources are in all_sources; for API, they're in query.sources
                 if details.get('data_source') == 'network_log':
-                    num_sources = len(details.get('all_sources', []))
+                    num_sources = len(details.get('all_sources') or [])
                 else:
                     num_sources = sum(len(query.get('sources', [])) for query in details.get('search_queries', []))
                 # Count only citations with ranks (from search results)
@@ -1338,7 +1339,7 @@ def tab_history():
                                         st.markdown(f"{j}. {snippet} — {domain_link}")
                     else:
                         # Network Log: Sources aren't associated with specific queries
-                        all_sources = details.get('all_sources', [])
+                        all_sources = details.get('all_sources') or []
                         if all_sources:
                             st.markdown(f"### 📚 Sources Found ({len(all_sources)}):")
                             st.caption("_Note: Network logs don't provide reliable query-to-source mapping._")
@@ -1371,7 +1372,7 @@ def tab_history():
                     st.caption("Sources the model consulted via web search")
 
                     # Build URL -> source lookup for metadata fallback
-                    all_sources = details.get('all_sources', [])
+                    all_sources = details.get('all_sources') or []
                     url_to_source = {src['url']: src for src in all_sources if src.get('url')}
 
                     for i, citation in enumerate(citations_with_rank, 1):
@@ -1439,6 +1440,7 @@ def tab_history():
 
     except Exception as e:
         st.error(f"Error loading history: {str(e)}")
+        st.error(f"Traceback: {traceback.format_exc()}")
 
 def sidebar_info():
     """Sidebar information."""
