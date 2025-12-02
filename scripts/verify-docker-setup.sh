@@ -1,15 +1,17 @@
 #!/bin/bash
 # ============================================================================
-# Docker Compose Verification Script
+# Hybrid Architecture Verification Script
 # ============================================================================
-# Verifies that the Docker Compose local production setup is working correctly
+# Verifies that the hybrid architecture setup is working correctly:
+#   - Backend (FastAPI) running in Docker
+#   - Frontend (Streamlit) running natively on macOS (optional)
 #
 # Usage: ./scripts/verify-docker-setup.sh
 # ============================================================================
 
 set -e  # Exit on any error
 
-echo "🔍 Verifying Docker Compose Setup..."
+echo "🔍 Verifying Hybrid Architecture Setup..."
 echo ""
 
 # Colors for output
@@ -37,27 +39,27 @@ COMPOSE_VERSION=$(docker-compose --version)
 echo -e "${GREEN}✅ $COMPOSE_VERSION${NC}"
 echo ""
 
-# Check containers are running
-echo "3️⃣  Checking containers..."
-if ! docker-compose ps | grep -q "Up"; then
-    echo -e "${YELLOW}⚠️  Containers are not running${NC}"
-    echo "Starting containers..."
+# Check backend container is running
+echo "3️⃣  Checking backend container..."
+if ! docker-compose ps | grep "llm-search-api" | grep -q "Up"; then
+    echo -e "${YELLOW}⚠️  Backend container is not running${NC}"
+    echo "Starting backend..."
     docker-compose up -d
-    echo "Waiting for containers to be healthy (30s)..."
+    echo "Waiting for backend to be healthy (30s)..."
     sleep 30
 fi
 
-CONTAINERS=$(docker-compose ps --format "table {{.Name}}\t{{.Status}}" | tail -n +2)
-echo "$CONTAINERS"
+BACKEND_STATUS=$(docker-compose ps --format "table {{.Name}}\t{{.Status}}" | grep "llm-search-api" || echo "")
+echo "$BACKEND_STATUS"
 echo ""
 
-# Check both containers are healthy
-if ! echo "$CONTAINERS" | grep -q "healthy"; then
-    echo -e "${RED}❌ Containers are not healthy${NC}"
-    echo "Check logs with: docker-compose logs"
+# Check backend container is healthy
+if ! echo "$BACKEND_STATUS" | grep -q "healthy"; then
+    echo -e "${RED}❌ Backend container is not healthy${NC}"
+    echo "Check logs with: docker-compose logs api"
     exit 1
 fi
-echo -e "${GREEN}✅ All containers are healthy${NC}"
+echo -e "${GREEN}✅ Backend container is healthy${NC}"
 echo ""
 
 # Check backend health endpoint
@@ -91,15 +93,16 @@ else
 fi
 echo ""
 
-# Check frontend health
-echo "6️⃣  Checking frontend..."
-FRONTEND_HEALTH=$(curl -s http://localhost:8501/_stcore/health)
-if [ "$FRONTEND_HEALTH" != "ok" ]; then
-    echo -e "${RED}❌ Frontend health check failed${NC}"
-    echo "Response: $FRONTEND_HEALTH"
-    exit 1
+# Check frontend health (optional - runs natively)
+echo "6️⃣  Checking frontend (optional)..."
+FRONTEND_HEALTH=$(curl -s http://localhost:8501/_stcore/health 2>/dev/null || echo "")
+if [ "$FRONTEND_HEALTH" = "ok" ]; then
+    echo -e "${GREEN}✅ Frontend is running (native)${NC}"
+else
+    echo -e "${YELLOW}⚠️  Frontend is not running${NC}"
+    echo "   To start: ./scripts/start-hybrid.sh"
+    echo "   Or manually: export API_BASE_URL=http://localhost:8000 && streamlit run app.py --server.port 8501"
 fi
-echo -e "${GREEN}✅ Frontend is healthy${NC}"
 echo ""
 
 # Check providers endpoint (tests backend API)
@@ -115,33 +118,39 @@ echo -e "${GREEN}✅ API endpoints working${NC}"
 echo "   Available providers: $PROVIDER_COUNT"
 echo ""
 
-# Check volumes are mounted
-echo "8️⃣  Checking volume mounts..."
+# Check backend volume is mounted
+echo "8️⃣  Checking backend volume mount..."
 BACKEND_VOLUME=$(docker inspect llm-search-api --format '{{range .Mounts}}{{.Source}}:{{.Destination}}{{"\n"}}{{end}}' | grep data || echo "")
-FRONTEND_VOLUME=$(docker inspect llm-search-frontend --format '{{range .Mounts}}{{.Source}}:{{.Destination}}{{"\n"}}{{end}}' | grep data || echo "")
 
-if [ -z "$BACKEND_VOLUME" ] || [ -z "$FRONTEND_VOLUME" ]; then
-    echo -e "${RED}❌ Volume mounts not found${NC}"
+if [ -z "$BACKEND_VOLUME" ]; then
+    echo -e "${RED}❌ Backend volume mount not found${NC}"
     exit 1
 fi
-echo -e "${GREEN}✅ Volumes are mounted${NC}"
-echo "   Backend: $BACKEND_VOLUME"
-echo "   Frontend: $FRONTEND_VOLUME"
+echo -e "${GREEN}✅ Backend volume is mounted${NC}"
+echo "   $BACKEND_VOLUME"
 echo ""
 
 # Final summary
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo -e "${GREEN}✅ All checks passed!${NC}"
+echo -e "${GREEN}✅ Backend checks passed!${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "🌐 Access URLs:"
-echo "   Frontend: http://localhost:8501"
 echo "   Backend API: http://localhost:8000"
 echo "   API Docs: http://localhost:8000/docs"
+if [ "$FRONTEND_HEALTH" = "ok" ]; then
+    echo "   Frontend: http://localhost:8501 ✅"
+else
+    echo "   Frontend: Not running (start with ./scripts/start-hybrid.sh)"
+fi
 echo ""
-echo "📊 Quick Commands:"
-echo "   View logs: docker-compose logs -f"
-echo "   Restart: docker-compose restart"
+echo "📊 Backend Commands:"
+echo "   View logs: docker-compose logs -f api"
+echo "   Restart: docker-compose restart api"
 echo "   Stop: docker-compose down"
 echo "   Rebuild: docker-compose up -d --build"
+echo ""
+echo "🎨 Frontend Commands:"
+echo "   Start: ./scripts/start-hybrid.sh"
+echo "   Or manual: export API_BASE_URL=http://localhost:8000 && streamlit run app.py --server.port 8501"
 echo ""
