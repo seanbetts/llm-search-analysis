@@ -3,7 +3,7 @@
 FastAPI-based REST API for analyzing LLM search capabilities across OpenAI, Google, and Anthropic providers.
 
 **Version:** 1.0.0
-**Test Coverage:** 95%
+**Test Coverage:** 95% (179 tests)
 **Python:** 3.10+
 
 ## Table of Contents
@@ -24,7 +24,7 @@ The backend API provides:
 - **Interaction Persistence**: SQLite database with full history
 - **RESTful API**: Clean endpoints with automatic OpenAPI documentation
 - **Comprehensive Error Handling**: Consistent error responses with correlation IDs
-- **High Test Coverage**: 95% coverage with 166 passing tests
+- **High Test Coverage**: 95% coverage with 179 passing tests
 
 ### Key Features
 
@@ -144,8 +144,9 @@ backend/
 │           ├── google_provider.py    # Google Gemini
 │           └── anthropic_provider.py # Anthropic Claude
 │
-├── tests/                            # Test suite (166 tests)
+├── tests/                            # Test suite (179 tests)
 │   ├── test_api.py                   # API endpoint tests
+│   ├── test_api_contracts.py         # API contract/schema validation tests
 │   ├── test_openai_provider.py       # OpenAI provider tests
 │   ├── test_google_provider.py       # Google provider tests
 │   ├── test_anthropic_provider.py    # Anthropic provider tests
@@ -454,7 +455,7 @@ pytest tests/test_api.py::TestHealthEndpoints::test_health_check_endpoint -v
 
 ### Test Coverage
 
-Current coverage: **95%**
+Current coverage: **95%** (179 tests passing)
 
 ```
 app/services/providers/openai_provider.py         100%
@@ -475,7 +476,31 @@ TOTAL                                              95%
 - **Unit tests**: Test individual components in isolation
 - **Integration tests**: Test component interactions
 - **API tests**: Test HTTP endpoints end-to-end
+- **Contract tests**: Validate API response schemas match frontend expectations
 - **Mocking**: Extensive use of mocks for external APIs
+
+### Contract Tests (`test_api_contracts.py`)
+
+Contract tests validate that API responses match the data structures the frontend depends on. These tests prevent bugs caused by schema mismatches:
+
+**What they catch:**
+- List fields returning `None` instead of empty lists (causing `'NoneType' object is not iterable`)
+- Missing required fields in responses
+- Incorrect data types
+- Schema violations that break frontend assumptions
+
+**Key tests:**
+- `test_send_prompt_response_schema_validation`: Validates complete response structure
+- `test_get_interaction_details_list_fields_never_none`: Ensures list fields are always iterable
+- `test_nested_sources_in_search_queries_never_none`: Validates nested data structures
+- `test_empty_response_data_handling`: Tests edge case of completely empty responses
+- `test_citation_without_rank_is_valid`: Validates optional field handling
+
+**Benefits:**
+- Catches bugs before they reach frontend (would have caught commits 974518c, 6473e54)
+- Documents API contract expectations
+- Prevents regressions when modifying response schemas
+- Validates Pydantic model defaults match frontend assumptions
 
 ## Deployment
 
