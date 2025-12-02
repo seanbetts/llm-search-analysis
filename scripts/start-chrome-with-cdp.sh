@@ -2,6 +2,12 @@
 # ============================================================================
 # Start Chrome with Remote Debugging (CDP) for Docker Playwright Connection
 # ============================================================================
+# ⚠️  NOTE: This script is NOT needed for the hybrid architecture.
+# ⚠️  It's kept for reference in case you want to try CDP connections.
+#
+# For the hybrid architecture, simply run:
+#   ./scripts/start-hybrid.sh
+#
 # This script launches Chrome on macOS with remote debugging enabled,
 # allowing Playwright running in Docker to connect via CDP.
 #

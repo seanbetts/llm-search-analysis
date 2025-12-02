@@ -115,13 +115,18 @@ CHATGPT_PASSWORD=your_password_here
 
 ## Deployment
 
-### Option 1: Docker (Recommended)
+### Recommended: Hybrid Architecture (macOS)
 
-Docker provides the easiest way to run this application with zero configuration hassle.
+For macOS users, we recommend a hybrid approach for optimal Chrome compatibility:
 
 #### Prerequisites
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) (Mac/Windows) or Docker Engine (Linux)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) for backend
+- Python 3.11+ for frontend
 - At least one LLM provider API key
+- Google Chrome installed (for network capture mode)
+
+#### Why Hybrid?
+Chrome doesn't work reliably in Docker on ARM64 Macs due to emulation issues. Running the frontend natively allows Playwright to launch Chrome directly on macOS, avoiding these compatibility problems entirely.
 
 #### Quick Start
 
@@ -140,53 +145,87 @@ cp .env.example .env
 # ANTHROPIC_API_KEY=your_key_here
 ```
 
-3. Start the application:
+3. Start the backend (Docker):
 ```bash
 docker compose up -d
 ```
 
-4. Access the interface:
+4. Install frontend dependencies (first time only):
+```bash
+pip install -r requirements.txt
+playwright install chrome
+```
+
+5. Start the frontend (native):
+```bash
+export API_BASE_URL=http://localhost:8000
+streamlit run app.py --server.port 8501
+```
+
+**Or use the convenience script to start everything:**
+```bash
+./scripts/start-hybrid.sh
+```
+
+6. Access the interface:
 - Frontend (Streamlit): http://localhost:8501
 - Backend API: http://localhost:8000
 - API Docs: http://localhost:8000/docs
 
-5. Stop the application:
+7. Stop the application:
 ```bash
-docker compose down
+# Stop frontend: Ctrl+C in the streamlit terminal
+docker compose down  # Stop backend
 ```
 
-#### Docker Architecture
+#### Hybrid Architecture
 
-The Docker setup includes:
-- **Backend (API)**: FastAPI server on port 8000
-- **Frontend**: Streamlit UI on port 8501
-- **Database**: SQLite with persistent volume mount
-- **Networking**: Isolated Docker network for inter-service communication
-- **Data Persistence**: Database and session files persist across container restarts
+The hybrid setup includes:
+- **Backend (API)**: FastAPI server running in Docker on port 8000
+- **Frontend**: Streamlit UI running natively on macOS on port 8501
+- **Chrome**: Native macOS Chrome for network capture (no Docker/emulation issues)
+- **Database**: SQLite with persistent volume mount in Docker
+- **Data Persistence**: Database and session files persist across restarts
 
 #### Docker Commands
 
 ```bash
-# Build and start services
-docker compose up --build -d
+# Start backend
+docker compose up -d
 
-# View logs
-docker compose logs -f
+# View backend logs
+docker compose logs -f api
 
-# Stop services (keeps data)
+# Stop backend (keeps data)
 docker compose down
 
-# Stop services and remove volumes (deletes data)
+# Stop backend and remove volumes (deletes data)
 docker compose down -v
 
-# Rebuild a specific service
+# Rebuild backend
 docker compose build api
 docker compose up -d api
 
-# Access a service shell
+# Access backend shell
 docker compose exec api bash
-docker compose exec frontend bash
 ```
+
+### Alternative: Full Docker (Linux/Windows)
+
+For Linux and Windows users, the full Docker deployment may work better:
+
+**Note:** This approach may not work reliably on ARM64 Macs due to Chrome compatibility issues in Docker. See the hybrid architecture above for macOS.
+
+1. Follow steps 1-2 from the hybrid setup above
+2. Uncomment the frontend service in `docker-compose.yml`
+3. Start both services:
+```bash
+docker compose up -d
+```
+
+4. Access at http://localhost:8501
+
+**Known limitation:** Network capture mode (Chrome automation) may not work in Docker on some platforms.
 
 #### Environment Variables
 
@@ -244,13 +283,13 @@ docker stats
 
 **Monitoring:**
 ```bash
-# Check container status
+# Check backend container status
 docker compose ps
 
 # Check backend health
 curl http://localhost:8000/health
 
-# Check frontend health
+# Check frontend health (if running natively)
 curl http://localhost:8501/_stcore/health
 
 # Check database size
@@ -258,6 +297,9 @@ ls -lh backend/data/llm_search.db
 
 # Check database interaction count
 sqlite3 backend/data/llm_search.db "SELECT COUNT(*) FROM responses;"
+
+# Check backend logs
+docker compose logs -f api
 ```
 
 **Data Persistence:**
@@ -288,12 +330,14 @@ docker compose up -d --build
 # Check backend is healthy
 curl http://localhost:8000/health
 
-# Check API_BASE_URL in frontend container
-docker compose exec frontend env | grep API_BASE_URL
-# Should show: API_BASE_URL=http://api:8000
+# For hybrid mode: Check API_BASE_URL is set correctly
+echo $API_BASE_URL
+# Should show: http://localhost:8000
 
-# Restart frontend
-docker compose restart frontend
+# If not set, export it:
+export API_BASE_URL=http://localhost:8000
+
+# Restart frontend (Ctrl+C and rerun streamlit)
 ```
 
 **Database is locked:**
@@ -318,15 +362,13 @@ docker compose up -d
 
 **View detailed logs:**
 ```bash
-# All services
-docker compose logs -f
-
-# Specific service
+# Backend logs (Docker)
 docker compose logs -f api
-docker compose logs -f frontend
 
 # Last 100 lines
-docker compose logs --tail=100
+docker compose logs --tail=100 api
+
+# Frontend logs are shown in the terminal where streamlit is running
 ```
 
 **Container health checks failing:**
@@ -357,7 +399,6 @@ For more troubleshooting, see:
 - [ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) - Environment configuration
 - [BACKUP_AND_RESTORE.md](docs/BACKUP_AND_RESTORE.md) - Database backup/restore
 - Backend logs: `docker compose logs api`
-- Frontend logs: `docker compose logs frontend`
 
 ### Option 2: Local Development
 
@@ -549,12 +590,13 @@ llm-search-analysis/
 
 ### Architecture Overview
 
-The application uses a **client-server architecture**:
+The application uses a **hybrid client-server architecture**:
 
 **Frontend (Streamlit):**
 - User interface with 3 tabs (Interactive, Batch, History)
 - Communicates with backend via REST API
 - Handles browser automation for network capture mode
+- **Runs natively on macOS** for optimal Chrome compatibility
 - Port: 8501
 
 **Backend (FastAPI):**
@@ -562,12 +604,19 @@ The application uses a **client-server architecture**:
 - LLM provider integrations (OpenAI, Google, Anthropic)
 - Database operations via SQLAlchemy ORM
 - Business logic and data validation
+- **Runs in Docker** for consistency and portability
 - Port: 8000
 
 **Database (SQLite):**
 - Persistent storage for all interactions
 - Volume-mounted in Docker for data persistence
 - Schema supports both API and network capture modes
+
+**Why Hybrid?**
+- Chrome doesn't work reliably in Docker on ARM64 Macs (emulation issues)
+- Running frontend natively allows Playwright to launch Chrome directly
+- Backend in Docker maintains portability and consistency
+- Best of both worlds: reliability + portability
 
 ### Database Schema
 

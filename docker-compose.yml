@@ -1,3 +1,20 @@
+# ============================================================================
+# LLM Search Analysis - Hybrid Architecture
+# ============================================================================
+# This configuration uses a hybrid approach:
+#   - Backend (FastAPI): Runs in Docker for portability
+#   - Frontend (Streamlit): Runs natively on macOS for Chrome compatibility
+#
+# Why hybrid?
+#   Chrome doesn't work reliably in Docker on ARM64 Mac (emulation issues).
+#   Running frontend natively allows Playwright to launch Chrome directly.
+#
+# To start the system:
+#   1. Start backend: docker-compose up -d
+#   2. Start frontend: streamlit run app.py --server.port 8501
+#      (Make sure to set: export API_BASE_URL=http://localhost:8000)
+# ============================================================================
+
 services:
   # FastAPI Backend Service
   api:
@@ -18,8 +35,8 @@ services:
       # Server Settings
       - HOST=0.0.0.0
       - PORT=8000
-      # CORS - allow frontend to connect
-      - CORS_ORIGINS=["http://localhost:8501","http://frontend:8501"]
+      # CORS - allow frontend to connect from localhost
+      - CORS_ORIGINS=["http://localhost:8501"]
       # Database
       - DATABASE_URL=sqlite:///./data/llm_search.db
       # LLM Provider API Keys
@@ -37,7 +54,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/api/v1/health')"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -45,44 +62,43 @@ services:
     networks:
       - llm-search-network
 
-  # Streamlit Frontend Service
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: llm-search-frontend
-    ports:
-      - "8501:8501"
-    volumes:
-      # Mount data directory for session files
-      - ./data:/app/data
-    environment:
-      # Point frontend to backend API via Docker network
-      - API_BASE_URL=http://api:8000
-      # LLM Provider API Keys (needed for direct API calls)
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      # ChatGPT Credentials (for network capture)
-      - CHATGPT_EMAIL=${CHATGPT_EMAIL}
-      - CHATGPT_PASSWORD=${CHATGPT_PASSWORD}
-      # Network Capture Settings
-      - CHATGPT_SESSION_FILE=./data/chatgpt_session.json
-      - BROWSER_HEADLESS=${BROWSER_HEADLESS:-true}
-      # Chrome CDP endpoint (Chrome running on host Mac, forwarded via socat)
-      - CHROME_CDP_URL=${CHROME_CDP_URL:-http://host.docker.internal:9223}
-    depends_on:
-      api:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8501/_stcore/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    networks:
-      - llm-search-network
+  # ============================================================================
+  # Frontend Service - DISABLED (Run Natively Instead)
+  # ============================================================================
+  # The frontend is commented out because Chrome doesn't work reliably in
+  # Docker on ARM64 Macs. Instead, run it natively:
+  #
+  #   export API_BASE_URL=http://localhost:8000
+  #   streamlit run app.py --server.port 8501
+  #
+  # This allows Playwright to launch Chrome directly on macOS without
+  # emulation or CDP complexity.
+  # ============================================================================
+  #
+  # frontend:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: llm-search-frontend
+  #   ports:
+  #     - "8501:8501"
+  #   volumes:
+  #     - ./data:/app/data
+  #   environment:
+  #     - API_BASE_URL=http://api:8000
+  #     - OPENAI_API_KEY=${OPENAI_API_KEY}
+  #     - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+  #     - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+  #     - CHATGPT_EMAIL=${CHATGPT_EMAIL}
+  #     - CHATGPT_PASSWORD=${CHATGPT_PASSWORD}
+  #     - CHATGPT_SESSION_FILE=./data/chatgpt_session.json
+  #     - BROWSER_HEADLESS=${BROWSER_HEADLESS:-true}
+  #   depends_on:
+  #     api:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+  #   networks:
+  #     - llm-search-network
 
 networks:
   llm-search-network:
