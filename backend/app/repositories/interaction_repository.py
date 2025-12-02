@@ -202,7 +202,8 @@ class InteractionRepository:
         joinedload(Response.search_queries)
         .joinedload(SearchQuery.sources),
         joinedload(Response.sources_used),
-        joinedload(Response.sources),  # Load direct sources for network_log mode
+        # Temporarily disable direct sources loading to debug crash
+        # joinedload(Response.sources),  # Load direct sources for network_log mode
       )
       .order_by(Response.created_at.desc())
     )

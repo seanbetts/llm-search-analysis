@@ -180,7 +180,7 @@ class InteractionService:
           internal_score=s.internal_score,
           metadata=s.metadata_json,
         )
-        for s in query.sources
+        for s in (query.sources or [])
       ]
 
       search_queries.append(
@@ -221,7 +221,7 @@ class InteractionService:
           internal_score=s.internal_score,
           metadata=s.metadata_json,
         )
-        for s in response.sources
+        for s in (response.sources or [])
       ]
 
     # Calculate average rank
