@@ -538,29 +538,66 @@ Streamlit → FastAPI API → Services → Repository → SQLite
 
 ---
 
-### Days 21: Deploy to Cloud
+### Days 21: Local Production Hardening
 
-**Goal:** Get the application running in production
+**Goal:** Run the full stack reliably on a single machine
+
+- [ ] Standardize environment configuration
+  - Align `.env`, `.env.example`, and any local overrides
+  - Document required env vars for backend and Streamlit
+  - Clarify local-only vs future-cloud settings
+
+- [ ] Treat Docker Compose as "local production"
+  - Use `docker-compose.yml` as the canonical way to run the full stack
+  - Confirm backend + Streamlit + SQLite volume all work together
+  - Document a one-command startup workflow (e.g. `docker compose up -d`)
+
+- [ ] Add simple backup & restore for SQLite
+  - Document backup procedure for the local DB volume
+  - Add basic scripts or documented commands for backup/restore
+  - Verify backup/restore with a small dataset
+
+- [ ] Local health and smoke checks
+  - Add a simple script or Make target that checks `/health` and one core interaction endpoint
+  - Document how to run a quick smoke test after changes
+
+- [ ] Operational docs for local-only usage
+  - Update README and/or backend docs to describe "local production" usage
+  - Include troubleshooting tips for Docker + SQLite + Streamlit on one machine
+
+**Deliverable:** Stable "local production" environment using Docker Compose
+
+---
+
+## Stage 4: Cloud Deployment (Deferred)
+
+**These steps are explicitly deferred until you're ready to deploy to a cloud platform.**
+
+### Cloud Platform Selection & Setup
 
 - [ ] Choose deployment platform
   - **Recommended: Render** (simple, $7/month)
   - Alternative: Railway, Fly.io, AWS ECS
 
+### Deploy Backend & Frontend
+
 - [ ] Deploy FastAPI backend
-  - Create web service on Render
+  - Create web service on chosen platform
   - Set environment variables
   - Configure build command
   - Set start command: `uvicorn app.main:app --host 0.0.0.0 --port 8000`
 
 - [ ] Deploy Streamlit frontend
-  - Create web service on Render
+  - Create web service on chosen platform
   - Point to backend API URL
   - Configure environment variables
   - Set start command: `streamlit run app.py`
 
-- [ ] Configure SQLite persistence
-  - Add persistent disk volume
-  - Mount to /data directory
+### Persistence & Monitoring
+
+- [ ] Configure SQLite persistence (or future Postgres)
+  - Add persistent disk volume (for SQLite) or database service (for Postgres)
+  - Mount to `/data` directory (for SQLite)
   - Verify data persists across deploys
 
 - [ ] Test deployed application
@@ -574,13 +611,29 @@ Streamlit → FastAPI API → Services → Repository → SQLite
   - Set up uptime monitoring
   - Configure error tracking (Sentry optional)
 
-**Deliverable:** Application running in production
+**Deliverable:** Application running on a managed cloud platform (later milestone)
 
 ---
 
 ## Post-Launch: Optional Improvements (Week 5+)
 
 **These can wait until actually needed:**
+
+### Near-Term: Local Quality & DX
+
+- [ ] Add code quality tools
+  - Black (formatting)
+  - Ruff (linting)
+  - mypy (type checking)
+  - pre-commit hooks
+
+- [ ] Strengthen tests around current workflows
+  - Add E2E tests that hit the FastAPI backend via Docker (local-only)
+  - Add targeted tests for any newly discovered edge cases
+
+- [ ] Basic SQLite tuning for local use
+  - Add indexes for obvious hot paths once data grows
+  - Measure impact on common queries
 
 ### Performance Optimizations (When Slow)
 
@@ -661,9 +714,10 @@ Streamlit → FastAPI API → Services → Repository → SQLite
 - [x] Days 15-16: Docker & local dev ✅
 - [x] Days 17-18: Error handling & logging ✅
 - [x] Days 19-20: Testing & documentation ✅ (95% coverage, 166 tests)
-- [ ] Days 21: Deploy to production NEXT
+- [ ] Days 21: Local production hardening NEXT
 
 ### Week 5+: Optional Improvements
+- [ ] Local quality & DX improvements
 - [ ] Performance optimizations (as needed)
 - [ ] Code quality improvements (as time permits)
 - [ ] Infrastructure upgrades (when scaling)
@@ -677,12 +731,17 @@ Streamlit → FastAPI API → Services → Repository → SQLite
 
 **Week 3:** ✅ Streamlit calling FastAPI for all operations
 
-**Week 4:** 🚧 95% complete - Testing & documentation done, deployment pending
+**Week 4:** 🚧 95% complete - Testing & documentation done, local production hardening pending
 - ✅ Docker setup complete
 - ✅ Error handling & logging production-ready
 - ✅ 95% test coverage achieved (166 tests passing)
 - ✅ Comprehensive API & backend documentation
-- ⏳ Production deployment (Day 21)
+- ⏳ Local production hardening (Day 21)
+
+**Cloud Deployment (Deferred Stage 4):**
+- ⏳ Application deployed to a managed cloud platform
+- ⏳ Persistent storage configured for cloud
+- ⏳ Basic uptime and error monitoring in place
 
 **Long-term:**
 - 3-5x faster development velocity
@@ -726,5 +785,3 @@ Streamlit → FastAPI API → Services → Repository → SQLite
 - Document decisions as you go
 
 ---
-
-**Ready to start? Let's build the FastAPI backend!** 🚀
