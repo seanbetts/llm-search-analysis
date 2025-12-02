@@ -114,8 +114,8 @@ def initialize_session_state():
         st.session_state.data_collection_mode = 'api'
     if 'browser_session_active' not in st.session_state:
         st.session_state.browser_session_active = False
-    if 'network_headless' not in st.session_state:
-        st.session_state.network_headless = False
+    if 'network_show_browser' not in st.session_state:
+        st.session_state.network_show_browser = False  # Default: headless mode (browser hidden)
 
 
 def format_pub_date(pub_date: str) -> str:
@@ -134,6 +134,53 @@ def normalize_model_id(model: str) -> str:
     if model == "gpt-5-1":
         return "gpt-5.1"
     return model
+
+
+def get_model_display_name(model: str) -> str:
+    """
+    Get formatted display name for a model.
+
+    Maps known model IDs to friendly display names, and formats
+    unknown model IDs by converting hyphens to spaces and capitalizing.
+    """
+    # Model display names mapping
+    model_names = {
+        # Anthropic (multiple format variants for robustness)
+        'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
+        'claude-sonnet-4-5.2-0250929': 'Claude Sonnet 4.5',  # Alternative format with .2
+        'claude-sonnet-4.5-20250929': 'Claude Sonnet 4.5',   # With period separator
+        'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
+        'claude-haiku-4.5-20251001': 'Claude Haiku 4.5',
+        'claude-opus-4-1-20250805': 'Claude Opus 4.1',
+        'claude-opus-4.1-20250805': 'Claude Opus 4.1',
+        # OpenAI
+        'gpt-5.1': 'GPT-5.1',
+        'gpt-5-1': 'GPT-5.1',
+        'gpt-5-mini': 'GPT-5 Mini',
+        'gpt-5-nano': 'GPT-5 Nano',
+        # Google
+        'gemini-3-pro-preview': 'Gemini 3 Pro (Preview)',
+        'gemini-2.5-flash': 'Gemini 2.5 Flash',
+        'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite',
+        # Network capture
+        'ChatGPT (Free)': 'ChatGPT (Free)',
+        'chatgpt-free': 'ChatGPT (Free)',
+        'ChatGPT': 'ChatGPT (Free)',
+    }
+
+    # Return mapped name if available
+    if model in model_names:
+        return model_names[model]
+
+    # Fallback: Format unknown model IDs nicely
+    # Remove date suffixes (e.g., -20250929 or -0250929)
+    import re
+    formatted = re.sub(r'-\d{7,8}$', '', model)
+    # Remove any trailing version numbers like .2
+    formatted = re.sub(r'\.\d+$', '', formatted)
+    # Convert hyphens to spaces and capitalize words
+    formatted = ' '.join(word.capitalize() for word in formatted.split('-'))
+    return formatted
 
 
 def sanitize_response_markdown(text: str) -> str:
@@ -420,33 +467,13 @@ def display_response(response, prompt=None):
         'anthropic': 'Anthropic'
     }
 
-    # Model display names
-    model_names = {
-        # Anthropic
-        'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
-        'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
-        'claude-opus-4-1-20250805': 'Claude Opus 4.1',
-        # OpenAI
-        'gpt-5.1': 'GPT-5.1',
-        'gpt-5-1': 'GPT-5.1',
-        'gpt-5-mini': 'GPT-5 Mini',
-        'gpt-5-nano': 'GPT-5 Nano',
-        # Google
-        'gemini-3-pro-preview': 'Gemini 3 Pro (Preview)',
-        'gemini-2.5-flash': 'Gemini 2.5 Flash',
-        'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite',
-        # Network capture
-        'ChatGPT (Free)': 'ChatGPT (Free)',
-        'chatgpt-free': 'ChatGPT (Free)',
-    }
-
     # Response metadata
     col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1.5, 2, 1, 1, 1, 1, 1, 1])
 
     with col1:
         st.metric("Provider", provider_names.get(response.provider.lower(), response.provider))
     with col2:
-        st.metric("Model", model_names.get(response.model, response.model))
+        st.metric("Model", get_model_display_name(response.model))
     with col3:
         response_time = f"{response.response_time_ms / 1000:.1f}s" if response.response_time_ms else "N/A"
         st.metric("Response Time", response_time)
@@ -519,9 +546,12 @@ def display_response(response, prompt=None):
         # API: Sources are associated with queries
         queries_with_sources = [q for q in response.search_queries if q.sources]
         if queries_with_sources:
-            st.markdown("### 📚 Sources (by Query):")
+            total_sources = sum(len(q.sources) for q in queries_with_sources)
+            st.markdown(f"### 📚 Sources Found ({total_sources}):")
             for i, query in enumerate(queries_with_sources, 1):
-                with st.expander(f"📚 Sources from Query {i} ({len(query.sources)} sources)", expanded=False):
+                # Truncate long queries for display
+                query_text = query.query if len(query.query) <= 60 else query.query[:60] + "..."
+                with st.expander(f"📚 {query_text} ({len(query.sources)} sources)", expanded=False):
                     for j, source in enumerate(query.sources, 1):
                         url_display = source.url or 'No URL'
                         url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
@@ -669,7 +699,8 @@ def tab_interactive():
     # Model selection (hide in network log mode since it always uses chatgpt-free)
     if st.session_state.data_collection_mode == 'network_log':
         st.info("🌐 **Network Capture Mode**: Using free ChatGPT (model selection not available)")
-        st.checkbox("Run browser headless", value=st.session_state.network_headless, key="network_headless")
+        st.checkbox("Show browser window", value=st.session_state.network_show_browser, key="network_show_browser",
+                   help="Check to see the browser window (may help with CAPTCHA). Unchecked runs in headless mode (faster, hidden).")
         # Fixed model for network capture
         selected_provider = 'openai'
         selected_model = 'chatgpt-free'
@@ -718,7 +749,7 @@ def tab_interactive():
 
                     # Initialize and use capturer
                     capturer = ChatGPTCapturer()
-                    capturer.start_browser(headless=st.session_state.network_headless)
+                    capturer.start_browser(headless=not st.session_state.network_show_browser)
 
                     try:
                         # Authenticate with credentials from Config
@@ -909,9 +940,8 @@ def tab_batch():
                             raise Exception("ChatGPT credentials not found. Please add CHATGPT_EMAIL and CHATGPT_PASSWORD to your .env file.")
 
                         # Initialize and use capturer
-                        # Note: headless=False to avoid Cloudflare CAPTCHA
                         capturer = ChatGPTCapturer()
-                        capturer.start_browser(headless=False)
+                        capturer.start_browser(headless=not st.session_state.network_show_browser)
 
                         try:
                             # Authenticate with credentials from Config
@@ -1105,6 +1135,9 @@ def tab_history():
         # Format average rank for display
         df['avg_rank_display'] = df['avg_rank'].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "N/A")
 
+        # Format model names for display
+        df['model_display'] = df['model'].apply(lambda x: get_model_display_name(x) if pd.notna(x) else x)
+
         # Filters and sorting layout
         col_search, col_analysis, col_provider, col_model = st.columns([1.2, 1, 1, 1])
 
@@ -1128,12 +1161,17 @@ def tab_history():
             ) if provider_options else []
 
         with col_model:
-            model_options = sorted(df['model'].dropna().unique().tolist())
-            selected_models = st.multiselect(
+            # Get unique raw model names and create formatted options
+            raw_model_options = sorted(df['model'].dropna().unique().tolist())
+            # Create display options mapping: "Formatted Name" -> "raw-model-id"
+            model_display_options = {get_model_display_name(m): m for m in raw_model_options}
+            selected_model_displays = st.multiselect(
                 "Model",
-                options=model_options,
-                default=model_options,
-            ) if model_options else []
+                options=list(model_display_options.keys()),
+                default=list(model_display_options.keys()),
+            ) if model_display_options else []
+            # Convert selected display names back to raw model IDs for filtering
+            selected_models = [model_display_options[d] for d in selected_model_displays]
 
         # Apply filters
         if search_query:
@@ -1148,7 +1186,7 @@ def tab_history():
         # Default sort (newest first); users can re-sort via table headers
         df = df.sort_values(by="timestamp", ascending=False, na_position="last")
 
-        display_df = df[['id', 'timestamp', 'analysis_type', 'prompt_preview', 'provider', 'model', 'searches', 'sources', 'citations', 'avg_rank_display', 'extra_links']]
+        display_df = df[['id', 'timestamp', 'analysis_type', 'prompt_preview', 'provider', 'model_display', 'searches', 'sources', 'citations', 'avg_rank_display', 'extra_links']]
         display_df.columns = ['ID', 'Timestamp', 'Analysis Type', 'Prompt', 'Provider', 'Model', 'Searches', 'Sources Found', 'Sources Used', 'Avg. Rank', 'Extra Links']
 
         # Configure column widths and alignment
@@ -1258,26 +1296,10 @@ def tab_history():
                     'anthropic': 'Anthropic'
                 }
 
-                # Model display names
-                model_names = {
-                    'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
-                    'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
-                    'claude-opus-4-1-20250805': 'Claude Opus 4.1',
-                    'gpt-5.1': 'GPT-5.1',
-                    'gpt-5-1': 'GPT-5.1',
-                    'gpt-5-mini': 'GPT-5 Mini',
-                    'gpt-5-nano': 'GPT-5 Nano',
-                    'gemini-3-pro-preview': 'Gemini 3 Pro (Preview)',
-                    'gemini-2.5-flash': 'Gemini 2.5 Flash',
-                    'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite',
-                    'ChatGPT (Free)': 'ChatGPT (Free)',
-                    'chatgpt-free': 'ChatGPT (Free)',
-                }
-
                 with col1:
                     st.metric("Provider", provider_names.get(details['provider'].lower(), details['provider']))
                 with col2:
-                    st.metric("Model", model_names.get(details['model'], details['model']))
+                    st.metric("Model", get_model_display_name(details['model']))
                 with col3:
                     st.metric("Response Time", response_time_s)
                 with col4:
@@ -1328,15 +1350,35 @@ def tab_history():
                     data_source = details.get('data_source', 'api')
                     if data_source == 'api':
                         # API: Sources are associated with queries
-                        st.markdown(f"### 📚 Sources Found (by Query):")
+                        # Calculate total sources count
+                        total_sources_count = sum(len(q.get('sources', [])) for q in details.get('search_queries', []))
+                        st.markdown(f"### 📚 Sources Found ({total_sources_count}):")
                         for i, query in enumerate(details.get('search_queries', []), 1):
                             query_sources = query.get('sources', [])
                             if query_sources:
-                                with st.expander(f"Query {i} ({len(query_sources)} sources)", expanded=False):
+                                # Truncate long queries for display
+                                query_text = query.get('query', '')
+                                query_display = query_text if len(query_text) <= 60 else query_text[:60] + "..."
+                                with st.expander(f"{query_display} ({len(query_sources)} sources)", expanded=False):
                                     for j, src in enumerate(query_sources, 1):
-                                        domain_link = f"[{urlparse(src['url']).netloc or 'Open source'}]({src['url']})" if src.get('url') else (src.get('domain') or 'Unknown domain')
-                                        snippet = src.get('title') or domain_link
-                                        st.markdown(f"{j}. {snippet} — {domain_link}")
+                                        url_display = src.get('url') or 'No URL'
+                                        # Use domain as title fallback when title is missing
+                                        display_title = src.get('title') or src.get('domain') or 'Unknown source'
+                                        snippet = src.get('snippet_text') or src.get('snippet')
+                                        pub_date = src.get('pub_date')
+                                        snippet_display = snippet if snippet else "N/A"
+                                        pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
+                                        snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
+                                        pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
+                                        domain_link = f'<a href="{url_display}" target="_blank">{src.get("domain") or "Open source"}</a>'
+                                        st.markdown(f"""
+                                        <div class="source-item">
+                                            <strong>{j}. {display_title}</strong><br/>
+                                            <small>{domain_link}</small>
+                                            {snippet_block}
+                                            {pub_date_block}
+                                        </div>
+                                        """, unsafe_allow_html=True)
                     else:
                         # Network Log: Sources aren't associated with specific queries
                         all_sources = details.get('all_sources') or []
@@ -1468,17 +1510,18 @@ def sidebar_info():
         Uses browser automation to capture network data for deeper insights.
 
         **How it works:**
-        - Opens a Chrome browser window
+        - Opens a Chrome browser (hidden by default)
         - Navigates to ChatGPT automatically
         - Submits your prompt
         - Captures network traffic with metadata
         - Closes browser when done
 
         **Features:**
+        - Runs in headless mode by default (faster)
         - Session persistence (stays logged in)
         - Captures internal ranking scores
         - Records query reformulations
-        - Headless mode available (may hit CAPTCHA)
+        - Optional browser window display (may help with CAPTCHA)
 
         **Additional Metadata:**
         Network logs provide internal scores, snippet text, and query reformulation data not available via API.
