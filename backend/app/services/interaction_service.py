@@ -168,7 +168,7 @@ class InteractionService:
 
     # Convert search queries to schemas
     search_queries = []
-    for query in response.search_queries:
+    for query in (response.search_queries or []):
       sources = [
         SourceSchema(
           url=s.url,
@@ -204,7 +204,7 @@ class InteractionService:
         citation_confidence=c.citation_confidence,
         metadata=c.metadata_json,
       )
-      for c in response.sources_used
+      for c in (response.sources_used or [])
     ]
 
     # For network_log mode, convert direct sources to schemas

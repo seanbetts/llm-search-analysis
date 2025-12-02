@@ -87,6 +87,8 @@ def calculate_average_rank(citations: list) -> Optional[float]:
     >>> calculate_average_rank(citations)
     3.0
   """
+  if not citations:
+    return None
   ranks = [c.rank for c in citations if c.rank is not None]
   if not ranks:
     return None
