@@ -3,7 +3,7 @@
 FastAPI-based REST API for analyzing LLM search capabilities across OpenAI, Google, and Anthropic providers.
 
 **Version:** 1.0.0
-**Test Coverage:** 95% (179 tests)
+**Test Coverage:** 95% (180 tests)
 **Python:** 3.10+
 
 ## Table of Contents
@@ -24,7 +24,7 @@ The backend API provides:
 - **Interaction Persistence**: SQLite database with full history
 - **RESTful API**: Clean endpoints with automatic OpenAPI documentation
 - **Comprehensive Error Handling**: Consistent error responses with correlation IDs
-- **High Test Coverage**: 95% coverage with 179 passing tests
+- **High Test Coverage**: 95% coverage with 180 passing tests
 
 ### Key Features
 
@@ -144,7 +144,7 @@ backend/
 │           ├── google_provider.py    # Google Gemini
 │           └── anthropic_provider.py # Anthropic Claude
 │
-├── tests/                            # Test suite (179 tests)
+├── tests/                            # Test suite (180 tests)
 │   ├── test_api.py                   # API endpoint tests
 │   ├── test_api_contracts.py         # API contract/schema validation tests
 │   ├── test_openai_provider.py       # OpenAI provider tests
@@ -455,7 +455,7 @@ pytest tests/test_api.py::TestHealthEndpoints::test_health_check_endpoint -v
 
 ### Test Coverage
 
-Current coverage: **95%** (179 tests passing)
+Current coverage: **95%** (180 tests passing)
 
 ```
 app/services/providers/openai_provider.py         100%
