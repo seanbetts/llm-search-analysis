@@ -41,6 +41,7 @@ class InteractionRepository:
     raw_response: dict,
     data_source: str = "api",
     extra_links_count: int = 0,
+    sources: List[dict] = None,
   ) -> int:
     """
     Save a complete interaction (prompt + response + search data).
@@ -56,6 +57,7 @@ class InteractionRepository:
       raw_response: Raw API response as dict
       data_source: Data collection mode ("api" or "network_log")
       extra_links_count: Number of extra links not from search
+      sources: List of source dicts linked directly to response (for network_log mode)
 
     Returns:
       The response ID
@@ -120,6 +122,23 @@ class InteractionRepository:
           source = SourceModel(
             search_query_id=search_query.id,
             response_id=response.id if source_data.get("response_id") else None,
+            url=source_data.get("url", ""),
+            title=source_data.get("title"),
+            domain=source_data.get("domain"),
+            rank=source_data.get("rank"),
+            pub_date=source_data.get("pub_date"),
+            snippet_text=source_data.get("snippet_text"),
+            internal_score=source_data.get("internal_score"),
+            metadata_json=source_data.get("metadata"),
+          )
+          self.db.add(source)
+
+      # Create top-level sources (for network_log mode)
+      if sources:
+        for source_data in sources:
+          source = SourceModel(
+            search_query_id=None,  # Not linked to a specific query
+            response_id=response.id,  # Linked directly to response
             url=source_data.get("url", ""),
             title=source_data.get("title"),
             domain=source_data.get("domain"),

@@ -98,6 +98,21 @@ class ProviderService:
         "metadata": citation.metadata,
       })
 
+    # Convert top-level sources (for network_log mode)
+    sources_dict = []
+    if provider_response.sources:
+      for source in provider_response.sources:
+        sources_dict.append({
+          "url": source.url,
+          "title": source.title,
+          "domain": source.domain,
+          "rank": source.rank,
+          "pub_date": source.pub_date,
+          "snippet_text": source.snippet_text,
+          "internal_score": source.internal_score,
+          "metadata": source.metadata,
+        })
+
     # Save to database if requested
     interaction_id = None
     if save_to_db:
@@ -112,6 +127,7 @@ class ProviderService:
         raw_response=provider_response.raw_response,
         data_source=provider_response.data_source,
         extra_links_count=provider_response.extra_links_count,
+        sources=sources_dict if sources_dict else None,
       )
 
     # Return full response using get_interaction_details to get proper schema

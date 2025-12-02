@@ -38,6 +38,7 @@ class InteractionService:
     raw_response: dict,
     data_source: str = "api",
     extra_links_count: int = 0,
+    sources: List[dict] = None,
   ) -> int:
     """
     Save interaction with business logic applied.
@@ -58,6 +59,7 @@ class InteractionService:
       raw_response: Raw API response
       data_source: Data collection mode
       extra_links_count: Number of extra links
+      sources: List of source dicts linked directly to response (for network_log mode)
 
     Returns:
       The response ID
@@ -76,6 +78,12 @@ class InteractionService:
       if "url" in citation and not citation.get("domain"):
         citation["domain"] = extract_domain(citation["url"])
 
+    # Extract domains from top-level sources (network_log mode)
+    if sources:
+      for source in sources:
+        if "url" in source and not source.get("domain"):
+          source["domain"] = extract_domain(source["url"])
+
     # Save to database
     return self.repository.save(
       prompt_text=prompt,
@@ -88,6 +96,7 @@ class InteractionService:
       raw_response=raw_response,
       data_source=data_source,
       extra_links_count=extra_links_count,
+      sources=sources,
     )
 
   def get_recent_interactions(

@@ -161,7 +161,6 @@ class TestInteractionResponseContract:
             assert isinstance(data["all_sources"], list), \
                 "all_sources must be list if present"
 
-    @pytest.mark.skip(reason="Network_log mode source saving not yet implemented - sources at top level aren't persisted")
     @patch('app.services.providers.openai_provider.OpenAIProvider.send_prompt')
     def test_network_log_mode_all_sources_handling(self, mock_send_prompt, client):
         """
@@ -170,12 +169,12 @@ class TestInteractionResponseContract:
         In network_log mode:
         - all_sources should contain the sources (not in search_queries)
         - Frontend expects to iterate: for src in details.get('all_sources') or []
+        - Sources are saved with response_id (not search_query_id)
 
-        This test validates the fix in commit 6473e54.
-
-        NOTE: Currently skipped because provider_service.send_prompt() doesn't
-        save top-level sources (provider_response.sources) to the database.
-        Only sources nested in search_queries are saved.
+        This test validates:
+        - Top-level sources are persisted to database
+        - Sources are retrieved in all_sources field
+        - Frontend can iterate without None errors
         """
         from app.services.providers.openai_provider import ProviderResponse, Source
 
