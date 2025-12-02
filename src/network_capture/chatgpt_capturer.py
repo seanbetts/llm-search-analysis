@@ -94,9 +94,43 @@ class ChatGPTCapturer(BaseCapturer):
             if cdp_url:
                 # CDP Mode: Connect to Chrome running on host
                 print(f"🔗 Connecting to Chrome via CDP at {cdp_url}")
-                self.browser = self.playwright.chromium.connect_over_cdp(cdp_url)
-                print("✅ Connected to host Chrome successfully")
-            else:
+
+                # Fetch WebSocket URL manually with proper Host header
+                # Chrome rejects requests with non-localhost Host headers
+                import json
+                import urllib.request
+
+                try:
+                    # Parse the CDP URL to get host and port
+                    from urllib.parse import urlparse
+                    parsed = urlparse(cdp_url)
+
+                    # Create request with localhost Host header
+                    version_url = f"{cdp_url}/json/version"
+                    req = urllib.request.Request(version_url)
+                    req.add_header('Host', 'localhost:9223')  # Force localhost Host header
+
+                    # Fetch the WebSocket URL
+                    with urllib.request.urlopen(req, timeout=5) as response:
+                        data = json.loads(response.read().decode())
+                        ws_endpoint = data['webSocketDebuggerUrl']
+
+                    # Replace localhost with actual host for Docker
+                    # ws://localhost:9223/... -> ws://host.docker.internal:9223/...
+                    ws_endpoint = ws_endpoint.replace('localhost', parsed.hostname)
+
+                    print(f"🔗 WebSocket endpoint: {ws_endpoint}")
+
+                    # Connect directly to WebSocket endpoint
+                    self.browser = self.playwright.chromium.connect_over_cdp(ws_endpoint)
+                    print("✅ Connected to host Chrome successfully")
+
+                except Exception as e:
+                    print(f"❌ Failed to connect via CDP: {e}")
+                    print("💡 Falling back to local Chrome launch...")
+                    cdp_url = None  # Fall through to local launch
+
+            if not cdp_url:
                 # Launch Mode: Start Chrome locally (for non-Docker environments)
                 print("🚀 Launching Chrome locally")
                 self.browser = self.playwright.chromium.launch(
