@@ -202,7 +202,162 @@ All environment variables are configured in the `.env` file. Key variables:
 - `LOG_LEVEL=INFO` - Logging level (DEBUG, INFO, WARNING, ERROR)
 - `DEBUG=false` - Enable debug mode
 
-See `.env.example` for complete configuration options.
+See `.env.example` for complete configuration options and [ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) for detailed documentation.
+
+#### Local Production Operations
+
+The Docker setup is designed for "local production" - running the full stack reliably on a single machine.
+
+**Verify Setup:**
+```bash
+# Run comprehensive health check
+./scripts/verify-docker-setup.sh
+```
+
+This checks:
+- ✅ Docker and Docker Compose are running
+- ✅ Both containers are healthy
+- ✅ Backend API is responding
+- ✅ Database is connected and accessible
+- ✅ Frontend can connect to backend
+- ✅ API endpoints are working
+- ✅ Volumes are properly mounted
+
+**Maintenance:**
+```bash
+# Create database backup (recommended before updates)
+./scripts/backup-database.sh
+
+# Restore from backup
+./scripts/restore-database.sh ./backups/llm_search_20250102_143000.db
+
+# Update containers with latest code
+docker compose down
+docker compose up -d --build
+
+# View live logs
+docker compose logs -f
+
+# Check resource usage
+docker stats
+```
+
+**Monitoring:**
+```bash
+# Check container status
+docker compose ps
+
+# Check backend health
+curl http://localhost:8000/health
+
+# Check frontend health
+curl http://localhost:8501/_stcore/health
+
+# Check database size
+ls -lh backend/data/llm_search.db
+
+# Check database interaction count
+sqlite3 backend/data/llm_search.db "SELECT COUNT(*) FROM responses;"
+```
+
+**Data Persistence:**
+- Database: `./backend/data/llm_search.db` (persists across restarts)
+- Session files: `./data/chatgpt_session.json` (ChatGPT login state)
+- Backups: `./backups/` (created by backup script)
+
+See [BACKUP_AND_RESTORE.md](docs/BACKUP_AND_RESTORE.md) for complete backup/restore guide.
+
+#### Docker Troubleshooting
+
+**Containers won't start:**
+```bash
+# Check Docker is running
+docker info
+
+# Check for port conflicts
+lsof -i :8000  # Backend port
+lsof -i :8501  # Frontend port
+
+# Rebuild from scratch
+docker compose down -v
+docker compose up -d --build
+```
+
+**"Connection refused" (Frontend → Backend):**
+```bash
+# Check backend is healthy
+curl http://localhost:8000/health
+
+# Check API_BASE_URL in frontend container
+docker compose exec frontend env | grep API_BASE_URL
+# Should show: API_BASE_URL=http://api:8000
+
+# Restart frontend
+docker compose restart frontend
+```
+
+**Database is locked:**
+```bash
+# Stop containers
+docker compose down
+
+# Check for orphaned processes
+ps aux | grep sqlite
+
+# Restart with fresh database connection
+docker compose up -d
+```
+
+**Changes not appearing:**
+```bash
+# Rebuild containers with no cache
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+```
+
+**View detailed logs:**
+```bash
+# All services
+docker compose logs -f
+
+# Specific service
+docker compose logs -f api
+docker compose logs -f frontend
+
+# Last 100 lines
+docker compose logs --tail=100
+```
+
+**Container health checks failing:**
+```bash
+# Check container logs
+docker compose logs api
+
+# Access container shell
+docker compose exec api bash
+
+# Manually test health endpoint from inside container
+curl http://localhost:8000/health
+```
+
+**Out of disk space:**
+```bash
+# Remove old images
+docker image prune -a
+
+# Remove old volumes
+docker volume prune
+
+# Check Docker disk usage
+docker system df
+```
+
+For more troubleshooting, see:
+- [ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) - Environment configuration
+- [BACKUP_AND_RESTORE.md](docs/BACKUP_AND_RESTORE.md) - Database backup/restore
+- Backend logs: `docker compose logs api`
+- Frontend logs: `docker compose logs frontend`
 
 ### Option 2: Local Development
 
