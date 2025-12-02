@@ -208,7 +208,7 @@ class InteractionService:
     ]
 
     # For network_log mode, convert direct sources to schemas
-    all_sources = None
+    all_sources = []
     if response.data_source == 'network_log' and response.sources:
       all_sources = [
         SourceSchema(

@@ -112,7 +112,7 @@ class SendPromptResponse(BaseModel):
     description="Citations used in the response"
   )
   all_sources: Optional[List[Source]] = Field(
-    default=None,
+    default_factory=list,
     description="All sources (for network_log mode, where sources are not linked to search queries)"
   )
 
