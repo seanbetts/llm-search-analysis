@@ -3,7 +3,7 @@
 FastAPI-based REST API for analyzing LLM search capabilities across OpenAI, Google, and Anthropic providers.
 
 **Version:** 1.0.0
-**Test Coverage:** 95% (180 tests)
+**Test Coverage:** 95% (191 tests)
 **Python:** 3.10+
 
 ## Table of Contents
@@ -24,7 +24,7 @@ The backend API provides:
 - **Interaction Persistence**: SQLite database with full history
 - **RESTful API**: Clean endpoints with automatic OpenAPI documentation
 - **Comprehensive Error Handling**: Consistent error responses with correlation IDs
-- **High Test Coverage**: 95% coverage with 180 passing tests
+- **High Test Coverage**: 95% coverage with 191 passing tests
 
 ### Key Features
 
@@ -144,9 +144,10 @@ backend/
 │           ├── google_provider.py    # Google Gemini
 │           └── anthropic_provider.py # Anthropic Claude
 │
-├── tests/                            # Test suite (180 tests)
+├── tests/                            # Test suite (191 tests)
 │   ├── test_api.py                   # API endpoint tests
 │   ├── test_api_contracts.py         # API contract/schema validation tests
+│   ├── test_integration_database.py  # Database integration tests with edge cases
 │   ├── test_openai_provider.py       # OpenAI provider tests
 │   ├── test_google_provider.py       # Google provider tests
 │   ├── test_anthropic_provider.py    # Anthropic provider tests
@@ -455,7 +456,7 @@ pytest tests/test_api.py::TestHealthEndpoints::test_health_check_endpoint -v
 
 ### Test Coverage
 
-Current coverage: **95%** (180 tests passing)
+Current coverage: **95%** (191 tests passing)
 
 ```
 app/services/providers/openai_provider.py         100%
@@ -474,9 +475,10 @@ TOTAL                                              95%
 ### Test Structure
 
 - **Unit tests**: Test individual components in isolation
-- **Integration tests**: Test component interactions
+- **Integration tests**: Test component interactions with realistic data
 - **API tests**: Test HTTP endpoints end-to-end
 - **Contract tests**: Validate API response schemas match frontend expectations
+- **Database integration tests**: Test with edge cases and messy production-like data
 - **Mocking**: Extensive use of mocks for external APIs
 
 ### Contract Tests (`test_api_contracts.py`)
@@ -501,6 +503,39 @@ Contract tests validate that API responses match the data structures the fronten
 - Documents API contract expectations
 - Prevents regressions when modifying response schemas
 - Validates Pydantic model defaults match frontend assumptions
+
+### Database Integration Tests (`test_integration_database.py`)
+
+Integration tests with realistic database fixtures simulate production scenarios including messy and corrupt data:
+
+**Edge cases tested:**
+- NULL foreign key relationships (orphaned records)
+- Responses with NULL prompt_id (broken relationship chains)
+- Search queries with no sources (empty result sets)
+- Responses with no citations (direct answers without search)
+- Mixed API and network_log mode data
+- Data migration artifacts (missing fields, unknown models)
+- Corrupted timestamps and invalid data
+
+**What they catch:**
+- Eager loading crashes with NULL relationships (Response.sources bug)
+- N+1 query problems
+- Cascading delete failures with orphaned data
+- NULL constraint violations
+- Query failures on corrupt data
+
+**Key tests:**
+- `test_eager_loading_with_null_relationships`: Validates eager loading doesn't crash with NULL FKs
+- `test_get_recent_with_missing_relationships`: Tests broken relationship chains
+- `test_mixed_api_and_network_log_data`: Validates dual data source support
+- `test_data_migration_scenario`: Tests imported/migrated data handling
+- `test_delete_with_orphaned_relationships`: Validates cascade deletes work correctly
+
+**Benefits:**
+- Production readiness - simulates real-world messy data
+- Migration safety - validates data from schema changes
+- Robustness - ensures graceful handling of corrupt data
+- Would have caught the eager loading crash that required disabling Response.sources joinedload
 
 ## Deployment
 
