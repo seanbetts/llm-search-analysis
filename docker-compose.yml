@@ -69,8 +69,8 @@ services:
       # Network Capture Settings
       - CHATGPT_SESSION_FILE=./data/chatgpt_session.json
       - BROWSER_HEADLESS=${BROWSER_HEADLESS:-true}
-      # Chrome CDP endpoint (Chrome running on host Mac)
-      - CHROME_CDP_URL=${CHROME_CDP_URL:-http://host.docker.internal:9222}
+      # Chrome CDP endpoint (Chrome running on host Mac, forwarded via socat)
+      - CHROME_CDP_URL=${CHROME_CDP_URL:-http://host.docker.internal:9223}
     depends_on:
       api:
         condition: service_healthy
