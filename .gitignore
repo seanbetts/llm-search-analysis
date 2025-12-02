@@ -37,10 +37,16 @@ ENV/
 # Environment variables
 .env
 
-# Database
-data/*.db
-data/*.sqlite
-data/*.sqlite3
+# Database files (all SQLite databases and related files)
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+*.db-journal
+*.db.backup
+# Exception: Keep test database fixtures in git
+!backend/tests/fixtures/*.db
 
 # Logs
 *.log
