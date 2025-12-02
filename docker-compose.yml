@@ -57,6 +57,11 @@ services:
     volumes:
       # Mount data directory for session files
       - ./data:/app/data
+    # Chrome requires larger shared memory under QEMU emulation
+    shm_size: '2gb'
+    # Add capabilities for Chrome to run properly
+    cap_add:
+      - SYS_ADMIN
     environment:
       # Point frontend to backend API via Docker network
       - API_BASE_URL=http://api:8000

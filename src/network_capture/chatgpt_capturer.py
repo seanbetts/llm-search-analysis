@@ -91,7 +91,10 @@ class ChatGPTCapturer(BaseCapturer):
                     '--disable-blink-features=AutomationControlled',
                     '--disable-dev-shm-usage',
                     '--disable-web-security',
-                    '--no-sandbox'
+                    '--no-sandbox',
+                    '--disable-gpu',  # Helps with stability under QEMU emulation
+                    '--disable-software-rasterizer',
+                    '--disable-setuid-sandbox'
                 ]
             )
 
