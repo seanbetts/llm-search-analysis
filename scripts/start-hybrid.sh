@@ -90,29 +90,38 @@ fi
 if lsof -Pi :8501 -sTCP:LISTEN -t >/dev/null 2>&1; then
     echo -e "${YELLOW}⚠️  Port 8501 is already in use${NC}"
     echo ""
-    echo "Streamlit may already be running. Options:"
-    echo "  1. Stop the existing process: kill \$(lsof -ti:8501)"
-    echo "  2. Access the running frontend: http://localhost:8501"
+    echo "A Streamlit instance is already running on port 8501."
     echo ""
-    read -p "Stop existing process and restart? (y/N): " -n 1 -r
+    echo "What would you like to do?"
+    echo "  1) Kill the existing process and start fresh"
+    echo "  2) Keep the existing instance (recommended)"
     echo ""
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Stopping existing process..."
-        lsof -ti:8501 | xargs kill
-        sleep 2
-    else
-        echo ""
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo -e "${GREEN}✅ Using existing Streamlit instance${NC}"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo ""
-        echo "📋 Access Points:"
-        echo "   Frontend (Streamlit): http://localhost:8501"
-        echo "   Backend API: http://localhost:8000"
-        echo "   API Docs: http://localhost:8000/docs"
-        echo ""
-        exit 0
-    fi
+    read -p "Enter your choice (1 or 2): " choice
+    echo ""
+
+    case $choice in
+        1)
+            echo "Stopping existing Streamlit process..."
+            kill $(lsof -ti:8501) 2>/dev/null || true
+            sleep 2
+            echo -e "${GREEN}✅ Existing process stopped${NC}"
+            echo ""
+            ;;
+        2|*)
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo -e "${GREEN}✅ Using existing Streamlit instance${NC}"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "📋 Access Points:"
+            echo "   Frontend (Streamlit): http://localhost:8501"
+            echo "   Backend API: http://localhost:8000"
+            echo "   API Docs: http://localhost:8000/docs"
+            echo ""
+            echo "💡 To stop the frontend: kill \$(lsof -ti:8501)"
+            echo ""
+            exit 0
+            ;;
+    esac
 fi
 
 echo -e "${BLUE}Starting Streamlit frontend...${NC}"
