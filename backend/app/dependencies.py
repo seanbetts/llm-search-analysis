@@ -7,6 +7,7 @@ from app.config import settings
 from app.repositories.interaction_repository import InteractionRepository
 from app.services.interaction_service import InteractionService
 from app.services.provider_service import ProviderService
+from app.services.export_service import ExportService
 
 # Create database engine
 engine = create_engine(
@@ -78,3 +79,18 @@ def get_provider_service(
     ProviderService instance
   """
   return ProviderService(interaction_service)
+
+
+def get_export_service(
+  interaction_service: InteractionService = Depends(get_interaction_service)
+) -> ExportService:
+  """
+  Get ExportService instance with interaction service.
+
+  Args:
+    interaction_service: InteractionService from get_interaction_service dependency
+
+  Returns:
+    ExportService instance
+  """
+  return ExportService(interaction_service)

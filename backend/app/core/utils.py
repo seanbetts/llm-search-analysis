@@ -1,6 +1,7 @@
 """Utility functions for the application."""
 
 import re
+from datetime import datetime
 from urllib.parse import urlparse
 from typing import Optional
 
@@ -158,3 +159,26 @@ def get_model_display_name(model: str) -> str:
   # Convert hyphens to spaces and capitalize words
   formatted = ' '.join(word.capitalize() for word in formatted.split('-'))
   return formatted
+
+
+def format_pub_date(pub_date: str) -> str:
+  """
+  Format ISO pub_date to a friendly string.
+
+  Args:
+    pub_date: ISO-formatted date string
+
+  Returns:
+    Formatted date string or original if parsing fails
+
+  Examples:
+    >>> format_pub_date("2024-01-15T10:30:00")
+    'Mon, Jan 15, 2024 10:30 UTC'
+  """
+  if not pub_date:
+    return ""
+  try:
+    dt = datetime.fromisoformat(pub_date.replace('Z', '+00:00'))
+    return dt.strftime("%a, %b %d, %Y %H:%M UTC")
+  except Exception:
+    return pub_date

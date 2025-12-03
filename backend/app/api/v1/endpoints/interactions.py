@@ -2,6 +2,7 @@
 
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import PlainTextResponse
 
 from app.api.v1.schemas.requests import SendPromptRequest
 from app.api.v1.schemas.responses import (
@@ -10,7 +11,8 @@ from app.api.v1.schemas.responses import (
 )
 from app.services.interaction_service import InteractionService
 from app.services.provider_service import ProviderService
-from app.dependencies import get_interaction_service, get_provider_service
+from app.services.export_service import ExportService
+from app.dependencies import get_interaction_service, get_provider_service, get_export_service
 from app.core.exceptions import (
   ProviderError,
   ModelNotSupportedError,
@@ -255,6 +257,69 @@ async def get_interaction_details(
   if not interaction:
     raise InteractionNotFoundError(interaction_id)
   return interaction
+
+
+@router.get(
+  "/{interaction_id}/export/markdown",
+  response_class=PlainTextResponse,
+  status_code=status.HTTP_200_OK,
+  summary="Export interaction as Markdown",
+  description="Export an interaction as formatted Markdown with all details, sources, and citations.",
+  responses={
+    404: {
+      "description": "Interaction not found",
+      "content": {
+        "application/json": {
+          "example": {
+            "error": {
+              "message": "Interaction with ID 999 not found",
+              "code": "RESOURCE_NOT_FOUND",
+              "details": {
+                "resource_type": "Interaction",
+                "resource_id": "999"
+              }
+            }
+          }
+        }
+      }
+    },
+    500: {
+      "description": "Internal server error",
+      "content": {
+        "application/json": {
+          "example": {
+            "error": {
+              "message": "An unexpected error occurred",
+              "code": "INTERNAL_SERVER_ERROR"
+            }
+          }
+        }
+      }
+    }
+  }
+)
+async def export_interaction_markdown(
+  interaction_id: int,
+  export_service: ExportService = Depends(get_export_service),
+):
+  """
+  Export interaction as Markdown.
+
+  Args:
+    interaction_id: The interaction ID to export
+    export_service: ExportService dependency
+
+  Returns:
+    Plain text Markdown document
+
+  Raises:
+    404: Interaction not found
+    500: Internal server error
+  """
+  markdown = export_service.build_markdown(interaction_id)
+  if not markdown:
+    raise InteractionNotFoundError(interaction_id)
+  return PlainTextResponse(content=markdown, media_type="text/markdown")
 
 
 @router.delete(

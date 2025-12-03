@@ -391,6 +391,48 @@ class APIClient:
     """
     return self._request("GET", "/api/v1/providers/models")
 
+  def export_interaction_markdown(self, interaction_id: int) -> str:
+    """
+    Export an interaction as formatted Markdown.
+
+    Args:
+      interaction_id: The interaction ID to export
+
+    Returns:
+      Markdown formatted string with full interaction details
+
+    Raises:
+      APINotFoundError: If interaction doesn't exist
+      APIServerError: If backend fails
+
+    Example:
+      >>> markdown = client.export_interaction_markdown(123)
+      >>> with open("interaction_123.md", "w") as f:
+      ...     f.write(markdown)
+    """
+    try:
+      # Make request directly to get text response (not JSON)
+      response = self.client.get(
+        f"/api/v1/interactions/{interaction_id}/export/markdown",
+        timeout=self.timeout_default
+      )
+      response.raise_for_status()
+      return response.text
+    except httpx.HTTPStatusError as e:
+      status_code = e.response.status_code
+      if status_code == 404:
+        raise APINotFoundError(f"Interaction {interaction_id} not found")
+      elif status_code >= 500:
+        raise APIServerError(f"Server error exporting interaction: {str(e)}")
+      else:
+        raise APIClientError(f"Failed to export interaction: {str(e)}")
+    except httpx.TimeoutException as e:
+      raise APITimeoutError(f"Export request timed out: {str(e)}")
+    except httpx.ConnectError as e:
+      raise APIConnectionError(f"Failed to connect to API: {str(e)}")
+    except Exception as e:
+      raise APIClientError(f"Unexpected error exporting interaction: {str(e)}")
+
   def health_check(self) -> Dict[str, Any]:
     """
     Check API health and database connectivity.

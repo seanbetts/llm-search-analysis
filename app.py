@@ -157,124 +157,6 @@ def sanitize_response_markdown(text: str) -> str:
     return cleaned.strip()
 
 
-def build_interaction_markdown(details: dict, interaction_id: int = None) -> str:
-    """Build a formatted markdown export of an interaction."""
-    lines = []
-    if interaction_id is not None:
-        lines.append(f"# Interaction {interaction_id}")
-        lines.append("")
-
-    # Prompt
-    lines.append("## Prompt")
-    lines.append(f"> {details.get('prompt', '')}")
-    lines.append("")
-
-    # Metadata
-    # Use backend-computed metrics
-    num_searches = len(details.get('search_queries', []))
-    num_sources = details.get('sources_found', 0)
-    num_sources_used = details.get('sources_used', 0)
-    avg_rank = details.get('avg_rank')
-    avg_rank_display = f"{avg_rank:.1f}" if avg_rank is not None else "N/A"
-    response_time_ms = details.get('response_time_ms')
-    response_time_s = f"{response_time_ms / 1000:.1f}s" if response_time_ms else "N/A"
-    extra_links = details.get('extra_links_count', 0)
-    analysis_type = 'Network Logs' if details.get('data_source') == 'network_log' else 'API'
-
-    lines.append("## Metadata")
-    lines.append(f"- Provider: {details.get('provider', 'Unknown')}")
-    lines.append(f"- Model: {details.get('model', 'Unknown')}")
-    lines.append(f"- Analysis: {analysis_type}")
-    lines.append(f"- Response Time: {response_time_s}")
-    lines.append(f"- Searches: {num_searches}")
-    lines.append(f"- Sources Found: {num_sources}")
-    lines.append(f"- Sources Used: {num_sources_used}")
-    lines.append(f"- Avg. Rank: {avg_rank_display}")
-    lines.append(f"- Extra Links: {extra_links}")
-    lines.append("")
-
-    # Response
-    lines.append("## Response")
-    # Format response text (convert citation references to inline links)
-    response_text = format_response_text(details.get('response_text', ''), details.get('citations', []))
-    lines.append(response_text or "_No response text available._")
-    lines.append("")
-
-    # Search queries and sources
-    search_queries = details.get('search_queries', [])
-    data_source = details.get('data_source', 'api')
-
-    if search_queries:
-        lines.append("## Search Queries")
-        for idx, query in enumerate(search_queries, 1):
-            q_text = query.get('query') or ''
-            lines.append(f"### Query {idx}: {q_text}")
-
-        lines.append("")
-
-        # For API data, sources are associated with queries
-        if data_source == 'api':
-            lines.append("## Sources (by Query)")
-            for idx, query in enumerate(search_queries, 1):
-                sources = query.get('sources', [])
-                lines.append(f"### Query {idx} Sources ({len(sources)})")
-                for s_idx, src in enumerate(sources, 1):
-                    title = src.get('title') or src.get('domain') or 'Unknown source'
-                    url = src.get('url') or ''
-                    domain = src.get('domain') or ''
-                    snippet = src.get('snippet') or 'N/A'
-                    if snippet == 'N/A' and src.get('title'):
-                        snippet = src.get('title')
-                    pub_date = src.get('pub_date')
-                    pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
-                    lines.append(f"{s_idx}. [{title}]({url}) ({domain})")
-        # For network logs, sources aren't associated with specific queries
-        else:
-            all_sources = details.get('all_sources') or []
-            if all_sources:
-                lines.append(f"## Sources Found ({len(all_sources)})")
-                lines.append("_Note: Network logs don't provide reliable query-to-source mapping._")
-                lines.append("")
-                for s_idx, src in enumerate(all_sources, 1):
-                    title = src.get('title') or src.get('domain') or 'Unknown source'
-                    url = src.get('url') or ''
-                    domain = src.get('domain') or ''
-                    snippet = src.get('snippet') or 'N/A'
-                    if snippet == 'N/A' and src.get('title'):
-                        snippet = src.get('title')
-                    pub_date = src.get('pub_date')
-                    pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
-                    lines.append(f"{s_idx}. [{title}]({url}) ({domain})")
-                    lines.append(f"   - Snippet: {snippet}")
-                    lines.append(f"   - Published: {pub_date_fmt}")
-        lines.append("")
-
-    # Sources used
-    citations = details.get('citations', [])
-    if citations:
-        lines.append("## Sources Used")
-        for c_idx, citation in enumerate(citations, 1):
-            title = citation.get('title') or 'Unknown source'
-            url = citation.get('url') or ''
-            domain = urlparse(url).netloc if url else ''
-            q_idx = citation.get('query_index')
-            rank = citation.get('rank')
-            rank_bits = []
-            if q_idx is not None:
-                rank_bits.append(f"Query {q_idx + 1}")
-            if rank:
-                rank_bits.append(f"Rank {rank}")
-            rank_display = f" ({', '.join(rank_bits)})" if rank_bits else ""
-            snippet = citation.get('snippet') or 'N/A'
-            pub_date = citation.get('pub_date')
-            pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
-            lines.append(f"{c_idx}. [{title}]({url}) ({domain}){rank_display}")
-            lines.append(f"   - Snippet: {snippet}")
-            lines.append(f"   - Published: {pub_date_fmt}")
-
-    return "\n".join(lines).strip() + "\n"
-
-
 def format_response_text(text: str, citations: list) -> str:
     """
     Format response text by converting reference-style citation links to inline links.
@@ -1172,7 +1054,7 @@ def tab_history():
             details = st.session_state.api_client.get_interaction(selected_id)
             if details:
                 # Download interaction as markdown (placed directly after selector)
-                md_export = build_interaction_markdown(details, selected_id)
+                md_export = st.session_state.api_client.export_interaction_markdown(selected_id)
                 btn_wrap, _ = st.columns([1, 4])
                 with btn_wrap:
                     btn_col1, btn_col2 = st.columns(2, gap="small")

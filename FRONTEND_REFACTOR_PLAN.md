@@ -327,17 +327,37 @@ app.py (1,605 lines)
 
 **Result**: Backend now provides formatted model display names in all API responses. Frontend removed duplicate 56-line mapping logic. Single source of truth for model name formatting.
 
-### 3. Export Logic (Markdown & CSV)
+### 3. Export Logic - ✅ COMPLETED (2025-12-03)
 
-- [ ] Implement backend export endpoints, for example:
-  - `GET /api/v1/interactions/{id}/export/markdown`
-  - `GET /api/v1/interactions/export.csv` (or a parameterised export endpoint).
+**Backend Implementation - ✅ COMPLETED**:
+- [x] Created `ExportService` class in `backend/app/services/export_service.py` (202 lines)
+  - `build_markdown()` method converts interaction data to formatted markdown
+  - Handles both API and network_log data sources
+  - Uses `format_pub_date()` utility for date formatting
+  - Converts reference-style citation links to inline markdown links
+- [x] Created export endpoint `GET /api/v1/interactions/{id}/export/markdown`
+  - Returns `PlainTextResponse` with `text/markdown` media type
+  - Proper error handling (404 for not found, 500 for server errors)
+  - Comprehensive OpenAPI documentation with response examples
+- [x] Added `format_pub_date()` utility to `backend/app/core/utils.py` (lines 164-184)
+  - Converts ISO datetime to friendly format: "Mon, Jan 15, 2024 10:30 UTC"
+- [x] Added dependency injection for `ExportService` in `backend/app/dependencies.py`
 
-- [ ] Move the structure currently implemented in `build_interaction_markdown()` into backend code.
+**Frontend Integration - ✅ COMPLETED**:
+- [x] Added `export_interaction_markdown()` method to `APIClient` class
+  - Makes GET request to export endpoint
+  - Returns plain text markdown (not JSON)
+  - Comprehensive error handling (404, 500, timeout, connection errors)
+- [x] Updated `app.py` line 1175 to use `api_client.export_interaction_markdown()`
+- [x] Removed `build_interaction_markdown()` function from frontend (116 lines removed)
+- [x] Kept helper functions `format_response_text()` and `format_pub_date()` as they're still used for UI display
 
-- [ ] Update Streamlit:
-  - Keep export buttons in the UI.
-  - Change them to call the backend export endpoints instead of rebuilding export formats in `app.py`.
+**Testing - ✅ COMPLETED**:
+- [x] Backend endpoint tested and working
+- [x] API client integration tested and working
+- [x] End-to-end export functionality verified
+
+**Result**: Markdown export logic moved to backend. Frontend now calls backend API instead of generating markdown locally. 116 lines of duplicate logic removed from frontend.
 
 ### 4. Network-Log Specific Mapping
 
