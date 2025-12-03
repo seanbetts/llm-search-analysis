@@ -413,7 +413,31 @@ app.py (1,605 lines)
 
 **Result**: CSS now in dedicated, reusable module. Better separation of concerns and improved maintainability.
 
-### 2. Split `app.py` by Responsibility
+### 2. Extract Helper Functions to Components - ✅ COMPLETED (2025-12-03)
+
+**Helper Modules Created - ✅ COMPLETED**:
+- [x] Created `frontend/utils.py` with utilities:
+  - `format_pub_date()` - formats ISO dates to friendly strings (11 lines)
+- [x] Created `frontend/components/__init__.py` for components module
+- [x] Created `frontend/components/response.py` with response formatting helpers:
+  - `sanitize_response_markdown()` - removes dividers and normalizes headings (28 lines)
+  - `format_response_text()` - converts reference-style citation links (46 lines)
+  - `extract_images_from_response()` - extracts image URLs from markdown/HTML (24 lines)
+- [x] Created `frontend/components/models.py` with model selection logic:
+  - `get_all_models()` - fetches and formats available models (49 lines)
+
+**Updated app.py - ✅ COMPLETED**:
+- [x] Added imports for new helper modules
+- [x] Removed 151 lines of duplicate function definitions
+- [x] Reduced app.py from 1353 to 1202 lines (-151 lines)
+
+**Testing - ✅ COMPLETED**:
+- [x] Streamlit app tested and functional
+- [x] All helper functions accessible via imports
+
+**Result**: Better code organization with dedicated modules for utilities, response formatting, and model selection. Combined with Phase 2.1: 216 lines removed from app.py.
+
+### 3. Split `app.py` by Responsibility
 
 - [ ] Keep in `app.py`:
   - Page config and CSS loading (via `load_styles()`).
@@ -426,7 +450,7 @@ app.py (1,605 lines)
   - `frontend/tabs/batch.py` with `tab_batch()`.
   - `frontend/tabs/history.py` with `tab_history()`.
 
-### 3. Introduce Minimal UI Helpers
+### 4. Introduce Additional UI Helpers (If Needed)
 
 - [ ] `frontend/components/metrics.py`:
   - Functions to render the metrics row given backend-provided metrics (no calculations inside).
@@ -434,16 +458,7 @@ app.py (1,605 lines)
 - [ ] `frontend/components/sources.py`:
   - Functions to render "Sources Found", "Sources Used", and "Extra Links" using the normalized backend data shape.
 
-- [ ] `frontend/components/response.py`:
-  - Response text rendering and related view-level helpers, such as:
-    - `sanitize_response_markdown()`.
-    - Image extraction and inline display.
-
-### 4. Centralize Frontend Utilities (Thin Only)
-
-- [ ] `frontend/utils.py` for small, Streamlit-side helpers that:
-  - Format any remaining timestamps (if not already formatted by backend).
-  - Provide simple, view-only convenience functions used by multiple tabs.
+### 5. Centralize Frontend Configuration (If Needed)
 
 - [ ] `frontend/constants.py` for UI-only configuration, such as:
   - Default history limit for the History tab.
@@ -455,7 +470,7 @@ app.py (1,605 lines)
   - Use backend-provided display fields where possible.
   - Reserve constants for UI behaviour/config, not domain semantics.
 
-### 5. Unify Error Handling
+### 6. Unify Error Handling
 
 - [ ] Implement a helper like `safe_api_call(callable)` that:
   - Wraps calls to `APIClient`.
@@ -469,6 +484,27 @@ app.py (1,605 lines)
   - Use frontend checks only for UX (e.g. non-empty prompt, obvious length warnings) and to show friendly summaries of backend validation errors.
 
 **Result:** `app.py` becomes a thin entrypoint; tab modules and components are small, focused, and mostly view-only.
+
+---
+
+### Phase 2 Progress Summary
+
+**Completed:**
+- ✅ Phase 2.1: CSS Extraction (-65 lines)
+- ✅ Phase 2.2: Helper Functions Extraction (-151 lines)
+
+**Total Phase 2 Reduction**: 216 lines removed from app.py (1418 → 1202 lines)
+
+**Code Organization Improvements:**
+- CSS now in dedicated `frontend/styles.py` module
+- Response formatting helpers in `frontend/components/response.py`
+- Model selection logic in `frontend/components/models.py`
+- Date formatting utilities in `frontend/utils.py`
+- All modules properly documented with docstrings
+
+**Remaining Work:**
+- Phase 2.3: Split tab functions into separate modules (~800 lines to extract)
+- Phase 2.4+: Additional helpers and error handling as needed
 
 ---
 
