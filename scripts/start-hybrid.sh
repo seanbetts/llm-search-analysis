@@ -51,7 +51,7 @@ fi
 
 echo "📦 Step 1: Starting backend (Docker)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-$DOCKER_COMPOSE up -d
+$DOCKER_COMPOSE up -d --remove-orphans
 
 # Wait for backend to be healthy
 echo ""
@@ -82,11 +82,37 @@ if ! command -v streamlit &> /dev/null; then
     echo ""
 fi
 
-# Check if Chrome is installed
-if ! command -v playwright &> /dev/null || ! playwright show-browsers | grep -q "chrome"; then
-    echo -e "${YELLOW}⚠️  Chrome not found. Installing Playwright browsers...${NC}"
-    playwright install chrome
+# Check if Playwright browsers are installed (optional - only needed for network capture mode)
+# We'll skip this check and let users install on-demand if they use network capture
+# This avoids errors and speeds up startup
+
+# Check if port 8501 is already in use
+if lsof -Pi :8501 -sTCP:LISTEN -t >/dev/null 2>&1; then
+    echo -e "${YELLOW}⚠️  Port 8501 is already in use${NC}"
     echo ""
+    echo "Streamlit may already be running. Options:"
+    echo "  1. Stop the existing process: kill \$(lsof -ti:8501)"
+    echo "  2. Access the running frontend: http://localhost:8501"
+    echo ""
+    read -p "Stop existing process and restart? (y/N): " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Stopping existing process..."
+        lsof -ti:8501 | xargs kill
+        sleep 2
+    else
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo -e "${GREEN}✅ Using existing Streamlit instance${NC}"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        echo "📋 Access Points:"
+        echo "   Frontend (Streamlit): http://localhost:8501"
+        echo "   Backend API: http://localhost:8000"
+        echo "   API Docs: http://localhost:8000/docs"
+        echo ""
+        exit 0
+    fi
 fi
 
 echo -e "${BLUE}Starting Streamlit frontend...${NC}"
