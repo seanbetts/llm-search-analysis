@@ -64,6 +64,11 @@ class Response(Base):
   data_source = Column(String(20), default='api')
   extra_links_count = Column(Integer, default=0)
 
+  # Computed metrics
+  sources_found = Column(Integer, default=0)
+  sources_used_count = Column(Integer, default=0)
+  avg_rank = Column(Float)
+
   # Relationships
   prompt = relationship("Prompt", back_populates="response")
   search_queries = relationship("SearchQuery", back_populates="response")

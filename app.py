@@ -224,20 +224,15 @@ def build_interaction_markdown(details: dict, interaction_id: int = None) -> str
     lines.append("")
 
     # Metadata
+    # Use backend-computed metrics
     num_searches = len(details.get('search_queries', []))
-    # For network logs, sources are in all_sources; for API, they're in query.sources
-    if details.get('data_source') == 'network_log':
-        num_sources = len(details.get('all_sources') or [])
-    else:
-        num_sources = sum(len(q.get('sources', [])) for q in details.get('search_queries', []))
-    # Count only citations with ranks (from search results)
-    citations_with_rank = [c for c in details.get('citations', []) if c.get('rank') is not None]
-    num_sources_used = len(citations_with_rank)
-    avg_rank_display = f"{sum(c['rank'] for c in citations_with_rank) / len(citations_with_rank):.1f}" if citations_with_rank else "N/A"
+    num_sources = details.get('sources_found', 0)
+    num_sources_used = details.get('sources_used', 0)
+    avg_rank = details.get('avg_rank')
+    avg_rank_display = f"{avg_rank:.1f}" if avg_rank is not None else "N/A"
     response_time_ms = details.get('response_time_ms')
     response_time_s = f"{response_time_ms / 1000:.1f}s" if response_time_ms else "N/A"
-    # Count citations without ranks (extra links)
-    extra_links = len([c for c in details.get('citations', []) if not c.get('rank')])
+    extra_links = details.get('extra_links_count', 0)
     analysis_type = 'Network Logs' if details.get('data_source') == 'network_log' else 'API'
 
     lines.append("## Metadata")
@@ -480,29 +475,23 @@ def display_response(response, prompt=None):
     with col4:
         st.metric("Search Queries", len(response.search_queries))
     with col5:
-        # Count sources differently for API vs network logs
-        if getattr(response, 'data_source', 'api') == 'network_log':
-            sources_count = len(response.sources)
-        else:
-            # API: count sources from all queries
-            sources_count = sum(len(q.sources) for q in response.search_queries)
+        # Use backend-computed sources_found metric
+        sources_count = getattr(response, 'sources_found', 0)
         st.metric("Sources Found", sources_count)
     with col6:
-        # Count only citations with ranks (from search results)
-        sources_with_rank = [c for c in response.citations if c.rank]
-        st.metric("Sources Used", len(sources_with_rank))
+        # Use backend-computed sources_used metric
+        sources_used = getattr(response, 'sources_used', 0)
+        st.metric("Sources Used", sources_used)
     with col7:
-        # Calculate average rank from sources used (citations with ranks)
-        if sources_with_rank:
-            avg_rank = sum(c.rank for c in sources_with_rank) / len(sources_with_rank)
+        # Use backend-computed avg_rank metric
+        avg_rank = getattr(response, 'avg_rank', None)
+        if avg_rank is not None:
             st.metric("Avg. Rank", f"{avg_rank:.1f}")
         else:
             st.metric("Avg. Rank", "N/A")
     with col8:
-        # Use parser-provided extra_links_count if available; fallback to citations without ranks
-        extra_links = getattr(response, "extra_links_count", None)
-        if extra_links is None:
-            extra_links = len([c for c in response.citations if not c.rank])
+        # Use backend-computed extra_links_count metric
+        extra_links = getattr(response, "extra_links_count", 0)
         st.metric("Extra Links", extra_links)
 
     st.divider()
@@ -970,39 +959,27 @@ def tab_batch():
                             headless=True
                         )
 
-                    # For batch results, work with the API response dict directly
-                    # Calculate average rank from citations
+                    # Store result using backend-computed metrics
                     if st.session_state.data_collection_mode == 'api':
-                        citations = response_data.get('citations', [])
-                        citations_with_rank = [c for c in citations if c.get('rank')]
-                        avg_rank = sum(c.get('rank') for c in citations_with_rank) / len(citations_with_rank) if citations_with_rank else None
-                    else:
-                        citations = response.citations
-                        citations_with_rank = [c for c in citations if c.rank]
-                        avg_rank = sum(c.rank for c in citations_with_rank) / len(citations_with_rank) if citations_with_rank else None
-
-                    # Store result (handle both API response dict and network log response object)
-                    if st.session_state.data_collection_mode == 'api':
-                        # For API mode, count sources from all queries
-                        sources_count = sum(len(q.get('sources', [])) for q in response_data.get('search_queries', []))
+                        # For API mode, use backend-computed metrics from response_data dict
                         st.session_state.batch_results.append({
                             'prompt': prompt,
                             'model': model_label,
                             'searches': len(response_data.get('search_queries', [])),
-                            'sources': sources_count,
-                            'sources_used': len(response_data.get('citations', [])),
-                            'avg_rank': avg_rank,
+                            'sources': response_data.get('sources_found', 0),
+                            'sources_used': response_data.get('sources_used', 0),
+                            'avg_rank': response_data.get('avg_rank'),
                             'response_time_s': response_data.get('response_time_ms', 0) / 1000
                         })
                     else:
-                        # For network log mode, use response object
+                        # For network log mode, use backend-computed metrics from response object
                         st.session_state.batch_results.append({
                             'prompt': prompt,
                             'model': model_label,
                             'searches': len(response.search_queries),
-                            'sources': len(response.sources),
-                            'sources_used': len(response.citations),
-                            'avg_rank': avg_rank,
+                            'sources': getattr(response, 'sources_found', 0),
+                            'sources_used': getattr(response, 'sources_used', 0),
+                            'avg_rank': getattr(response, 'avg_rank', None),
                             'response_time_s': response.response_time_ms / 1000
                         })
 

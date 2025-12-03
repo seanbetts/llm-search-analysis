@@ -258,17 +258,46 @@ app.py (1,605 lines)
 
 ### 1. Metrics & Summaries in Backend
 
-- [ ] Extend backend response schemas so `InteractionDetail` and `InteractionSummary` include:
-  - `sources_found`
-  - `sources_used`
-  - `avg_rank`
-  - `extra_links`
-  - `analysis_type`
-  - Display-ready timestamp (or a clearly defined structure for formatting on the client).
+✅ **COMPLETED** (2025-12-03)
 
-- [ ] Move calculations currently done in `app.py` (e.g. in `build_interaction_markdown()` and the History tab) into backend services.
+- [x] Extend backend response schemas so `SendPromptResponse` and `InteractionSummary` include:
+  - [x] `sources_found` - Total sources from search queries
+  - [x] `sources_used` - Citations with rank (from search results)
+  - [x] `avg_rank` - Average rank of citations
+  - [x] `extra_links` - Already existed in schema
+  - [x] `analysis_type` - **Not needed**: `data_source` field already provides this ("api" or "network_log"). Frontend can trivially map for display.
+  - [x] Display-ready timestamp - **Working as intended**: Backend returns ISO 8601 timestamps in `created_at`. Frontend has `format_pub_date()` for display formatting. This follows best practice.
 
-- [ ] Add backend tests that verify these metrics so both Streamlit and React UIs can rely on them.
+- [x] Move calculations currently done in `app.py` (e.g. in `build_interaction_markdown()` and the History tab) into backend services.
+  - [x] Metrics now computed in `InteractionService.save_interaction()` (lines 87-101)
+  - [x] Stored in database (`Response` model columns: `sources_found`, `sources_used_count`, `avg_rank`)
+  - [x] Returned in `get_interaction_details()` (line 267-269)
+
+- [x] Add backend tests that verify these metrics so both Streamlit and React UIs can rely on them.
+  - [x] Created `tests/test_metrics_computation.py` with 12 comprehensive tests
+  - [x] All 197 backend tests pass
+
+**Files Changed:**
+- `backend/app/api/v1/schemas/responses.py` - Added metrics fields to SendPromptResponse (lines 126-145)
+- `backend/app/models/database.py` - Added metrics columns to Response model (lines 67-70)
+- `backend/app/repositories/interaction_repository.py` - Updated save() to store metrics (lines 44-48, 110-112)
+- `backend/app/services/interaction_service.py` - Compute metrics on save (lines 87-101, 267-269)
+- `backend/app/core/utils.py` - Updated calculate_average_rank to use getattr (line 92-93)
+- `backend/tests/test_metrics_computation.py` - NEW: 12 TDD tests (329 lines)
+
+**Frontend Integration - ✅ COMPLETED** (2025-12-03):
+- [x] Updated `build_interaction_markdown()` (lines 227-236) to use backend metrics
+  - Now uses `details.get('sources_found')`, `details.get('sources_used')`, `details.get('avg_rank')`
+  - Removed manual calculation logic
+- [x] Updated `display_response()` (lines 478-495) to use backend metrics
+  - Uses `getattr(response, 'sources_found')`, `getattr(response, 'sources_used')`, `getattr(response, 'avg_rank')`
+  - Removed all manual counting and calculations
+- [x] Updated `tab_batch()` (lines 962-984) to use backend metrics
+  - Batch results now use `response_data.get('sources_found')`, etc. for API mode
+  - Uses `getattr(response, 'sources_found')`, etc. for network log mode
+  - Removed duplicate avg_rank calculations
+
+**Result**: Frontend now displays metrics computed by backend. All frontend calculations removed. Metrics are computed once on save and returned in all API responses.
 
 ### 2. Model & Provider Naming
 

@@ -42,6 +42,9 @@ class InteractionRepository:
     data_source: str = "api",
     extra_links_count: int = 0,
     sources: List[dict] = None,
+    sources_found: int = 0,
+    sources_used_count: int = 0,
+    avg_rank: Optional[float] = None,
   ) -> int:
     """
     Save a complete interaction (prompt + response + search data).
@@ -58,6 +61,9 @@ class InteractionRepository:
       data_source: Data collection mode ("api" or "network_log")
       extra_links_count: Number of extra links not from search
       sources: List of source dicts linked directly to response (for network_log mode)
+      sources_found: Total number of sources from search
+      sources_used_count: Number of citations with rank (from search results)
+      avg_rank: Average rank of citations
 
     Returns:
       The response ID
@@ -100,7 +106,10 @@ class InteractionRepository:
         response_time_ms=response_time_ms,
         raw_response_json=raw_response,
         data_source=data_source,
-        extra_links_count=extra_links_count
+        extra_links_count=extra_links_count,
+        sources_found=sources_found,
+        sources_used_count=sources_used_count,
+        avg_rank=avg_rank
       )
       self.db.add(response)
       self.db.flush()

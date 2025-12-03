@@ -2,6 +2,7 @@
 
 from typing import List, Optional
 from datetime import datetime
+from types import SimpleNamespace
 
 from app.repositories.interaction_repository import InteractionRepository
 from app.core.utils import normalize_model_name, extract_domain, calculate_average_rank
@@ -84,6 +85,21 @@ class InteractionService:
         if "url" in source and not source.get("domain"):
           source["domain"] = extract_domain(source["url"])
 
+    # Compute metrics
+    # sources_found: Total sources from search queries or top-level sources (network_log)
+    if data_source == "network_log" and sources:
+      sources_found = len(sources)
+    else:
+      sources_found = sum(len(q.get("sources", [])) for q in search_queries)
+
+    # sources_used: Count of citations with rank (from search results)
+    sources_used = len([c for c in citations if c.get("rank") is not None])
+
+    # avg_rank: Average rank of citations (excluding None)
+    # Convert dicts to objects for calculate_average_rank
+    citation_objects = [SimpleNamespace(**c) for c in citations]
+    avg_rank = calculate_average_rank(citation_objects)
+
     # Save to database
     return self.repository.save(
       prompt_text=prompt,
@@ -97,6 +113,9 @@ class InteractionService:
       data_source=data_source,
       extra_links_count=extra_links_count,
       sources=sources,
+      sources_found=sources_found,
+      sources_used_count=sources_used,
+      avg_rank=avg_rank,
     )
 
   def get_recent_interactions(
@@ -233,9 +252,7 @@ class InteractionService:
         for s in (response.sources or [])
       ]
 
-    # Calculate average rank
-    average_rank = calculate_average_rank(response.sources_used)
-
+    # Use stored computed metrics from database
     return SendPromptResponse(
       prompt=response.prompt.prompt_text if response.prompt else "",
       response_text=response.response_text,
@@ -247,10 +264,13 @@ class InteractionService:
       response_time_ms=response.response_time_ms,
       data_source=response.data_source,
       extra_links_count=response.extra_links_count,
+      sources_found=response.sources_found or 0,
+      sources_used=response.sources_used_count or 0,
+      avg_rank=response.avg_rank,
       interaction_id=response.id,
       created_at=response.created_at,
       raw_response=response.raw_response_json,
-      metadata={"average_rank": average_rank} if average_rank else None,
+      metadata={"average_rank": response.avg_rank} if response.avg_rank else None,
     )
 
   def delete_interaction(self, interaction_id: int) -> bool:

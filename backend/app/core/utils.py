@@ -89,7 +89,8 @@ def calculate_average_rank(citations: list) -> Optional[float]:
   """
   if not citations:
     return None
-  ranks = [c.rank for c in citations if c.rank is not None]
+  ranks = [getattr(c, 'rank', None) for c in citations]
+  ranks = [r for r in ranks if r is not None]
   if not ranks:
     return None
   return sum(ranks) / len(ranks)

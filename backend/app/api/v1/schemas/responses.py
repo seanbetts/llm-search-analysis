@@ -121,6 +121,23 @@ class SendPromptResponse(BaseModel):
   model: str = Field(..., description="Model name used")
   response_time_ms: Optional[int] = Field(None, ge=0, description="Response time in milliseconds")
   data_source: str = Field(default="api", description="Data collection mode (api/network_log)")
+
+  # Computed metrics
+  sources_found: int = Field(
+    default=0,
+    ge=0,
+    description="Total number of sources from search queries"
+  )
+  sources_used: int = Field(
+    default=0,
+    ge=0,
+    description="Number of citations with rank (from search results)"
+  )
+  avg_rank: Optional[float] = Field(
+    None,
+    ge=0,
+    description="Average rank of citations from search results"
+  )
   extra_links_count: int = Field(
     default=0,
     ge=0,
@@ -146,7 +163,11 @@ class SendPromptResponse(BaseModel):
           "provider": "openai",
           "model": "gpt-4o",
           "response_time_ms": 1500,
-          "data_source": "api"
+          "data_source": "api",
+          "sources_found": 5,
+          "sources_used": 3,
+          "avg_rank": 2.3,
+          "extra_links_count": 1
         }
       ]
     }
