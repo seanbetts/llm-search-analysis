@@ -427,13 +427,9 @@ def display_response(response, prompt=None):
         st.caption("Sources the model consulted via web search")
 
         # Build URL -> source lookup for metadata fallback
-        # For API: sources are in query.sources; for network logs: sources are in response.sources
-        if getattr(response, 'data_source', 'api') == 'network_log':
-            url_to_source = {s.url: s for s in response.sources if getattr(s, "url", None)}
-        else:
-            # API: gather sources from all queries
-            all_sources = [s for q in response.search_queries for s in q.sources]
-            url_to_source = {s.url: s for s in all_sources if getattr(s, "url", None)}
+        # Backend provides all_sources pre-aggregated for both API and network_log modes
+        all_sources = getattr(response, 'all_sources', []) or []
+        url_to_source = {s.url: s for s in all_sources if getattr(s, "url", None)}
 
         for i, citation in enumerate(citations_with_rank, 1):
             with st.container():
@@ -615,9 +611,8 @@ def tab_interactive():
                     # Convert citations
                     citations = [SimpleNamespace(**citation) for citation in response_data.get('citations', [])]
 
-                    # Convert sources - use all_sources for network_log, sources for API
-                    # For network_log mode, sources are in all_sources field
-                    sources = [SimpleNamespace(**src) for src in response_data.get('all_sources') or response_data.get('sources', [])]
+                    # Convert sources - backend now provides all_sources for both modes
+                    all_sources = [SimpleNamespace(**src) for src in response_data.get('all_sources', [])]
 
                     # Create response object
                     response = SimpleNamespace(
@@ -625,7 +620,7 @@ def tab_interactive():
                         model=response_data.get('model'),
                         response_text=response_data.get('response_text'),
                         search_queries=search_queries,
-                        sources=sources,
+                        all_sources=all_sources,
                         citations=citations,
                         response_time_ms=response_data.get('response_time_ms'),
                         data_source=response_data.get('data_source', 'api'),

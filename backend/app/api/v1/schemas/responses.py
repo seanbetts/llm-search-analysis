@@ -113,7 +113,7 @@ class SendPromptResponse(BaseModel):
   )
   all_sources: Optional[List[Source]] = Field(
     default_factory=list,
-    description="All sources (for network_log mode, where sources are not linked to search queries)"
+    description="All sources aggregated from all search queries (API mode) or directly from response (network_log mode). Always populated for consistent frontend handling."
   )
 
   # Metadata

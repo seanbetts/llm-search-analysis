@@ -359,15 +359,34 @@ app.py (1,605 lines)
 
 **Result**: Markdown export logic moved to backend. Frontend now calls backend API instead of generating markdown locally. 116 lines of duplicate logic removed from frontend.
 
-### 4. Network-Log Specific Mapping
+### 4. Network-Log Specific Mapping - ✅ COMPLETED (2025-12-03)
 
-- [ ] Consolidate network-log semantics in the backend:
-  - Provide a consistent JSON shape for `sources`, `citations`, and network-log-specific fields.
-  - Ensure `data_source` is explicit, and that the backend provides already-aggregated lists that the UI can render without special-case logic.
+**Backend Implementation - ✅ COMPLETED**:
+- [x] Updated `InteractionService.get_interaction_details()` to populate `all_sources` for both API and network_log modes
+  - API mode: Aggregates sources from all search queries
+  - Network_log mode: Uses sources directly from response
+  - Provides consistent, pre-aggregated list for frontend
+- [x] Updated schema description for `all_sources` field to reflect it's always populated
+- [x] Verified all 211 backend tests passing including 4 network_log-specific tests:
+  - `test_network_log_mode_all_sources_handling` - API contract test
+  - `test_metrics_with_network_log_mode` - metrics computation test
+  - `test_network_log_exclusive_fields` - repository test
+  - `test_mixed_api_and_network_log_data` - integration test
 
-- [ ] Add backend tests for network-log data so UI code can treat network-log vs API data uniformly where possible.
+**Frontend Integration - ✅ COMPLETED**:
+- [x] Removed special-case logic for network_log mode in `app.py` (lines 429-436)
+  - Previously: Checked `data_source` and gathered sources differently
+  - Now: Uses `all_sources` field directly for both modes
+- [x] Updated batch tab source handling (lines 614-616)
+  - Simplified to use `all_sources` field consistently
+- [x] Both API and network_log data now handled uniformly
 
-**Result:** Most domain logic lives in the backend; the frontend becomes a relatively thin renderer over rich JSON responses.
+**Testing - ✅ COMPLETED**:
+- [x] All 211 backend tests passing
+- [x] API endpoint verified to return `all_sources` field
+- [x] Docker container rebuilt and restarted with changes
+
+**Result**: Backend provides consistent, pre-aggregated `all_sources` field for both API and network_log modes. Frontend eliminates special-case logic and treats both data sources uniformly. Most domain logic lives in backend; frontend is a thin renderer over rich JSON responses.
 
 ---
 

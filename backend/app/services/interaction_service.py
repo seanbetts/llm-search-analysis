@@ -242,9 +242,11 @@ class InteractionService:
       for c in (response.sources_used or [])
     ]
 
-    # For network_log mode, convert direct sources to schemas
+    # Populate all_sources for both API and network_log modes
+    # This provides a consistent, pre-aggregated list for the frontend
     all_sources = []
     if response.data_source == 'network_log' and response.sources:
+      # Network_log: sources are directly on response
       all_sources = [
         SourceSchema(
           url=s.url,
@@ -258,6 +260,22 @@ class InteractionService:
         )
         for s in (response.sources or [])
       ]
+    else:
+      # API: gather all sources from search queries
+      for query in (response.search_queries or []):
+        for s in (query.sources or []):
+          all_sources.append(
+            SourceSchema(
+              url=s.url,
+              title=s.title,
+              domain=s.domain,
+              rank=s.rank,
+              pub_date=s.pub_date,
+              snippet_text=s.snippet_text,
+              internal_score=s.internal_score,
+              metadata=s.metadata_json,
+            )
+          )
 
     # Use stored computed metrics from database
     model = response.prompt.session.model_used if response.prompt and response.prompt.session else ""
