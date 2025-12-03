@@ -15,6 +15,13 @@ from urllib.parse import urlparse
 from src.config import Config
 from frontend.api_client import APIClient, APIClientError, APINotFoundError
 from frontend.styles import load_styles
+from frontend.utils import format_pub_date
+from frontend.components.response import (
+  sanitize_response_markdown,
+  format_response_text,
+  extract_images_from_response
+)
+from frontend.components.models import get_all_models
 
 # Page config
 st.set_page_config(
@@ -52,164 +59,6 @@ def initialize_session_state():
     if 'network_show_browser' not in st.session_state:
         st.session_state.network_show_browser = False  # Default: headless mode (browser hidden)
 
-
-def format_pub_date(pub_date: str) -> str:
-    """Format ISO pub_date to a friendly string."""
-    if not pub_date:
-        return ""
-    try:
-        dt = datetime.fromisoformat(pub_date)
-        return dt.strftime("%a, %b %d, %Y %H:%M UTC")
-    except Exception:
-        return pub_date
-
-
-def sanitize_response_markdown(text: str) -> str:
-    """Remove heavy dividers and downscale large headings so they don't exceed the section title."""
-    if not text:
-        return ""
-
-    cleaned_lines = []
-    divider_pattern = re.compile(r"^\s*[-_*]{3,}\s*$")
-    heading_pattern = re.compile(r"^(#{1,6})\s+(.*)$")
-
-    for line in text.splitlines():
-        # Drop markdown horizontal rules
-        if divider_pattern.match(line):
-            continue
-
-        # Normalize headings: ensure none are larger than level 3
-        m = heading_pattern.match(line)
-        if m:
-            hashes, content = m.groups()
-            # Downscale: any heading becomes at most level 4 to stay below section titles
-            line = f"#### {content}"
-        cleaned_lines.append(line)
-
-    cleaned = "\n".join(cleaned_lines)
-    # Remove simple HTML <hr> tags as well
-    cleaned = re.sub(r"<\s*hr\s*/?\s*>", "", cleaned, flags=re.IGNORECASE)
-    return cleaned.strip()
-
-
-def format_response_text(text: str, citations: list) -> str:
-    """
-    Format response text by converting reference-style citation links to inline links.
-
-    ChatGPT includes markdown reference links at the bottom like:
-    [1]: URL "Title"
-    [2]: URL "Title"
-
-    And uses them inline like: [Text][1]
-
-    We convert these to inline markdown links: [Text](URL)
-    Then remove the reference definitions.
-    """
-    if not text:
-        return ""
-
-    # Step 1: Extract reference-style link definitions into a mapping
-    # Pattern: [N]: URL "Title" or [N]: URL
-    # Handle titles with escaped quotes by matching everything after URL to end of line
-    reference_pattern = r'^\[(\d+)\]:\s+(https?://\S+)(?:\s+.*)?$'
-    references = {}
-    for match in re.finditer(reference_pattern, text, flags=re.MULTILINE):
-        ref_num = match.group(1)
-        url = match.group(2)
-        references[ref_num] = url
-
-    # Step 2: Replace reference-style links with inline links
-    # Pattern: [text][N] where N is a number
-    def replace_reference_link(match):
-        link_text = match.group(1)
-        ref_num = match.group(2)
-        if ref_num in references:
-            return f"[{link_text}]({references[ref_num]})"
-        return match.group(0)  # Keep original if reference not found
-
-    text = re.sub(r'\[([^\]]+)\]\[(\d+)\]', replace_reference_link, text)
-
-    # Step 3: Remove the reference definitions from the bottom
-    text = re.sub(reference_pattern, '', text, flags=re.MULTILINE)
-
-    # Step 4: Clean up any resulting multiple newlines
-    text = re.sub(r'\n{3,}', '\n\n', text)
-
-    return sanitize_response_markdown(text.strip())
-
-
-def extract_images_from_response(text: str):
-    """Extract image URLs from markdown or img tags and return cleaned text."""
-    if not text:
-        return text, []
-    images = []
-
-    # Markdown images ![alt](url)
-    def md_repl(match):
-        url = match.group(1)
-        if url:
-            images.append(url)
-        return ""  # strip from text
-    text = re.sub(r"!\[[^\]]*\]\(([^) ]+)[^)]*\)", md_repl, text)
-
-    # HTML img tags
-    def html_repl(match):
-        src = match.group(1)
-        if src:
-            images.append(src)
-        return ""
-    text = re.sub(r'<img[^>]+src=["\']([^"\']+)["\'][^>]*>', html_repl, text, flags=re.IGNORECASE)
-
-    return text.strip(), images
-
-def get_all_models():
-    """Get all available models with provider labels."""
-    try:
-        # Get providers from API
-        api_client = st.session_state.api_client
-        providers = api_client.get_providers()
-
-        models = {}
-
-        provider_labels = {
-            'openai': '🟢 OpenAI',
-            'google': '🔵 Google',
-            'anthropic': '🟣 Anthropic'
-        }
-
-        # Model display names
-        model_names = {
-            # Anthropic
-            'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
-            'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
-            'claude-opus-4-1-20250805': 'Claude Opus 4.1',
-            # OpenAI
-            'gpt-5.1': 'GPT-5.1',
-            'gpt-5-mini': 'GPT-5 Mini',
-            'gpt-5-nano': 'GPT-5 Nano',
-            # Google
-            'gemini-3-pro-preview': 'Gemini 3 Pro (Preview)',
-            'gemini-2.5-flash': 'Gemini 2.5 Flash',
-            'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite',
-            # Network capture
-            'ChatGPT (Free)': 'ChatGPT (Free)',
-            'chatgpt-free': 'ChatGPT (Free)',
-        }
-
-        for provider in providers:
-            if provider['is_active']:
-                provider_name = provider['name']
-                for model in provider['supported_models']:
-                    # Get formatted model name
-                    formatted_model = model_names.get(model, model)
-                    # Create label: "🟢 OpenAI - GPT-5.1"
-                    label = f"{provider_labels[provider_name]} - {formatted_model}"
-                    models[label] = (provider_name, model)
-
-        return models
-    except Exception as e:
-        st.error(f"Error loading models: {str(e)}")
-        return {}
 
 def display_response(response, prompt=None):
     """Display the LLM response with search metadata."""
