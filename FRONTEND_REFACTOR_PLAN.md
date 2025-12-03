@@ -394,10 +394,29 @@ app.py (1,605 lines)
 
 **Objective:** Make `app.py` small and comprehensible, with tab-specific modules and minimal, view-only helpers.
 
-### 1. Split `app.py` by Responsibility
+### 1. Extract CSS and Create Module Structure - ✅ COMPLETED (2025-12-03)
+
+**Module Structure Created - ✅ COMPLETED**:
+- [x] Created `frontend/__init__.py` - root module
+- [x] Created `frontend/styles.py` with `load_styles()` function
+- [x] Created `frontend/tabs/` directory structure for tab modules
+- [x] Moved 65 lines of CSS from app.py to styles module
+
+**Updated app.py - ✅ COMPLETED**:
+- [x] Added import: `from frontend.styles import load_styles`
+- [x] Replaced inline CSS block with `load_styles()` call
+- [x] Reduced app.py from 1418 to 1353 lines (-65 lines)
+
+**Testing - ✅ COMPLETED**:
+- [x] Streamlit app tested and functional
+- [x] CSS styles loading correctly via module
+
+**Result**: CSS now in dedicated, reusable module. Better separation of concerns and improved maintainability.
+
+### 2. Split `app.py` by Responsibility
 
 - [ ] Keep in `app.py`:
-  - Page config and global CSS.
+  - Page config and CSS loading (via `load_styles()`).
   - `initialize_session_state()` (slimmed down).
   - `sidebar_info()`.
   - `main()` function that wires tabs.
@@ -407,11 +426,7 @@ app.py (1,605 lines)
   - `frontend/tabs/batch.py` with `tab_batch()`.
   - `frontend/tabs/history.py` with `tab_history()`.
 
-- [ ] Extract global CSS from `app.py`:
-  - Move the long `<style>...</style>` block into a dedicated helper (e.g. `frontend/styles.py`) or a separate CSS file (e.g. `frontend/styles.css`).
-  - Keep `app.py` responsible only for injecting the CSS via a small wrapper (e.g. `st.markdown(load_styles(), unsafe_allow_html=True)`).
-
-### 2. Introduce Minimal UI Helpers
+### 3. Introduce Minimal UI Helpers
 
 - [ ] `frontend/components/metrics.py`:
   - Functions to render the metrics row given backend-provided metrics (no calculations inside).
@@ -424,7 +439,7 @@ app.py (1,605 lines)
     - `sanitize_response_markdown()`.
     - Image extraction and inline display.
 
-### 3. Centralize Frontend Utilities (Thin Only)
+### 4. Centralize Frontend Utilities (Thin Only)
 
 - [ ] `frontend/utils.py` for small, Streamlit-side helpers that:
   - Format any remaining timestamps (if not already formatted by backend).
@@ -440,7 +455,7 @@ app.py (1,605 lines)
   - Use backend-provided display fields where possible.
   - Reserve constants for UI behaviour/config, not domain semantics.
 
-### 4. Unify Error Handling
+### 5. Unify Error Handling
 
 - [ ] Implement a helper like `safe_api_call(callable)` that:
   - Wraps calls to `APIClient`.
