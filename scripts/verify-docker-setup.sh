@@ -29,34 +29,39 @@ fi
 echo -e "${GREEN}✅ Docker is running${NC}"
 echo ""
 
-# Check Docker Compose is installed
+# Detect and check Docker Compose (V2 vs V1)
 echo "2️⃣  Checking Docker Compose..."
-if ! docker-compose --version > /dev/null 2>&1; then
+if docker compose version > /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+    COMPOSE_VERSION=$(docker compose version)
+elif command -v docker-compose > /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker-compose"
+    COMPOSE_VERSION=$(docker-compose --version)
+else
     echo -e "${RED}❌ Docker Compose is not installed${NC}"
     exit 1
 fi
-COMPOSE_VERSION=$(docker-compose --version)
 echo -e "${GREEN}✅ $COMPOSE_VERSION${NC}"
 echo ""
 
 # Check backend container is running
 echo "3️⃣  Checking backend container..."
-if ! docker-compose ps | grep "llm-search-api" | grep -q "Up"; then
+if ! $DOCKER_COMPOSE ps | grep "llm-search-api" | grep -q "Up"; then
     echo -e "${YELLOW}⚠️  Backend container is not running${NC}"
     echo "Starting backend..."
-    docker-compose up -d
+    $DOCKER_COMPOSE up -d
     echo "Waiting for backend to be healthy (30s)..."
     sleep 30
 fi
 
-BACKEND_STATUS=$(docker-compose ps --format "table {{.Name}}\t{{.Status}}" | grep "llm-search-api" || echo "")
+BACKEND_STATUS=$($DOCKER_COMPOSE ps --format "table {{.Name}}\t{{.Status}}" | grep "llm-search-api" || echo "")
 echo "$BACKEND_STATUS"
 echo ""
 
 # Check backend container is healthy
 if ! echo "$BACKEND_STATUS" | grep -q "healthy"; then
     echo -e "${RED}❌ Backend container is not healthy${NC}"
-    echo "Check logs with: docker-compose logs api"
+    echo "Check logs with: $DOCKER_COMPOSE logs api"
     exit 1
 fi
 echo -e "${GREEN}✅ Backend container is healthy${NC}"
@@ -145,10 +150,10 @@ else
 fi
 echo ""
 echo "📊 Backend Commands:"
-echo "   View logs: docker-compose logs -f api"
-echo "   Restart: docker-compose restart api"
-echo "   Stop: docker-compose down"
-echo "   Rebuild: docker-compose up -d --build"
+echo "   View logs: $DOCKER_COMPOSE logs -f api"
+echo "   Restart: $DOCKER_COMPOSE restart api"
+echo "   Stop: $DOCKER_COMPOSE down"
+echo "   Rebuild: $DOCKER_COMPOSE up -d --build"
 echo ""
 echo "🎨 Frontend Commands:"
 echo "   Start: ./scripts/start-hybrid.sh"

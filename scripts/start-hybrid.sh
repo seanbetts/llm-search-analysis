@@ -38,9 +38,20 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
+# Detect docker compose command (V2 vs V1)
+if docker compose version > /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+elif command -v docker-compose > /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker-compose"
+else
+    echo -e "${YELLOW}❌ Docker Compose not found${NC}"
+    echo "Please install Docker Compose and try again."
+    exit 1
+fi
+
 echo "📦 Step 1: Starting backend (Docker)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-docker compose up -d
+$DOCKER_COMPOSE up -d
 
 # Wait for backend to be healthy
 echo ""
@@ -52,7 +63,7 @@ for i in {1..30}; do
     fi
     if [ $i -eq 30 ]; then
         echo -e "${YELLOW}⚠️  Backend health check timeout${NC}"
-        echo "Check logs with: docker compose logs api"
+        echo "Check logs with: $DOCKER_COMPOSE logs api"
         exit 1
     fi
     sleep 1
@@ -91,7 +102,7 @@ echo "   API Docs: http://localhost:8000/docs"
 echo ""
 echo "💡 To stop:"
 echo "   • Frontend: Press Ctrl+C"
-echo "   • Backend: docker compose down"
+echo "   • Backend: $DOCKER_COMPOSE down"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
