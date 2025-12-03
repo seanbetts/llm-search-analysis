@@ -5,7 +5,12 @@ from datetime import datetime
 from types import SimpleNamespace
 
 from app.repositories.interaction_repository import InteractionRepository
-from app.core.utils import normalize_model_name, extract_domain, calculate_average_rank
+from app.core.utils import (
+  normalize_model_name,
+  extract_domain,
+  calculate_average_rank,
+  get_model_display_name,
+)
 from app.api.v1.schemas.responses import (
   SendPromptResponse,
   InteractionSummary,
@@ -161,11 +166,13 @@ class InteractionService:
         else ""
       )
 
+      model = response.prompt.session.model_used if response.prompt and response.prompt.session else ""
       summary = InteractionSummary(
         interaction_id=response.id,
         prompt=response.prompt.prompt_text if response.prompt else "",
         provider=response.prompt.session.provider.name if response.prompt and response.prompt.session else "",
-        model=response.prompt.session.model_used if response.prompt and response.prompt.session else "",
+        model=model,
+        model_display_name=get_model_display_name(model) if model else None,
         response_preview=response_preview,
         search_query_count=search_query_count,
         source_count=source_count,
@@ -253,6 +260,7 @@ class InteractionService:
       ]
 
     # Use stored computed metrics from database
+    model = response.prompt.session.model_used if response.prompt and response.prompt.session else ""
     return SendPromptResponse(
       prompt=response.prompt.prompt_text if response.prompt else "",
       response_text=response.response_text,
@@ -260,7 +268,8 @@ class InteractionService:
       citations=citations,
       all_sources=all_sources,
       provider=response.prompt.session.provider.name if response.prompt and response.prompt.session else "",
-      model=response.prompt.session.model_used if response.prompt and response.prompt.session else "",
+      model=model,
+      model_display_name=get_model_display_name(model) if model else None,
       response_time_ms=response.response_time_ms,
       data_source=response.data_source,
       extra_links_count=response.extra_links_count,

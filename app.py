@@ -129,60 +129,6 @@ def format_pub_date(pub_date: str) -> str:
         return pub_date
 
 
-def normalize_model_id(model: str) -> str:
-    """Normalize model identifiers for consistency."""
-    if model == "gpt-5-1":
-        return "gpt-5.1"
-    return model
-
-
-def get_model_display_name(model: str) -> str:
-    """
-    Get formatted display name for a model.
-
-    Maps known model IDs to friendly display names, and formats
-    unknown model IDs by converting hyphens to spaces and capitalizing.
-    """
-    # Model display names mapping
-    model_names = {
-        # Anthropic (multiple format variants for robustness)
-        'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
-        'claude-sonnet-4-5.2-0250929': 'Claude Sonnet 4.5',  # Alternative format with .2
-        'claude-sonnet-4.5-20250929': 'Claude Sonnet 4.5',   # With period separator
-        'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
-        'claude-haiku-4.5-20251001': 'Claude Haiku 4.5',
-        'claude-opus-4-1-20250805': 'Claude Opus 4.1',
-        'claude-opus-4.1-20250805': 'Claude Opus 4.1',
-        # OpenAI
-        'gpt-5.1': 'GPT-5.1',
-        'gpt-5-1': 'GPT-5.1',
-        'gpt-5-mini': 'GPT-5 Mini',
-        'gpt-5-nano': 'GPT-5 Nano',
-        # Google
-        'gemini-3-pro-preview': 'Gemini 3 Pro (Preview)',
-        'gemini-2.5-flash': 'Gemini 2.5 Flash',
-        'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite',
-        # Network capture
-        'ChatGPT (Free)': 'ChatGPT (Free)',
-        'chatgpt-free': 'ChatGPT (Free)',
-        'ChatGPT': 'ChatGPT (Free)',
-    }
-
-    # Return mapped name if available
-    if model in model_names:
-        return model_names[model]
-
-    # Fallback: Format unknown model IDs nicely
-    # Remove date suffixes (e.g., -20250929 or -0250929)
-    import re
-    formatted = re.sub(r'-\d{7,8}$', '', model)
-    # Remove any trailing version numbers like .2
-    formatted = re.sub(r'\.\d+$', '', formatted)
-    # Convert hyphens to spaces and capitalize words
-    formatted = ' '.join(word.capitalize() for word in formatted.split('-'))
-    return formatted
-
-
 def sanitize_response_markdown(text: str) -> str:
     """Remove heavy dividers and downscale large headings so they don't exceed the section title."""
     if not text:
@@ -468,7 +414,9 @@ def display_response(response, prompt=None):
     with col1:
         st.metric("Provider", provider_names.get(response.provider.lower(), response.provider))
     with col2:
-        st.metric("Model", get_model_display_name(response.model))
+        # Use backend-provided model_display_name (Phase 1.2)
+        model_display = getattr(response, 'model_display_name', None) or response.model
+        st.metric("Model", model_display)
     with col3:
         response_time = f"{response.response_time_ms / 1000:.1f}s" if response.response_time_ms else "N/A"
         st.metric("Response Time", response_time)
@@ -1112,8 +1060,12 @@ def tab_history():
         # Format average rank for display
         df['avg_rank_display'] = df['avg_rank'].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "N/A")
 
-        # Format model names for display
-        df['model_display'] = df['model'].apply(lambda x: get_model_display_name(x) if pd.notna(x) else x)
+        # Use backend-provided model_display_name (Phase 1.2)
+        # Fallback to raw model name if display name not available
+        df['model_display'] = df.apply(
+            lambda row: row.get('model_display_name') or row['model'] if pd.notna(row.get('model')) else row.get('model'),
+            axis=1
+        )
 
         # Filters and sorting layout
         col_search, col_analysis, col_provider, col_model = st.columns([1.2, 1, 1, 1])
@@ -1138,10 +1090,15 @@ def tab_history():
             ) if provider_options else []
 
         with col_model:
-            # Get unique raw model names and create formatted options
-            raw_model_options = sorted(df['model'].dropna().unique().tolist())
-            # Create display options mapping: "Formatted Name" -> "raw-model-id"
-            model_display_options = {get_model_display_name(m): m for m in raw_model_options}
+            # Get unique display names (Phase 1.2: now from backend)
+            model_display_options_df = df[['model', 'model_display']].drop_duplicates()
+            # Create mapping: "Display Name" -> "raw-model-id"
+            model_display_options = {
+                row['model_display']: row['model']
+                for _, row in model_display_options_df.iterrows()
+                if pd.notna(row['model'])
+            }
+            model_display_options = dict(sorted(model_display_options.items()))
             selected_model_displays = st.multiselect(
                 "Model",
                 options=list(model_display_options.keys()),
@@ -1276,7 +1233,9 @@ def tab_history():
                 with col1:
                     st.metric("Provider", provider_names.get(details['provider'].lower(), details['provider']))
                 with col2:
-                    st.metric("Model", get_model_display_name(details['model']))
+                    # Use backend-provided model_display_name (Phase 1.2)
+                    model_display = details.get('model_display_name') or details['model']
+                    st.metric("Model", model_display)
                 with col3:
                     st.metric("Response Time", response_time_s)
                 with col4:

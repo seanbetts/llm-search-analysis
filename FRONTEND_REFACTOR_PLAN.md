@@ -299,17 +299,33 @@ app.py (1,605 lines)
 
 **Result**: Frontend now displays metrics computed by backend. All frontend calculations removed. Metrics are computed once on save and returned in all API responses.
 
-### 2. Model & Provider Naming
+### 2. Model & Provider Naming - ✅ COMPLETED (2025-12-03)
 
-- [ ] Move `normalize_model_id()` and `get_model_display_name()` logic into:
-  - A backend utility module used by services and/or
-  - Backend response fields like `provider_display` and `model_display` that are ready for UI.
+**Backend Implementation - ✅ COMPLETED**:
+- [x] Created `get_model_display_name()` in `backend/app/core/utils.py` (lines 100-160)
+  - Maps known model IDs to friendly display names (Claude Sonnet 4.5, GPT-5.1, Gemini 2.5 Flash, etc.)
+  - Handles multiple format variants for robustness (e.g., claude-sonnet-4-5-20250929, claude-sonnet-4.5-20250929)
+  - Fallback formatting for unknown models (removes date suffixes, capitalizes words)
+- [x] Added 14 comprehensive TDD tests in `backend/tests/test_model_display_names.py`
+  - Tests for Anthropic, OpenAI, Google, ChatGPT models
+  - Tests for unknown models with date suffixes and version numbers
+  - All 211 backend tests passing
+- [x] Extended API response schemas:
+  - Added `model_display_name: Optional[str]` to `SendPromptResponse` (line 122)
+  - Added `model_display_name: Optional[str]` to `InteractionSummary` (line 185)
+- [x] Updated services to compute and set display names:
+  - `InteractionService.get_recent_interactions()` (line 175)
+  - `InteractionService.get_interaction_details()` (line 270)
+  - `ProviderService.send_prompt()` (line 189)
 
-- [ ] Add tests to ensure name mappings are stable and consistent across UIs.
+**Frontend Integration - ✅ COMPLETED**:
+- [x] Updated `display_response()` (line 472) to use backend `model_display_name`
+- [x] Updated `tab_history()` (line 1119) to use backend `model_display_name` for DataFrame
+- [x] Updated model filter dropdown (line 1148) to use backend display names
+- [x] Updated `tab_details()` (line 1291) to use backend `model_display_name`
+- [x] Removed `normalize_model_id()` and `get_model_display_name()` from frontend (56 lines removed)
 
-- [ ] In the frontend, treat any remaining mapping helpers (e.g. display-name fallbacks) as temporary shims:
-  - Prefer using backend-provided display fields wherever available.
-  - Avoid introducing new long-lived provider/model tables in the frontend.
+**Result**: Backend now provides formatted model display names in all API responses. Frontend removed duplicate 56-line mapping logic. Single source of truth for model name formatting.
 
 ### 3. Export Logic (Markdown & CSV)
 

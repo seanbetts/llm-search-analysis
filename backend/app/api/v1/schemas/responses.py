@@ -119,6 +119,7 @@ class SendPromptResponse(BaseModel):
   # Metadata
   provider: str = Field(..., description="LLM provider name")
   model: str = Field(..., description="Model name used")
+  model_display_name: Optional[str] = Field(None, description="Formatted display name for the model")
   response_time_ms: Optional[int] = Field(None, ge=0, description="Response time in milliseconds")
   data_source: str = Field(default="api", description="Data collection mode (api/network_log)")
 
@@ -181,6 +182,7 @@ class InteractionSummary(BaseModel):
   prompt: str = Field(..., description="The prompt text")
   provider: str = Field(..., description="LLM provider name")
   model: str = Field(..., description="Model name used")
+  model_display_name: Optional[str] = Field(None, description="Formatted display name for the model")
   response_preview: str = Field(..., description="First 200 chars of response")
 
   search_query_count: int = Field(default=0, ge=0, description="Number of search queries")

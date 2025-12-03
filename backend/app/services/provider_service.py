@@ -5,6 +5,7 @@ from app.config import settings
 from app.services.providers import ProviderFactory, ProviderResponse
 from app.api.v1.schemas.responses import ProviderInfo, SendPromptResponse
 from app.services.interaction_service import InteractionService
+from app.core.utils import get_model_display_name
 
 
 class ProviderService:
@@ -185,6 +186,7 @@ class ProviderService:
         citations=citations_schema,
         provider=provider_response.provider,
         model=provider_response.model,
+        model_display_name=get_model_display_name(provider_response.model),
         response_time_ms=provider_response.response_time_ms,
         data_source=provider_response.data_source,
         extra_links_count=provider_response.extra_links_count,
