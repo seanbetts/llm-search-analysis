@@ -115,7 +115,7 @@ HOST=127.0.0.1
 PORT=8000
 
 # Database (relative to backend directory)
-DATABASE_URL=sqlite:///../data/llm_search.db
+DATABASE_URL=sqlite:///./data/llm_search.db
 
 # Frontend API connection
 API_BASE_URL=http://localhost:8000
@@ -153,12 +153,12 @@ DATABASE_URL=sqlite:///./data/llm_search.db
 ### Local Development
 
 ```bash
-DATABASE_URL=sqlite:///../data/llm_search.db
+DATABASE_URL=sqlite:///./data/llm_search.db
 ```
 
-- **Path:** `./data/llm_search.db` (from project root)
-- **Relative to:** `backend/` directory
-- **Shared:** Both backend and frontend can access
+- **Path:** `./backend/data/llm_search.db` (from project root)
+- **Relative to:** run backend commands from `backend/`
+- **Shared:** Backend API and Streamlit/CLI tools read the same file
 
 ### Future: PostgreSQL
 
@@ -289,7 +289,7 @@ ANTHROPIC_API_KEY=sk-ant-api03-ABC123...
 
 HOST=127.0.0.1
 PORT=8000
-DATABASE_URL=sqlite:///../data/llm_search.db
+DATABASE_URL=sqlite:///./data/llm_search.db
 API_BASE_URL=http://localhost:8000
 CORS_ORIGINS=["http://localhost:8501","http://localhost:3000"]
 

@@ -23,8 +23,8 @@ class Settings(BaseSettings):
 
   # Database settings
   DATABASE_URL: str = Field(
-    default="sqlite:///../data/llm_search.db",
-    description="SQLite database URL (relative to backend directory, points to project root's data folder)"
+    default="sqlite:///./data/llm_search.db",
+    description="SQLite database URL (relative to backend directory, stored in backend/data/llm_search.db)"
   )
 
   # API Keys for LLM providers
