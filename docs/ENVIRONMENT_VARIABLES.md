@@ -159,6 +159,9 @@ DATABASE_URL=sqlite:///./data/llm_search.db
 - **Path:** `./backend/data/llm_search.db` (from project root)
 - **Relative to:** run backend commands from `backend/`
 - **Shared:** Backend API and Streamlit/CLI tools read the same file
+- **Auto-migration:** The backend now auto-normalizes any legacy
+  `sqlite:///../data/llm_search.db` values to `sqlite:///./data/llm_search.db`,
+  but you should update your `.env` to avoid the warning.
 
 ### Future: PostgreSQL
 

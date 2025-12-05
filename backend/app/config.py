@@ -1,5 +1,6 @@
 from typing import List
-from pydantic import Field
+import logging
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -60,6 +61,28 @@ class Settings(BaseSettings):
     case_sensitive=True,
     extra="ignore",
   )
+
+  @field_validator("DATABASE_URL", mode="before")
+  @classmethod
+  def normalize_database_url(cls, value: str) -> str:
+    """
+    Ensure old ../data paths are normalized to backend/data.
+
+    Older configs pointed at sqlite:///../data/llm_search.db which
+    resolves to the removed root-level data directory. This guard keeps
+    deployments pointed at backend/data even if the env var wasn't updated.
+    """
+    logger = logging.getLogger(__name__)
+
+    if isinstance(value, str) and value.startswith("sqlite:///../data/llm_search.db"):
+      fixed_path = "sqlite:///./data/llm_search.db"
+      logger.warning(
+        "DATABASE_URL=%s detected; normalizing to %s so backend and frontend share the same database",
+        value,
+        fixed_path,
+      )
+      return fixed_path
+    return value
 
 
 # Create global settings instance
