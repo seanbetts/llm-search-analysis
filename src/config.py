@@ -25,7 +25,7 @@ class Config:
     CHATGPT_PASSWORD = os.getenv("CHATGPT_PASSWORD")
 
     # Database
-    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data/llm_search.db")
+    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///backend/data/llm_search.db")
 
     @classmethod
     def get_api_keys(cls) -> dict:

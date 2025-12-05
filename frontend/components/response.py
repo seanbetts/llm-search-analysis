@@ -243,11 +243,12 @@ def display_response(response, prompt=None):
       st.divider()
   else:
     # Network Log: Sources aren't associated with specific queries
-    if response.sources:
-      st.markdown(f"### 📚 Sources Found ({len(response.sources)}):")
+    all_sources = getattr(response, 'all_sources', []) or []
+    if all_sources:
+      st.markdown(f"### 📚 Sources Found ({len(all_sources)}):")
       st.caption("_Note: Network logs don't provide reliable query-to-source mapping._")
-      with st.expander(f"View all {len(response.sources)} sources", expanded=False):
-        for j, source in enumerate(response.sources, 1):
+      with st.expander(f"View all {len(all_sources)} sources", expanded=False):
+        for j, source in enumerate(all_sources, 1):
           url_display = source.url or 'No URL'
           url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
           # Use domain as title fallback when title is missing

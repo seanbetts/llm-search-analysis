@@ -253,3 +253,83 @@ Deliverables:
 	4.	Cost / latency if using LLM-in-the-loop
 	•	Risk: expensive to classify everything via an external LLM.
 	•	Mitigation: start with LLM prototyping, then distil into local transformer models for high-volume paths.
+
+⸻
+
+6. Semantic frame analysis extension (prompt-focused layer)
+
+Building on the core design above, we add an explicit **semantic frame layer** for prompts, inspired by the “Brand Visibility Optimisation in LLM Responses: A Semantic Frame Analysis Approach” proposal.
+
+6.1 Prompt semantic frames
+
+For each prompt, in addition to the existing intent labels, classify it into one or more **semantic frames** that capture how the request is structured:
+	1.	Commercial_transaction frames
+	•	Buying, comparing, selecting options (e.g. “What are some good tools…”, “Which services are best for…”).
+	2.	Evaluation frames
+	•	Assessing quality, reliability, value (e.g. “reliable”, “best”, “recommended”, “affordable”).
+	3.	Need_expression frames
+	•	Expressing requirements, constraints, preferences (e.g. “I need…”, “that ships to UK”, “for freelancers starting out”).
+	4.	Context_specification frames
+	•	Specifying use cases, demographics, situations (e.g. “remote teams”, “sustainable clothing”, “for small businesses”).
+
+These frames sit alongside (not instead of) the interaction / intent layer:
+	•	Intent answers “what is the user trying to do?” (ask, compare, create, troubleshoot, code, etc.).
+	•	Frames answer “how is the request conceptually structured?” (transaction, evaluation, need, context).
+
+6.2 Frame element extraction (prompt features)
+
+For prompts, extract structured **frame elements** that act as rich features for analysis:
+	•	Buyer characteristics
+		– Professional role, experience level, location (e.g. “freelance designer in the UK”).
+	•	Product attributes
+		– Reliability, sustainability, cost-effectiveness, integrations.
+	•	Usage contexts
+		– Remote work, startup environment, personal use, industry context.
+	•	Evaluation criteria
+		– “best”, “reliable”, “affordable”, “recommended”, “most popular”.
+
+These elements are stored as structured lists (not just raw text) so they can be used later for pattern analysis and modelling.
+
+6.3 Storage model additions
+
+Extend the per-interaction storage (e.g. a JSON blob attached to each prompt/response pair) with a **prompt semantics** section:
+	•	prompt_semantics.frames
+		– list of frame labels: [“commercial_transaction”, “evaluation”, …].
+	•	prompt_semantics.elements
+		– buyer_characteristics: [...],
+		– product_attributes: [...],
+		– usage_contexts: [...],
+		– evaluation_criteria: [...].
+
+Example (schematic JSON fragment):
+	{
+	  "prompt_semantics": {
+	    "frames": ["commercial_transaction", "context_specification"],
+	    "elements": {
+	      "buyer_characteristics": ["freelance designer", "UK"],
+	      "product_attributes": ["reliable", "sustainable"],
+	      "usage_contexts": ["remote team", "creative workflows"],
+	      "evaluation_criteria": ["best", "recommended"]
+	    }
+	  }
+	}
+
+This sits alongside the existing axes (topics, industries, brands, intent) and reuses the same modelling strategy (LLM-first with the option to distil to local models later).
+
+6.4 Brand visibility correlation (analysis layer)
+
+With prompt semantic frames and elements stored, we can later compute **brand visibility correlations** without changing the core online classifier:
+	•	Per interaction:
+		– record which brands were mentioned (already in the brand/entity layer),
+		– optionally add a coarse sentiment/valence flag (favourable / neutral / negative).
+	•	Offline analysis:
+		– correlate specific frame combinations and frame elements with:
+			• probability of any brand being mentioned,
+			• probability of particular brands or sectors being mentioned,
+			• probability of favourable vs neutral mentions.
+
+This turns the classifier outputs into a semantic feature space for marketing/brand teams:
+	•	“Which prompt patterns maximise positive mentions for sector X or brand Y?”
+	•	“Which evaluation criteria or contexts most strongly correlate with favourable visibility?”
+
+These correlations live in downstream analytics (dashboards, notebooks) and do not complicate the core classification pipeline; they only rely on the classifier consistently emitting prompt_semantics and brand labels.

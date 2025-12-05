@@ -19,8 +19,18 @@ def tab_batch():
     st.error("No API keys configured. Please set up your .env file with at least one provider API key.")
     return
 
+  # Filter models based on data collection mode
+  if st.session_state.data_collection_mode == 'network_log':
+    # Only OpenAI models supported for network capture
+    model_labels = [label for label in models.keys() if models[label][0] == 'openai']
+    if not model_labels:
+      st.error("Network log mode requires OpenAI models. Please configure OPENAI_API_KEY in your .env file or switch to API mode.")
+      return
+    st.info("🌐 **Network Capture Mode**: Only OpenAI/ChatGPT models available")
+  else:
+    model_labels = list(models.keys())
+
   # Model selection
-  model_labels = list(models.keys())
   selected_labels = st.multiselect(
     "Select Models for Batch",
     model_labels,
@@ -115,7 +125,70 @@ def tab_batch():
 
               # Send prompt and capture
               # Always use 'chatgpt-free' for network capture (free accounts don't have model selection)
-              response = capturer.send_prompt(prompt, 'chatgpt-free')
+              provider_response = capturer.send_prompt(prompt, 'chatgpt-free')
+
+              # Convert ProviderResponse to display format and save to database
+              from types import SimpleNamespace
+              from frontend.helpers.metrics import compute_metrics, get_model_display_name
+
+              search_queries = [SimpleNamespace(
+                query=q.query,
+                sources=[SimpleNamespace(
+                  url=s.url, title=s.title, domain=s.domain, rank=s.rank,
+                  pub_date=s.pub_date, snippet_text=s.snippet_text,
+                  internal_score=s.internal_score, metadata=s.metadata
+                ) for s in q.sources],
+                timestamp=q.timestamp,
+                order_index=q.order_index
+              ) for q in provider_response.search_queries]
+
+              citations = [SimpleNamespace(
+                url=c.url, title=c.title, rank=c.rank,
+                snippet_used=c.snippet_used,
+                citation_confidence=c.citation_confidence,
+                metadata=c.metadata
+              ) for c in provider_response.citations]
+
+              all_sources = [SimpleNamespace(
+                url=s.url, title=s.title, domain=s.domain, rank=s.rank,
+                pub_date=s.pub_date, snippet_text=s.snippet_text,
+                internal_score=s.internal_score, metadata=s.metadata
+              ) for s in provider_response.sources]
+
+              # Compute metrics
+              metrics = compute_metrics(search_queries, citations, all_sources)
+
+              # Create response object
+              response = SimpleNamespace(
+                provider=provider_response.provider,
+                model=provider_response.model,
+                model_display_name=get_model_display_name(provider_response.model),
+                response_text=provider_response.response_text,
+                search_queries=search_queries,
+                all_sources=all_sources,
+                citations=citations,
+                response_time_ms=provider_response.response_time_ms,
+                data_source='network_log',
+                sources_found=metrics['sources_found'],
+                sources_used=metrics['sources_used'],
+                avg_rank=metrics['avg_rank'],
+                extra_links_count=metrics['extra_links_count'],
+                raw_response=provider_response.raw_response
+              )
+
+              # Save to database via backend API
+              st.session_state.api_client.save_network_log(
+                provider=provider_response.provider,
+                model=provider_response.model,
+                prompt=prompt,
+                response_text=provider_response.response_text,
+                search_queries=search_queries,
+                sources=all_sources,
+                citations=citations,
+                response_time_ms=provider_response.response_time_ms,
+                raw_response=provider_response.raw_response,
+                extra_links_count=metrics['extra_links_count']
+              )
 
             finally:
               # Always cleanup browser

@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import PlainTextResponse
 
-from app.api.v1.schemas.requests import SendPromptRequest
+from app.api.v1.schemas.requests import SendPromptRequest, SaveNetworkLogRequest
 from app.api.v1.schemas.responses import (
   SendPromptResponse,
   InteractionSummary,
@@ -159,6 +159,87 @@ async def send_prompt(
       provider_name = request.model.split('-')[0] if request.model else "unknown"
       raise ProviderError(provider_name, str(e))
     # Otherwise, let global handler catch it
+    raise
+
+
+@router.post(
+  "/save-network-log",
+  response_model=SendPromptResponse,
+  status_code=status.HTTP_201_CREATED,
+  summary="Save network_log mode data",
+  description="Save interaction data captured via network_log mode (browser automation). "
+  "This endpoint accepts pre-captured data and saves it to the database.",
+  responses={
+    400: {
+      "description": "Invalid request",
+      "content": {
+        "application/json": {
+          "example": {
+            "error": {
+              "message": "Invalid provider",
+              "code": "INVALID_REQUEST"
+            }
+          }
+        }
+      }
+    },
+    500: {
+      "description": "Internal server error",
+      "content": {
+        "application/json": {
+          "example": {
+            "error": {
+              "message": "Database error occurred",
+              "code": "INTERNAL_SERVER_ERROR"
+            }
+          }
+        }
+      }
+    }
+  }
+)
+async def save_network_log_data(
+  request: SaveNetworkLogRequest,
+  interaction_service: InteractionService = Depends(get_interaction_service),
+):
+  """
+  Save network_log mode data captured by frontend.
+
+  This endpoint is used when the frontend captures LLM interaction data via
+  browser automation (network_log mode). The frontend sends the captured data
+  to this endpoint for database persistence.
+
+  Args:
+    request: SaveNetworkLogRequest with all interaction data
+    interaction_service: InteractionService dependency
+
+  Returns:
+    SendPromptResponse with saved interaction data including interaction_id
+
+  Raises:
+    400: Invalid request
+    500: Internal server error
+  """
+  try:
+    # Save the network_log data to database
+    response = interaction_service.save_network_log_interaction(
+      provider=request.provider,
+      model=request.model,
+      prompt=request.prompt,
+      response_text=request.response_text,
+      search_queries=request.search_queries,
+      sources=request.sources,
+      citations=request.citations,
+      response_time_ms=request.response_time_ms,
+      raw_response=request.raw_response,
+      extra_links_count=request.extra_links_count,
+    )
+    return response
+  except ValueError as e:
+    from app.core.exceptions import InvalidRequestError
+    raise InvalidRequestError(str(e))
+  except Exception as e:
+    # Let global handler catch it
     raise
 
 

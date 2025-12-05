@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field, field_validator
 import re
 
@@ -197,6 +197,116 @@ class BatchRequest(BaseModel):
           "models": ["gpt-4o", "gpt-4o-mini"],
           "data_mode": "api",
           "headless": True
+        }
+      ]
+    }
+  }
+
+
+class SaveNetworkLogRequest(BaseModel):
+  """Request schema for saving network_log mode data captured by frontend."""
+
+  provider: str = Field(
+    ...,
+    description="LLM provider name",
+    examples=["openai"]
+  )
+
+  model: str = Field(
+    ...,
+    description="Model name used",
+    examples=["chatgpt-free"]
+  )
+
+  prompt: str = Field(
+    ...,
+    min_length=1,
+    max_length=10000,
+    description="The prompt text",
+    examples=["What is AI?"]
+  )
+
+  response_text: str = Field(
+    ...,
+    description="The response text from the LLM"
+  )
+
+  search_queries: List[Dict[str, Any]] = Field(
+    default_factory=list,
+    description="List of search queries (with query text and sources)"
+  )
+
+  sources: List[Dict[str, Any]] = Field(
+    default_factory=list,
+    description="All sources found (for network_log mode)"
+  )
+
+  citations: List[Dict[str, Any]] = Field(
+    default_factory=list,
+    description="Citations extracted from response"
+  )
+
+  response_time_ms: int = Field(
+    ...,
+    ge=0,
+    description="Response time in milliseconds"
+  )
+
+  raw_response: Optional[Dict[str, Any]] = Field(
+    None,
+    description="Raw response data"
+  )
+
+  extra_links_count: int = Field(
+    default=0,
+    ge=0,
+    description="Count of extra links (citations not from search)"
+  )
+
+  @field_validator("provider")
+  @classmethod
+  def validate_provider(cls, v: str) -> str:
+    """Validate provider name."""
+    valid_providers = ["openai", "google", "anthropic", "chatgpt"]
+    v_lower = v.lower()
+    if v_lower not in valid_providers:
+      raise ValueError(
+        f"Invalid provider '{v}'. Must be one of: {', '.join(valid_providers)}"
+      )
+    return v_lower
+
+  model_config = {
+    "json_schema_extra": {
+      "examples": [
+        {
+          "provider": "openai",
+          "model": "chatgpt-free",
+          "prompt": "What is AI?",
+          "response_text": "AI stands for Artificial Intelligence...",
+          "search_queries": [
+            {
+              "query": "artificial intelligence definition",
+              "sources": []
+            }
+          ],
+          "sources": [
+            {
+              "url": "https://example.com",
+              "title": "Example Source",
+              "domain": "example.com",
+              "rank": 1
+            }
+          ],
+          "citations": [
+            {
+              "url": "https://example.com",
+              "title": "Example Citation",
+              "rank": 1
+            }
+          ],
+          "response_time_ms": 5000,
+          "raw_response": {},
+          "extra_links_count": 0
         }
       ]
     }

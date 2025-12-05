@@ -6,6 +6,7 @@ from src.config import Config
 from frontend.components.models import get_all_models
 from frontend.components.response import display_response
 from frontend.api_client import APINotFoundError, APIClientError
+from frontend.helpers.metrics import compute_metrics, get_model_display_name
 
 
 def tab_interactive():
@@ -53,57 +54,119 @@ def tab_interactive():
     formatted_model = selected_label.split(' - ', 1)[1] if ' - ' in selected_label else selected_model
     with st.spinner(f"Querying {formatted_model}..."):
       try:
-        # Check data collection mode and route accordingly
         if st.session_state.data_collection_mode == 'network_log':
-          # Use network log capture
+          # NETWORK_LOG MODE: Use ChatGPTCapturer directly (runs on host machine)
           from src.network_capture.chatgpt_capturer import ChatGPTCapturer
 
-          # Only ChatGPT is supported for network logs currently
-          if selected_provider != 'openai':
-            st.error(f"Network log mode is only supported for OpenAI/ChatGPT currently. Selected provider: {selected_provider}")
-            st.session_state.error = "Network log mode only supports OpenAI/ChatGPT"
-            return
-
-          # Check if ChatGPT credentials are configured
-          if not Config.CHATGPT_EMAIL or not Config.CHATGPT_PASSWORD:
-            st.error("ChatGPT credentials not found. Please add CHATGPT_EMAIL and CHATGPT_PASSWORD to your .env file.")
-            st.session_state.error = "Missing ChatGPT credentials"
-            return
-
-          # Initialize and use capturer
+          # Initialize capturer
           capturer = ChatGPTCapturer()
-          capturer.start_browser(headless=not st.session_state.network_show_browser)
 
           try:
-            # Authenticate with credentials from Config
-            # Session persistence will restore saved sessions automatically
-            if not capturer.authenticate(
-              email=Config.CHATGPT_EMAIL,
-              password=Config.CHATGPT_PASSWORD
-            ):
-              raise Exception("Failed to authenticate with ChatGPT")
+            # Start browser
+            headless = not st.session_state.network_show_browser
+            capturer.start_browser(headless=headless)
 
-            # Send prompt and capture
-            # Always use 'chatgpt-free' for network capture (free accounts don't have model selection)
-            response = capturer.send_prompt(prompt, 'chatgpt-free')
+            # Authenticate (anonymous mode if no credentials)
+            capturer.authenticate(
+              email=Config.CHATGPT_EMAIL if Config.CHATGPT_EMAIL else None,
+              password=Config.CHATGPT_PASSWORD if Config.CHATGPT_PASSWORD else None
+            )
+
+            # Send prompt and get response
+            provider_response = capturer.send_prompt(prompt, selected_model)
 
           finally:
-            # Always cleanup browser
-            capturer.stop_browser()
+            # Always stop browser
+            try:
+              capturer.stop_browser()
+            except:
+              pass
+
+          # Convert ProviderResponse to display format
+          search_queries = []
+          for query in provider_response.search_queries:
+            sources = [SimpleNamespace(
+              url=s.url,
+              title=s.title,
+              domain=s.domain,
+              rank=s.rank,
+              pub_date=s.pub_date,
+              snippet_text=s.snippet_text,
+              internal_score=s.internal_score,
+              metadata=s.metadata
+            ) for s in query.sources]
+
+            search_queries.append(SimpleNamespace(
+              query=query.query,
+              sources=sources,
+              timestamp=query.timestamp,
+              order_index=query.order_index
+            ))
+
+          citations = [SimpleNamespace(
+            url=c.url,
+            title=c.title,
+            rank=c.rank,
+            snippet_used=c.snippet_used,
+            citation_confidence=c.citation_confidence,
+            metadata=c.metadata
+          ) for c in provider_response.citations]
+
+          all_sources = [SimpleNamespace(
+            url=s.url,
+            title=s.title,
+            domain=s.domain,
+            rank=s.rank,
+            pub_date=s.pub_date,
+            snippet_text=s.snippet_text,
+            internal_score=s.internal_score,
+            metadata=s.metadata
+          ) for s in provider_response.sources]
+
+          # Compute metrics using shared helper
+          metrics = compute_metrics(search_queries, citations, all_sources)
+
+          # Create response object with computed metrics
+          response = SimpleNamespace(
+            provider=provider_response.provider,
+            model=provider_response.model,
+            model_display_name=get_model_display_name(provider_response.model),
+            response_text=provider_response.response_text,
+            search_queries=search_queries,
+            all_sources=all_sources,
+            citations=citations,
+            response_time_ms=provider_response.response_time_ms,
+            data_source='network_log',
+            sources_found=metrics['sources_found'],
+            sources_used=metrics['sources_used'],
+            avg_rank=metrics['avg_rank'],
+            extra_links_count=metrics['extra_links_count'],
+            raw_response=provider_response.raw_response
+          )
+
+          # Save to database via backend API
+          st.session_state.api_client.save_network_log(
+            provider=provider_response.provider,
+            model=provider_response.model,
+            prompt=prompt,
+            response_text=provider_response.response_text,
+            search_queries=search_queries,
+            sources=all_sources,
+            citations=citations,
+            response_time_ms=provider_response.response_time_ms,
+            raw_response=provider_response.raw_response,
+            extra_links_count=metrics['extra_links_count']
+          )
 
         else:
-          # Use API client to send prompt (handles provider call AND database save)
+          # API MODE: Use backend API (returns all computed metrics)
           response_data = st.session_state.api_client.send_prompt(
             prompt=prompt,
             provider=selected_provider,
-            model=selected_model,
-            data_mode="api",
-            headless=True
+            model=selected_model
           )
 
           # Convert API response dict to object for display_response function
-          from types import SimpleNamespace
-
           # Convert search queries
           search_queries = []
           for query_data in response_data.get('search_queries', []):
@@ -119,7 +182,7 @@ def tab_interactive():
           # Convert citations
           citations = [SimpleNamespace(**citation) for citation in response_data.get('citations', [])]
 
-          # Convert sources - backend now provides all_sources for both modes
+          # Convert sources
           all_sources = [SimpleNamespace(**src) for src in response_data.get('all_sources', [])]
 
           # Create response object with all backend fields

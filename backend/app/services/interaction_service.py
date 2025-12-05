@@ -300,6 +300,58 @@ class InteractionService:
       metadata={"average_rank": response.avg_rank} if response.avg_rank else None,
     )
 
+  def save_network_log_interaction(
+    self,
+    provider: str,
+    model: str,
+    prompt: str,
+    response_text: str,
+    search_queries: List[dict],
+    sources: List[dict],
+    citations: List[dict],
+    response_time_ms: int,
+    raw_response: Optional[dict],
+    extra_links_count: int = 0,
+  ) -> SendPromptResponse:
+    """
+    Save network_log mode interaction and return formatted response.
+
+    This is a convenience method for the /save-network-log endpoint that
+    saves the interaction and returns a fully formatted SendPromptResponse.
+
+    Args:
+      provider: Provider name
+      model: Model name
+      prompt: The prompt text
+      response_text: The response text
+      search_queries: List of search query dicts
+      sources: List of source dicts (for network_log mode)
+      citations: List of citation dicts
+      response_time_ms: Response time in milliseconds
+      raw_response: Raw response data
+      extra_links_count: Number of extra links
+
+    Returns:
+      SendPromptResponse with interaction_id and all data
+    """
+    # Save to database
+    response_id = self.save_interaction(
+      prompt=prompt,
+      provider=provider,
+      model=model,
+      response_text=response_text,
+      response_time_ms=response_time_ms,
+      search_queries=search_queries,
+      citations=citations,
+      raw_response=raw_response or {},
+      data_source="network_log",
+      extra_links_count=extra_links_count,
+      sources=sources,
+    )
+
+    # Retrieve the saved interaction to return full data
+    return self.get_interaction_details(response_id)
+
   def delete_interaction(self, interaction_id: int) -> bool:
     """
     Delete an interaction.

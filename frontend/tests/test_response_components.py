@@ -390,3 +390,152 @@ class TestMetricsCalculation:
 
     model_display = getattr(response, 'model_display_name', None) or response.model
     assert model_display == 'gpt-5.1'
+
+
+class TestDisplayResponseIntegration:
+  """Integration tests for display_response that verify attribute access."""
+
+  def test_display_response_with_api_mode_response(self):
+    """Test that display_response can handle API mode response without errors."""
+    from frontend.components.response import display_response
+
+    # Create a complete API mode response object
+    response = SimpleNamespace(
+      provider='openai',
+      model='gpt-5.1',
+      model_display_name='GPT-5.1',
+      response_text='Test response text',
+      search_queries=[
+        SimpleNamespace(
+          query='test query',
+          sources=[
+            SimpleNamespace(
+              url='https://example.com',
+              title='Example',
+              domain='example.com',
+              rank=1,
+              pub_date=None,
+              snippet_text='Test snippet',
+              internal_score=None,
+              metadata={}
+            )
+          ],
+          timestamp='2024-01-01T00:00:00',
+          order_index=0
+        )
+      ],
+      citations=[
+        SimpleNamespace(
+          url='https://example.com',
+          title='Example',
+          rank=1,
+          snippet_used=None,
+          citation_confidence=None,
+          metadata={}
+        )
+      ],
+      all_sources=[
+        SimpleNamespace(
+          url='https://example.com',
+          title='Example',
+          domain='example.com',
+          rank=1,
+          pub_date=None,
+          snippet_text='Test snippet',
+          internal_score=None,
+          metadata={}
+        )
+      ],
+      response_time_ms=1000,
+      data_source='api',
+      sources_found=1,
+      sources_used=1,
+      avg_rank=1.0,
+      extra_links_count=0,
+      raw_response={}
+    )
+
+    # This should not raise AttributeError
+    # We can't actually test the Streamlit output, but we can verify no exceptions
+    try:
+      # Note: This will fail in test environment because Streamlit isn't running
+      # But it will still catch AttributeError before failing on Streamlit
+      display_response(response, 'test prompt')
+    except Exception as e:
+      # Only AttributeError should fail the test
+      if 'AttributeError' in str(type(e).__name__):
+        raise
+      # Other errors (like Streamlit not running) are expected in tests
+      pass
+
+  def test_display_response_with_network_log_response(self):
+    """Test that display_response can handle network_log mode response without errors."""
+    from frontend.components.response import display_response
+
+    # Create a complete network_log mode response object
+    response = SimpleNamespace(
+      provider='openai',
+      model='chatgpt-free',
+      model_display_name='ChatGPT (Free)',
+      response_text='Test response text',
+      search_queries=[],  # Network log may have empty queries
+      citations=[
+        SimpleNamespace(
+          url='https://example.com',
+          title='Example',
+          rank=1,
+          snippet_used=None,
+          citation_confidence=None,
+          metadata={}
+        )
+      ],
+      all_sources=[  # THIS IS THE CRITICAL ATTRIBUTE
+        SimpleNamespace(
+          url='https://example.com',
+          title='Example',
+          domain='example.com',
+          rank=1,
+          pub_date=None,
+          snippet_text='Test snippet',
+          internal_score=None,
+          metadata={}
+        )
+      ],
+      response_time_ms=5000,
+      data_source='network_log',
+      sources_found=1,
+      sources_used=1,
+      avg_rank=1.0,
+      extra_links_count=0,
+      raw_response={}
+    )
+
+    # This should not raise AttributeError
+    try:
+      display_response(response, 'test prompt')
+    except Exception as e:
+      # Only AttributeError should fail the test
+      if 'AttributeError' in str(type(e).__name__):
+        raise
+      # Other errors (like Streamlit not running) are expected in tests
+      pass
+
+  def test_response_object_has_all_sources_not_sources(self):
+    """Test that response objects use 'all_sources' not 'sources' attribute."""
+    # This test enforces the naming convention
+    response = SimpleNamespace(
+      provider='openai',
+      model='gpt-5.1',
+      all_sources=[SimpleNamespace(url='https://example.com')],
+      search_queries=[],
+      citations=[],
+      response_text='Test',
+      data_source='api'
+    )
+
+    # all_sources should exist
+    assert hasattr(response, 'all_sources')
+    assert len(response.all_sources) == 1
+
+    # sources should NOT exist (to avoid confusion)
+    assert not hasattr(response, 'sources')

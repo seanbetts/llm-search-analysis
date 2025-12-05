@@ -255,6 +255,79 @@ class APIClient:
       timeout=self.timeout_send_prompt
     )
 
+  def save_network_log(
+    self,
+    provider: str,
+    model: str,
+    prompt: str,
+    response_text: str,
+    search_queries: List[Dict[str, Any]],
+    sources: List[Dict[str, Any]],
+    citations: List[Dict[str, Any]],
+    response_time_ms: int,
+    raw_response: Optional[Dict[str, Any]] = None,
+    extra_links_count: int = 0,
+  ) -> Dict[str, Any]:
+    """
+    Save network_log mode data captured by frontend.
+
+    This method is used when the frontend captures LLM interaction data via
+    browser automation (network_log mode). The captured data is sent to the
+    backend for database persistence.
+
+    Args:
+      provider: Provider name (openai, google, anthropic)
+      model: Model name used
+      prompt: The prompt text
+      response_text: The response text from the LLM
+      search_queries: List of search query dictionaries
+      sources: List of source dictionaries (for network_log mode)
+      citations: List of citation dictionaries
+      response_time_ms: Response time in milliseconds
+      raw_response: Optional raw response data
+      extra_links_count: Number of extra links (citations not from search)
+
+    Returns:
+      Dictionary containing saved interaction data including interaction_id
+
+    Raises:
+      APIValidationError: If data is invalid
+      APIServerError: If backend fails
+      APITimeoutError: If request times out
+
+    Example:
+      >>> response = client.save_network_log(
+      ...     provider="openai",
+      ...     model="chatgpt-free",
+      ...     prompt="What is AI?",
+      ...     response_text="AI stands for...",
+      ...     search_queries=[{"query": "AI definition", "sources": []}],
+      ...     sources=[{"url": "https://example.com", "title": "Example"}],
+      ...     citations=[],
+      ...     response_time_ms=5000
+      ... )
+      >>> print(response["interaction_id"])
+    """
+    payload = {
+      "provider": provider,
+      "model": model,
+      "prompt": prompt,
+      "response_text": response_text,
+      "search_queries": search_queries,
+      "sources": sources,
+      "citations": citations,
+      "response_time_ms": response_time_ms,
+      "raw_response": raw_response,
+      "extra_links_count": extra_links_count,
+    }
+
+    return self._request(
+      "POST",
+      "/api/v1/interactions/save-network-log",
+      json=payload,
+      timeout=self.timeout_send_prompt
+    )
+
   def get_recent_interactions(
     self,
     limit: int = 50,
