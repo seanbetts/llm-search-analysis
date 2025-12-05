@@ -122,16 +122,21 @@ def tab_interactive():
           # Convert sources - backend now provides all_sources for both modes
           all_sources = [SimpleNamespace(**src) for src in response_data.get('all_sources', [])]
 
-          # Create response object
+          # Create response object with all backend fields
           response = SimpleNamespace(
             provider=response_data.get('provider'),
             model=response_data.get('model'),
+            model_display_name=response_data.get('model_display_name'),
             response_text=response_data.get('response_text'),
             search_queries=search_queries,
             all_sources=all_sources,
             citations=citations,
             response_time_ms=response_data.get('response_time_ms'),
             data_source=response_data.get('data_source', 'api'),
+            # Computed metrics from backend
+            sources_found=response_data.get('sources_found', 0),
+            sources_used=response_data.get('sources_used', 0),
+            avg_rank=response_data.get('avg_rank'),
             extra_links_count=response_data.get('extra_links_count', 0),
             raw_response=response_data.get('raw_response', {})
           )
