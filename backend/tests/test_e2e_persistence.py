@@ -11,7 +11,8 @@ import tempfile
 import os
 from fastapi.testclient import TestClient
 from app.main import app
-from app.database import Database, get_db
+from app.dependencies import get_db
+from app.models.database import Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -39,7 +40,6 @@ def client(test_db_url):
     TestingSessionLocal = sessionmaker(bind=engine)
 
     # Create tables
-    from app.database import Base
     Base.metadata.create_all(bind=engine)
 
     # Override get_db dependency
@@ -71,7 +71,7 @@ class TestAPIPersistence:
             pytest.skip("OPENAI_API_KEY not set")
 
         # Call API
-        response = client.post('/v1/interactions/send', json={
+        response = client.post('/api/v1/interactions/send', json={
             'prompt': 'Test OpenAI prompt for E2E',
             'provider': 'openai',
             'model': 'gpt-5.1'
@@ -80,17 +80,17 @@ class TestAPIPersistence:
         # Verify API call succeeded
         assert response.status_code == 200
         data = response.json()
-        assert data['provider'] == 'openai'
+        assert data['provider'] == 'OpenAI'  # API returns display name
         assert data['model'] == 'gpt-5.1'
         interaction_id = data.get('interaction_id')
         assert interaction_id is not None
 
         # Verify saved to database by retrieving it
-        get_response = client.get(f'/v1/interactions/{interaction_id}')
+        get_response = client.get(f'/api/v1/interactions/{interaction_id}')
         assert get_response.status_code == 200
         retrieved = get_response.json()
         assert retrieved['prompt'] == 'Test OpenAI prompt for E2E'
-        assert retrieved['provider'] == 'openai'
+        assert retrieved['provider'] == 'OpenAI'  # API returns display name
         assert retrieved['model'] == 'gpt-5.1'
 
     def test_anthropic_api_call_saves_to_database(self, client, test_db_url):
@@ -101,7 +101,7 @@ class TestAPIPersistence:
             pytest.skip("ANTHROPIC_API_KEY not set")
 
         # Call API
-        response = client.post('/v1/interactions/send', json={
+        response = client.post('/api/v1/interactions/send', json={
             'prompt': 'Test Anthropic prompt for E2E',
             'provider': 'anthropic',
             'model': 'claude-sonnet-4-5-20250929'
@@ -110,17 +110,17 @@ class TestAPIPersistence:
         # Verify API call succeeded
         assert response.status_code == 200
         data = response.json()
-        assert data['provider'] == 'anthropic'
+        assert data['provider'] == 'Anthropic'  # API returns display name
         assert data['model'] == 'claude-sonnet-4-5-20250929'
         interaction_id = data.get('interaction_id')
         assert interaction_id is not None, "Anthropic interaction should have ID (proving it was saved)"
 
         # Verify saved to database by retrieving it
-        get_response = client.get(f'/v1/interactions/{interaction_id}')
+        get_response = client.get(f'/api/v1/interactions/{interaction_id}')
         assert get_response.status_code == 200, "Should be able to retrieve saved Anthropic interaction"
         retrieved = get_response.json()
         assert retrieved['prompt'] == 'Test Anthropic prompt for E2E'
-        assert retrieved['provider'] == 'anthropic'
+        assert retrieved['provider'] == 'Anthropic'  # API returns display name
         assert retrieved['model'] == 'claude-sonnet-4-5-20250929'
 
     def test_google_api_call_saves_to_database(self, client, test_db_url):
@@ -130,7 +130,7 @@ class TestAPIPersistence:
             pytest.skip("GOOGLE_API_KEY not set")
 
         # Call API
-        response = client.post('/v1/interactions/send', json={
+        response = client.post('/api/v1/interactions/send', json={
             'prompt': 'Test Google prompt for E2E',
             'provider': 'google',
             'model': 'gemini-3-pro-preview'
@@ -139,17 +139,17 @@ class TestAPIPersistence:
         # Verify API call succeeded
         assert response.status_code == 200
         data = response.json()
-        assert data['provider'] == 'google'
+        assert data['provider'] == 'Google'  # API returns display name
         assert data['model'] == 'gemini-3-pro-preview'
         interaction_id = data.get('interaction_id')
         assert interaction_id is not None
 
         # Verify saved to database by retrieving it
-        get_response = client.get(f'/v1/interactions/{interaction_id}')
+        get_response = client.get(f'/api/v1/interactions/{interaction_id}')
         assert get_response.status_code == 200
         retrieved = get_response.json()
         assert retrieved['prompt'] == 'Test Google prompt for E2E'
-        assert retrieved['provider'] == 'google'
+        assert retrieved['provider'] == 'Google'  # API returns display name
 
     def test_recent_interactions_includes_all_providers(self, client, test_db_url):
         """Test that recent interactions returns data from all providers."""
@@ -168,7 +168,7 @@ class TestAPIPersistence:
 
         # Send prompts to each provider
         for provider, model in providers_to_test:
-            response = client.post('/v1/interactions/send', json={
+            response = client.post('/api/v1/interactions/send', json={
                 'prompt': f'Test prompt for {provider}',
                 'provider': provider,
                 'model': model
@@ -176,7 +176,7 @@ class TestAPIPersistence:
             assert response.status_code == 200
 
         # Get recent interactions
-        response = client.get('/v1/interactions/recent?limit=50')
+        response = client.get('/api/v1/interactions/recent?limit=50')
         assert response.status_code == 200
         interactions = response.json()
 
@@ -193,7 +193,7 @@ class TestAPIErrors:
 
     def test_invalid_model_does_not_save(self, client):
         """Test that invalid model requests don't create database entries."""
-        response = client.post('/v1/interactions/send', json={
+        response = client.post('/api/v1/interactions/send', json={
             'prompt': 'Test prompt',
             'provider': 'openai',
             'model': 'invalid-model-12345'
@@ -203,7 +203,7 @@ class TestAPIErrors:
         assert response.status_code != 200
 
         # Should not be in recent interactions
-        recent = client.get('/v1/interactions/recent')
+        recent = client.get('/api/v1/interactions/recent')
         interactions = recent.json()
         prompts = [i['prompt'] for i in interactions]
         assert 'Test prompt' not in prompts
@@ -227,7 +227,7 @@ class TestAPIErrors:
             pytest.skip("All API keys are configured, can't test missing key error")
 
         provider, model = test_provider
-        response = client.post('/v1/interactions/send', json={
+        response = client.post('/api/v1/interactions/send', json={
             'prompt': 'Test prompt with missing key',
             'provider': provider,
             'model': model
@@ -237,7 +237,7 @@ class TestAPIErrors:
         assert response.status_code != 200
 
         # Should not be in recent interactions
-        recent = client.get('/v1/interactions/recent')
+        recent = client.get('/api/v1/interactions/recent')
         interactions = recent.json()
         prompts = [i['prompt'] for i in interactions]
         assert 'Test prompt with missing key' not in prompts

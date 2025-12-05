@@ -167,10 +167,13 @@ class InteractionService:
       )
 
       model = response.prompt.session.model_used if response.prompt and response.prompt.session else ""
+      # Use display_name if available, otherwise fall back to name
+      provider_obj = response.prompt.session.provider if response.prompt and response.prompt.session else None
+      provider_display = provider_obj.display_name if provider_obj and provider_obj.display_name else (provider_obj.name if provider_obj else "")
       summary = InteractionSummary(
         interaction_id=response.id,
         prompt=response.prompt.prompt_text if response.prompt else "",
-        provider=response.prompt.session.provider.name if response.prompt and response.prompt.session else "",
+        provider=provider_display,
         model=model,
         model_display_name=get_model_display_name(model) if model else None,
         response_preview=response_preview,
@@ -279,13 +282,16 @@ class InteractionService:
 
     # Use stored computed metrics from database
     model = response.prompt.session.model_used if response.prompt and response.prompt.session else ""
+    # Use display_name if available, otherwise fall back to name
+    provider_obj = response.prompt.session.provider if response.prompt and response.prompt.session else None
+    provider_display = provider_obj.display_name if provider_obj and provider_obj.display_name else (provider_obj.name if provider_obj else "")
     return SendPromptResponse(
       prompt=response.prompt.prompt_text if response.prompt else "",
       response_text=response.response_text,
       search_queries=search_queries,
       citations=citations,
       all_sources=all_sources,
-      provider=response.prompt.session.provider.name if response.prompt and response.prompt.session else "",
+      provider=provider_display,
       model=model,
       model_display_name=get_model_display_name(model) if model else None,
       response_time_ms=response.response_time_ms,

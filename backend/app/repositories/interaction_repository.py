@@ -16,6 +16,14 @@ from app.models.database import (
   SourceUsed,
 )
 
+# Provider display name mapping
+PROVIDER_DISPLAY_NAMES = {
+  'openai': 'OpenAI',
+  'google': 'Google',
+  'anthropic': 'Anthropic',
+  'chatgpt_network': 'ChatGPT (Network Log)',
+}
+
 
 class InteractionRepository:
   """Repository for managing interactions (prompts + responses)."""
@@ -77,7 +85,7 @@ class InteractionRepository:
       if not provider:
         provider = Provider(
           name=provider_name,
-          display_name=provider_name.title(),
+          display_name=PROVIDER_DISPLAY_NAMES.get(provider_name, provider_name.title()),
           is_active=True
         )
         self.db.add(provider)

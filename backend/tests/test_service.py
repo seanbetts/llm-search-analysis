@@ -113,6 +113,7 @@ class TestInteractionService:
     mock_response.prompt.session = MagicMock()
     mock_response.prompt.session.provider = MagicMock()
     mock_response.prompt.session.provider.name = "openai"
+    mock_response.prompt.session.provider.display_name = "OpenAI"
     mock_response.prompt.session.model_used = "gpt-4o"
 
     # Create 2 search queries with 3 and 2 sources
@@ -155,6 +156,7 @@ class TestInteractionService:
     mock_response.prompt.session = MagicMock()
     mock_response.prompt.session.provider = MagicMock()
     mock_response.prompt.session.provider.name = "openai"
+    mock_response.prompt.session.provider.display_name = "OpenAI"
     mock_response.prompt.session.model_used = "gpt-4o"
     mock_response.search_queries = []
 
@@ -184,6 +186,7 @@ class TestInteractionService:
     mock_response.prompt.session = MagicMock()
     mock_response.prompt.session.provider = MagicMock()
     mock_response.prompt.session.provider.name = "openai"
+    mock_response.prompt.session.provider.display_name = "OpenAI"
     mock_response.prompt.session.model_used = "gpt-4o"
     mock_response.search_queries = []
 
@@ -231,6 +234,7 @@ class TestInteractionService:
     mock_response.prompt.session = MagicMock()
     mock_response.prompt.session.provider = MagicMock()
     mock_response.prompt.session.provider.name = "google"
+    mock_response.prompt.session.provider.display_name = "Google"
     mock_response.prompt.session.model_used = "gemini-2.5-flash"
 
     # Mock search queries
@@ -271,7 +275,7 @@ class TestInteractionService:
     # Verify full response
     assert result is not None
     assert result.response_text == "Full response text"
-    assert result.provider == "google"
+    assert result.provider == "Google"  # API returns display name
     assert result.model == "gemini-2.5-flash"
     assert result.response_time_ms == 2500
     assert result.interaction_id == 123

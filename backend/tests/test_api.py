@@ -157,7 +157,7 @@ class TestInteractionsEndpoints:
     assert response.status_code == 200
     data = response.json()
     assert data["response_text"] == "Test response"
-    assert data["provider"] == "openai"
+    assert data["provider"] == "OpenAI"  # API returns display name
     assert data["model"] == "gpt-5.1"
     assert "interaction_id" in data
     assert len(data["search_queries"]) == 1
@@ -239,7 +239,7 @@ class TestInteractionsEndpoints:
 
     interaction = data[0]
     assert "interaction_id" in interaction
-    assert interaction["provider"] == "openai"
+    assert interaction["provider"] == "OpenAI"  # API returns display name
     assert interaction["model"] == "gpt-5.1"
     assert "created_at" in interaction
 
