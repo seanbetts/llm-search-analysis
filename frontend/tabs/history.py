@@ -9,6 +9,24 @@ from frontend.utils import format_pub_date
 from frontend.components.response import format_response_text, extract_images_from_response
 
 
+def _build_model_display_mapping(model_display_options_df):
+  """
+  Build mapping of display_name -> set(raw model ids) for filtering.
+
+  Multiple model ids can share the same human-readable label (e.g.,
+  old vs normalized Anthropic IDs). This helper ensures the filter keeps
+  all ids selected whenever a label is chosen.
+  """
+  model_display_options = {}
+  for _, row in model_display_options_df.iterrows():
+    model = row.get('model')
+    display = row.get('model_display')
+    if pd.isna(model) or pd.isna(display):
+      continue
+    model_display_options.setdefault(display, set()).add(model)
+  return dict(sorted(model_display_options.items()))
+
+
 def tab_history():
   """Tab 3: Query History."""
   st.markdown("### 📜 Query History")
@@ -85,20 +103,17 @@ def tab_history():
     with col_model:
       # Get unique display names (Phase 1.2: now from backend)
       model_display_options_df = df[['model', 'model_display']].drop_duplicates()
-      # Create mapping: "Display Name" -> "raw-model-id"
-      model_display_options = {
-        row['model_display']: row['model']
-        for _, row in model_display_options_df.iterrows()
-        if pd.notna(row['model'])
-      }
-      model_display_options = dict(sorted(model_display_options.items()))
+      model_display_options = _build_model_display_mapping(model_display_options_df)
+      model_display_labels = list(model_display_options.keys())
       selected_model_displays = st.multiselect(
         "Model",
-        options=list(model_display_options.keys()),
-        default=list(model_display_options.keys()),
-      ) if model_display_options else []
+        options=model_display_labels,
+        default=model_display_labels,
+      ) if model_display_labels else []
       # Convert selected display names back to raw model IDs for filtering
-      selected_models = [model_display_options[d] for d in selected_model_displays]
+      selected_models = set()
+      for display in selected_model_displays:
+        selected_models.update(model_display_options.get(display, set()))
 
     # Apply filters
     if search_query:
