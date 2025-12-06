@@ -4,8 +4,8 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from types import SimpleNamespace
-from src.config import Config
-from src.network_capture.chatgpt_capturer import ChatGPTCapturer
+from frontend.config import Config
+from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 from frontend.components.models import get_all_models
 from frontend.helpers.metrics import compute_metrics, get_model_display_name
 from frontend.helpers.serialization import namespace_to_dict

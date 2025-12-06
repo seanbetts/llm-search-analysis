@@ -2,8 +2,8 @@
 
 import streamlit as st
 from types import SimpleNamespace
-from src.config import Config
-from src.network_capture.chatgpt_capturer import ChatGPTCapturer
+from frontend.config import Config
+from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 from frontend.components.models import get_all_models
 from frontend.components.response import display_response
 from frontend.api_client import APINotFoundError, APIClientError

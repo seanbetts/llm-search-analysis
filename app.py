@@ -12,7 +12,6 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from urllib.parse import urlparse
-from src.config import Config
 from frontend.api_client import APIClient, APIClientError, APINotFoundError
 from frontend.styles import load_styles
 from frontend.utils import format_pub_date
