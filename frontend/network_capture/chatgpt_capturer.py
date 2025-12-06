@@ -51,6 +51,7 @@ class ChatGPTCapturer(BaseCapturer):
         super().__init__()
         self.playwright = None
         self.browser_manager = BrowserManager()
+        self._headless = None  # Track headless mode for restart logic
 
         # Set up storage state file path for session persistence
         if storage_state_path is None:
@@ -81,6 +82,7 @@ class ChatGPTCapturer(BaseCapturer):
         Args:
             headless: Whether to run in headless mode (default: True for seamless UX)
                      Note: Ignored in CDP mode (headless controlled by host Chrome)
+                     Auto-switches to headed mode if no session file exists
 
         Raises:
             Exception: If browser fails to start or connect
@@ -88,6 +90,15 @@ class ChatGPTCapturer(BaseCapturer):
         try:
             from pathlib import Path
             import os
+
+            # Check if session file exists - if not, force headed mode for login
+            if not os.path.exists(self.storage_state_path):
+                if headless:
+                    print("⚠️  No session file found - switching to headed mode for initial login")
+                    headless = False
+
+            # Store headless state for potential restart logic
+            self._headless = headless
 
             self.playwright = sync_playwright().start()
 
@@ -420,6 +431,37 @@ class ChatGPTCapturer(BaseCapturer):
             if not verification_detected:
                 print("  No email verification detected")
                 return False
+
+            # If email verification detected in headless mode, restart with browser visible
+            if self._headless:
+                import os
+                print("\n⚠️  Email verification required but browser is hidden!")
+                print("🔄 Restarting browser in visible mode...")
+
+                # Show UI message if available
+                if STREAMLIT_AVAILABLE:
+                    st.info("Email verification required. Restarting browser in visible mode...", icon="🔄")
+
+                # Delete session file to force re-login
+                if os.path.exists(self.storage_state_path):
+                    os.remove(self.storage_state_path)
+                    print(f"🗑️  Deleted session file: {self.storage_state_path}")
+
+                # Close current browser
+                self.stop_browser()
+
+                # Restart in headed mode
+                print("🚀 Restarting browser in visible mode...")
+                self.start_browser(headless=False)
+
+                # Navigate to ChatGPT
+                print(f"🌐 Navigating to {self.CHATGPT_URL}...")
+                self.page = self.context.new_page()
+                self.page.goto(self.CHATGPT_URL, wait_until='domcontentloaded', timeout=30000)
+                time.sleep(3)  # Wait for page to stabilize
+
+                print("✅ Browser restarted in visible mode - continuing...")
+                # Fall through to show verification message
 
             # Email verification code detected - give user time to enter it
             message = """
