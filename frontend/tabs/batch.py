@@ -3,8 +3,12 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+from types import SimpleNamespace
 from src.config import Config
+from src.network_capture.chatgpt_capturer import ChatGPTCapturer
 from frontend.components.models import get_all_models
+from frontend.helpers.metrics import compute_metrics, get_model_display_name
+from frontend.helpers.serialization import namespace_to_dict
 
 
 def tab_batch():
@@ -99,9 +103,6 @@ def tab_batch():
         try:
           # Check data collection mode and route accordingly
           if st.session_state.data_collection_mode == 'network_log':
-            # Use network log capture
-            from src.network_capture.chatgpt_capturer import ChatGPTCapturer
-
             # Only ChatGPT is supported for network logs currently
             if provider_name != 'openai':
               raise Exception(f"Network log mode only supports OpenAI/ChatGPT. Skipping {provider_name}")
@@ -128,9 +129,6 @@ def tab_batch():
               provider_response = capturer.send_prompt(prompt, 'chatgpt-free')
 
               # Convert ProviderResponse to display format and save to database
-              from types import SimpleNamespace
-              from frontend.helpers.metrics import compute_metrics, get_model_display_name
-
               search_queries = [SimpleNamespace(
                 query=q.query,
                 sources=[SimpleNamespace(
@@ -177,14 +175,15 @@ def tab_batch():
               )
 
               # Save to database via backend API
+              # Convert SimpleNamespace objects to dicts for JSON serialization
               st.session_state.api_client.save_network_log(
                 provider=provider_response.provider,
                 model=provider_response.model,
                 prompt=prompt,
                 response_text=provider_response.response_text,
-                search_queries=search_queries,
-                sources=all_sources,
-                citations=citations,
+                search_queries=namespace_to_dict(search_queries),
+                sources=namespace_to_dict(all_sources),
+                citations=namespace_to_dict(citations),
                 response_time_ms=provider_response.response_time_ms,
                 raw_response=provider_response.raw_response,
                 extra_links_count=metrics['extra_links_count']

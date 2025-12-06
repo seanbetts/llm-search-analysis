@@ -3,10 +3,12 @@
 import streamlit as st
 from types import SimpleNamespace
 from src.config import Config
+from src.network_capture.chatgpt_capturer import ChatGPTCapturer
 from frontend.components.models import get_all_models
 from frontend.components.response import display_response
 from frontend.api_client import APINotFoundError, APIClientError
 from frontend.helpers.metrics import compute_metrics, get_model_display_name
+from frontend.helpers.serialization import namespace_to_dict
 
 
 def tab_interactive():
@@ -56,8 +58,6 @@ def tab_interactive():
       try:
         if st.session_state.data_collection_mode == 'network_log':
           # NETWORK_LOG MODE: Use ChatGPTCapturer directly (runs on host machine)
-          from src.network_capture.chatgpt_capturer import ChatGPTCapturer
-
           # Initialize capturer
           capturer = ChatGPTCapturer()
 
@@ -145,14 +145,15 @@ def tab_interactive():
           )
 
           # Save to database via backend API
+          # Convert SimpleNamespace objects to dicts for JSON serialization
           st.session_state.api_client.save_network_log(
             provider=provider_response.provider,
             model=provider_response.model,
             prompt=prompt,
             response_text=provider_response.response_text,
-            search_queries=search_queries,
-            sources=all_sources,
-            citations=citations,
+            search_queries=namespace_to_dict(search_queries),
+            sources=namespace_to_dict(all_sources),
+            citations=namespace_to_dict(citations),
             response_time_ms=provider_response.response_time_ms,
             raw_response=provider_response.raw_response,
             extra_links_count=metrics['extra_links_count']

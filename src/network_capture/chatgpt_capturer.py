@@ -345,6 +345,121 @@ class ChatGPTCapturer(BaseCapturer):
             print(f"  ⚠️  Error checking login status: {str(e)[:50]}")
             return False
 
+    def _handle_email_verification_code(self) -> bool:
+        """
+        Handle email verification code flow.
+
+        OpenAI now sends a verification code via email during login.
+        This method detects the verification page and gives the user time
+        to manually enter the code from their email.
+
+        Returns:
+            True if login successful after code entry, False otherwise
+        """
+        try:
+            print("🔍 Checking for email verification code prompt...")
+
+            # Check for email verification indicators
+            verification_indicators = [
+                'text="Check your inbox"',
+                'text="Enter code"',
+                'text="verification code"',
+                'text="Verify your email"',
+                'text="We sent a code"',
+                'text="Enter the code"',
+                'input[type="text"][placeholder*="code" i]',
+                'input[name*="code" i]',
+                'input[id*="code" i]',
+            ]
+
+            verification_detected = False
+            page_text = ""
+
+            try:
+                # Get visible page text for better detection
+                page_text = self.page.inner_text('body').lower()
+            except:
+                pass
+
+            # Check text content
+            if any(phrase in page_text for phrase in ['check your inbox', 'enter code', 'verification code', 'enter the code']):
+                verification_detected = True
+                print("  ✓ Email verification text detected in page")
+
+            # Check for code input fields
+            for selector in verification_indicators:
+                try:
+                    if self.page.locator(selector).count() > 0:
+                        verification_detected = True
+                        print(f"  ✓ Verification element detected: {selector}")
+                        break
+                except:
+                    continue
+
+            if not verification_detected:
+                print("  No email verification detected")
+                return False
+
+            # Email verification code detected - give user time to enter it
+            print("\n" + "="*70)
+            print("📧 EMAIL VERIFICATION CODE REQUIRED")
+            print("="*70)
+            print("OpenAI has sent a verification code to your email.")
+            print("\nPlease:")
+            print("  1. Check your email inbox")
+            print("  2. Copy the verification code from the email")
+            print("  3. Enter it in the browser window")
+            print("  4. Click Continue/Submit")
+            print("\nWaiting up to 120 seconds for you to complete this...")
+            print("="*70 + "\n")
+
+            # Wait for up to 120 seconds, checking every 5 seconds if login completed
+            max_wait = 120
+            check_interval = 5
+            waited = 0
+
+            chat_interface_selectors = [
+                '#prompt-textarea',
+                'textarea[placeholder*="Message"]',
+                '[data-testid="composer-input"]'
+            ]
+
+            while waited < max_wait:
+                # Check if user has completed verification and reached chat interface
+                for selector in chat_interface_selectors:
+                    try:
+                        if self.page.locator(selector).count() > 0:
+                            print(f"✅ Email verification successful! (completed in {waited}s)")
+                            return True
+                    except:
+                        continue
+
+                # Wait before next check
+                time.sleep(check_interval)
+                waited += check_interval
+
+                # Print progress every 15 seconds
+                if waited % 15 == 0:
+                    remaining = max_wait - waited
+                    print(f"⏳ Still waiting for code entry... ({remaining}s remaining)")
+
+            # Final check after timeout
+            print("⏱️  Wait time expired, doing final check...")
+            for selector in chat_interface_selectors:
+                try:
+                    if self.page.locator(selector).count() > 0:
+                        print("✅ Email verification successful!")
+                        return True
+                except:
+                    continue
+
+            print("❌ Email verification not completed within timeout")
+            return False
+
+        except Exception as e:
+            print(f"  ⚠️  Error handling email verification: {str(e)[:50]}")
+            return False
+
     def _login_with_credentials(self, email: str, password: str) -> bool:
         """
         Login to ChatGPT with email and password.
@@ -553,7 +668,11 @@ class ChatGPTCapturer(BaseCapturer):
                 print("✅ Login successful!")
                 return True
             else:
-                # May need 2FA or additional verification
+                # Check if email verification code is required
+                if self._handle_email_verification_code():
+                    return True
+
+                # May need other 2FA or additional verification
                 print("⚠️  Login may require additional verification (2FA, CAPTCHA, etc.)")
                 print("   Waiting 10 seconds for manual verification...")
                 try:
