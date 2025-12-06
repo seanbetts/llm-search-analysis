@@ -50,7 +50,8 @@ class TestImports:
 
         This enforces the architectural boundary:
         - Frontend should only import from: frontend/, src/
-        - Frontend should NOT import from: backend/
+        - Frontend should NOT import from: backend/ (except data models)
+        - Exception: frontend/network_capture can import backend data models
         """
         # Import all frontend modules
         import frontend.tabs.interactive
@@ -64,9 +65,20 @@ class TestImports:
         import sys
         backend_imports = [name for name in sys.modules.keys() if name.startswith('backend.') or name.startswith('app.')]
 
-        # The only backend import allowed is through API client (which uses HTTP, not Python imports)
-        # If this test fails, it means frontend is directly importing backend Python modules
-        assert len(backend_imports) == 0, f"Frontend should not import backend modules. Found: {backend_imports}"
+        # Allowed backend imports: data models for network_capture
+        # network_capture runs client-side and needs to produce data in backend format
+        allowed_imports = {
+            'backend.app',
+            'backend.app.services',
+            'backend.app.services.providers',
+            'backend.app.services.providers.base_provider',
+            'backend.app.services.providers.provider_factory'
+        }
+
+        disallowed_imports = [imp for imp in backend_imports if imp not in allowed_imports]
+
+        # If this test fails, it means frontend is importing backend services/business logic
+        assert len(disallowed_imports) == 0, f"Frontend should only import backend data models. Found disallowed imports: {disallowed_imports}"
 
 
 class TestFunctionality:

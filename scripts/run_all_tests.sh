@@ -30,7 +30,10 @@ run_frontend_tests() {
     echo "pytest is required to run frontend tests. Please install project dependencies."
     exit 1
   fi
-  (cd "$REPO_ROOT" && pytest frontend/tests/ -v)
+  (
+    cd "$REPO_ROOT" && \
+    PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}" pytest frontend/tests/ -v
+  )
 }
 
 main() {

@@ -12,13 +12,10 @@ NETWORK_LOG_FINDINGS.md for full analysis.
 import json
 import re
 from typing import Dict, Any, List, Tuple
-import sys
-from pathlib import Path
 from datetime import datetime, timezone
 
-# Add parent directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent))
-from providers.base_provider import (
+# Import data models from backend
+from backend.app.services.providers.base_provider import (
     ProviderResponse,
     SearchQuery,
     Source,

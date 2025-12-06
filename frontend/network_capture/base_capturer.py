@@ -6,12 +6,9 @@ Defines the interface that all network capturer implementations must follow.
 
 from abc import ABC, abstractmethod
 from typing import Optional
-import sys
-from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent))
-from providers.base_provider import ProviderResponse
+# Import ProviderResponse from backend
+from backend.app.services.providers.base_provider import ProviderResponse
 
 
 class BaseCapturer(ABC):
