@@ -437,8 +437,11 @@ Waiting up to 120 seconds for you to complete this...
             """
 
             # Display in Streamlit UI if available, otherwise print to console
+            # Use st.empty() so we can clear the message once verification completes
+            warning_placeholder = None
             if STREAMLIT_AVAILABLE:
-                st.warning(message, icon="📧")
+                warning_placeholder = st.empty()
+                warning_placeholder.warning(message, icon="📧")
             else:
                 print("\n" + "="*70)
                 print("📧 EMAIL VERIFICATION CODE REQUIRED")
@@ -469,6 +472,9 @@ Waiting up to 120 seconds for you to complete this...
                     try:
                         if self.page.locator(selector).count() > 0:
                             print(f"✅ Email verification successful! (completed in {waited}s)")
+                            # Clear the warning message from UI
+                            if warning_placeholder is not None:
+                                warning_placeholder.empty()
                             return True
                     except:
                         continue
@@ -488,11 +494,17 @@ Waiting up to 120 seconds for you to complete this...
                 try:
                     if self.page.locator(selector).count() > 0:
                         print("✅ Email verification successful!")
+                        # Clear the warning message from UI
+                        if warning_placeholder is not None:
+                            warning_placeholder.empty()
                         return True
                 except:
                     continue
 
             print("❌ Email verification not completed within timeout")
+            # Clear the warning message from UI
+            if warning_placeholder is not None:
+                warning_placeholder.empty()
             return False
 
         except Exception as e:
