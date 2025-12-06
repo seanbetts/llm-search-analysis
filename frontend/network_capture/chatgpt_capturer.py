@@ -948,7 +948,7 @@ Waiting up to 120 seconds for you to complete this...
                 )
 
             # Parse the event stream response
-            self._log_status("🔍 Parsing network data...")
+            self._log_status("🔍 Parsing network logs...")
             parsed_response = NetworkLogParser.parse_chatgpt_log(
                 network_response=event_stream_response,
                 model="ChatGPT",
