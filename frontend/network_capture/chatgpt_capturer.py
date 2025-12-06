@@ -219,7 +219,10 @@ class ChatGPTCapturer(BaseCapturer):
             # Navigate to ChatGPT
             print("🌐 Navigating to ChatGPT...")
             self.page.goto(self.CHATGPT_URL, wait_until='domcontentloaded', timeout=30000)
-            time.sleep(2)
+
+            # Wait longer for page to fully render and session to restore
+            print("⏳ Waiting for page to fully load...")
+            time.sleep(3)  # Increased from 2 to 3 seconds
 
             # Check if we're already logged in from saved session
             print("🔍 Checking for existing session...")
@@ -232,6 +235,8 @@ class ChatGPTCapturer(BaseCapturer):
                     print("💾 Saving current session for future use...")
                     self._save_session()
                 return True
+            else:
+                print("🔍 Not logged in via saved session")
 
             # If credentials provided, use login flow
             if email and password:
@@ -316,13 +321,20 @@ class ChatGPTCapturer(BaseCapturer):
 
             # Look for chat interface
             has_chat_interface = False
+            matched_selector = None
             for selector in chat_interface_selectors:
                 try:
-                    if self.page.locator(selector).count() > 0:
+                    count = self.page.locator(selector).count()
+                    if count > 0:
                         has_chat_interface = True
+                        matched_selector = selector
+                        print(f"  ✓ Found chat interface: {selector} (count: {count})")
                         break
                 except:
                     continue
+
+            if not has_chat_interface:
+                print(f"  ✗ No chat interface found (checked {len(chat_interface_selectors)} selectors)")
 
             # Look for login buttons
             has_login_button = False
@@ -331,9 +343,15 @@ class ChatGPTCapturer(BaseCapturer):
                     button = self.page.locator(selector).first
                     if button.count() > 0 and button.is_visible():
                         has_login_button = True
+                        print(f"  ✗ Found login button: {selector}")
                         break
                 except:
                     continue
+
+            if has_login_button:
+                print("  → Login button present, not logged in")
+            elif has_chat_interface:
+                print("  → No login button, assuming logged in")
 
             # Logged in if we have chat interface and no login button
             return has_chat_interface and not has_login_button
