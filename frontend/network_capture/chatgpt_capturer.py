@@ -41,17 +41,20 @@ class ChatGPTCapturer(BaseCapturer):
 
     CHATGPT_URL = "https://chatgpt.com"
 
-    def __init__(self, storage_state_path: Optional[str] = None):
+    def __init__(self, storage_state_path: Optional[str] = None, status_callback: Optional[Any] = None):
         """Initialize ChatGPT capturer.
 
         Args:
             storage_state_path: Path to JSON file storing session data (cookies, localStorage).
                                If None, uses a default file in the project.
+            status_callback: Optional callback function to send status messages to UI.
+                           Should accept a single string parameter.
         """
         super().__init__()
         self.playwright = None
         self.browser_manager = BrowserManager()
         self._headless = None  # Track headless mode for restart logic
+        self._status_callback = status_callback  # UI status callback
 
         # Set up storage state file path for session persistence
         if storage_state_path is None:
@@ -61,6 +64,15 @@ class ChatGPTCapturer(BaseCapturer):
             storage_state_path = str(project_root / 'data' / 'chatgpt_session.json')
 
         self.storage_state_path = storage_state_path
+
+    def _log_status(self, message: str):
+        """Log status message to both console and UI callback if available."""
+        print(message)
+        if self._status_callback:
+            try:
+                self._status_callback(message)
+            except:
+                pass  # Ignore callback errors
 
     def get_provider_name(self) -> str:
         """Get provider name."""
@@ -94,11 +106,13 @@ class ChatGPTCapturer(BaseCapturer):
             # Check if session file exists - if not, force headed mode for login
             if not os.path.exists(self.storage_state_path):
                 if headless:
-                    print("⚠️  No session file found - switching to headed mode for initial login")
+                    self._log_status("⚠️  No session file found - browser will be visible for initial login")
                     headless = False
 
             # Store headless state for potential restart logic
             self._headless = headless
+
+            self._log_status("🚀 Starting browser..." if headless else "🚀 Starting browser (visible mode)...")
 
             self.playwright = sync_playwright().start()
 
@@ -234,7 +248,7 @@ class ChatGPTCapturer(BaseCapturer):
         """
         try:
             # Navigate to ChatGPT
-            print("🌐 Navigating to ChatGPT...")
+            self._log_status("🌐 Navigating to ChatGPT...")
             self.page.goto(self.CHATGPT_URL, wait_until='domcontentloaded', timeout=30000)
 
             # Wait longer for page to fully render and session to restore
@@ -242,9 +256,9 @@ class ChatGPTCapturer(BaseCapturer):
             time.sleep(3)  # Increased from 2 to 3 seconds
 
             # Check if we're already logged in from saved session
-            print("🔍 Checking for existing session...")
+            self._log_status("🔍 Checking for existing session...")
             if self._is_logged_in():
-                print("✅ Already logged in (session restored from saved state)")
+                self._log_status("✅ Already logged in (session restored)")
                 # Save session if we're logged in but don't have a session file yet
                 # This handles cases where cookies persist from system Chrome
                 import os
@@ -253,7 +267,7 @@ class ChatGPTCapturer(BaseCapturer):
                     self._save_session()
                 return True
             else:
-                print("🔍 Not logged in via saved session")
+                self._log_status("🔐 No existing session - authentication required")
 
             # If credentials provided, use login flow
             if email and password:
@@ -830,7 +844,7 @@ Waiting up to 120 seconds for you to complete this...
         start_time = time.time()
 
         try:
-            print(f"Submitting prompt to ChatGPT (model: {model})...")
+            self._log_status(f"📝 Submitting prompt to ChatGPT...")
             print(f"Prompt: {prompt[:100]}...")
 
             # Handle any modals/overlays that might be blocking the UI
@@ -934,7 +948,7 @@ Waiting up to 120 seconds for you to complete this...
                 )
 
             # Parse the event stream response
-            print("🔍 Parsing event stream for search data...")
+            self._log_status("🔍 Parsing network data...")
             parsed_response = NetworkLogParser.parse_chatgpt_log(
                 network_response=event_stream_response,
                 model="ChatGPT",
@@ -1027,7 +1041,7 @@ Waiting up to 120 seconds for you to complete this...
         Args:
             max_wait: Maximum seconds to wait (default 60)
         """
-        print(f"  Waiting for response (max {max_wait}s)...")
+        self._log_status("⏳ Waiting for ChatGPT response...")
 
         # Look for signs that ChatGPT is generating
         generating_indicators = [

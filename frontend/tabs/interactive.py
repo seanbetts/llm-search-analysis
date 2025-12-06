@@ -58,29 +58,41 @@ def tab_interactive():
       try:
         if st.session_state.data_collection_mode == 'network_log':
           # NETWORK_LOG MODE: Use ChatGPTCapturer directly (runs on host machine)
-          # Initialize capturer
-          capturer = ChatGPTCapturer()
 
-          try:
-            # Start browser
-            headless = not st.session_state.network_show_browser
-            capturer.start_browser(headless=headless)
+          # Create status widget to show progress
+          with st.status("Analyzing with network capture...", expanded=True) as status:
+            status_container = st.empty()
 
-            # Authenticate (anonymous mode if no credentials)
-            capturer.authenticate(
-              email=Config.CHATGPT_EMAIL if Config.CHATGPT_EMAIL else None,
-              password=Config.CHATGPT_PASSWORD if Config.CHATGPT_PASSWORD else None
-            )
+            # Status callback to update UI
+            def update_status(msg: str):
+              status_container.write(msg)
 
-            # Send prompt and get response
-            provider_response = capturer.send_prompt(prompt, selected_model)
+            # Initialize capturer with status callback
+            capturer = ChatGPTCapturer(status_callback=update_status)
 
-          finally:
-            # Always stop browser
             try:
-              capturer.stop_browser()
-            except:
-              pass
+              # Start browser
+              headless = not st.session_state.network_show_browser
+              capturer.start_browser(headless=headless)
+
+              # Authenticate (anonymous mode if no credentials)
+              capturer.authenticate(
+                email=Config.CHATGPT_EMAIL if Config.CHATGPT_EMAIL else None,
+                password=Config.CHATGPT_PASSWORD if Config.CHATGPT_PASSWORD else None
+              )
+
+              # Send prompt and get response
+              provider_response = capturer.send_prompt(prompt, selected_model)
+
+            finally:
+              # Always stop browser
+              try:
+                capturer.stop_browser()
+              except:
+                pass
+
+            # Mark status as complete
+            status.update(label="Network capture complete", state="complete", expanded=False)
 
           # Convert ProviderResponse to display format
           search_queries = []
