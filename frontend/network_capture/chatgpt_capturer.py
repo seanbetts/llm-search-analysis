@@ -16,6 +16,12 @@ try:
 except ImportError:
     STEALTH_AVAILABLE = False
 
+try:
+    import streamlit as st
+    STREAMLIT_AVAILABLE = True
+except ImportError:
+    STREAMLIT_AVAILABLE = False
+
 from .base_capturer import BaseCapturer
 from .browser_manager import BrowserManager
 from .parser import NetworkLogParser
@@ -416,17 +422,35 @@ class ChatGPTCapturer(BaseCapturer):
                 return False
 
             # Email verification code detected - give user time to enter it
-            print("\n" + "="*70)
-            print("📧 EMAIL VERIFICATION CODE REQUIRED")
-            print("="*70)
-            print("OpenAI has sent a verification code to your email.")
-            print("\nPlease:")
-            print("  1. Check your email inbox")
-            print("  2. Copy the verification code from the email")
-            print("  3. Enter it in the browser window")
-            print("  4. Click Continue/Submit")
-            print("\nWaiting up to 120 seconds for you to complete this...")
-            print("="*70 + "\n")
+            message = """
+📧 **EMAIL VERIFICATION CODE REQUIRED**
+
+OpenAI has sent a verification code to your email.
+
+**Please:**
+1. Check your email inbox
+2. Copy the verification code from the email
+3. Enter it in the browser window
+4. Click Continue/Submit
+
+Waiting up to 120 seconds for you to complete this...
+            """
+
+            # Display in Streamlit UI if available, otherwise print to console
+            if STREAMLIT_AVAILABLE:
+                st.warning(message, icon="📧")
+            else:
+                print("\n" + "="*70)
+                print("📧 EMAIL VERIFICATION CODE REQUIRED")
+                print("="*70)
+                print("OpenAI has sent a verification code to your email.")
+                print("\nPlease:")
+                print("  1. Check your email inbox")
+                print("  2. Copy the verification code from the email")
+                print("  3. Enter it in the browser window")
+                print("  4. Click Continue/Submit")
+                print("\nWaiting up to 120 seconds for you to complete this...")
+                print("="*70 + "\n")
 
             # Wait for up to 120 seconds, checking every 5 seconds if login completed
             max_wait = 120
