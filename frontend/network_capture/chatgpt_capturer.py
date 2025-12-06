@@ -267,7 +267,7 @@ class ChatGPTCapturer(BaseCapturer):
                     self._save_session()
                 return True
             else:
-                self._log_status("🔐 No existing session - authentication required")
+                self._log_status("🔐 No existing session - login required")
 
             # If credentials provided, use login flow
             if email and password:

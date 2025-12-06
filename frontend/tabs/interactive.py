@@ -51,15 +51,17 @@ def tab_interactive():
       st.warning("Please enter a prompt")
       return
 
-    # Show loading state
     # Extract formatted model name from selected_label (format: "🟢 Provider - Model Name")
     formatted_model = selected_label.split(' - ', 1)[1] if ' - ' in selected_label else selected_model
-    with st.spinner(f"Querying {formatted_model}..."):
-      try:
-        if st.session_state.data_collection_mode == 'network_log':
-          # NETWORK_LOG MODE: Use ChatGPTCapturer directly (runs on host machine)
 
-          # Create status widget to show progress
+    try:
+      if st.session_state.data_collection_mode == 'network_log':
+        # NETWORK_LOG MODE: Use ChatGPTCapturer directly (runs on host machine)
+
+        # Create status widget placeholder to show progress
+        status_placeholder = st.empty()
+
+        with status_placeholder.container():
           with st.status("Analyzing with network capture...", expanded=True) as status:
             status_container = st.empty()
 
@@ -90,9 +92,6 @@ def tab_interactive():
                 capturer.stop_browser()
               except:
                 pass
-
-            # Mark status as complete
-            status.update(label="Network capture complete", state="complete", expanded=False)
 
           # Convert ProviderResponse to display format
           search_queries = []
@@ -171,8 +170,17 @@ def tab_interactive():
             extra_links_count=metrics['extra_links_count']
           )
 
-        else:
-          # API MODE: Use backend API (returns all computed metrics)
+          # Store response in session state
+          st.session_state.response = response
+          st.session_state.prompt = prompt
+          st.session_state.error = None
+
+        # Clear status widget now that response is ready
+        status_placeholder.empty()
+
+      else:
+        # API MODE: Use backend API (returns all computed metrics)
+        with st.spinner(f"Querying {formatted_model}..."):
           response_data = st.session_state.api_client.send_prompt(
             prompt=prompt,
             provider=selected_provider,
@@ -222,24 +230,24 @@ def tab_interactive():
         st.session_state.prompt = prompt
         st.session_state.error = None
 
-      except APINotFoundError as e:
-        st.session_state.error = f"Resource not found: {str(e)}"
-        st.session_state.response = None
-      except APIClientError as e:
-        # Handle various API client errors with user-friendly messages
-        error_msg = str(e)
-        if "timed out" in error_msg.lower():
-          st.session_state.error = f"Request timed out. The model may be taking too long to respond. Please try again."
-        elif "connect" in error_msg.lower() or "connection" in error_msg.lower():
-          st.session_state.error = f"Cannot connect to API server. Please ensure the backend is running on http://localhost:8000"
-        elif "validation" in error_msg.lower():
-          st.session_state.error = f"Invalid request: {error_msg}"
-        else:
-          st.session_state.error = f"API error: {error_msg}"
-        st.session_state.response = None
-      except Exception as e:
-        st.session_state.error = f"Unexpected error: {str(e)}"
-        st.session_state.response = None
+    except APINotFoundError as e:
+      st.session_state.error = f"Resource not found: {str(e)}"
+      st.session_state.response = None
+    except APIClientError as e:
+      # Handle various API client errors with user-friendly messages
+      error_msg = str(e)
+      if "timed out" in error_msg.lower():
+        st.session_state.error = f"Request timed out. The model may be taking too long to respond. Please try again."
+      elif "connect" in error_msg.lower() or "connection" in error_msg.lower():
+        st.session_state.error = f"Cannot connect to API server. Please ensure the backend is running on http://localhost:8000"
+      elif "validation" in error_msg.lower():
+        st.session_state.error = f"Invalid request: {error_msg}"
+      else:
+        st.session_state.error = f"API error: {error_msg}"
+      st.session_state.response = None
+    except Exception as e:
+      st.session_state.error = f"Unexpected error: {str(e)}"
+      st.session_state.response = None
 
   # Display results
   if st.session_state.error:
