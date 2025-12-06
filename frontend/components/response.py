@@ -65,8 +65,9 @@ def format_response_text(text: str, citations: list) -> str:
 
   # Step 1: Extract reference-style link definitions into a mapping
   # Pattern: [N]: URL "Title" or [N]: URL
-  # Handle titles with escaped quotes by matching everything after URL to end of line
-  reference_pattern = r'^\[(\d+)\]:\s+(https?://\S+)(?:\s+.*)?$'
+  # Note: We don't include the optional title part in the pattern because
+  # it can cause the regex to match across newlines (since \s+ matches \n)
+  reference_pattern = r'^\[(\d+)\]:\s+(https?://\S+)'
   references = {}
   for match in re.finditer(reference_pattern, text, flags=re.MULTILINE):
     ref_num = match.group(1)
@@ -85,7 +86,9 @@ def format_response_text(text: str, citations: list) -> str:
   text = re.sub(r'\[([^\]]+)\]\[(\d+)\]', replace_reference_link, text)
 
   # Step 3: Remove the reference definitions from the bottom
-  text = re.sub(reference_pattern, '', text, flags=re.MULTILINE)
+  # Use a more specific pattern to match the entire line including optional title
+  removal_pattern = r'^\[(\d+)\]:\s+https?://\S+.*$'
+  text = re.sub(removal_pattern, '', text, flags=re.MULTILINE)
 
   # Step 4: Clean up any resulting multiple newlines
   text = re.sub(r'\n{3,}', '\n\n', text)
