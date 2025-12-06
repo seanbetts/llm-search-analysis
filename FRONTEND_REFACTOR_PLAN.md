@@ -557,6 +557,159 @@ app.py (1,605 lines)
 
 ---
 
+## Phase 2.5 – Deprecate and Clean Up `src/` Folder (P2)
+
+**Status:** ⬜ NOT STARTED
+
+**Objective:** Remove the legacy `src/` folder and consolidate all code into `backend/` and `frontend/` directories. This eliminates duplicate code and establishes a clear architecture boundary.
+
+### Current State Analysis
+
+**Still Active (Used by Frontend):**
+1. **`src/config.py`** (1.6 KB)
+   - Environment configuration (CHATGPT_EMAIL, CHATGPT_PASSWORD, API keys)
+   - **Used by:** `frontend/tabs/batch.py`, `frontend/tabs/interactive.py`, old tests
+   - **Action:** Migrate to backend config or frontend environment variables
+
+2. **`src/network_capture/`** (shared network capture code)
+   - `chatgpt_capturer.py` - Browser automation for ChatGPT network log capture
+   - `parser.py` - Network log parsing
+   - `base_capturer.py`, `browser_manager.py`
+   - **Used by:** Frontend tabs for network_log data collection mode
+   - **Action:** Decide ownership (keep as shared library or move to backend)
+
+**Deprecated (Duplicated in Backend):**
+1. **`src/providers/`** - Provider implementations
+   - `openai_provider.py`, `anthropic_provider.py`, `google_provider.py`, `provider_factory.py`
+   - **Duplicated in:** `backend/app/services/providers/`
+   - **Action:** Delete (backend has authoritative copy)
+
+2. **`src/database.py`** (22 KB, 600+ lines)
+   - Old SQLAlchemy models
+   - **Replaced by:** `backend/app/models/database.py`
+   - **Used by:** Only old frontend tests
+   - **Action:** Update/remove tests, then delete
+
+3. **`src/analyzer.py`** (3.6 KB)
+   - Analytics logic
+   - **Status:** Likely replaced by backend services
+   - **Action:** Verify unused, then delete
+
+4. **`src/parser.py`** (1.5 KB)
+   - Parsing logic
+   - **Status:** Likely replaced by backend or network_capture/parser.py
+   - **Action:** Verify unused, then delete
+
+### Implementation Tasks
+
+**1. Migrate Configuration (High Priority)**
+- [ ] Audit all uses of `src/config.py`
+- [ ] Decision: Backend config ownership vs frontend .env
+- [ ] Option A: Backend reads environment, frontend calls backend for needed config
+- [ ] Option B: Frontend reads .env directly for its own config (API URLs, etc.)
+- [ ] Update frontend imports to use new config source
+- [ ] Delete `src/config.py`
+
+**2. Consolidate Network Capture (High Priority)**
+- [ ] Decision: Where should `network_capture/` live?
+  - **Option A:** Keep in `src/` as shared code (both frontend and backend may use)
+  - **Option B:** Move to `backend/app/services/network_capture/` (backend owns it)
+  - **Option C:** Move to separate `lib/network_capture/` or `shared/network_capture/` package
+  - **Recommendation:** Move to backend, frontend calls network capture via API (cleaner separation)
+- [ ] If moving to backend: Create backend endpoint for network log capture
+- [ ] Update frontend to call backend API instead of importing directly
+- [ ] Move code to chosen location
+- [ ] Update all imports
+- [ ] Test network_log mode functionality
+
+**3. Remove Duplicate Provider Code (High Priority)**
+- [ ] Verify no code imports from `src/providers/`
+  ```bash
+  grep -r "from src.providers" --include="*.py"
+  ```
+- [ ] Delete `src/providers/` directory entirely
+- [ ] Confirm backend providers work correctly
+
+**4. Remove Old Database Code (Medium Priority)**
+- [ ] Audit `frontend/tests/test_database_integration.py`
+- [ ] Update tests to use backend API or remove if obsolete
+- [ ] Verify no other imports of `src/database.py`
+- [ ] Delete `src/database.py`
+
+**5. Remove Old Analysis/Parsing Code (Low Priority)**
+- [ ] Verify `src/analyzer.py` is unused:
+  ```bash
+  grep -r "from src.analyzer\|import analyzer" --include="*.py"
+  ```
+- [ ] Verify `src/parser.py` is unused (separate from network_capture/parser.py)
+- [ ] Delete if confirmed deprecated
+
+**6. Final Cleanup**
+- [ ] Remove empty `src/__pycache__/` directory
+- [ ] Delete `src/__init__.py`
+- [ ] Remove `src/.DS_Store`
+- [ ] Delete `src/` directory entirely
+- [ ] Update any documentation that references `src/`
+
+### Target Directory Structure
+
+**After Phase 2.5 Completion:**
+```
+llm-search-analysis/
+├── backend/              # FastAPI backend (source of truth)
+│   ├── app/
+│   │   ├── core/
+│   │   │   └── config.py                    # ← Backend config
+│   │   ├── services/
+│   │   │   ├── providers/                   # ← API provider implementations
+│   │   │   └── network_capture/             # ← Network log capture (if moved)
+│   │   └── models/
+│   │       └── database.py                  # ← Database models
+│   └── tests/
+├── frontend/             # Streamlit UI (thin client)
+│   ├── tabs/             # Tab modules
+│   ├── components/       # Display components
+│   ├── helpers/          # Helper utilities
+│   └── api_client.py     # Backend API client
+├── lib/                  # Shared libraries (optional)
+│   └── network_capture/  # ← Network capture (if kept shared)
+├── data/                 # Data files, sessions, etc.
+├── scripts/              # Utility scripts
+└── app.py                # Streamlit entry point
+```
+
+### Testing Strategy
+
+**Before Changes:**
+- [ ] Document all current uses of `src/` imports
+- [ ] Run full test suite to establish baseline
+- [ ] Test network_log mode manually
+
+**During Migration:**
+- [ ] Update imports incrementally
+- [ ] Test each component after migration
+- [ ] Keep src/ files until migration complete (don't delete prematurely)
+
+**After Changes:**
+- [ ] Run full test suite (backend and frontend)
+- [ ] Manually test network_log mode
+- [ ] Manually test API mode
+- [ ] Test all three tabs (interactive, batch, history)
+- [ ] Verify no broken imports
+
+### Success Criteria
+
+- ✅ No code imports from `src/` anywhere in codebase
+- ✅ `src/` directory deleted
+- ✅ All tests passing
+- ✅ Network_log mode still functional
+- ✅ Configuration accessible where needed
+- ✅ Clear ownership of all code (backend vs frontend vs shared)
+
+**Result:** Clean architecture with no duplicate code, clear separation between backend and frontend, and legacy `src/` folder completely removed.
+
+---
+
 ## Phase 3 – React-Ready API & Data Shapes (P1/P2)
 
 **Objective:** Shape the backend API and data contracts so a future React app can plug in directly with minimal redesign.
@@ -624,14 +777,20 @@ app.py (1,605 lines)
 
 ## Priority Summary
 
-- **P1 (High Priority / Do First)**
-  - Move metrics, model/provider naming, export logic, and network-log mapping into backend or shared core.
+- **P1 (High Priority / Do First)** ✅ COMPLETED
+  - ✅ Move metrics, model/provider naming, export logic, and network-log mapping into backend or shared core.
   - Define and document the React-ready API surface.
 
 - **P2 (Medium Priority)**
-  - Split `app.py` into tab modules and minimal components.
-  - Introduce thin UI helpers, unified error handling, and UI-only constants/config in Streamlit.
-  - Extract inline CSS and remove magic numbers (timeouts, limits) in favour of configuration.
+  - ✅ Split `app.py` into tab modules and minimal components.
+  - ✅ Extract inline CSS and helper functions into dedicated modules.
+  - **Phase 2.5:** Deprecate and clean up `src/` folder
+    - Migrate configuration to backend or frontend .env
+    - Consolidate network_capture code (move to backend or shared library)
+    - Remove duplicate provider code
+    - Delete old database, analyzer, and parser code
+  - Introduce thin UI helpers, unified error handling, and UI-only constants/config in Streamlit (optional).
+  - Remove magic numbers (timeouts, limits) in favour of configuration (optional).
 
 - **P3 (Lower Priority / Planning)**
   - React migration design: routes, TypeScript types, and JS/TS client library shape.
