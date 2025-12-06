@@ -1,5 +1,7 @@
 """Integration tests for FastAPI endpoints."""
 
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -12,7 +14,8 @@ from app.dependencies import get_db
 
 
 # Create test database
-TEST_DATABASE_URL = "sqlite:///./test.db"
+TEST_DB_PATH = Path(__file__).resolve().parent / "data" / "test.db"
+TEST_DATABASE_URL = f"sqlite:///{TEST_DB_PATH}"
 test_engine = create_engine(
   TEST_DATABASE_URL,
   connect_args={"check_same_thread": False}

@@ -15,6 +15,8 @@ These tests would have caught:
 - Cascading delete issues
 """
 
+from pathlib import Path
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -34,7 +36,8 @@ from app.repositories.interaction_repository import InteractionRepository
 
 
 # Create test database
-TEST_DATABASE_URL = "sqlite:///./test_integration.db"
+TEST_DB_PATH = Path(__file__).resolve().parent / "data" / "test_integration.db"
+TEST_DATABASE_URL = f"sqlite:///{TEST_DB_PATH}"
 test_engine = create_engine(
     TEST_DATABASE_URL,
     connect_args={"check_same_thread": False}

@@ -3,6 +3,7 @@ Anthropic Claude provider implementation with web search.
 """
 
 import time
+import logging
 from typing import List
 from urllib.parse import urlparse
 from anthropic import Anthropic
@@ -14,6 +15,8 @@ from .base_provider import (
   Source,
   Citation
 )
+
+logger = logging.getLogger(__name__)
 
 
 class AnthropicProvider(BaseProvider):
@@ -128,18 +131,20 @@ class AnthropicProvider(BaseProvider):
           # Extract citations from text blocks
           if hasattr(content_block, 'citations') and content_block.citations:
             for citation in content_block.citations:
-              # Only include citations with valid URLs
-              if hasattr(citation, 'url') and citation.url:
+              # Handle both dict and object formats
+              url = citation.get('url') if isinstance(citation, dict) else getattr(citation, 'url', None)
+              if url:
                 # Try to find rank from sources list by matching URL
                 rank = None
                 for source in sources:
-                  if source.url == citation.url:
+                  if source.url == url:
                     rank = source.rank
                     break
 
+                title = citation.get('title') if isinstance(citation, dict) else getattr(citation, 'title', None)
                 citations.append(Citation(
-                  url=citation.url,
-                  title=citation.title if hasattr(citation, 'title') else None,
+                  url=url,
+                  title=title,
                   rank=rank
                 ))
 
@@ -161,11 +166,14 @@ class AnthropicProvider(BaseProvider):
             result_sources = []
             for rank, result in enumerate(content_block.content, 1):
               # Only include sources with valid URLs
-              if hasattr(result, 'url') and result.url:
+              # Handle both dict and object formats
+              url = result.get('url') if isinstance(result, dict) else getattr(result, 'url', None)
+              if url:
+                title = result.get('title') if isinstance(result, dict) else getattr(result, 'title', None)
                 source_obj = Source(
-                  url=result.url,
-                  title=result.title if hasattr(result, 'title') else None,
-                  domain=urlparse(result.url).netloc,
+                  url=url,
+                  title=title,
+                  domain=urlparse(url).netloc,
                   rank=rank
                 )
                 result_sources.append(source_obj)

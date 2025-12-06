@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 import re
 
 
@@ -83,6 +83,30 @@ class SendPromptRequest(BaseModel):
         f"Invalid data_mode '{v}'. Must be one of: {', '.join(valid_modes)}"
       )
     return v_lower
+
+  @model_validator(mode='after')
+  def validate_provider_model_match(self) -> 'SendPromptRequest':
+    """Validate that provider matches the model."""
+    # Import here to avoid circular dependency
+    from app.services.providers.provider_factory import ProviderFactory
+
+    # Get the provider that this model belongs to
+    expected_provider = ProviderFactory.get_provider_for_model(self.model)
+
+    if not expected_provider:
+      raise ValueError(
+        f"Model '{self.model}' is not supported. "
+        f"Supported models: {', '.join(ProviderFactory.get_all_supported_models())}"
+      )
+
+    # Validate provider matches
+    if self.provider != expected_provider:
+      raise ValueError(
+        f"Provider mismatch: model '{self.model}' belongs to provider '{expected_provider}', "
+        f"but request specified provider '{self.provider}'"
+      )
+
+    return self
 
   model_config = {
     "json_schema_extra": {

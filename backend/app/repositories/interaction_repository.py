@@ -2,6 +2,7 @@
 Repository for database operations on interactions (prompts + responses).
 """
 
+import logging
 from typing import List, Optional
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
@@ -15,6 +16,8 @@ from app.models.database import (
   SourceModel,
   SourceUsed,
 )
+
+logger = logging.getLogger(__name__)
 
 # Provider display name mapping
 PROVIDER_DISPLAY_NAMES = {
@@ -123,7 +126,7 @@ class InteractionRepository:
       self.db.flush()
 
       # Create search queries and sources
-      for query_data in search_queries:
+      for i, query_data in enumerate(search_queries):
         search_query = SearchQuery(
           response_id=response.id,
           search_query=query_data.get("query", ""),

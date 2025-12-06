@@ -41,6 +41,9 @@ def normalize_model_name(model_name: str) -> str:
 
   Converts dashes to dots for version numbers (e.g., gpt-5-1 → gpt-5.1)
 
+  IMPORTANT: Known canonical model names are preserved as-is to prevent corruption.
+  This is critical for models like Claude which use date suffixes (claude-sonnet-4-5-20250929).
+
   Args:
     model_name: The model name to normalize
 
@@ -52,9 +55,19 @@ def normalize_model_name(model_name: str) -> str:
     'gpt-5.1'
     >>> normalize_model_name("gemini-3-0-flash")
     'gemini-3.0-flash'
-    >>> normalize_model_name("claude-3-7-sonnet")
-    'claude-3.7-sonnet'
+    >>> normalize_model_name("claude-sonnet-4-5-20250929")
+    'claude-sonnet-4-5-20250929'  # Preserved as-is
   """
+  # Import here to avoid circular dependency
+  try:
+    from app.services.providers.provider_factory import ProviderFactory
+    # If this model is in the canonical MODEL_PROVIDER_MAP, return as-is
+    if model_name in ProviderFactory.MODEL_PROVIDER_MAP:
+      return model_name
+  except ImportError:
+    # If import fails, proceed with normalization logic
+    pass
+
   # Handle version number patterns like x-y where y is a single digit
   # gpt-5-1 → gpt-5.1
   # gemini-3-0-flash → gemini-3.0-flash

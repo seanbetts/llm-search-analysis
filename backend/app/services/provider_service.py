@@ -1,11 +1,14 @@
 """Service layer for LLM provider integration."""
 
+import logging
 from typing import Dict, List
 from app.config import settings
 from app.services.providers import ProviderFactory, ProviderResponse
 from app.api.v1.schemas.responses import ProviderInfo, SendPromptResponse
 from app.services.interaction_service import InteractionService
 from app.core.utils import get_model_display_name
+
+logger = logging.getLogger(__name__)
 
 
 class ProviderService:

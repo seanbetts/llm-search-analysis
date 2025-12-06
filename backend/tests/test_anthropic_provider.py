@@ -78,27 +78,34 @@ class TestAnthropicProvider:
     mock_query_block.input = {"query": "latest AI developments"}
 
     # Mock web_search_tool_result block (search results)
+    # NOTE: Real Anthropic SDK returns dicts, not objects with attributes
     mock_result_block = Mock()
     mock_result_block.type = "web_search_tool_result"
 
-    mock_result1 = Mock()
-    mock_result1.url = "https://example.com/article1"
-    mock_result1.title = "AI Article 1"
+    mock_result1 = {
+      'type': 'web_search_result',
+      'url': 'https://example.com/article1',
+      'title': 'AI Article 1'
+    }
 
-    mock_result2 = Mock()
-    mock_result2.url = "https://example.com/article2"
-    mock_result2.title = "AI Article 2"
+    mock_result2 = {
+      'type': 'web_search_result',
+      'url': 'https://example.com/article2',
+      'title': 'AI Article 2'
+    }
 
     mock_result_block.content = [mock_result1, mock_result2]
 
     # Mock text block with citations
+    # NOTE: Real Anthropic SDK returns citation dicts, not objects
     mock_text_block = Mock()
     mock_text_block.type = "text"
     mock_text_block.text = "AI has advanced significantly."
 
-    mock_citation = Mock()
-    mock_citation.url = "https://example.com/article1"
-    mock_citation.title = "AI Article 1"
+    mock_citation = {
+      'url': 'https://example.com/article1',
+      'title': 'AI Article 1'
+    }
     mock_text_block.citations = [mock_citation]
 
     mock_response.content = [mock_query_block, mock_result_block, mock_text_block]
@@ -172,18 +179,20 @@ class TestAnthropicProvider:
     """Test _parse_response removes duplicate citations."""
     mock_response = Mock()
 
-    # Mock text block with duplicate citations
+    # Mock text block with duplicate citations (use dicts)
     mock_text_block = Mock()
     mock_text_block.type = "text"
     mock_text_block.text = "Test response"
 
-    mock_citation1 = Mock()
-    mock_citation1.url = "https://example.com/same"
-    mock_citation1.title = "Same Article"
+    mock_citation1 = {
+      'url': 'https://example.com/same',
+      'title': 'Same Article'
+    }
 
-    mock_citation2 = Mock()
-    mock_citation2.url = "https://example.com/same"  # Duplicate
-    mock_citation2.title = "Same Article"
+    mock_citation2 = {
+      'url': 'https://example.com/same',  # Duplicate
+      'title': 'Same Article'
+    }
 
     mock_text_block.citations = [mock_citation1, mock_citation2]
 
@@ -208,12 +217,14 @@ class TestAnthropicProvider:
     mock_query1.name = "web_search"
     mock_query1.input = {"query": "query 1"}
 
-    # First result
+    # First result (use dict to match real API)
     mock_result1 = Mock()
     mock_result1.type = "web_search_tool_result"
-    mock_result1_source = Mock()
-    mock_result1_source.url = "https://example.com/result1"
-    mock_result1_source.title = "Result 1"
+    mock_result1_source = {
+      'type': 'web_search_result',
+      'url': 'https://example.com/result1',
+      'title': 'Result 1'
+    }
     mock_result1.content = [mock_result1_source]
 
     # Second query
@@ -222,12 +233,14 @@ class TestAnthropicProvider:
     mock_query2.name = "web_search"
     mock_query2.input = {"query": "query 2"}
 
-    # Second result
+    # Second result (use dict to match real API)
     mock_result2 = Mock()
     mock_result2.type = "web_search_tool_result"
-    mock_result2_source = Mock()
-    mock_result2_source.url = "https://example.com/result2"
-    mock_result2_source.title = "Result 2"
+    mock_result2_source = {
+      'type': 'web_search_result',
+      'url': 'https://example.com/result2',
+      'title': 'Result 2'
+    }
     mock_result2.content = [mock_result2_source]
 
     mock_response.content = [mock_query1, mock_result1, mock_query2, mock_result2]
@@ -277,17 +290,21 @@ class TestAnthropicProvider:
     mock_query.name = "web_search"
     mock_query.input = {"query": "test query"}
 
-    # Mock result with one valid and one invalid source
+    # Mock result with one valid and one invalid source (use dicts)
     mock_result = Mock()
     mock_result.type = "web_search_tool_result"
 
-    mock_result1 = Mock()
-    mock_result1.url = None  # No URL
-    mock_result1.title = "Invalid"
+    mock_result1 = {
+      'type': 'web_search_result',
+      'url': None,  # No URL
+      'title': 'Invalid'
+    }
 
-    mock_result2 = Mock()
-    mock_result2.url = "https://example.com/valid"
-    mock_result2.title = "Valid"
+    mock_result2 = {
+      'type': 'web_search_result',
+      'url': 'https://example.com/valid',
+      'title': 'Valid'
+    }
 
     mock_result.content = [mock_result1, mock_result2]
 
@@ -374,21 +391,26 @@ class TestAnthropicProvider:
 
     mock_result = Mock()
     mock_result.type = "web_search_tool_result"
-    mock_source1 = Mock()
-    mock_source1.url = "https://example.com/first"
-    mock_source1.title = "First"
-    mock_source2 = Mock()
-    mock_source2.url = "https://example.com/second"
-    mock_source2.title = "Second"
+    mock_source1 = {
+      'type': 'web_search_result',
+      'url': 'https://example.com/first',
+      'title': 'First'
+    }
+    mock_source2 = {
+      'type': 'web_search_result',
+      'url': 'https://example.com/second',
+      'title': 'Second'
+    }
     mock_result.content = [mock_source1, mock_source2]
 
-    # Mock text with citation to second source
+    # Mock text with citation to second source (use dict)
     mock_text = Mock()
     mock_text.type = "text"
     mock_text.text = "Test"
-    mock_citation = Mock()
-    mock_citation.url = "https://example.com/second"
-    mock_citation.title = "Second"
+    mock_citation = {
+      'url': 'https://example.com/second',
+      'title': 'Second'
+    }
     mock_text.citations = [mock_citation]
 
     mock_response.content = [mock_query, mock_result, mock_text]

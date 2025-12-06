@@ -44,7 +44,7 @@ GOOGLE_API_KEY=AIza...
 ANTHROPIC_API_KEY=sk-ant-...
 
 # Database
-DATABASE_URL=sqlite:///./test.db
+DATABASE_URL=sqlite:///./tests/data/test.db
 
 # Server
 LOG_LEVEL=INFO
