@@ -51,6 +51,22 @@ docker compose up -d
 - For existing SQLite files created before Alembic, run `alembic stamp head` once so migrations start from the current schema.
 - Recompute historical response metrics if needed: `cd backend && python scripts/backfill_metrics.py` (use `--dry-run` to preview).
 
+### Provider payload validation
+- Canonical OpenAI/Anthropic/Google payloads live in `backend/tests/fixtures/provider_payloads.py`. Update them whenever the SDKs change and run `pytest backend/tests/test_provider_payload_schemas.py -v` to ensure the new shapes are accepted.
+- To capture a fresh sample:
+  1. Run the backend with real API keys and send a prompt (via `/interactions/send` or Streamlit).
+  2. Copy the `raw_response` field from the JSON response (or `responses.raw_response_json` in SQLite).
+  3. Redact anything sensitive, paste it into the appropriate fixture, then re-run the schema tests above.
+
+### Auditing stored JSON blobs
+- Validate historical rows (raw responses, internal ranking scores, metadata) with `backend/scripts/audit_json_payloads.py`.
+  ```bash
+  cd backend
+  DATABASE_URL=sqlite:///./data/llm_search.db python scripts/audit_json_payloads.py --dry-run
+  # Add --fix to write sanitized payloads back to the DB
+  ```
+- The script reports invalid provider blobs and nulls them when `--fix` is supplied, preventing broken JSON from crashing Streamlit/API consumers.
+
 ## Documentation Map
 - **Architecture & API** – `docs/backend/overview.md` (links to `docs/backend/API_DOCUMENTATION.md` and `docs/backend/TESTING.md`).
 - **Operations** – `docs/operations/ENVIRONMENT_VARIABLES.md`, `docs/operations/BACKUP_AND_RESTORE.md`, plus helper scripts under `scripts/`.
