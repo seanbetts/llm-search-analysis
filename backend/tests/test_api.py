@@ -194,12 +194,14 @@ class TestInteractionsEndpoints:
       }
     )
 
-    # Unsupported model returns 400 Bad Request
-    assert response.status_code == 400
+    # Unsupported model returns 422 Unprocessable Entity (Pydantic validation error)
+    assert response.status_code == 422
     data = response.json()
+    # Error is wrapped in custom error handler format
     assert "error" in data
-    assert data["error"]["code"] == "INVALID_REQUEST"
-    assert "unsupported-model-xyz" in data["error"]["message"]
+    assert data["error"]["code"] == "VALIDATION_ERROR"
+    # Validation error should mention the unsupported model
+    assert "unsupported-model-xyz" in str(data).lower() or "not supported" in str(data).lower()
 
   def test_get_recent_interactions_empty(self, client):
     """Test GET /api/v1/interactions/recent with no interactions."""

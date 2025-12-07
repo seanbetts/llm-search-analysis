@@ -329,10 +329,9 @@ class TestUtilityFunctions:
     """Test normalizing Claude model names."""
     # Claude models with text suffix don't get normalized
     assert normalize_model_name("claude-3-7-sonnet") == "claude-3-7-sonnet"
-    # Date-based models get partially normalized (last two parts)
-    # claude-sonnet-4-5-20250929 -> parts[-2]="5", parts[-1]="20250929"
-    # Becomes "5.2" and "0250929", result: claude-sonnet-4-5.2-0250929
-    assert normalize_model_name("claude-sonnet-4-5-20250929") == "claude-sonnet-4-5.2-0250929"
+    # Canonical models from MODEL_PROVIDER_MAP are preserved exactly (bug fix)
+    # Previously this would be corrupted to "claude-sonnet-4-5.2-0250929"
+    assert normalize_model_name("claude-sonnet-4-5-20250929") == "claude-sonnet-4-5-20250929"
     # The function works best with simple two-digit versions
     assert normalize_model_name("claude-4-5") == "claude-4.5"
 

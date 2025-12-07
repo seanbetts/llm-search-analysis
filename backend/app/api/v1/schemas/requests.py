@@ -23,7 +23,7 @@ class SendPromptRequest(BaseModel):
   model: str = Field(
     ...,
     description="Model name to use",
-    examples=["gpt-4o", "gemini-2.0-flash-exp", "claude-3-7-sonnet-20250219"]
+    examples=["gpt-5.1", "gemini-2.0-flash-exp", "claude-3-7-sonnet-20250219"]
   )
 
   data_mode: str = Field(
@@ -114,7 +114,7 @@ class SendPromptRequest(BaseModel):
         {
           "prompt": "What are the latest developments in quantum computing?",
           "provider": "openai",
-          "model": "gpt-4o",
+          "model": "gpt-5.1",
           "data_mode": "api",
           "headless": True
         }
@@ -144,7 +144,7 @@ class BatchRequest(BaseModel):
     ...,
     min_length=1,
     description="List of models to test against",
-    examples=[["gpt-4o", "gpt-4o-mini"]]
+    examples=[["gpt-5.1", "gpt-5.1-mini"]]
   )
 
   data_mode: str = Field(
@@ -218,7 +218,7 @@ class BatchRequest(BaseModel):
             "Explain machine learning"
           ],
           "provider": "openai",
-          "models": ["gpt-4o", "gpt-4o-mini"],
+          "models": ["gpt-5.1", "gpt-5.1-mini"],
           "data_mode": "api",
           "headless": True
         }

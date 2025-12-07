@@ -25,13 +25,13 @@ class TestSendPromptRequest:
     request = SendPromptRequest(
       prompt="What is AI?",
       provider="openai",
-      model="gpt-4o",
+      model="gpt-5.1",
       data_mode="api",
       headless=True
     )
     assert request.prompt == "What is AI?"
     assert request.provider == "openai"
-    assert request.model == "gpt-4o"
+    assert request.model == "gpt-5.1"
 
   def test_prompt_too_short(self):
     """Test prompt validation - too short."""
@@ -39,7 +39,7 @@ class TestSendPromptRequest:
       SendPromptRequest(
         prompt="",
         provider="openai",
-        model="gpt-4o"
+        model="gpt-5.1"
       )
     assert "prompt" in str(exc_info.value).lower()
 
@@ -49,7 +49,7 @@ class TestSendPromptRequest:
       SendPromptRequest(
         prompt="   ",
         provider="openai",
-        model="gpt-4o"
+        model="gpt-5.1"
       )
     assert "empty or whitespace" in str(exc_info.value).lower()
 
@@ -59,7 +59,7 @@ class TestSendPromptRequest:
       SendPromptRequest(
         prompt="a" * 10001,
         provider="openai",
-        model="gpt-4o"
+        model="gpt-5.1"
       )
     assert "10000" in str(exc_info.value)
 
@@ -69,7 +69,7 @@ class TestSendPromptRequest:
       SendPromptRequest(
         prompt="<script>alert('xss')</script>What is AI?",
         provider="openai",
-        model="gpt-4o"
+        model="gpt-5.1"
       )
     assert "script" in str(exc_info.value).lower()
 
@@ -79,7 +79,7 @@ class TestSendPromptRequest:
       SendPromptRequest(
         prompt="<iframe src='evil.com'>What is AI?</iframe>",
         provider="openai",
-        model="gpt-4o"
+        model="gpt-5.1"
       )
     assert "iframe" in str(exc_info.value).lower()
 
@@ -89,7 +89,7 @@ class TestSendPromptRequest:
       SendPromptRequest(
         prompt="What is AI?",
         provider="invalid_provider",
-        model="gpt-4o"
+        model="gpt-5.1"
       )
     assert "invalid provider" in str(exc_info.value).lower()
 
@@ -99,7 +99,7 @@ class TestSendPromptRequest:
       SendPromptRequest(
         prompt="What is AI?",
         provider="openai",
-        model="gpt-4o",
+        model="gpt-5.1",
         data_mode="invalid_mode"
       )
     assert "invalid data_mode" in str(exc_info.value).lower()
@@ -109,7 +109,7 @@ class TestSendPromptRequest:
     request = SendPromptRequest(
       prompt="What is AI?",
       provider="OpenAI",
-      model="gpt-4o"
+      model="gpt-5.1"
     )
     assert request.provider == "openai"
 
@@ -122,7 +122,7 @@ class TestBatchRequest:
     request = BatchRequest(
       prompts=["What is AI?", "What is ML?"],
       provider="openai",
-      models=["gpt-4o", "gpt-4o-mini"]
+      models=["gpt-5.1", "gpt-5.1-mini"]
     )
     assert len(request.prompts) == 2
     assert len(request.models) == 2
@@ -133,7 +133,7 @@ class TestBatchRequest:
       BatchRequest(
         prompts=[],
         provider="openai",
-        models=["gpt-4o"]
+        models=["gpt-5.1"]
       )
     assert "prompts" in str(exc_info.value).lower()
 
@@ -153,7 +153,7 @@ class TestBatchRequest:
       BatchRequest(
         prompts=["What is AI?", "   "],
         provider="openai",
-        models=["gpt-4o"]
+        models=["gpt-5.1"]
       )
     assert "index 1" in str(exc_info.value).lower()
 
@@ -163,7 +163,7 @@ class TestBatchRequest:
       BatchRequest(
         prompts=["prompt"] * 101,
         provider="openai",
-        models=["gpt-4o"]
+        models=["gpt-5.1"]
       )
     assert "100" in str(exc_info.value)
 
@@ -229,7 +229,7 @@ class TestResponseSchemas:
       prompt="What is AI?",
       response_text="AI is...",
       provider="openai",
-      model="gpt-4o",
+      model="gpt-5.1",
       response_time_ms=1500,
       data_source="api"
     )
@@ -244,7 +244,7 @@ class TestResponseSchemas:
       interaction_id=1,
       prompt="What is AI?",
       provider="openai",
-      model="gpt-4o",
+      model="gpt-5.1",
       response_preview="AI is...",
       created_at=datetime.utcnow()
     )
@@ -268,7 +268,7 @@ class TestResponseSchemas:
       name="openai",
       display_name="OpenAI",
       is_active=True,
-      supported_models=["gpt-4o", "gpt-4o-mini"]
+      supported_models=["gpt-5.1", "gpt-5.1-mini"]
     )
     assert info.name == "openai"
     assert len(info.supported_models) == 2
