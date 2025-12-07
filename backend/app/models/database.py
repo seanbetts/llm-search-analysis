@@ -3,7 +3,7 @@ Database models using SQLAlchemy.
 """
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, JSON, Float, Index
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, JSON, Float, Index, CheckConstraint
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -76,9 +76,8 @@ class Response(Base):
   # Relationships
   prompt = relationship("Prompt", back_populates="response")
   search_queries = relationship("SearchQuery", back_populates="response")
-  sources = relationship(
-    "SourceModel",
-    foreign_keys="[SourceModel.response_id]",
+  response_sources = relationship(
+    "ResponseSource",
     back_populates="response"
   )
   sources_used = relationship("SourceUsed", back_populates="response")
@@ -104,34 +103,50 @@ class SearchQuery(Base):
 
   # Relationships
   response = relationship("Response", back_populates="search_queries")
-  sources = relationship("SourceModel", back_populates="search_query")
+  sources = relationship("QuerySource", back_populates="search_query")
 
 
-class SourceModel(Base):
-  """Source/URL fetched during search."""
-  __tablename__ = "sources"
+class QuerySource(Base):
+  """Source/URL fetched for a specific search query."""
+  __tablename__ = "query_sources"
 
   id = Column(Integer, primary_key=True)
-  search_query_id = Column(Integer, ForeignKey("search_queries.id"), nullable=True)
-  response_id = Column(Integer, ForeignKey("responses.id"), nullable=True)
+  search_query_id = Column(Integer, ForeignKey("search_queries.id"), nullable=False)
   url = Column(Text, nullable=False)
   title = Column(Text)
   domain = Column(String(255))
   rank = Column(Integer)
   pub_date = Column(String(50))
-
-  # Network log exclusive fields
   snippet_text = Column(Text)
   internal_score = Column(Float)
   metadata_json = Column(JSON)
 
-  # Relationships
   search_query = relationship("SearchQuery", back_populates="sources")
-  response = relationship("Response", foreign_keys=[response_id], back_populates="sources")
 
   __table_args__ = (
-    Index("ix_sources_search_query_id", "search_query_id"),
-    Index("ix_sources_response_id", "response_id"),
+    Index("ix_query_sources_search_query_id", "search_query_id"),
+  )
+
+
+class ResponseSource(Base):
+  """Source fetched directly for a response (network log mode)."""
+  __tablename__ = "response_sources"
+
+  id = Column(Integer, primary_key=True)
+  response_id = Column(Integer, ForeignKey("responses.id"), nullable=False)
+  url = Column(Text, nullable=False)
+  title = Column(Text)
+  domain = Column(String(255))
+  rank = Column(Integer)
+  pub_date = Column(String(50))
+  snippet_text = Column(Text)
+  internal_score = Column(Float)
+  metadata_json = Column(JSON)
+
+  response = relationship("Response", back_populates="response_sources")
+
+  __table_args__ = (
+    Index("ix_response_sources_response_id", "response_id"),
   )
 
 
@@ -141,6 +156,8 @@ class SourceUsed(Base):
 
   id = Column(Integer, primary_key=True)
   response_id = Column(Integer, ForeignKey("responses.id"), nullable=False)
+  query_source_id = Column(Integer, ForeignKey("query_sources.id"), nullable=True)
+  response_source_id = Column(Integer, ForeignKey("response_sources.id"), nullable=True)
   url = Column(Text, nullable=False)
   title = Column(Text)
   rank = Column(Integer)
@@ -152,7 +169,15 @@ class SourceUsed(Base):
 
   __table_args__ = (
     Index("ix_sources_used_response_id", "response_id"),
+    Index("ix_sources_used_query_source_id", "query_source_id"),
+    Index("ix_sources_used_response_source_id", "response_source_id"),
+    CheckConstraint(
+      "(query_source_id IS NULL) OR (response_source_id IS NULL)",
+      name="ck_sources_used_single_reference"
+    )
   )
 
   # Relationships
   response = relationship("Response", back_populates="sources_used")
+  query_source = relationship("QuerySource")
+  response_source = relationship("ResponseSource")

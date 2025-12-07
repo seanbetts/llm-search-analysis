@@ -169,7 +169,7 @@ class InteractionService:
       # For network_log: sources are linked directly to response
       # For api: sources are linked to search queries
       if response.data_source == 'network_log':
-        source_count = len(response.sources) if response.sources else 0
+        source_count = len(response.response_sources) if response.response_sources else 0
       else:
         source_count = sum(len(q.sources) for q in response.search_queries)
       citation_count = len(response.sources_used)
@@ -266,7 +266,7 @@ class InteractionService:
     # Populate all_sources for both API and network_log modes
     # This provides a consistent, pre-aggregated list for the frontend
     all_sources = []
-    if response.data_source == 'network_log' and response.sources:
+    if response.data_source == 'network_log' and response.response_sources:
       # Network_log: sources are directly on response
       all_sources = [
         SourceSchema(
@@ -279,7 +279,7 @@ class InteractionService:
           internal_score=s.internal_score,
           metadata=s.metadata_json,
         )
-        for s in (response.sources or [])
+        for s in (response.response_sources or [])
       ]
     else:
       # API: gather all sources from search queries

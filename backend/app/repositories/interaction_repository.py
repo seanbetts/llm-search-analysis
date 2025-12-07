@@ -15,7 +15,8 @@ from app.models.database import (
   Prompt,
   Response,
   SearchQuery,
-  SourceModel,
+  QuerySource,
+  ResponseSource,
   SourceUsed,
 )
 
@@ -85,6 +86,32 @@ class InteractionRepository:
       SQLAlchemyError: If database operation fails
     """
     try:
+      query_source_lookup: dict = {}
+      response_source_lookup: dict = {}
+
+      def register_source(lookup: dict, url: str, rank: Optional[int], source_id: int):
+        if not url:
+          return
+        normalized_url = url.strip()
+        key_with_rank = (normalized_url, rank if rank is not None else None)
+        lookup.setdefault(key_with_rank, []).append(source_id)
+        fallback_key = (normalized_url, None)
+        lookup.setdefault(fallback_key, []).append(source_id)
+
+      def match_source(lookup: dict, url: Optional[str], rank: Optional[int]) -> Optional[int]:
+        if not url:
+          return None
+        normalized_url = url.strip()
+        keys = []
+        if rank is not None:
+          keys.append((normalized_url, rank))
+        keys.append((normalized_url, None))
+        for key in keys:
+          ids = lookup.get(key)
+          if ids:
+            return ids[0]
+        return None
+
       # Get or create provider
       provider = self.db.query(Provider).filter_by(name=provider_name).first()
       if not provider:
@@ -141,9 +168,8 @@ class InteractionRepository:
 
         # Create sources for this query
         for source_data in query_data.get("sources", []):
-          source = SourceModel(
+          source = QuerySource(
             search_query_id=search_query.id,
-            response_id=response.id if source_data.get("response_id") else None,
             url=source_data.get("url", ""),
             title=source_data.get("title"),
             domain=source_data.get("domain"),
@@ -154,13 +180,14 @@ class InteractionRepository:
             metadata_json=source_data.get("metadata"),
           )
           self.db.add(source)
+          self.db.flush()
+          register_source(query_source_lookup, source.url or "", source.rank, source.id)
 
       # Create top-level sources (for network_log mode)
       if sources:
         for source_data in sources:
-          source = SourceModel(
-            search_query_id=None,  # Not linked to a specific query
-            response_id=response.id,  # Linked directly to response
+          source = ResponseSource(
+            response_id=response.id,
             url=source_data.get("url", ""),
             title=source_data.get("title"),
             domain=source_data.get("domain"),
@@ -171,11 +198,28 @@ class InteractionRepository:
             metadata_json=source_data.get("metadata"),
           )
           self.db.add(source)
+          self.db.flush()
+          register_source(response_source_lookup, source.url or "", source.rank, source.id)
 
       # Create sources used (citations)
       for citation_data in sources_used:
+        matched_query_source = match_source(
+          query_source_lookup,
+          citation_data.get("url"),
+          citation_data.get("rank"),
+        )
+        matched_response_source = None
+        if matched_query_source is None:
+          matched_response_source = match_source(
+            response_source_lookup,
+            citation_data.get("url"),
+            citation_data.get("rank"),
+          )
+
         source_used = SourceUsed(
           response_id=response.id,
+          query_source_id=matched_query_source,
+          response_source_id=matched_response_source,
           url=citation_data.get("url", ""),
           title=citation_data.get("title"),
           rank=citation_data.get("rank"),
@@ -213,7 +257,7 @@ class InteractionRepository:
         joinedload(Response.search_queries)
         .joinedload(SearchQuery.sources),
         joinedload(Response.sources_used),
-        joinedload(Response.sources),  # Load direct sources for network_log mode
+        joinedload(Response.response_sources),
       )
       .filter_by(id=response_id)
       .first()
@@ -257,8 +301,7 @@ class InteractionRepository:
         joinedload(Response.search_queries)
         .joinedload(SearchQuery.sources),
         joinedload(Response.sources_used),
-        # Temporarily disable direct sources loading to debug crash
-        # joinedload(Response.sources),  # Load direct sources for network_log mode
+        joinedload(Response.response_sources),
       )
     )
 
@@ -311,10 +354,10 @@ class InteractionRepository:
       # Delete sources and search queries
       queries = self.db.query(SearchQuery).filter_by(response_id=response_id).all()
       for query in queries:
-        self.db.query(SourceModel).filter_by(search_query_id=query.id).delete()
+        self.db.query(QuerySource).filter_by(search_query_id=query.id).delete()
 
       # Delete sources associated with response (network logs)
-      self.db.query(SourceModel).filter_by(response_id=response_id).delete()
+      self.db.query(ResponseSource).filter_by(response_id=response_id).delete()
 
       # Delete search queries
       self.db.query(SearchQuery).filter_by(response_id=response_id).delete()

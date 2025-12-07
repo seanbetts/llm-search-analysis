@@ -9,7 +9,7 @@ These tests use production-like data scenarios including:
 - Mixed data from different sources
 
 These tests would have caught:
-- Eager loading crashes (Response.sources with NULL relationships)
+- Eager loading crashes (Response.response_sources with NULL relationships)
 - N+1 query problems
 - NULL constraint violations
 - Cascading delete issues
@@ -30,7 +30,8 @@ from app.models.database import (
     Prompt,
     Response,
     SearchQuery,
-    SourceModel,
+    QuerySource,
+    ResponseSource,
     SourceUsed,
 )
 from app.repositories.interaction_repository import InteractionRepository
@@ -75,8 +76,8 @@ class TestRealisticDataScenarios:
         """
         Test eager loading when relationships have NULL values.
 
-        This would have caught the crash: Response.sources eager loading
-        when sources have NULL search_query_id and NULL response_id.
+        This would have caught prior crashes when response-level sources
+        weren't eager loaded correctly alongside query-level sources.
         """
         # Create provider and session
         provider = Provider(name="openai", display_name="OpenAI", is_active=True)
@@ -102,23 +103,29 @@ class TestRealisticDataScenarios:
         db_session.add(response)
         db_session.flush()
 
-        # Create orphaned source (both FKs are NULL - should not exist but might in real data)
-        orphaned_source = SourceModel(
-            search_query_id=None,
-            response_id=None,  # NULL!
-            url="https://orphaned.com",
-            title="Orphaned Source",
-        )
-        db_session.add(orphaned_source)
-
-        # Create source with only response_id (network_log mode)
-        network_source = SourceModel(
-            search_query_id=None,
+        # Create network-log source linked directly to response
+        network_source = ResponseSource(
             response_id=response.id,
             url="https://network.com",
             title="Network Source",
         )
         db_session.add(network_source)
+
+        # Create query with associated sources
+        search_query = SearchQuery(
+            response_id=response.id,
+            search_query="test query",
+            order_index=0,
+        )
+        db_session.add(search_query)
+        db_session.flush()
+
+        query_source = QuerySource(
+            search_query_id=search_query.id,
+            url="https://api.com/result",
+            title="API Source",
+        )
+        db_session.add(query_source)
 
         db_session.commit()
 
@@ -128,9 +135,11 @@ class TestRealisticDataScenarios:
 
         assert result is not None
         assert result.id == response.id
-        # Should only get sources linked to this response
-        assert len(result.sources) == 1
-        assert result.sources[0].url == "https://network.com"
+        # Should only load response-level sources in response_sources relationship
+        assert len(result.response_sources) == 1
+        assert result.response_sources[0].url == "https://network.com"
+        # Query-level sources should be accessible via search query relationship
+        assert len(result.search_queries[0].sources) == 1
 
     def test_get_recent_with_missing_relationships(self, db_session, repository):
         """
@@ -328,8 +337,8 @@ class TestRealisticDataScenarios:
         # Verify network_log mode response
         network_response = repository.get_by_id(network_id)
         assert network_response.data_source == "network_log"
-        assert len(network_response.sources) == 1
-        assert network_response.sources[0].search_query_id is None
+        assert len(network_response.response_sources) == 1
+        assert network_response.response_sources[0].response_id == network_response.id
 
     def test_concurrent_query_patterns(self, db_session, repository):
         """
@@ -426,7 +435,7 @@ class TestRealisticDataScenarios:
         db_session.add(query)
         db_session.flush()
 
-        source = SourceModel(
+        source = QuerySource(
             search_query_id=query.id,
             url="https://migrated.com",
             title=None,  # Missing
@@ -477,8 +486,7 @@ class TestRealisticDataScenarios:
 
         # Manually create orphaned source (simulating data corruption)
         response = db_session.query(Response).filter_by(id=response_id).first()
-        orphaned_source = SourceModel(
-            search_query_id=None,
+        orphaned_source = ResponseSource(
             response_id=response.id,
             url="https://orphaned.com",
             title="Orphaned",
@@ -492,7 +500,7 @@ class TestRealisticDataScenarios:
         assert deleted is True
         # Verify everything cleaned up
         assert db_session.query(Response).filter_by(id=response_id).first() is None
-        assert db_session.query(SourceModel).filter_by(url="https://orphaned.com").first() is None
+        assert db_session.query(ResponseSource).filter_by(url="https://orphaned.com").first() is None
 
 
 class TestEdgeCaseQueries:
