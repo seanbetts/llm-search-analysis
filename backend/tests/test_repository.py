@@ -129,9 +129,8 @@ class TestInteractionRepository:
 
     # Verify all relationships loaded
     assert response is not None
-    assert response.prompt is not None
-    assert response.prompt.session is not None
-    assert response.prompt.session.provider is not None
+    assert response.interaction is not None
+    assert response.interaction.provider is not None
     assert len(response.search_queries) == 1
     assert len(response.search_queries[0].sources) == 1
     assert len(response.sources_used) == 1

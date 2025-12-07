@@ -28,13 +28,12 @@ from app.core.provider_schemas import (
   validate_openai_raw_response,
 )
 from app.models.database import (
-  Prompt,
   Provider,
+  InteractionModel,
   QuerySource,
   Response,
   ResponseSource,
   SearchQuery,
-  SessionModel,
   SourceUsed,
 )
 
@@ -51,15 +50,10 @@ def audit_raw_responses(session, fix: bool, logger: logging.Logger) -> Tuple[int
   """Validate raw_response_json for API responses."""
   invalid = 0
   updated = 0
-  responses = (
-    session.query(Response)
-    .options(
-      joinedload(Response.prompt)
-      .joinedload(Prompt.session)
-      .joinedload(SessionModel.provider)
-    )
-    .all()
-  )
+  responses = session.query(Response).options(
+    joinedload(Response.interaction)
+    .joinedload(InteractionModel.provider)
+  ).all()
 
   for response in responses:
     if response.data_source != "api":
@@ -67,7 +61,7 @@ def audit_raw_responses(session, fix: bool, logger: logging.Logger) -> Tuple[int
     if not response.raw_response_json:
       continue
     provider_obj: Optional[Provider] = (
-      response.prompt.session.provider if response.prompt and response.prompt.session else None
+      response.interaction.provider if response.interaction else None
     )
     provider_name = provider_obj.name if provider_obj else None
     if not provider_name:

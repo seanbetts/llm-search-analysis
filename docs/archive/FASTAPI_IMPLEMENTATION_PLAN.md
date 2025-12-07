@@ -555,8 +555,8 @@ Streamlit → FastAPI API → Services → Repository → SQLite
   - Current system: 72 interactions, 4.8MB database, all services healthy
 
 - [x] Add simple backup & restore for SQLite
-  - Created `scripts/backup-database.sh` - hot backups with integrity checks
-  - Created `scripts/restore-database.sh` - safe restore with rollback capability
+  - Created `backend/scripts/backup-database.sh` - hot backups with integrity checks
+  - Created `backend/scripts/restore-database.sh` - safe restore with rollback capability
   - Created `docs/operations/BACKUP_AND_RESTORE.md` - complete guide (550+ lines)
   - Automatic backup retention (keeps 10 most recent)
   - Docker-aware (stops containers during restore, restarts after)
@@ -586,8 +586,8 @@ Streamlit → FastAPI API → Services → Repository → SQLite
 - `docs/operations/ENVIRONMENT_VARIABLES.md` (400+ lines)
 - `docs/operations/BACKUP_AND_RESTORE.md` (550+ lines)
 - `scripts/verify-docker-setup.sh` (executable, 147 lines)
-- `scripts/backup-database.sh` (executable, 111 lines)
-- `scripts/restore-database.sh` (executable, 184 lines)
+- `backend/scripts/backup-database.sh` (executable, 111 lines)
+- `backend/scripts/restore-database.sh` (executable, 184 lines)
 
 **Commits:** a1e719d (7 files changed, 1,466 insertions, 51 deletions)
 

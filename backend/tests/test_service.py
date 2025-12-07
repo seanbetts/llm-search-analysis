@@ -159,13 +159,12 @@ class TestInteractionService:
     mock_response.created_at = datetime.utcnow()
 
     # Create mock prompt/session/provider
-    mock_response.prompt = MagicMock()
-    mock_response.prompt.prompt_text = "Test prompt"
-    mock_response.prompt.session = MagicMock()
-    mock_response.prompt.session.provider = MagicMock()
-    mock_response.prompt.session.provider.name = "openai"
-    mock_response.prompt.session.provider.display_name = "OpenAI"
-    mock_response.prompt.session.model_used = "gpt-4o"
+    mock_response.interaction = MagicMock()
+    mock_response.interaction.prompt_text = "Test prompt"
+    mock_response.interaction.provider = MagicMock()
+    mock_response.interaction.provider.name = "openai"
+    mock_response.interaction.provider.display_name = "OpenAI"
+    mock_response.interaction.model_name = "gpt-4o"
 
     # Create 2 search queries with 3 and 2 sources
     mock_query1 = MagicMock()
@@ -203,13 +202,12 @@ class TestInteractionService:
     mock_response.response_time_ms = 1000
     mock_response.data_source = "api"
     mock_response.created_at = datetime.utcnow()
-    mock_response.prompt = MagicMock()
-    mock_response.prompt.prompt_text = "Test"
-    mock_response.prompt.session = MagicMock()
-    mock_response.prompt.session.provider = MagicMock()
-    mock_response.prompt.session.provider.name = "openai"
-    mock_response.prompt.session.provider.display_name = "OpenAI"
-    mock_response.prompt.session.model_used = "gpt-4o"
+    mock_response.interaction = MagicMock()
+    mock_response.interaction.prompt_text = "Test"
+    mock_response.interaction.provider = MagicMock()
+    mock_response.interaction.provider.name = "openai"
+    mock_response.interaction.provider.display_name = "OpenAI"
+    mock_response.interaction.model_name = "gpt-4o"
     mock_response.search_queries = []
 
     # Citations with ranks 1, 3, 5 -> average = 3.0
@@ -233,13 +231,12 @@ class TestInteractionService:
     mock_response.response_time_ms = 1000
     mock_response.data_source = "api"
     mock_response.created_at = datetime.utcnow()
-    mock_response.prompt = MagicMock()
-    mock_response.prompt.prompt_text = "Test"
-    mock_response.prompt.session = MagicMock()
-    mock_response.prompt.session.provider = MagicMock()
-    mock_response.prompt.session.provider.name = "openai"
-    mock_response.prompt.session.provider.display_name = "OpenAI"
-    mock_response.prompt.session.model_used = "gpt-4o"
+    mock_response.interaction = MagicMock()
+    mock_response.interaction.prompt_text = "Test"
+    mock_response.interaction.provider = MagicMock()
+    mock_response.interaction.provider.name = "openai"
+    mock_response.interaction.provider.display_name = "OpenAI"
+    mock_response.interaction.model_name = "gpt-4o"
     mock_response.search_queries = []
 
     # Mix of ranks and None
@@ -286,13 +283,12 @@ class TestInteractionService:
     mock_response.raw_response_json = {"key": "value"}
 
     # Mock prompt/session/provider
-    mock_response.prompt = MagicMock()
-    mock_response.prompt.prompt_text = "What is the future of AI?"
-    mock_response.prompt.session = MagicMock()
-    mock_response.prompt.session.provider = MagicMock()
-    mock_response.prompt.session.provider.name = "google"
-    mock_response.prompt.session.provider.display_name = "Google"
-    mock_response.prompt.session.model_used = "gemini-2.5-flash"
+    mock_response.interaction = MagicMock()
+    mock_response.interaction.prompt_text = "What is the future of AI?"
+    mock_response.interaction.provider = MagicMock()
+    mock_response.interaction.provider.name = "google"
+    mock_response.interaction.provider.display_name = "Google"
+    mock_response.interaction.model_name = "gemini-2.5-flash"
 
     # Mock search queries
     mock_source = MagicMock()

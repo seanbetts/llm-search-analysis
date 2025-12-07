@@ -20,35 +20,31 @@ class Provider(Base):
   created_at = Column(DateTime, default=datetime.utcnow)
 
   # Relationships
-  sessions = relationship("SessionModel", back_populates="provider")
+  interactions = relationship("InteractionModel", back_populates="provider")
 
 
-class SessionModel(Base):
-  """Prompt session."""
-  __tablename__ = "sessions"
+class InteractionModel(Base):
+  """Root interaction metadata."""
+  __tablename__ = "interactions"
 
   id = Column(Integer, primary_key=True)
   provider_id = Column(Integer, ForeignKey("providers.id"), nullable=False)
-  model_used = Column(String(100))
-  created_at = Column(DateTime, default=datetime.utcnow)
-
-  # Relationships
-  provider = relationship("Provider", back_populates="sessions")
-  prompts = relationship("Prompt", back_populates="session")
-
-
-class Prompt(Base):
-  """User prompt."""
-  __tablename__ = "prompts"
-
-  id = Column(Integer, primary_key=True)
-  session_id = Column(Integer, ForeignKey("sessions.id"), nullable=False)
+  model_name = Column(String(100), nullable=False)
   prompt_text = Column(Text, nullable=False)
+  data_source = Column(String(20), nullable=False, default="api")
   created_at = Column(DateTime, default=datetime.utcnow)
+  updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+  deleted_at = Column(DateTime)
+  metadata_json = Column(JSON)
 
-  # Relationships
-  session = relationship("SessionModel", back_populates="prompts")
-  response = relationship("Response", back_populates="prompt", uselist=False)
+  __table_args__ = (
+    Index("ix_interactions_created_at", "created_at"),
+    Index("ix_interactions_provider_id", "provider_id"),
+    Index("ix_interactions_data_source", "data_source"),
+  )
+
+  provider = relationship("Provider", back_populates="interactions")
+  responses = relationship("Response", back_populates="interaction", cascade="all, delete-orphan")
 
 
 class Response(Base):
@@ -56,7 +52,7 @@ class Response(Base):
   __tablename__ = "responses"
 
   id = Column(Integer, primary_key=True)
-  prompt_id = Column(Integer, ForeignKey("prompts.id"), nullable=False)
+  interaction_id = Column(Integer, ForeignKey("interactions.id", ondelete="CASCADE"), nullable=False)
   response_text = Column(Text)
   response_time_ms = Column(Integer)
   created_at = Column(DateTime, default=datetime.utcnow)
@@ -74,13 +70,14 @@ class Response(Base):
   )
 
   # Relationships
-  prompt = relationship("Prompt", back_populates="response")
-  search_queries = relationship("SearchQuery", back_populates="response")
+  interaction = relationship("InteractionModel", back_populates="responses")
+  search_queries = relationship("SearchQuery", back_populates="response", cascade="all, delete-orphan")
   response_sources = relationship(
     "ResponseSource",
-    back_populates="response"
+    back_populates="response",
+    cascade="all, delete-orphan"
   )
-  sources_used = relationship("SourceUsed", back_populates="response")
+  sources_used = relationship("SourceUsed", back_populates="response", cascade="all, delete-orphan")
 
 
 class SearchQuery(Base):

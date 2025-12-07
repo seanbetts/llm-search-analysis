@@ -73,7 +73,9 @@ The backend API provides:
                  │
 ┌────────────────┴────────────────────────────────────────────┐
 │                  Database (SQLite)                           │
-│  - Interactions  - Search Queries  - Sources  - Citations   │
+│  - Providers  - Interactions  - Responses                    │
+│  - Search Queries  - Query Sources  - Response Sources       │
+│  - Sources Used                                              │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -173,65 +175,124 @@ backend/
 
 ### Database Schema
 
-**Tables:**
+The persistence model now centers on `InteractionModel`, which replaces the old
+`sessions → prompts → responses` chain. Alembic revision `9b9f1c6a2e3f` creates
+the schema below and enforces cascading deletes so orphaned records cannot be
+introduced.
 
 ```sql
--- Providers table
 providers (
   id INTEGER PRIMARY KEY,
-  name TEXT UNIQUE,      # openai, google, anthropic
-  display_name TEXT
+  name TEXT UNIQUE NOT NULL,
+  display_name TEXT,
+  is_active BOOLEAN DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 
--- Interactions table
 interactions (
   id INTEGER PRIMARY KEY,
-  prompt TEXT,
-  response_text TEXT,
-  provider_id INTEGER,
-  model TEXT,
-  data_source TEXT,      # 'api' or 'network_log'
-  response_time_ms INTEGER,
-  raw_response_json TEXT,
-  created_at TIMESTAMP
+  provider_id INTEGER NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
+  model_name TEXT NOT NULL,
+  prompt_text TEXT NOT NULL,
+  data_source TEXT NOT NULL DEFAULT 'api',
+  created_at TIMESTAMP NOT NULL,
+  updated_at TIMESTAMP NOT NULL,
+  deleted_at TIMESTAMP,
+  metadata_json JSON
 )
 
--- Search queries table
+responses (
+  id INTEGER PRIMARY KEY,
+  interaction_id INTEGER NOT NULL REFERENCES interactions(id) ON DELETE CASCADE,
+  response_text TEXT,
+  response_time_ms INTEGER,
+  created_at TIMESTAMP NOT NULL,
+  raw_response_json JSON,
+  data_source TEXT DEFAULT 'api',
+  extra_links_count INTEGER DEFAULT 0,
+  sources_found INTEGER DEFAULT 0,
+  sources_used_count INTEGER DEFAULT 0,
+  avg_rank REAL
+)
+
 search_queries (
   id INTEGER PRIMARY KEY,
-  interaction_id INTEGER,
-  query TEXT,
-  order_index INTEGER,
-  timestamp TIMESTAMP
+  response_id INTEGER NOT NULL REFERENCES responses(id) ON DELETE CASCADE,
+  search_query TEXT,
+  created_at TIMESTAMP NOT NULL,
+  order_index INTEGER DEFAULT 0,
+  internal_ranking_scores JSON,
+  query_reformulations JSON
 )
 
--- Sources table (search results)
-sources (
+query_sources (
   id INTEGER PRIMARY KEY,
-  search_query_id INTEGER,
-  url TEXT,
+  search_query_id INTEGER NOT NULL REFERENCES search_queries(id) ON DELETE CASCADE,
+  url TEXT NOT NULL,
   title TEXT,
   domain TEXT,
-  rank INTEGER,          # Position in search results (1-indexed)
-  metadata_json TEXT
+  rank INTEGER,
+  pub_date TEXT,
+  snippet_text TEXT,
+  internal_score REAL,
+  metadata_json JSON
 )
 
--- Citations table (sources used in response)
-citations (
+response_sources (
   id INTEGER PRIMARY KEY,
-  interaction_id INTEGER,
-  url TEXT,
+  response_id INTEGER NOT NULL REFERENCES responses(id) ON DELETE CASCADE,
+  url TEXT NOT NULL,
   title TEXT,
-  rank INTEGER,          # From sources table if matched
-  confidence REAL
+  domain TEXT,
+  rank INTEGER,
+  pub_date TEXT,
+  snippet_text TEXT,
+  internal_score REAL,
+  metadata_json JSON
+)
+
+sources_used (
+  id INTEGER PRIMARY KEY,
+  response_id INTEGER NOT NULL REFERENCES responses(id) ON DELETE CASCADE,
+  query_source_id INTEGER REFERENCES query_sources(id),
+  response_source_id INTEGER REFERENCES response_sources(id),
+  url TEXT NOT NULL,
+  title TEXT,
+  rank INTEGER,
+  snippet_used TEXT,
+  citation_confidence REAL,
+  metadata_json JSON,
+  CHECK (
+    (query_source_id IS NULL) OR
+    (response_source_id IS NULL)
+  )
 )
 ```
 
 **Relationships:**
-- One interaction → Many search queries
-- One search query → Many sources
-- One interaction → Many citations
-- Citations reference sources by URL matching
+- One provider → Many interactions
+- One interaction → Many responses
+- One response → Many search queries, response sources, and citations
+- `sources_used` rows optionally reference the originating query/response source
+  to guarantee referential integrity for citations.
+
+### Schema Operations & Migration Guidance
+
+- **Alembic-managed schema** – The backend no longer creates tables on startup;
+  always run `alembic upgrade head` before launching the API.
+- **Interactions migration (`9b9f1c6a2e3f`)** – Required for any database that still
+  has `sessions`/`prompts`.
+  1. Back up the SQLite/Postgres database.
+  2. Run `alembic upgrade 9b9f1c6a2e3f` (or `upgrade head` if that revision is the latest).
+  3. Inspect the migration logs to ensure interactions were backfilled and the
+     legacy tables dropped.
+- **Post-migration validation**
+  - Execute `python scripts/audit_json_payloads.py --dry-run` to confirm
+    historical blobs (raw responses, ranking scores, metadata) still parse.
+  - Run `python scripts/backfill_metrics.py --dry-run` to verify response metrics
+    remain consistent.
+  - Spot-check counts: interactions should match historical response counts, and
+    `prompts`/`sessions` tables should no longer exist.
 
 ### Provider Integration Pattern
 

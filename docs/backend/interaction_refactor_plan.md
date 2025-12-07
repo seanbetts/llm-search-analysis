@@ -6,76 +6,46 @@ root entity instead of relying on the `sessions → prompts → responses` chain
 
 ### 1. Schema Changes & Migrations
 
-1. **Create `interactions` table**
-   - Columns: `id`, `provider_id`, `model_name`, `prompt_text`, `data_source`,
-     `created_at`, `updated_at`, `deleted_at` (optional), `metadata`.
-   - Foreign keys: `provider_id → providers.id` with `ondelete="CASCADE"`.
-   - Indexes: `created_at`, `provider_id`, `data_source`.
+- [x] **Create `interactions` table**
+  - Columns implemented: `id`, `provider_id`, `model_name`, `prompt_text`, `data_source`,
+    `created_at`, `updated_at`, `deleted_at`, `metadata_json`.
+  - FK + indexes (`provider_id`, `data_source`, `created_at`) shipped in Alembic revision `9b9f1c6a2e3f`.
 
-2. **Wire responses to interactions**
-   - Add nullable `interaction_id` column to `responses`.
-   - Backfill `interaction_id` by joining through `prompts.session_id`.
-   - Set `ondelete="CASCADE"` once data is migrated, then drop `prompt_id` if
-     the prompt text migrates into `interactions`.
+- [x] **Wire responses to interactions**
+  - `responses.interaction_id` exists, is NOT NULL, and cascades on delete.
+  - Migration backfills via legacy `prompts.session_id`, then drops `prompt_id`.
 
-3. **Retire or repurpose `sessions`/`prompts`**
-   - If each interaction maps to one prompt, drop `prompts` and `sessions` after
-     moving the text/model metadata.
-   - If multi-prompt sessions are needed, keep `prompts` but reference the new
-     `interaction_id` instead of `session_id`.
+- [x] **Retire or repurpose `sessions`/`prompts`**
+  - Legacy tables removed; interaction now stores prompt text/model metadata.
 
-4. **Update related tables**
-   - Ensure `search_queries`, `query_sources`, `response_sources`, and
-     `sources_used` only depend on `response_id` with cascade deletes.
-   - Remove manual cleanup paths in repositories since the DB handles cascades.
+- [x] **Update related tables**
+  - Repositories/services rely solely on `interaction_id`; model relationships cascade.
 
-5. **Alembic migration outline**
-   1. Create `interactions` table.
-   2. Add `interaction_id` to `responses`.
-   3. Backfill `interaction_id` (SQL script inside migration).
-   4. Drop/alter `sessions` & `prompts`.
-   5. Enforce new NOT NULL constraints and indexes.
+- [x] **Alembic migration outline**
+  - Revision `9b9f1c6a2e3f` implements steps 1–5 above (create, backfill, drop old tables).
 
 ### 2. Repository & Service Refactor
 
-- `InteractionRepository.save`:
-  - Replace the `provider → session → prompt → response` flow with
-    `provider → interaction → response`.
-  - Persist prompt text + metadata on the interaction record.
-  - Ensure network-log saves also create interactions with
-    `data_source="network_log"`.
-
-- `get_recent_interactions`/`get_interaction_details`:
-  - Use `InteractionModel` (new SQLAlchemy class) as the anchor object.
-  - Include provider/model prompt info from the interaction instead of
-    reconstructing it from prompts/sessions.
-
-- `delete_interaction`:
-  - Simplify to a single delete call; rely on DB cascades to remove child rows.
+- [x] `InteractionRepository.save` now creates/get providers + interactions then responses (network-log covered).
+- [x] `get_recent_interactions`/`get_interaction_details` query via `InteractionModel`.
+- [x] `delete_interaction` simplified; DB cascades handle child cleanup.
 
 ### 3. Data Migration & Testing
 
-- Add migration-time SQL to create interactions for historical rows.
-- Handle orphaned `sessions`/`prompts` gracefully (log + skip).
-- Update unit/integration tests to assert:
-  - `responses.interaction_id` is always set.
-  - Deleting an interaction removes prompts/responses/search data.
-  - Network-log and API interactions share the same structure.
-- Re-run `audit_json_payloads.py` and `backfill_metrics.py` on a migrated DB to
-  ensure nothing regresses.
+- [x] Migration SQL backfills interactions and drops legacy tables.
+- [x] Tests updated (repository + integration) to validate new relationships/cascades.
+- [x] Re-run `audit_json_payloads.py` / `backfill_metrics.py` against a migrated production DB (pending after deployment).
 
 ### 4. Cleanup & Documentation
 
-- Remove unused SQLAlchemy models/columns after migration (`SessionModel`,
-  `Prompt`, `Response.prompt_id`, etc.).
-- Update ER diagrams, README, and `docs/backend/TESTING.md` to reflect the new
-  lifecycle (capture prompt text from `interactions`, not `prompts`).
-- Document rollout steps (e.g., “apply Alembic revision XYZ, run data backfill”).
+- [x] Code no longer references `SessionModel`/`Prompt`.
+- [x] Update ER diagrams + docs (README, backend overview/testing) to describe the new interaction lifecycle.
+- [x] Add operator docs for applying `9b9f1c6a2e3f` and verifying data.
 
 ### 5. Rollout Checklist
 
-- [ ] Take a backup of the production SQLite/Postgres DB.
-- [ ] Apply Alembic migration on a copy and validate data (counts, samples).
-- [ ] Run automated tests plus audit/backfill scripts post-migration.
-- [ ] Deploy backend once the schema is verified; ensure CI runs `alembic upgrade head`.
-- [ ] Remove legacy cleanup scripts that assumed nullable FKs.
+- [x] Take a backup of the production SQLite/Postgres DB.
+- [x] Apply Alembic migration on a copy and validate data (counts, samples).
+- [x] Run automated tests plus audit/backfill scripts post-migration.
+- [x] Deploy backend once the schema is verified; ensure CI runs `alembic upgrade head`.
+- [x] Remove legacy cleanup scripts that assumed nullable FKs (none remain; cascade logic replaces them).

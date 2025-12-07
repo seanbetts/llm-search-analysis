@@ -29,6 +29,17 @@ From the repository root, run the helper script that executes SDK validation bef
 ./scripts/run_all_tests.sh
 ```
 
+### Database Prep
+
+The suite assumes the Alembic schema (especially revision `9b9f1c6a2e3f`) has been applied. Run:
+
+```bash
+cd backend
+alembic upgrade head
+```
+
+before invoking pytest so the `interactions` table and cascade relationships exist.
+
 ### Manual Test Execution
 
 If you prefer to run tests manually:
@@ -108,9 +119,14 @@ backend/tests/
 ├── test_google_provider.py          # Google provider unit tests
 ├── test_anthropic_provider.py       # Anthropic provider unit tests
 ├── test_provider_factory.py         # Provider factory tests
-├── test_api.py                       # API endpoint tests
+├── test_api.py                      # API endpoint tests
 └── ...
 ```
+
+`test_integration_database.py`, `test_repository.py`, and `test_service.py`
+contain regression cases for the interaction-first persistence layer (creating,
+reading, and deleting interactions, responses, and search artifacts). Extend
+those files when making schema/repository changes so cascades stay covered.
 
 ## Understanding Test Markers
 

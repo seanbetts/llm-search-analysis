@@ -3,6 +3,7 @@
 LLM Search Analysis is a hybrid Streamlit + FastAPI application that compares how OpenAI, Google Gemini, Anthropic Claude, and ChatGPT (network capture) perform live web search. The backend delivers a consistent API for saving interactions and metrics, while the frontend provides interactive, batch, and history workflows plus experimental browser automation.
 
 ## Highlights
+- **Interaction-first persistence** with Alembic migrations and cascade deletes (interactions → responses → search data).
 - **Multi-provider coverage** with normalized metrics (search queries, sources, citations, average rank).
 - **Dual data-collection modes:** official APIs plus Playwright-powered network capture for ChatGPT.
 - **SQLite persistence** with Docker volumes, backup/restore scripts, and health checks.
@@ -50,6 +51,11 @@ docker compose up -d
 - Generate new revisions after model changes: `alembic revision --autogenerate -m "describe change"`.
 - For existing SQLite files created before Alembic, run `alembic stamp head` once so migrations start from the current schema.
 - Recompute historical response metrics if needed: `cd backend && python scripts/backfill_metrics.py` (use `--dry-run` to preview).
+- **Upgrading to the interactions schema (`9b9f1c6a2e3f`)**
+  1. Back up `backend/data/llm_search.db` (or the Postgres database) before touching the schema.
+  2. Run `cd backend && alembic upgrade 9b9f1c6a2e3f` to create/backfill the `interactions` table and drop legacy `sessions`/`prompts`.
+  3. Immediately run `alembic upgrade head` (if newer revisions exist) and `python scripts/audit_json_payloads.py --dry-run` to confirm stored blobs are still valid.
+  4. If the audit reports issues, rerun with `--fix`, then run `python scripts/backfill_metrics.py --dry-run` to verify response metrics.
 
 ### Provider payload validation
 - Canonical OpenAI/Anthropic/Google payloads live in `backend/tests/fixtures/provider_payloads.py`. Update them whenever the SDKs change and run `pytest backend/tests/test_provider_payload_schemas.py -v` to ensure the new shapes are accepted.
