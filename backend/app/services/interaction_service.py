@@ -197,13 +197,15 @@ class InteractionService:
         else ""
       )
 
-      model = response.prompt.session.model_used if response.prompt and response.prompt.session else ""
+      interaction = response.interaction
+      model = interaction.model_name if interaction else ""
       # Use display_name if available, otherwise fall back to name
-      provider_obj = response.prompt.session.provider if response.prompt and response.prompt.session else None
+      provider_obj = interaction.provider if interaction else None
       provider_display = provider_obj.display_name if provider_obj and provider_obj.display_name else (provider_obj.name if provider_obj else "")
+      prompt_text = interaction.prompt_text if interaction else ""
       summary = InteractionSummary(
         interaction_id=response.id,
-        prompt=response.prompt.prompt_text if response.prompt else "",
+        prompt=prompt_text,
         provider=provider_display,
         model=model,
         model_display_name=get_model_display_name(model) if model else None,
@@ -312,12 +314,14 @@ class InteractionService:
           )
 
     # Use stored computed metrics from database
-    model = response.prompt.session.model_used if response.prompt and response.prompt.session else ""
+    interaction = response.interaction
+    model = interaction.model_name if interaction else ""
     # Use display_name if available, otherwise fall back to name
-    provider_obj = response.prompt.session.provider if response.prompt and response.prompt.session else None
+    provider_obj = interaction.provider if interaction else None
     provider_display = provider_obj.display_name if provider_obj and provider_obj.display_name else (provider_obj.name if provider_obj else "")
+    prompt_text = interaction.prompt_text if interaction else ""
     return SendPromptResponse(
-      prompt=response.prompt.prompt_text if response.prompt else "",
+      prompt=prompt_text,
       response_text=response.response_text,
       search_queries=search_queries,
       citations=citations,

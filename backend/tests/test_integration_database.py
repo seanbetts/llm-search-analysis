@@ -26,8 +26,7 @@ from sqlalchemy.exc import IntegrityError
 from app.models.database import (
     Base,
     Provider,
-    SessionModel,
-    Prompt,
+    InteractionModel,
     Response,
     SearchQuery,
     QuerySource,
@@ -84,17 +83,17 @@ class TestRealisticDataScenarios:
         db_session.add(provider)
         db_session.flush()
 
-        session = SessionModel(provider_id=provider.id, model_used="gpt-4o")
-        db_session.add(session)
-        db_session.flush()
-
-        # Create prompt and response
-        prompt = Prompt(session_id=session.id, prompt_text="Test prompt")
-        db_session.add(prompt)
+        interaction = InteractionModel(
+            provider_id=provider.id,
+            model_name="gpt-4o",
+            prompt_text="Test prompt",
+            data_source="api",
+        )
+        db_session.add(interaction)
         db_session.flush()
 
         response = Response(
-            prompt_id=prompt.id,
+            interaction_id=interaction.id,
             response_text="Test response",
             response_time_ms=1000,
             raw_response_json={},
@@ -152,19 +151,17 @@ class TestRealisticDataScenarios:
         db_session.add(provider)
         db_session.flush()
 
-        # Create session
-        session = SessionModel(provider_id=provider.id, model_used="gpt-4o")
-        db_session.add(session)
+        interaction = InteractionModel(
+            provider_id=provider.id,
+            model_name="gpt-4o",
+            prompt_text="Test prompt",
+            data_source="api",
+        )
+        db_session.add(interaction)
         db_session.flush()
 
-        # Create prompt
-        prompt = Prompt(session_id=session.id, prompt_text="Test prompt")
-        db_session.add(prompt)
-        db_session.flush()
-
-        # Create response with all relationships intact
         good_response = Response(
-            prompt_id=prompt.id,
+            interaction_id=interaction.id,
             response_text="Good response",
             response_time_ms=1000,
             raw_response_json={},
@@ -177,7 +174,7 @@ class TestRealisticDataScenarios:
         # Attempting to create an orphaned response should now fail fast
         with pytest.raises(IntegrityError):
             bad_response = Response(
-                prompt_id=None,
+                interaction_id=None,
                 response_text="Orphaned response",
                 response_time_ms=1000,
                 raw_response_json={},
@@ -204,16 +201,17 @@ class TestRealisticDataScenarios:
         db_session.add(provider)
         db_session.flush()
 
-        session = SessionModel(provider_id=provider.id, model_used="gpt-4o")
-        db_session.add(session)
-        db_session.flush()
-
-        prompt = Prompt(session_id=session.id, prompt_text="Test")
-        db_session.add(prompt)
+        interaction = InteractionModel(
+            provider_id=provider.id,
+            model_name="gpt-4o",
+            prompt_text="Test",
+            data_source="api",
+        )
+        db_session.add(interaction)
         db_session.flush()
 
         response = Response(
-            prompt_id=prompt.id,
+            interaction_id=interaction.id,
             response_text="Response",
             response_time_ms=1000,
             raw_response_json={},
@@ -377,9 +375,8 @@ class TestRealisticDataScenarios:
 
         # Access all relationships - should be already loaded
         for result in results:
-            assert result.prompt is not None
-            assert result.prompt.session is not None
-            assert result.prompt.session.provider is not None
+            assert result.interaction is not None
+            assert result.interaction.provider is not None
             assert len(result.search_queries) > 0
             for query in result.search_queries:
                 # Sources should be loaded
@@ -399,22 +396,18 @@ class TestRealisticDataScenarios:
         db_session.add(provider)
         db_session.flush()
 
-        # Create session with minimal data
-        session = SessionModel(
+        interaction = InteractionModel(
             provider_id=provider.id,
-            model_used="unknown-model",  # Model that doesn't exist anymore
+            model_name="unknown-model",  # Model that doesn't exist anymore
+            prompt_text="Migrated prompt",
+            data_source="api",
         )
-        db_session.add(session)
-        db_session.flush()
-
-        # Create prompt with minimal data
-        prompt = Prompt(session_id=session.id, prompt_text="Migrated prompt")
-        db_session.add(prompt)
+        db_session.add(interaction)
         db_session.flush()
 
         # Create response with missing optional fields
         response = Response(
-            prompt_id=prompt.id,
+            interaction_id=interaction.id,
             response_text="Migrated response",
             response_time_ms=None,  # Missing
             raw_response_json=None,  # Missing
@@ -519,7 +512,7 @@ class TestRealisticDataScenarios:
         )
 
         assert repository.delete(response_id) is True
-        assert db_session.query(SessionModel).count() == 0
+        assert db_session.query(InteractionModel).count() == 0
         assert db_session.query(Provider).count() == 0
 
     def test_delete_keeps_provider_with_other_sessions(self, db_session, repository):
@@ -566,17 +559,18 @@ class TestEdgeCaseQueries:
         db_session.add(provider)
         db_session.flush()
 
-        session = SessionModel(provider_id=provider.id, model_used="gpt-4o")
-        db_session.add(session)
-        db_session.flush()
-
-        prompt = Prompt(session_id=session.id, prompt_text="Test")
-        db_session.add(prompt)
+        interaction = InteractionModel(
+            provider_id=provider.id,
+            model_name="gpt-4o",
+            prompt_text="Test",
+            data_source="api",
+        )
+        db_session.add(interaction)
         db_session.flush()
 
         # Response with NULL created_at (shouldn't happen but might in real data)
         response = Response(
-            prompt_id=prompt.id,
+            interaction_id=interaction.id,
             response_text="Response",
             response_time_ms=1000,
             raw_response_json={},
