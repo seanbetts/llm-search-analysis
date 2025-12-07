@@ -7,6 +7,11 @@ from frontend.components.response import (
   format_response_text,
   extract_images_from_response,
 )
+from frontend.tests.fixtures.send_prompt_responses import (
+  api_send_prompt_response_dict,
+  api_send_prompt_response_namespace,
+  network_log_send_prompt_response_namespace,
+)
 
 
 class TestSanitizeResponseMarkdown:
@@ -165,57 +170,33 @@ class TestResponseObjectStructure:
 
   def test_response_has_all_required_fields(self):
     """Test that response object has all fields needed by display_response."""
-    # Simulate the response object created in interactive.py
-    response_data = {
-      'provider': 'openai',
-      'model': 'gpt-5.1',
-      'model_display_name': 'GPT 5.1',
-      'response_text': 'Test response',
-      'search_queries': [],
-      'citations': [],
-      'all_sources': [],
-      'response_time_ms': 1500,
-      'data_source': 'api',
-      'sources_found': 5,
-      'sources_used': 3,
-      'avg_rank': 2.5,
-      'extra_links_count': 1,
-      'raw_response': {}
-    }
+    response = api_send_prompt_response_namespace()
 
-    response = SimpleNamespace(**response_data)
-
-    # Verify all fields exist
+    # Verify all fields exist and mirror backend schema defaults
     assert response.provider == 'openai'
     assert response.model == 'gpt-5.1'
-    assert response.model_display_name == 'GPT 5.1'
-    assert response.response_text == 'Test response'
-    assert response.response_time_ms == 1500
-    assert response.sources_found == 5
-    assert response.sources_used == 3
-    assert response.avg_rank == 2.5
-    assert response.extra_links_count == 1
+    assert response.model_display_name == 'GPT-5.1'
+    assert response.response_text.startswith('Artificial intelligence regulation')
+    assert response.response_time_ms == 1250
+    assert response.sources_found == 3
+    assert response.sources_used == 2
+    assert response.avg_rank == 1.5
+    assert response.extra_links_count == 0
 
   def test_response_with_missing_optional_fields(self):
     """Test that response object handles missing optional fields gracefully."""
-    response_data = {
-      'provider': 'openai',
-      'model': 'gpt-5.1',
-      'model_display_name': None,  # Can be None
-      'response_text': 'Test response',
+    payload = api_send_prompt_response_dict()
+    payload.update({
+      'model_display_name': None,
       'search_queries': [],
       'citations': [],
       'all_sources': [],
-      'response_time_ms': 1500,
-      'data_source': 'api',
       'sources_found': 0,
       'sources_used': 0,
-      'avg_rank': None,  # Can be None
+      'avg_rank': None,
       'extra_links_count': 0,
-      'raw_response': {}
-    }
-
-    response = SimpleNamespace(**response_data)
+    })
+    response = SimpleNamespace(**payload)
 
     # Use getattr as display_response does
     assert getattr(response, 'model_display_name', None) is None
@@ -226,16 +207,9 @@ class TestResponseObjectStructure:
 
   def test_search_queries_structure(self):
     """Test that search queries are properly structured."""
-    query_data = {
-      'query': 'test query',
-      'sources': [
-        {'url': 'https://example.com', 'title': 'Example', 'rank': 1}
-      ],
-      'timestamp': '2024-01-01T00:00:00',
-      'order_index': 0
-    }
+    payload = api_send_prompt_response_dict()
+    query_data = payload['search_queries'][0]
 
-    # Convert as in interactive.py
     sources = [SimpleNamespace(**src) for src in query_data['sources']]
     search_query = SimpleNamespace(
       query=query_data['query'],
@@ -244,25 +218,22 @@ class TestResponseObjectStructure:
       order_index=query_data.get('order_index')
     )
 
-    assert search_query.query == 'test query'
-    assert len(search_query.sources) == 1
-    assert search_query.sources[0].url == 'https://example.com'
+    assert search_query.query == 'ai regulation 2024'
+    assert len(search_query.sources) == 2
+    assert search_query.sources[0].url == 'https://example.com/regulation-overview'
     assert search_query.sources[0].rank == 1
+    assert search_query.sources[1].url == 'https://news.example.org/policy'
+    assert search_query.sources[1].rank == 2
 
   def test_citations_structure(self):
     """Test that citations are properly structured."""
-    citation_data = [
-      {'url': 'https://example.com', 'title': 'Example', 'rank': 1},
-      {'url': 'https://example.org', 'title': 'Org', 'rank': None}
-    ]
-
-    # Convert as in interactive.py
-    citations = [SimpleNamespace(**citation) for citation in citation_data]
+    payload = api_send_prompt_response_dict()
+    citations = [SimpleNamespace(**citation) for citation in payload['citations']]
 
     assert len(citations) == 2
-    assert citations[0].url == 'https://example.com'
+    assert citations[0].url == 'https://example.com/regulation-overview'
     assert citations[0].rank == 1
-    assert citations[1].rank is None
+    assert citations[1].rank == 2
 
 
 class TestMetricsCalculation:
@@ -270,124 +241,49 @@ class TestMetricsCalculation:
 
   def test_sources_found_count(self):
     """Test that sources_found is correctly displayed."""
-    response = SimpleNamespace(
-      provider='openai',
-      model='gpt-5.1',
-      model_display_name='GPT 5.1',
-      response_text='Test',
-      search_queries=[],
-      citations=[],
-      all_sources=[],
-      response_time_ms=1000,
-      sources_found=10,  # Should appear in UI
-      sources_used=5,
-      avg_rank=2.3,
-      extra_links_count=1
-    )
-
-    # Test that getattr retrieves the value correctly
+    response = api_send_prompt_response_namespace()
     sources_count = getattr(response, 'sources_found', 0)
-    assert sources_count == 10
+    assert sources_count == 3
 
   def test_sources_used_count(self):
     """Test that sources_used is correctly displayed."""
-    response = SimpleNamespace(
-      provider='openai',
-      model='gpt-5.1',
-      model_display_name='GPT 5.1',
-      response_text='Test',
-      search_queries=[],
-      citations=[],
-      all_sources=[],
-      response_time_ms=1000,
-      sources_found=10,
-      sources_used=7,  # Should appear in UI
-      avg_rank=2.3,
-      extra_links_count=1
-    )
-
+    response = api_send_prompt_response_namespace()
     sources_used = getattr(response, 'sources_used', 0)
-    assert sources_used == 7
+    assert sources_used == 2
 
   def test_avg_rank_calculation(self):
     """Test that avg_rank is correctly displayed."""
-    response = SimpleNamespace(
-      provider='openai',
-      model='gpt-5.1',
-      model_display_name='GPT 5.1',
-      response_text='Test',
-      search_queries=[],
-      citations=[],
-      all_sources=[],
-      response_time_ms=1000,
-      sources_found=10,
-      sources_used=5,
-      avg_rank=3.2,  # Should appear in UI
-      extra_links_count=1
-    )
-
+    response = api_send_prompt_response_namespace()
     avg_rank = getattr(response, 'avg_rank', None)
-    assert avg_rank == 3.2
+    assert avg_rank == 1.5
 
   def test_avg_rank_none_handling(self):
     """Test that avg_rank None is handled correctly."""
-    response = SimpleNamespace(
-      provider='openai',
-      model='gpt-5.1',
-      model_display_name='GPT 5.1',
-      response_text='Test',
-      search_queries=[],
-      citations=[],
-      all_sources=[],
-      response_time_ms=1000,
-      sources_found=0,
-      sources_used=0,
-      avg_rank=None,  # Should show "N/A" in UI
-      extra_links_count=0
-    )
+    payload = api_send_prompt_response_dict()
+    payload.update({
+      'avg_rank': None,
+      'sources_found': 0,
+      'sources_used': 0,
+    })
+    response = SimpleNamespace(**payload)
 
     avg_rank = getattr(response, 'avg_rank', None)
     assert avg_rank is None
 
   def test_model_display_name_formatting(self):
     """Test that model_display_name is used instead of raw model name."""
-    response = SimpleNamespace(
-      provider='openai',
-      model='gpt-5.1',
-      model_display_name='GPT 5.1',  # Should show this, not 'gpt-5.1'
-      response_text='Test',
-      search_queries=[],
-      citations=[],
-      all_sources=[],
-      response_time_ms=1000,
-      sources_found=5,
-      sources_used=3,
-      avg_rank=2.5,
-      extra_links_count=1
-    )
+    response = api_send_prompt_response_namespace()
 
     # This is how response.py line 149 retrieves it
     model_display = getattr(response, 'model_display_name', None) or response.model
-    assert model_display == 'GPT 5.1'
+    assert model_display == 'GPT-5.1'
     assert model_display != 'gpt-5.1'
 
   def test_model_display_name_fallback(self):
     """Test that model name is used when model_display_name is None."""
-    response = SimpleNamespace(
-      provider='openai',
-      model='gpt-5.1',
-      model_display_name=None,  # Should fall back to model
-      response_text='Test',
-      search_queries=[],
-      citations=[],
-      all_sources=[],
-      response_time_ms=1000,
-      sources_found=5,
-      sources_used=3,
-      avg_rank=2.5,
-      extra_links_count=1
-    )
-
+    payload = api_send_prompt_response_dict()
+    payload['model_display_name'] = None
+    response = SimpleNamespace(**payload)
     model_display = getattr(response, 'model_display_name', None) or response.model
     assert model_display == 'gpt-5.1'
 
@@ -399,62 +295,7 @@ class TestDisplayResponseIntegration:
     """Test that display_response can handle API mode response without errors."""
     from frontend.components.response import display_response
 
-    # Create a complete API mode response object
-    response = SimpleNamespace(
-      provider='openai',
-      model='gpt-5.1',
-      model_display_name='GPT-5.1',
-      response_text='Test response text',
-      search_queries=[
-        SimpleNamespace(
-          query='test query',
-          sources=[
-            SimpleNamespace(
-              url='https://example.com',
-              title='Example',
-              domain='example.com',
-              rank=1,
-              pub_date=None,
-              snippet_text='Test snippet',
-              internal_score=None,
-              metadata={}
-            )
-          ],
-          timestamp='2024-01-01T00:00:00',
-          order_index=0
-        )
-      ],
-      citations=[
-        SimpleNamespace(
-          url='https://example.com',
-          title='Example',
-          rank=1,
-          snippet_used=None,
-          citation_confidence=None,
-          metadata={}
-        )
-      ],
-      all_sources=[
-        SimpleNamespace(
-          url='https://example.com',
-          title='Example',
-          domain='example.com',
-          rank=1,
-          pub_date=None,
-          snippet_text='Test snippet',
-          internal_score=None,
-          metadata={}
-        )
-      ],
-      response_time_ms=1000,
-      data_source='api',
-      sources_found=1,
-      sources_used=1,
-      avg_rank=1.0,
-      extra_links_count=0,
-      raw_response={}
-    )
-
+    response = api_send_prompt_response_namespace()
     # This should not raise AttributeError
     # We can't actually test the Streamlit output, but we can verify no exceptions
     try:
@@ -472,44 +313,7 @@ class TestDisplayResponseIntegration:
     """Test that display_response can handle network_log mode response without errors."""
     from frontend.components.response import display_response
 
-    # Create a complete network_log mode response object
-    response = SimpleNamespace(
-      provider='openai',
-      model='chatgpt-free',
-      model_display_name='ChatGPT (Free)',
-      response_text='Test response text',
-      search_queries=[],  # Network log may have empty queries
-      citations=[
-        SimpleNamespace(
-          url='https://example.com',
-          title='Example',
-          rank=1,
-          snippet_used=None,
-          citation_confidence=None,
-          metadata={}
-        )
-      ],
-      all_sources=[  # THIS IS THE CRITICAL ATTRIBUTE
-        SimpleNamespace(
-          url='https://example.com',
-          title='Example',
-          domain='example.com',
-          rank=1,
-          pub_date=None,
-          snippet_text='Test snippet',
-          internal_score=None,
-          metadata={}
-        )
-      ],
-      response_time_ms=5000,
-      data_source='network_log',
-      sources_found=1,
-      sources_used=1,
-      avg_rank=1.0,
-      extra_links_count=0,
-      raw_response={}
-    )
-
+    response = network_log_send_prompt_response_namespace()
     # This should not raise AttributeError
     try:
       display_response(response, 'test prompt')

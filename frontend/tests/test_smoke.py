@@ -8,6 +8,11 @@ architectural boundary violations (e.g., frontend importing backend code).
 
 import pytest
 
+from frontend.tests.fixtures.send_prompt_responses import (
+    api_send_prompt_response_namespace,
+    network_log_send_prompt_response_namespace,
+)
+
 
 class TestImports:
     """Test that all modules can be imported successfully."""
@@ -72,7 +77,11 @@ class TestImports:
             'backend.app.services',
             'backend.app.services.providers',
             'backend.app.services.providers.base_provider',
-            'backend.app.services.providers.provider_factory'
+            'backend.app.services.providers.provider_factory',
+            'backend.app.api',
+            'backend.app.api.v1',
+            'backend.app.api.v1.schemas',
+            'backend.app.api.v1.schemas.responses',
         }
 
         disallowed_imports = [imp for imp in backend_imports if imp not in allowed_imports]
@@ -101,55 +110,27 @@ class TestFunctionality:
     def test_compute_metrics(self):
         """Test that compute_metrics works correctly."""
         from frontend.helpers.metrics import compute_metrics
-        from types import SimpleNamespace
+        response = api_send_prompt_response_namespace()
 
-        # Create test data
-        search_queries = [
-            SimpleNamespace(
-                query='test query',
-                sources=[
-                    SimpleNamespace(url='https://example.com/1'),
-                    SimpleNamespace(url='https://example.com/2'),
-                ]
-            )
-        ]
+        metrics = compute_metrics(response.search_queries, response.citations)
 
-        citations = [
-            SimpleNamespace(rank=1, url='https://example.com/1'),
-            SimpleNamespace(rank=2, url='https://example.com/2'),
-            SimpleNamespace(rank=None, url='https://example.com/3'),  # Extra link
-        ]
-
-        metrics = compute_metrics(search_queries, citations)
-
-        assert metrics['sources_found'] == 2
-        assert metrics['sources_used'] == 2
-        assert metrics['avg_rank'] == 1.5
-        assert metrics['extra_links_count'] == 1
+        assert metrics['sources_found'] == response.sources_found
+        assert metrics['sources_used'] == response.sources_used
+        assert metrics['avg_rank'] == response.avg_rank
+        assert metrics['extra_links_count'] == response.extra_links_count
 
     def test_compute_metrics_network_log_fallback(self):
         """Test that compute_metrics falls back to all_sources for network_log mode."""
         from frontend.helpers.metrics import compute_metrics
-        from types import SimpleNamespace
+        response = network_log_send_prompt_response_namespace()
 
-        # Simulate network_log mode: search_queries exist but have no sources
-        search_queries = [SimpleNamespace(query='test', sources=[])]
+        metrics = compute_metrics(
+            response.search_queries,
+            response.citations,
+            response.all_sources,
+        )
 
-        citations = [
-            SimpleNamespace(rank=1, url='https://example.com/1'),
-            SimpleNamespace(rank=2, url='https://example.com/2'),
-        ]
-
-        all_sources = [
-            SimpleNamespace(url='https://example.com/1'),
-            SimpleNamespace(url='https://example.com/2'),
-            SimpleNamespace(url='https://example.com/3'),
-        ]
-
-        # Should use all_sources since search_queries have no sources
-        metrics = compute_metrics(search_queries, citations, all_sources)
-
-        assert metrics['sources_found'] == 3  # From all_sources, not 0!
-        assert metrics['sources_used'] == 2
-        assert metrics['avg_rank'] == 1.5
-        assert metrics['extra_links_count'] == 0
+        assert metrics['sources_found'] == response.sources_found
+        assert metrics['sources_used'] == response.sources_used
+        assert metrics['avg_rank'] == response.avg_rank
+        assert metrics['extra_links_count'] == response.extra_links_count

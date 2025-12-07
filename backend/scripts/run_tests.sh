@@ -45,12 +45,12 @@ else
   exit 1
 fi
 
-# Step 2: Unit Tests
+# Step 2: Unit Tests (instrumented for coverage)
 echo -e "${BLUE}Step 2: Unit Tests${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-if pytest tests/ -v -m "not sdk_validation" --ignore=tests/test_provider_sdk_validation.py; then
+if coverage run -m pytest tests/ -v -m "not sdk_validation" --ignore=tests/test_provider_sdk_validation.py; then
   echo ""
   echo -e "${GREEN}✅ Unit tests passed${NC}"
   echo ""
@@ -66,13 +66,14 @@ echo -e "${BLUE}Step 3: Test Coverage Report${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-coverage run -m pytest tests/
 coverage combine >/dev/null 2>&1 || true
 coverage report --omit="tests/*"
-coverage html
+if [[ "${GENERATE_HTML_COVERAGE:-0}" == "1" ]]; then
+  coverage html
+  echo "HTML coverage report available at htmlcov/index.html"
+fi
 echo ""
-echo -e "${GREEN}✅ Coverage report generated${NC}"
-echo "View detailed report: open htmlcov/index.html"
+echo -e "${GREEN}✅ Coverage summary generated${NC}"
 echo ""
 
 # Final Summary
