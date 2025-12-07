@@ -94,6 +94,18 @@ class TestGoogleProvider:
     mock_candidate.grounding_metadata = mock_metadata
 
     mock_response.candidates = [mock_candidate]
+    mock_response.to_dict = Mock(return_value={
+      "text": mock_response.text,
+      "candidates": [{
+        "grounding_metadata": {
+          "web_search_queries": ["latest AI developments", "AI breakthroughs"],
+          "grounding_chunks": [
+            {"web": {"uri": "https://example.com/article1", "title": "AI Article 1"}},
+            {"web": {"uri": "https://example.com/article2", "title": "AI Article 2"}}
+          ]
+        }
+      }]
+    })
 
     provider.client.models.generate_content = Mock(return_value=mock_response)
 
@@ -119,6 +131,10 @@ class TestGoogleProvider:
     mock_response = Mock()
     mock_response.text = "Simple response without search."
     mock_response.candidates = []
+    mock_response.to_dict = Mock(return_value={
+      "text": mock_response.text,
+      "candidates": []
+    })
 
     provider.client.models.generate_content = Mock(return_value=mock_response)
 
@@ -149,6 +165,17 @@ class TestGoogleProvider:
 
     mock_candidate.grounding_metadata = mock_metadata
     mock_response.candidates = [mock_candidate]
+    mock_response.to_dict = Mock(return_value={
+      "text": mock_response.text,
+      "candidates": [{
+        "grounding_metadata": {
+          "web_search_queries": [],
+          "grounding_chunks": [
+            {"web": {"uri": "https://example.com/source", "title": "Source Title"}}
+          ]
+        }
+      }]
+    })
 
     provider.client.models.generate_content = Mock(return_value=mock_response)
 
@@ -207,6 +234,12 @@ class TestGoogleProvider:
     mock_candidate.grounding_metadata = mock_metadata
 
     mock_response.candidates = [mock_candidate]
+    mock_response.to_dict = Mock(return_value={
+      "text": mock_response.text,
+      "candidates": [{
+        "grounding_metadata": {}
+      }]
+    })
 
     provider.client.models.generate_content = Mock(return_value=mock_response)
 
@@ -243,6 +276,18 @@ class TestGoogleProvider:
     mock_candidate.grounding_metadata = mock_metadata
 
     mock_response.candidates = [mock_candidate]
+    mock_response.to_dict = Mock(return_value={
+      "text": mock_response.text,
+      "candidates": [{
+        "grounding_metadata": {
+          "web_search_queries": ["test query"],
+          "grounding_chunks": [
+            {"web": {"uri": None}},
+            {"web": {"uri": "https://example.com/valid", "title": "Valid Source"}}
+          ]
+        }
+      }]
+    })
 
     provider.client.models.generate_content = Mock(return_value=mock_response)
 
@@ -276,6 +321,18 @@ class TestGoogleProvider:
     mock_candidate.grounding_metadata = mock_metadata
 
     mock_response.candidates = [mock_candidate]
+    mock_response.to_dict = Mock(return_value={
+      "text": mock_response.text,
+      "candidates": [{
+        "grounding_metadata": {
+          "web_search_queries": ["query 1", "query 2"],
+          "grounding_chunks": [
+            {"web": {"uri": f"https://example.com/source{i}", "title": f"Source {i}"}}
+            for i in range(5)
+          ]
+        }
+      }]
+    })
 
     provider.client.models.generate_content = Mock(return_value=mock_response)
 
@@ -293,6 +350,10 @@ class TestGoogleProvider:
     mock_response = Mock()
     mock_response.text = "Test response"
     mock_response.candidates = []
+    mock_response.to_dict = Mock(return_value={
+      "text": mock_response.text,
+      "candidates": []
+    })
 
     provider.client.models.generate_content = Mock(return_value=mock_response)
 
@@ -301,3 +362,20 @@ class TestGoogleProvider:
     assert result.response_time_ms is not None
     assert isinstance(result.response_time_ms, int)
     assert result.response_time_ms >= 0
+
+  def test_raw_payload_validation_failure(self, provider):
+    """Ensure invalid raw payloads trigger ValueError."""
+    mock_response = Mock()
+    mock_response.text = "Test response"
+    mock_response.candidates = []
+    mock_response.to_dict = Mock(return_value={
+      "text": mock_response.text,
+      "candidates": "oops"
+    })
+
+    provider.client.models.generate_content = Mock(return_value=mock_response)
+
+    with pytest.raises(ValueError) as exc_info:
+      provider.send_prompt("Test", "gemini-2.5-flash")
+
+    assert "raw payload" in str(exc_info.value)

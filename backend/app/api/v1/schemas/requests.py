@@ -1,6 +1,8 @@
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 import re
+
+from app.core.json_schemas import SourceMetadata, CitationMetadata, dump_metadata
 
 
 class SendPromptRequest(BaseModel):
@@ -227,6 +229,70 @@ class BatchRequest(BaseModel):
   }
 
 
+class NetworkLogSource(BaseModel):
+  """Typed structure for network-log sources."""
+
+  model_config = ConfigDict(extra="forbid")
+
+  url: str = Field(..., description="Source URL")
+  title: Optional[str] = Field(None, description="Source title")
+  domain: Optional[str] = Field(None, description="Domain name")
+  rank: Optional[int] = Field(None, ge=1, description="Position in search results (1-indexed)")
+  pub_date: Optional[str] = Field(None, description="ISO timestamp if available")
+  snippet_text: Optional[str] = Field(None, description="Snippet associated with the source")
+  internal_score: Optional[float] = Field(None, description="Internal ranking score")
+  metadata: Optional[Dict[str, Any]] = Field(None, description="Provider metadata for this source")
+
+  @field_validator("metadata")
+  @classmethod
+  def validate_metadata(cls, value: Optional[Dict[str, Any]]):
+    return dump_metadata(SourceMetadata, value)
+
+
+class NetworkLogCitation(BaseModel):
+  """Typed structure for network-log citations."""
+
+  model_config = ConfigDict(extra="forbid")
+
+  url: str = Field(..., description="Citation URL")
+  title: Optional[str] = Field(None, description="Citation title")
+  rank: Optional[int] = Field(None, ge=1, description="Rank from search results")
+  snippet_used: Optional[str] = Field(None, description="Snippet text used in the response")
+  metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata about the citation")
+
+  @field_validator("metadata")
+  @classmethod
+  def validate_metadata(cls, value: Optional[Dict[str, Any]]):
+    return dump_metadata(CitationMetadata, value)
+
+
+class NetworkLogSearchQuery(BaseModel):
+  """Typed structure for search queries captured from network logs."""
+
+  model_config = ConfigDict(extra="forbid")
+
+  query: str = Field(..., description="Search query text")
+  order_index: Optional[int] = Field(default=0, ge=0, description="Order of the query in the sequence")
+  sources: List[NetworkLogSource] = Field(default_factory=list, description="Sources returned for this query")
+  internal_ranking_scores: Optional[Dict[str, Any]] = Field(
+    default=None,
+    description="Provider-specific ranking metadata"
+  )
+  query_reformulations: Optional[List[str]] = Field(
+    default=None,
+    description="List of reformulated queries (if provided)"
+  )
+
+  @field_validator("internal_ranking_scores")
+  @classmethod
+  def validate_internal_scores(cls, value: Optional[Dict[str, Any]]):
+    if value is None:
+      return None
+    if not isinstance(value, dict):
+      raise ValueError("internal_ranking_scores must be an object")
+    return value
+
+
 class SaveNetworkLogRequest(BaseModel):
   """Request schema for saving network_log mode data captured by frontend."""
 
@@ -255,17 +321,17 @@ class SaveNetworkLogRequest(BaseModel):
     description="The response text from the LLM"
   )
 
-  search_queries: List[Dict[str, Any]] = Field(
+  search_queries: List[NetworkLogSearchQuery] = Field(
     default_factory=list,
     description="List of search queries (with query text and sources)"
   )
 
-  sources: List[Dict[str, Any]] = Field(
+  sources: List[NetworkLogSource] = Field(
     default_factory=list,
     description="All sources found (for network_log mode)"
   )
 
-  citations: List[Dict[str, Any]] = Field(
+  citations: List[NetworkLogCitation] = Field(
     default_factory=list,
     description="Citations extracted from response"
   )

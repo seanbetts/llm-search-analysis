@@ -79,6 +79,26 @@ export RUN_E2E=1
 
 Leave `RUN_E2E` unset/0 for normal development; the tests will show as skipped.
 
+### Provider Payload Schema Tests
+
+Raw provider responses are validated by `tests/test_provider_payload_schemas.py`, which uses canonical JSON fixtures stored under `backend/tests/fixtures/provider_payloads.py`. When SDK behavior changes, capture fresh samples and update those fixtures:
+
+1. Run the backend with real API keys and send a prompt using `app.py` or the `/interactions/send` endpoint.
+2. Copy the `raw_response` portion of the returned payload (or read `responses.raw_response_json` from SQLite).
+3. Sanitize/redact any private data, then paste into the corresponding fixture (OpenAI, Google, Anthropic).
+4. Run `pytest tests/test_provider_payload_schemas.py -v` to ensure the schema still accepts the new shape.
+
+### Auditing Stored JSON Payloads
+
+Use `backend/scripts/audit_json_payloads.py` to verify that historical rows still conform to the schemas:
+
+```bash
+cd backend
+DATABASE_URL=sqlite:///./data/llm_search.db python scripts/audit_json_payloads.py --dry-run
+```
+
+Add `--fix` to write sanitized payloads (invalid blobs are nulled so the API no longer crashes when reading them). The script also checks `internal_ranking_scores` and metadata JSON columns on query/response sources.
+
 ## Test Organization
 
 ```

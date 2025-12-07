@@ -1,8 +1,10 @@
 """Tests for Anthropic Claude provider implementation."""
 
 import pytest
+from copy import deepcopy
 from unittest.mock import Mock, MagicMock, patch
 from app.services.providers.anthropic_provider import AnthropicProvider
+from tests.fixtures import provider_payloads as payloads
 
 
 class TestAnthropicProvider:
@@ -109,7 +111,7 @@ class TestAnthropicProvider:
     mock_text_block.citations = [mock_citation]
 
     mock_response.content = [mock_query_block, mock_result_block, mock_text_block]
-    mock_response.model_dump = Mock(return_value={"test": "data"})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.ANTHROPIC_RESPONSE))
 
     provider.client.messages.create = Mock(return_value=mock_response)
 
@@ -140,7 +142,7 @@ class TestAnthropicProvider:
     mock_text_block.citations = []
 
     mock_response.content = [mock_text_block]
-    mock_response.model_dump = Mock(return_value={})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.ANTHROPIC_RESPONSE))
 
     provider.client.messages.create = Mock(return_value=mock_response)
 
@@ -167,7 +169,7 @@ class TestAnthropicProvider:
     mock_text2.citations = []
 
     mock_response.content = [mock_text1, mock_text2]
-    mock_response.model_dump = Mock(return_value={})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.ANTHROPIC_RESPONSE))
 
     provider.client.messages.create = Mock(return_value=mock_response)
 
@@ -197,7 +199,7 @@ class TestAnthropicProvider:
     mock_text_block.citations = [mock_citation1, mock_citation2]
 
     mock_response.content = [mock_text_block]
-    mock_response.model_dump = Mock(return_value={})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.ANTHROPIC_RESPONSE))
 
     provider.client.messages.create = Mock(return_value=mock_response)
 
@@ -244,7 +246,7 @@ class TestAnthropicProvider:
     mock_result2.content = [mock_result2_source]
 
     mock_response.content = [mock_query1, mock_result1, mock_query2, mock_result2]
-    mock_response.model_dump = Mock(return_value={})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.ANTHROPIC_RESPONSE))
 
     provider.client.messages.create = Mock(return_value=mock_response)
 
@@ -270,7 +272,7 @@ class TestAnthropicProvider:
     mock_query_block.input = None
 
     mock_response.content = [mock_query_block]
-    mock_response.model_dump = Mock(return_value={})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.ANTHROPIC_RESPONSE))
 
     provider.client.messages.create = Mock(return_value=mock_response)
 
@@ -309,7 +311,7 @@ class TestAnthropicProvider:
     mock_result.content = [mock_result1, mock_result2]
 
     mock_response.content = [mock_query, mock_result]
-    mock_response.model_dump = Mock(return_value={})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.ANTHROPIC_RESPONSE))
 
     provider.client.messages.create = Mock(return_value=mock_response)
 
@@ -330,7 +332,7 @@ class TestAnthropicProvider:
     mock_other_tool.input = {"query": "should be ignored"}
 
     mock_response.content = [mock_other_tool]
-    mock_response.model_dump = Mock(return_value={})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.ANTHROPIC_RESPONSE))
 
     provider.client.messages.create = Mock(return_value=mock_response)
 
@@ -350,7 +352,7 @@ class TestAnthropicProvider:
     mock_query.input = {"query": "test query"}
 
     mock_response.content = [mock_query]
-    mock_response.model_dump = Mock(return_value={})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.ANTHROPIC_RESPONSE))
 
     provider.client.messages.create = Mock(return_value=mock_response)
 
@@ -370,7 +372,7 @@ class TestAnthropicProvider:
     mock_query.input = "not a dict"
 
     mock_response.content = [mock_query]
-    mock_response.model_dump = Mock(return_value={})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.ANTHROPIC_RESPONSE))
 
     provider.client.messages.create = Mock(return_value=mock_response)
 
@@ -414,7 +416,7 @@ class TestAnthropicProvider:
     mock_text.citations = [mock_citation]
 
     mock_response.content = [mock_query, mock_result, mock_text]
-    mock_response.model_dump = Mock(return_value={})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.ANTHROPIC_RESPONSE))
 
     provider.client.messages.create = Mock(return_value=mock_response)
 
@@ -429,7 +431,7 @@ class TestAnthropicProvider:
     """Test send_prompt calculates response time."""
     mock_response = Mock()
     mock_response.content = []
-    mock_response.model_dump = Mock(return_value={})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.ANTHROPIC_RESPONSE))
 
     provider.client.messages.create = Mock(return_value=mock_response)
 
@@ -438,3 +440,17 @@ class TestAnthropicProvider:
     assert result.response_time_ms is not None
     assert isinstance(result.response_time_ms, int)
     assert result.response_time_ms >= 0
+
+  def test_raw_payload_validation_failure(self, provider):
+    """Ensure malformed payloads raise ValueError during validation."""
+    mock_response = Mock()
+    # Missing required content list
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.ANTHROPIC_INVALID))
+    mock_response.content = []
+
+    provider.client.messages.create = Mock(return_value=mock_response)
+
+    with pytest.raises(ValueError) as exc_info:
+      provider.send_prompt("Broken", "claude-sonnet-4-5-20250929")
+
+    assert "raw payload" in str(exc_info.value)
