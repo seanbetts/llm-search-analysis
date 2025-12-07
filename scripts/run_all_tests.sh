@@ -30,18 +30,39 @@ run_frontend_tests() {
     echo "pytest is required to run frontend tests. Please install project dependencies."
     exit 1
   fi
+  PYTHON_BIN="${FRONTEND_PYTHON:-python}"
   (
     cd "$REPO_ROOT" && \
-    PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}" pytest frontend/tests/ -v
+    PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}" "$PYTHON_BIN" -m pytest frontend/tests/ -v ${PYTEST_ADDOPTS:-}
   )
 }
 
 main() {
   echo "🧪 Running full test suite (backend + frontend)"
+  backend_status=0
+  frontend_status=0
+
+  set +e
   run_backend_tests
+  backend_status=$?
+  set -e
+  if [[ $backend_status -ne 0 ]]; then
+    echo "⚠️  Backend tests failed (exit code $backend_status). Continuing to frontend..."
+  fi
+
+  set +e
   run_frontend_tests
-  echo ""
-  echo "✅ All frontend and backend tests completed successfully."
+  frontend_status=$?
+  set -e
+
+  if [[ $backend_status -eq 0 && $frontend_status -eq 0 ]]; then
+    echo ""
+    echo "✅ All frontend and backend tests completed successfully."
+  else
+    echo ""
+    echo "❌ Test suite completed with failures."
+    exit 1
+  fi
 }
 
 main "$@"

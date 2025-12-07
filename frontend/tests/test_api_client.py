@@ -375,3 +375,73 @@ class TestClientCleanup:
     finally:
       client.close()
     # Should not raise any errors
+
+
+class TestSaveNetworkLog:
+  """Tests for save_network_log endpoint."""
+
+  def test_save_network_log_success(self, client, mock_api):
+    """Posting network log data should return saved interaction info."""
+    mock_api.post("/api/v1/interactions/save-network-log").mock(return_value=httpx.Response(
+      201,
+      json={"interaction_id": 42, "data_source": "network_log"}
+    ))
+
+    payload = {
+      "provider": "openai",
+      "model": "chatgpt-free",
+      "prompt": "Captured prompt",
+      "response_text": "Captured response",
+      "search_queries": [],
+      "sources": [],
+      "citations": [],
+      "response_time_ms": 1200,
+      "raw_response": {"mode": "network_log"},
+      "extra_links_count": 1,
+    }
+    result = client.save_network_log(**payload)
+    assert result["interaction_id"] == 42
+    assert result["data_source"] == "network_log"
+
+  def test_save_network_log_validation_error(self, client, mock_api):
+    """Validation errors should raise APIValidationError."""
+    mock_api.post("/api/v1/interactions/save-network-log").mock(return_value=httpx.Response(
+      422,
+      json={"detail": "Missing prompt"}
+    ))
+
+    with pytest.raises(APIValidationError):
+      client.save_network_log(
+        provider="openai",
+        model="chatgpt-free",
+        prompt="",
+        response_text="",
+        search_queries=[],
+        sources=[],
+        citations=[],
+        response_time_ms=500,
+      )
+
+
+class TestExportInteractionMarkdown:
+  """Tests for export_interaction_markdown helper."""
+
+  def test_export_success(self, client, mock_api):
+    """Successful export should return markdown text."""
+    mock_api.get("/api/v1/interactions/123/export/markdown").mock(return_value=httpx.Response(
+      200,
+      text="# Interaction 123"
+    ))
+
+    markdown = client.export_interaction_markdown(123)
+    assert markdown.startswith("# Interaction 123")
+
+  def test_export_not_found(self, client, mock_api):
+    """Missing interaction should raise APINotFoundError."""
+    mock_api.get("/api/v1/interactions/999/export/markdown").mock(return_value=httpx.Response(
+      404,
+      text="Not Found"
+    ))
+
+    with pytest.raises(APINotFoundError):
+      client.export_interaction_markdown(999)

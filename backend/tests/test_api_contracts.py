@@ -236,11 +236,13 @@ class TestInteractionResponseContract:
         assert response.status_code == 200
         data = response.json()
 
-        # Must be a list, even if empty
-        assert isinstance(data, list), "Response must be a list"
+        # Must be a paginated payload
+        assert isinstance(data, dict), "Response must be a dict with items/pagination"
+        assert "items" in data and "pagination" in data, "Paginated response must include items and pagination"
+        assert isinstance(data["items"], list), "items must be a list"
 
         # Validate each item against schema
-        for item in data:
+        for item in data["items"]:
             validated = InteractionSummary(**item)
             assert validated.interaction_id is not None
             assert isinstance(validated.prompt, str)

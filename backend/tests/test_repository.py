@@ -157,8 +157,9 @@ class TestInteractionRepository:
       )
 
     # Get recent
-    results = repository.get_recent(limit=10)
+    results, total = repository.get_recent(page_size=10)
 
+    assert total == 5
     assert len(results) == 5
     # Should be in descending order by created_at
     assert results[0].response_text == "Response 4"
@@ -192,12 +193,14 @@ class TestInteractionRepository:
     )
 
     # Get API interactions only
-    api_results = repository.get_recent(limit=10, data_source="api")
+    api_results, api_total = repository.get_recent(data_source="api")
+    assert api_total == 1
     assert len(api_results) == 1
     assert api_results[0].data_source == "api"
 
     # Get network_log interactions only
-    network_results = repository.get_recent(limit=10, data_source="network_log")
+    network_results, network_total = repository.get_recent(data_source="network_log")
+    assert network_total == 1
     assert len(network_results) == 1
     assert network_results[0].data_source == "network_log"
 
@@ -217,7 +220,8 @@ class TestInteractionRepository:
       )
 
     # Get with limit
-    results = repository.get_recent(limit=5)
+    results, total = repository.get_recent(page_size=5)
+    assert total == 20
     assert len(results) == 5
 
   def test_delete_existing_interaction(self, repository):

@@ -4,17 +4,35 @@ End-to-end tests for API persistence.
 These tests verify that API calls actually save to the database.
 This catches issues that component tests miss because they test
 the database layer and API layer separately.
+
+These tests hit real provider SDKs and require valid API keys plus
+network access. To avoid flaky local/CI runs, they are skipped unless
+RUN_E2E=1 is set in the environment.
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
+
+import pytest
 from fastapi.testclient import TestClient
-from app.main import app
-from app.dependencies import get_db
-from app.models.database import Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+from app.dependencies import get_db
+from app.main import app
+from app.models.database import Base
+
+
+RUN_E2E = os.getenv("RUN_E2E") == "1"
+pytestmark = pytest.mark.integration
+
+
+def _recent_prompts(response):
+    """Extract prompt strings from /interactions/recent responses."""
+    assert response.status_code == 200, f"Unexpected status {response.status_code}"
+    payload = response.json()
+    interactions = payload.get("items", payload) if isinstance(payload, dict) else payload
+    return [item["prompt"] for item in interactions]
 
 
 @pytest.fixture
@@ -59,6 +77,10 @@ def client(test_db_url):
     app.dependency_overrides.clear()
 
 
+@pytest.mark.skipif(
+    not RUN_E2E,
+    reason="Set RUN_E2E=1 with provider API keys to exercise real persistence tests.",
+)
 class TestAPIPersistence:
     """Test that API calls actually persist to database."""
 
@@ -176,9 +198,10 @@ class TestAPIPersistence:
             assert response.status_code == 200
 
         # Get recent interactions
-        response = client.get('/api/v1/interactions/recent?limit=50')
+        response = client.get('/api/v1/interactions/recent?page_size=50')
         assert response.status_code == 200
-        interactions = response.json()
+        payload = response.json()
+        interactions = payload.get("items", payload)
 
         # Verify all providers are present
         providers_found = {i['provider'] for i in interactions}
@@ -204,8 +227,7 @@ class TestAPIErrors:
 
         # Should not be in recent interactions
         recent = client.get('/api/v1/interactions/recent')
-        interactions = recent.json()
-        prompts = [i['prompt'] for i in interactions]
+        prompts = _recent_prompts(recent)
         assert 'Test prompt' not in prompts
 
     def test_provider_api_error_does_not_save(self, client):
@@ -237,6 +259,5 @@ class TestAPIErrors:
 
             # Verify no partial database entry was created
             recent = client.get('/api/v1/interactions/recent')
-            interactions = recent.json()
-            prompts = [i['prompt'] for i in interactions]
+            prompts = _recent_prompts(recent)
             assert 'Test prompt that will fail' not in prompts

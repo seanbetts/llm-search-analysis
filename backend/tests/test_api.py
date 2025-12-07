@@ -208,8 +208,9 @@ class TestInteractionsEndpoints:
     response = client.get("/api/v1/interactions/recent")
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
-    assert len(data) == 0
+    assert isinstance(data, dict)
+    assert data["items"] == []
+    assert data["pagination"]["total_items"] == 0
 
   @patch('app.services.providers.openai_provider.OpenAIProvider.send_prompt')
   def test_get_recent_interactions_with_data(self, mock_send_prompt, client):
@@ -239,31 +240,32 @@ class TestInteractionsEndpoints:
     response = client.get("/api/v1/interactions/recent")
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
-    assert len(data) == 1
+    assert isinstance(data, dict)
+    assert len(data["items"]) == 1
 
-    interaction = data[0]
+    interaction = data["items"][0]
     assert "interaction_id" in interaction
     assert interaction["provider"] == "OpenAI"  # API returns display name
     assert interaction["model"] == "gpt-5.1"
     assert "created_at" in interaction
 
   def test_get_recent_interactions_with_limit(self, client):
-    """Test GET /api/v1/interactions/recent respects limit parameter."""
-    response = client.get("/api/v1/interactions/recent?limit=10")
+    """Test GET /api/v1/interactions/recent respects page_size parameter."""
+    response = client.get("/api/v1/interactions/recent?page_size=10")
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
-    assert len(data) <= 10
+    assert isinstance(data, dict)
+    assert len(data["items"]) <= 10
+    assert data["pagination"]["page_size"] == 10
 
   def test_get_recent_interactions_with_data_source_filter(self, client):
     """Test GET /api/v1/interactions/recent filters by data source."""
     response = client.get("/api/v1/interactions/recent?data_source=api")
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
+    assert isinstance(data, dict)
     # All returned interactions should have data_source="api"
-    for interaction in data:
+    for interaction in data["items"]:
       assert interaction["data_source"] == "api"
 
   def test_get_interaction_details_not_found(self, client):
@@ -377,6 +379,104 @@ class TestInteractionsEndpoints:
     # Verify it's deleted
     get_response = client.get(f"/api/v1/interactions/{interaction_id}")
     assert get_response.status_code == 404
+
+  def test_save_network_log_interaction(self, client):
+    """Test POST /api/v1/interactions/save-network-log persists network log data."""
+    payload = {
+      "provider": "openai",
+      "model": "chatgpt-free",
+      "prompt": "Capture ChatGPT conversation",
+      "response_text": "Network log response body",
+      "search_queries": [
+        {
+          "query": "latest ai news",
+          "order_index": 0,
+          "sources": [
+            {
+              "url": "https://example.com/article",
+              "title": "Example Article",
+              "domain": "example.com",
+              "rank": 1,
+              "snippet_text": "Example snippet",
+              "pub_date": "2024-01-01"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://example.com/article",
+          "title": "Example Article",
+          "domain": "example.com",
+          "rank": 1,
+          "snippet_text": "Example snippet",
+          "pub_date": "2024-01-01"
+        }
+      ],
+      "citations": [
+        {
+          "url": "https://example.com/article",
+          "title": "Example Article",
+          "rank": 1,
+          "snippet_used": "Example snippet"
+        }
+      ],
+      "response_time_ms": 1200,
+      "extra_links_count": 1,
+      "raw_response": {"mode": "network_log"}
+    }
+
+    response = client.post("/api/v1/interactions/save-network-log", json=payload)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["interaction_id"] is not None
+    assert data["data_source"] == "network_log"
+    assert data["prompt"] == payload["prompt"]
+    assert len(data["all_sources"]) == 1
+
+    recent = client.get("/api/v1/interactions/recent?data_source=network_log")
+    assert recent.status_code == 200
+    recent_data = recent.json()
+    assert any(item["prompt"] == payload["prompt"] for item in recent_data["items"])
+
+  def test_export_interaction_markdown_success(self, client):
+    """Test GET /api/v1/interactions/{id}/export/markdown returns markdown."""
+    payload = {
+      "provider": "openai",
+      "model": "chatgpt-free",
+      "prompt": "Export me",
+      "response_text": "Export response body",
+      "search_queries": [],
+      "sources": [
+        {
+          "url": "https://example.com/export",
+          "title": "Export Source",
+          "domain": "example.com",
+          "rank": 1,
+          "snippet_text": "Snippet"
+        }
+      ],
+      "citations": [],
+      "response_time_ms": 900,
+      "extra_links_count": 0,
+      "raw_response": {"mode": "network_log"}
+    }
+    create_resp = client.post("/api/v1/interactions/save-network-log", json=payload)
+    interaction_id = create_resp.json()["interaction_id"]
+
+    export_resp = client.get(f"/api/v1/interactions/{interaction_id}/export/markdown")
+    assert export_resp.status_code == 200
+    markdown = export_resp.text
+    assert "# Interaction" in markdown
+    assert "## Prompt" in markdown
+    assert payload["prompt"] in markdown
+
+  def test_export_interaction_markdown_not_found(self, client):
+    """Test GET /api/v1/interactions/{id}/export/markdown returns 404 for missing ID."""
+    response = client.get("/api/v1/interactions/999999/export/markdown")
+    assert response.status_code == 404
+    data = response.json()
+    assert data["error"]["code"] == "RESOURCE_NOT_FOUND"
 
 
 class TestErrorHandling:

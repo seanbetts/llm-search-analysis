@@ -66,17 +66,14 @@ echo -e "${BLUE}Step 3: Test Coverage Report${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-if command -v pytest-cov &> /dev/null; then
-  pytest tests/ --cov=app --cov-report=term-missing --cov-report=html
-  echo ""
-  echo -e "${GREEN}✅ Coverage report generated${NC}"
-  echo "View detailed report: open htmlcov/index.html"
-  echo ""
-else
-  echo -e "${YELLOW}⚠️  pytest-cov not installed, skipping coverage report${NC}"
-  echo "Install with: pip install pytest-cov"
-  echo ""
-fi
+coverage run -m pytest tests/
+coverage combine >/dev/null 2>&1 || true
+coverage report --omit="tests/*"
+coverage html
+echo ""
+echo -e "${GREEN}✅ Coverage report generated${NC}"
+echo "View detailed report: open htmlcov/index.html"
+echo ""
 
 # Final Summary
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

@@ -131,12 +131,13 @@ class TestInteractionService:
       MagicMock(rank=None),
     ]
 
-    mock_repository.get_recent.return_value = [mock_response]
+    mock_repository.get_recent.return_value = ([mock_response], 1)
 
     # Get recent interactions
-    summaries = service.get_recent_interactions(limit=10)
+    summaries, total = service.get_recent_interactions(page_size=10)
 
     # Verify counts
+    assert total == 1
     assert len(summaries) == 1
     summary = summaries[0]
     assert summary.search_query_count == 2  # 2 queries
@@ -167,9 +168,9 @@ class TestInteractionService:
       MagicMock(rank=5),
     ]
 
-    mock_repository.get_recent.return_value = [mock_response]
+    mock_repository.get_recent.return_value = ([mock_response], 1)
 
-    summaries = service.get_recent_interactions()
+    summaries, _ = service.get_recent_interactions()
 
     assert summaries[0].average_rank == 3.0
 
@@ -197,23 +198,28 @@ class TestInteractionService:
       MagicMock(rank=4),
     ]
 
-    mock_repository.get_recent.return_value = [mock_response]
+    mock_repository.get_recent.return_value = ([mock_response], 1)
 
-    summaries = service.get_recent_interactions()
+    summaries, _ = service.get_recent_interactions()
 
     # Should only average 2 and 4 -> 3.0
     assert summaries[0].average_rank == 3.0
 
   def test_get_recent_interactions_with_data_source_filter(self, service, mock_repository):
     """Test filtering by data source."""
-    mock_repository.get_recent.return_value = []
+    mock_repository.get_recent.return_value = ([], 0)
 
-    service.get_recent_interactions(limit=50, data_source="network_log")
+    service.get_recent_interactions(page=2, page_size=50, data_source="network_log")
 
     # Verify filter was passed to repository
     mock_repository.get_recent.assert_called_once_with(
-      limit=50,
-      data_source="network_log"
+      page=2,
+      page_size=50,
+      data_source="network_log",
+      provider=None,
+      model=None,
+      date_from=None,
+      date_to=None
     )
 
   def test_get_interaction_details_returns_full_response(self, service, mock_repository):

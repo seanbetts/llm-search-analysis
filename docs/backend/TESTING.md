@@ -59,6 +59,26 @@ pytest -m sdk_validation
 pytest --cov=app --cov-report=html
 ```
 
+### Live Provider Persistence Tests (optional)
+
+`backend/tests/test_e2e_persistence.py` exercises the full HTTP stack and makes **real** calls to OpenAI, Google, and Anthropic to ensure successful responses are persisted to the database. These tests are skipped by default to keep CI/local runs deterministic. To enable them:
+
+1. Ensure your `.env` contains valid `OPENAI_API_KEY`, `GOOGLE_API_KEY`, and `ANTHROPIC_API_KEY`.
+2. Set `RUN_E2E=1` (in `.env` or inline) before invoking pytest or `scripts/run_tests.sh`.
+
+Examples:
+
+```bash
+# Temporarily enable within a single command
+RUN_E2E=1 pytest backend/tests/test_e2e_persistence.py -v
+
+# Or export once for the session
+export RUN_E2E=1
+./scripts/run_all_tests.sh
+```
+
+Leave `RUN_E2E` unset/0 for normal development; the tests will show as skipped.
+
 ## Test Organization
 
 ```
