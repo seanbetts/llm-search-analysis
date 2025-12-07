@@ -9,6 +9,7 @@ from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 from frontend.components.models import get_all_models
 from frontend.helpers.metrics import compute_metrics, get_model_display_name
 from frontend.helpers.serialization import namespace_to_dict
+from frontend.helpers.error_handling import safe_api_call
 
 
 def tab_batch():
@@ -176,7 +177,8 @@ def tab_batch():
 
               # Save to database via backend API
               # Convert SimpleNamespace objects to dicts for JSON serialization
-              st.session_state.api_client.save_network_log(
+              _, save_error = safe_api_call(
+                st.session_state.api_client.save_network_log,
                 provider=provider_response.provider,
                 model=provider_response.model,
                 prompt=prompt,
@@ -186,8 +188,11 @@ def tab_batch():
                 citations=namespace_to_dict(citations),
                 response_time_ms=provider_response.response_time_ms,
                 raw_response=provider_response.raw_response,
-                extra_links_count=metrics['extra_links_count']
+                extra_links_count=metrics['extra_links_count'],
+                show_spinner=False
               )
+              if save_error:
+                raise Exception(f"Failed to save: {save_error}")
 
             finally:
               # Always cleanup browser
@@ -195,13 +200,17 @@ def tab_batch():
 
           else:
             # Use API client to send prompt (handles provider call AND database save)
-            response_data = st.session_state.api_client.send_prompt(
+            response_data, api_error = safe_api_call(
+              st.session_state.api_client.send_prompt,
               prompt=prompt,
               provider=provider_name,
               model=model_name,
               data_mode="api",
-              headless=True
+              headless=True,
+              show_spinner=False
             )
+            if api_error:
+              raise Exception(api_error)
 
           # Store result using backend-computed metrics
           if st.session_state.data_collection_mode == 'api':

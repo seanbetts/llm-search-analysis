@@ -6,9 +6,9 @@ from frontend.config import Config
 from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 from frontend.components.models import get_all_models
 from frontend.components.response import display_response
-from frontend.api_client import APINotFoundError, APIClientError
 from frontend.helpers.metrics import compute_metrics, get_model_display_name
 from frontend.helpers.serialization import namespace_to_dict
+from frontend.helpers.error_handling import safe_api_call
 
 
 def tab_interactive():
@@ -157,7 +157,8 @@ def tab_interactive():
 
           # Save to database via backend API
           # Convert SimpleNamespace objects to dicts for JSON serialization
-          st.session_state.api_client.save_network_log(
+          _, save_error = safe_api_call(
+            st.session_state.api_client.save_network_log,
             provider=provider_response.provider,
             model=provider_response.model,
             prompt=prompt,
@@ -167,8 +168,12 @@ def tab_interactive():
             citations=namespace_to_dict(citations),
             response_time_ms=provider_response.response_time_ms,
             raw_response=provider_response.raw_response,
-            extra_links_count=metrics['extra_links_count']
+            extra_links_count=metrics['extra_links_count'],
+            show_spinner=False  # Already showing status in the network capture
           )
+
+          if save_error:
+            st.warning(f"Response captured but failed to save: {save_error}")
 
           # Store response in session state
           st.session_state.response = response
@@ -180,14 +185,20 @@ def tab_interactive():
 
       else:
         # API MODE: Use backend API (returns all computed metrics)
-        with st.spinner(f"Querying {formatted_model}..."):
-          response_data = st.session_state.api_client.send_prompt(
-            prompt=prompt,
-            provider=selected_provider,
-            model=selected_model
-          )
+        response_data, error = safe_api_call(
+          st.session_state.api_client.send_prompt,
+          prompt=prompt,
+          provider=selected_provider,
+          model=selected_model,
+          spinner_text=f"Querying {formatted_model}..."
+        )
 
-          # Convert API response dict to object for display_response function
+        if error:
+          # Error occurred - store in session state
+          st.session_state.error = error
+          st.session_state.response = None
+        else:
+          # Success - convert API response dict to object for display_response function
           # Convert search queries
           search_queries = []
           for query_data in response_data.get('search_queries', []):
@@ -225,27 +236,13 @@ def tab_interactive():
             raw_response=response_data.get('raw_response', {})
           )
 
-        # Store in session state
-        st.session_state.response = response
-        st.session_state.prompt = prompt
-        st.session_state.error = None
+          # Store in session state
+          st.session_state.response = response
+          st.session_state.prompt = prompt
+          st.session_state.error = None
 
-    except APINotFoundError as e:
-      st.session_state.error = f"Resource not found: {str(e)}"
-      st.session_state.response = None
-    except APIClientError as e:
-      # Handle various API client errors with user-friendly messages
-      error_msg = str(e)
-      if "timed out" in error_msg.lower():
-        st.session_state.error = f"Request timed out. The model may be taking too long to respond. Please try again."
-      elif "connect" in error_msg.lower() or "connection" in error_msg.lower():
-        st.session_state.error = f"Cannot connect to API server. Please ensure the backend is running on http://localhost:8000"
-      elif "validation" in error_msg.lower():
-        st.session_state.error = f"Invalid request: {error_msg}"
-      else:
-        st.session_state.error = f"API error: {error_msg}"
-      st.session_state.response = None
     except Exception as e:
+      # Catch any network_log mode errors
       st.session_state.error = f"Unexpected error: {str(e)}"
       st.session_state.response = None
 

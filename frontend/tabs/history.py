@@ -7,6 +7,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 from frontend.utils import format_pub_date
 from frontend.components.response import format_response_text, extract_images_from_response
+from frontend.helpers.error_handling import safe_api_call
 
 
 def _build_model_display_mapping(model_display_options_df):
@@ -32,7 +33,14 @@ def tab_history():
   st.markdown("### 📜 Query History")
   # Get recent interactions
   try:
-    interactions = st.session_state.api_client.get_recent_interactions(limit=100)
+    interactions, error = safe_api_call(
+      st.session_state.api_client.get_recent_interactions,
+      limit=100,
+      spinner_text="Loading interaction history..."
+    )
+    if error:
+      st.error(f"Error loading history: {error}")
+      return
 
     if not interactions:
       st.info("No interactions recorded yet. Start by submitting prompts in the Interactive tab!")
@@ -177,10 +185,23 @@ def tab_history():
     )
 
     if selected_id:
-      details = st.session_state.api_client.get_interaction(selected_id)
-      if details:
+      details, details_error = safe_api_call(
+        st.session_state.api_client.get_interaction,
+        selected_id,
+        show_spinner=False
+      )
+      if details_error:
+        st.error(f"Error loading interaction: {details_error}")
+      elif details:
         # Download interaction as markdown (placed directly after selector)
-        md_export = st.session_state.api_client.export_interaction_markdown(selected_id)
+        md_export, export_error = safe_api_call(
+          st.session_state.api_client.export_interaction_markdown,
+          selected_id,
+          show_spinner=False
+        )
+        if export_error:
+          st.warning(f"Could not generate markdown export: {export_error}")
+          md_export = "# Export failed\n\nCould not generate markdown export."
         btn_wrap, _ = st.columns([1, 4])
         with btn_wrap:
           btn_col1, btn_col2 = st.columns(2, gap="small")
@@ -194,21 +215,24 @@ def tab_history():
             )
           with btn_col2:
             if st.button("🗑️ Delete Interaction", type="secondary", use_container_width=True):
-              try:
-                deleted = st.session_state.api_client.delete_interaction(selected_id)
-                if deleted:
-                  st.success(f"Interaction ID {selected_id} deleted.")
-                  try:
-                    # Streamlit >=1.22 uses st.rerun
-                    rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
-                    if rerun:
-                      rerun()
-                  except Exception:
-                    pass
-                else:
-                  st.warning("Interaction not found.")
-              except Exception as del_err:
-                st.error(f"Failed to delete interaction: {del_err}")
+              deleted, delete_error = safe_api_call(
+                st.session_state.api_client.delete_interaction,
+                selected_id,
+                show_spinner=False
+              )
+              if delete_error:
+                st.error(f"Failed to delete interaction: {delete_error}")
+              elif deleted:
+                st.success(f"Interaction ID {selected_id} deleted.")
+                try:
+                  # Streamlit >=1.22 uses st.rerun
+                  rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
+                  if rerun:
+                    rerun()
+                except Exception:
+                  pass
+              else:
+                st.warning("Interaction not found.")
 
         st.divider()
         # Prompt header

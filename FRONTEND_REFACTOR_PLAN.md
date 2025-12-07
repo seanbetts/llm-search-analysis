@@ -437,20 +437,20 @@ app.py (1,605 lines)
 
 **Result**: Better code organization with dedicated modules for utilities, response formatting, and model selection. Combined with Phase 2.1: 216 lines removed from app.py.
 
-### 3. Split `app.py` by Responsibility
+### 3. Split `app.py` by Responsibility - ✅ COMPLETED (2025-12-03)
 
-- [ ] Keep in `app.py`:
+- [x] Keep in `app.py`:
   - Page config and CSS loading (via `load_styles()`).
   - `initialize_session_state()` (slimmed down).
   - `sidebar_info()`.
   - `main()` function that wires tabs.
 
-- [ ] Create tab modules:
+- [x] Create tab modules:
   - `frontend/tabs/interactive.py` with `tab_interactive()`.
   - `frontend/tabs/batch.py` with `tab_batch()`.
   - `frontend/tabs/history.py` with `tab_history()`.
 
-### 4. Introduce Additional UI Helpers (If Needed)
+### 4. Introduce Additional UI Helpers ⏭️ SKIPPED (2025-12-07)
 
 - [ ] `frontend/components/metrics.py`:
   - Functions to render the metrics row given backend-provided metrics (no calculations inside).
@@ -458,7 +458,12 @@ app.py (1,605 lines)
 - [ ] `frontend/components/sources.py`:
   - Functions to render "Sources Found", "Sources Used", and "Extra Links" using the normalized backend data shape.
 
-### 5. Centralize Frontend Configuration (If Needed)
+**Decision: Not needed**
+- No code duplication - display logic only appears once in `display_response()`
+- Would add indirection without reducing complexity
+- React migration (Phase 3+) will supersede this approach entirely
+
+### 5. Centralize Frontend Configuration ⏭️ SKIPPED (2025-12-07)
 
 - [ ] `frontend/constants.py` for UI-only configuration, such as:
   - Default history limit for the History tab.
@@ -470,18 +475,37 @@ app.py (1,605 lines)
   - Use backend-provided display fields where possible.
   - Reserve constants for UI behaviour/config, not domain semantics.
 
-### 6. Unify Error Handling
+**Decision: Not needed**
+- Minimal duplication (only `provider_names` dict in 2 places)
+- Backend should be source of truth for domain data (as plan itself notes)
+- Centralizing magic numbers like `limit=100` provides low value
+- React migration will introduce its own configuration approach
 
-- [ ] Implement a helper like `safe_api_call(callable)` that:
+### 6. Unify Error Handling ✅ COMPLETED (2025-12-07)
+
+- [x] Implement a helper like `safe_api_call(callable)` that:
   - Wraps calls to `APIClient`.
   - Catches `APIClientError` subclasses.
   - Displays consistent Streamlit error messages or warnings.
 
-- [ ] Replace scattered `try/except` blocks in tabs with calls to `safe_api_call`.
+- [x] Replace scattered `try/except` blocks in tabs with calls to `safe_api_call`.
 
-- [ ] Clarify validation responsibilities:
+- [x] Clarify validation responsibilities:
   - Rely on backend Pydantic validation and error codes for correctness and security (length limits, allowed models/providers, XSS checks, etc.).
   - Use frontend checks only for UX (e.g. non-empty prompt, obvious length warnings) and to show friendly summaries of backend validation errors.
+
+**Implementation Summary:**
+- Created `frontend/helpers/error_handling.py` with `safe_api_call()` function that:
+  - Returns tuple `(result, error_message)` for consistent error handling
+  - Catches all `APIClientError` subclasses with user-friendly messages
+  - Supports optional spinner control and success messages
+- Updated `frontend/helpers/__init__.py` to export the new function
+- Refactored all three tab files to use unified error handling:
+  - `frontend/tabs/interactive.py`: API mode and network_log save calls
+  - `frontend/tabs/batch.py`: Batch processing API calls
+  - `frontend/tabs/history.py`: History retrieval, export, and delete operations
+- Removed scattered `try/except` blocks and inconsistent error message patterns
+- Achieved consistent UX across all tabs with single source of truth for error messages
 
 **Result:** `app.py` becomes a thin entrypoint; tab modules and components are small, focused, and mostly view-only.
 
@@ -493,6 +517,11 @@ app.py (1,605 lines)
 - ✅ Phase 2.1: CSS Extraction (-65 lines)
 - ✅ Phase 2.2: Helper Functions Extraction (-151 lines)
 - ✅ Phase 2.3: Tab Functions Extraction (-1018 lines)
+- ✅ Phase 2.6: Unified Error Handling (2025-12-07)
+
+**Skipped:**
+- ⏭️ Phase 2.4: Additional UI Helpers (not needed - no duplication)
+- ⏭️ Phase 2.5: Frontend Configuration (not needed - minimal value)
 
 **Total Phase 2 Reduction**: 1234 lines removed from app.py (1418 → 184 lines)
 
@@ -502,9 +531,12 @@ app.py (1,605 lines)
   - Includes `display_response()` function moved from app.py
 - Model selection logic in `frontend/components/models.py` (59 lines)
 - Date formatting utilities in `frontend/utils.py` (21 lines)
+- Error handling centralized in `frontend/helpers/error_handling.py` (105 lines)
+  - `safe_api_call()` wrapper provides consistent error handling across all API calls
+  - Replaced scattered try/except blocks in all tab modules
 - Tab modules in `frontend/tabs/`:
-  - `interactive.py` - Interactive prompting tab (174 lines)
-  - `batch.py` - Batch analysis tab (238 lines)
+  - `interactive.py` - Interactive prompting tab (256 lines)
+  - `batch.py` - Batch analysis tab (323 lines)
   - `history.py` - Query history tab (417 lines)
   - `__init__.py` - Tab module exports (7 lines)
 - All modules properly documented with docstrings
