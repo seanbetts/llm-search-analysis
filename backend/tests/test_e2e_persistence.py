@@ -210,34 +210,33 @@ class TestAPIErrors:
 
     def test_provider_api_error_does_not_save(self, client):
         """Test that provider API errors don't create partial database entries."""
-        # This would require mocking the provider to force an error
-        # For now, we test with missing API key which should fail
-        import os
+        from unittest.mock import patch, Mock
+        from app.core.exceptions import APIException
 
-        # Find a provider without API key
-        test_provider = None
-        if not os.getenv('OPENAI_API_KEY'):
-            test_provider = ('openai', 'gpt-5.1')
-        elif not os.getenv('ANTHROPIC_API_KEY'):
-            test_provider = ('anthropic', 'claude-sonnet-4-5-20250929')
-        elif not os.getenv('GOOGLE_API_KEY'):
-            test_provider = ('google', 'gemini-3-pro-preview')
+        # Mock the OpenAI provider to raise an API error
+        with patch('app.services.providers.openai_provider.OpenAIProvider.send_prompt') as mock_send_prompt:
+            # Force an API error
+            mock_send_prompt.side_effect = APIException(
+                message="API request failed",
+                error_code="PROVIDER_API_ERROR",
+                status_code=500,
+                details={"error": "Simulated provider API error"}
+            )
 
-        if not test_provider:
-            pytest.skip("All API keys are configured, can't test missing key error")
+            # Attempt to send prompt
+            response = client.post('/api/v1/interactions/send', json={
+                'prompt': 'Test prompt that will fail',
+                'provider': 'openai',
+                'model': 'gpt-5.1'
+            })
 
-        provider, model = test_provider
-        response = client.post('/api/v1/interactions/send', json={
-            'prompt': 'Test prompt with missing key',
-            'provider': provider,
-            'model': model
-        })
+            # Should return error status
+            assert response.status_code >= 400
+            data = response.json()
+            assert 'error' in data
 
-        # Should fail
-        assert response.status_code != 200
-
-        # Should not be in recent interactions
-        recent = client.get('/api/v1/interactions/recent')
-        interactions = recent.json()
-        prompts = [i['prompt'] for i in interactions]
-        assert 'Test prompt with missing key' not in prompts
+            # Verify no partial database entry was created
+            recent = client.get('/api/v1/interactions/recent')
+            interactions = recent.json()
+            prompts = [i['prompt'] for i in interactions]
+            assert 'Test prompt that will fail' not in prompts
