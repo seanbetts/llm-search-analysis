@@ -47,5 +47,5 @@ root entity instead of relying on the `sessions → prompts → responses` chain
 - [x] Take a backup of the production SQLite/Postgres DB.
 - [x] Apply Alembic migration on a copy and validate data (counts, samples).
 - [x] Run automated tests plus audit/backfill scripts post-migration.
-- [ ] Deploy backend once the schema is verified; ensure CI runs `alembic upgrade head`.
-- [ ] Remove legacy cleanup scripts that assumed nullable FKs.
+- [x] Deploy backend once the schema is verified; ensure CI runs `alembic upgrade head`.
+- [x] Remove legacy cleanup scripts that assumed nullable FKs (none remain; cascade logic replaces them).
