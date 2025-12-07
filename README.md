@@ -24,7 +24,7 @@ cd llm-search-analysis
 cp .env.example .env
 # edit .env and add API keys / ChatGPT credentials if needed
 
-# Start both services
+# Start both services (runs DB migrations automatically)
 docker compose up -d
 
 # Verify everything
@@ -35,10 +35,20 @@ docker compose up -d
 - Maintenance tasks (backups, upgrades, logs) are documented in `docs/operations/BACKUP_AND_RESTORE.md`.
 
 ### Option 2: Hybrid Local Development (macOS)
-1. Start Docker-backed backend: `cd backend && uvicorn app.main:app --reload --port 8000`.
+1. Prepare the backend database (inside `backend/`):
+   ```bash
+   cd backend
+   alembic upgrade head
+   uvicorn app.main:app --reload --port 8000
+   ```
 2. Install frontend deps: `pip install -r requirements.txt && playwright install chrome`.
 3. Run Streamlit UI: `API_BASE_URL=http://localhost:8000 streamlit run app.py`.
 4. Network capture requires Chrome, non-headless mode, and the env vars noted in `docs/frontend/network_capture.md`.
+
+### Database migrations
+- Apply latest schema: `cd backend && alembic upgrade head`.
+- Generate new revisions after model changes: `alembic revision --autogenerate -m "describe change"`.
+- For existing SQLite files created before Alembic, run `alembic stamp head` once so migrations start from the current schema.
 
 ## Documentation Map
 - **Architecture & API** – `docs/backend/overview.md` (links to `docs/backend/API_DOCUMENTATION.md` and `docs/backend/TESTING.md`).

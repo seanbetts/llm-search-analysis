@@ -21,6 +21,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
+from sqlalchemy.exc import IntegrityError
 
 from app.models.database import (
     Base,
@@ -162,24 +163,25 @@ class TestRealisticDataScenarios:
         )
         db_session.add(good_response)
 
-        # Create response with NULL prompt (orphaned)
-        # This can happen if prompt was deleted but cascade failed
-        orphaned_response = Response(
-            prompt_id=None,  # NULL!
-            response_text="Orphaned response",
-            response_time_ms=1000,
-            raw_response_json={},
-            data_source="api",
-        )
-        db_session.add(orphaned_response)
-
         db_session.commit()
 
-        # Should not crash with NULL relationships
+        # Attempting to create an orphaned response should now fail fast
+        with pytest.raises(IntegrityError):
+            bad_response = Response(
+                prompt_id=None,
+                response_text="Orphaned response",
+                response_time_ms=1000,
+                raw_response_json={},
+                data_source="api",
+            )
+            db_session.add(bad_response)
+            db_session.commit()
+        db_session.rollback()
+
+        # Repository should still return the valid response without crashing.
         results, total = repository.get_recent(page_size=10)
 
-        # Repository should return without crashing even if orphaned rows exist.
-        assert total >= 1
+        assert total == 1
         assert any(result.id == good_response.id for result in results)
 
     def test_search_query_with_no_sources(self, db_session, repository):

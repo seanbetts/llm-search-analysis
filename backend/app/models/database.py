@@ -3,7 +3,7 @@ Database models using SQLAlchemy.
 """
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, JSON, Float
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, JSON, Float, Index
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -28,7 +28,7 @@ class SessionModel(Base):
   __tablename__ = "sessions"
 
   id = Column(Integer, primary_key=True)
-  provider_id = Column(Integer, ForeignKey("providers.id"))
+  provider_id = Column(Integer, ForeignKey("providers.id"), nullable=False)
   model_used = Column(String(100))
   created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -42,7 +42,7 @@ class Prompt(Base):
   __tablename__ = "prompts"
 
   id = Column(Integer, primary_key=True)
-  session_id = Column(Integer, ForeignKey("sessions.id"))
+  session_id = Column(Integer, ForeignKey("sessions.id"), nullable=False)
   prompt_text = Column(Text, nullable=False)
   created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -56,7 +56,7 @@ class Response(Base):
   __tablename__ = "responses"
 
   id = Column(Integer, primary_key=True)
-  prompt_id = Column(Integer, ForeignKey("prompts.id"))
+  prompt_id = Column(Integer, ForeignKey("prompts.id"), nullable=False)
   response_text = Column(Text)
   response_time_ms = Column(Integer)
   created_at = Column(DateTime, default=datetime.utcnow)
@@ -68,6 +68,10 @@ class Response(Base):
   sources_found = Column(Integer, default=0)
   sources_used_count = Column(Integer, default=0)
   avg_rank = Column(Float)
+
+  __table_args__ = (
+    Index("ix_responses_created_at", "created_at"),
+  )
 
   # Relationships
   prompt = relationship("Prompt", back_populates="response")
@@ -85,7 +89,7 @@ class SearchQuery(Base):
   __tablename__ = "search_queries"
 
   id = Column(Integer, primary_key=True)
-  response_id = Column(Integer, ForeignKey("responses.id"))
+  response_id = Column(Integer, ForeignKey("responses.id"), nullable=False)
   search_query = Column(Text)
   created_at = Column(DateTime, default=datetime.utcnow)
   order_index = Column(Integer, default=0)
@@ -93,6 +97,10 @@ class SearchQuery(Base):
   # Network log exclusive fields
   internal_ranking_scores = Column(JSON)
   query_reformulations = Column(JSON)
+
+  __table_args__ = (
+    Index("ix_search_queries_response_id", "response_id"),
+  )
 
   # Relationships
   response = relationship("Response", back_populates="search_queries")
@@ -121,13 +129,18 @@ class SourceModel(Base):
   search_query = relationship("SearchQuery", back_populates="sources")
   response = relationship("Response", foreign_keys=[response_id], back_populates="sources")
 
+  __table_args__ = (
+    Index("ix_sources_search_query_id", "search_query_id"),
+    Index("ix_sources_response_id", "response_id"),
+  )
+
 
 class SourceUsed(Base):
   """Source actually used/cited in the response."""
   __tablename__ = "sources_used"
 
   id = Column(Integer, primary_key=True)
-  response_id = Column(Integer, ForeignKey("responses.id"))
+  response_id = Column(Integer, ForeignKey("responses.id"), nullable=False)
   url = Column(Text, nullable=False)
   title = Column(Text)
   rank = Column(Integer)
@@ -136,6 +149,10 @@ class SourceUsed(Base):
   snippet_used = Column(Text)
   citation_confidence = Column(Float)
   metadata_json = Column(JSON)
+
+  __table_args__ = (
+    Index("ix_sources_used_response_id", "response_id"),
+  )
 
   # Relationships
   response = relationship("Response", back_populates="sources_used")

@@ -60,14 +60,6 @@ app.include_router(interactions.router, prefix="/api/v1")
 app.include_router(providers.router, prefix="/api/v1")
 
 
-# Startup event to create database tables
-@app.on_event("startup")
-async def startup_event():
-  """Create database tables on startup if they don't exist"""
-  from app.models.database import Base
-  Base.metadata.create_all(bind=engine)
-
-
 @app.get("/")
 async def root():
   """Root endpoint - API information"""
