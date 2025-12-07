@@ -502,6 +502,60 @@ class TestRealisticDataScenarios:
         assert db_session.query(Response).filter_by(id=response_id).first() is None
         assert db_session.query(ResponseSource).filter_by(url="https://orphaned.com").first() is None
 
+    def test_delete_removes_session_and_provider(self, db_session, repository):
+        """
+        Deleting the only interaction should clean up session and provider.
+        """
+        response_id = repository.save(
+            prompt_text="Cleanup prompt",
+            provider_name="cleanup_provider",
+            model_name="gpt-4o",
+            response_text="Cleanup response",
+            response_time_ms=1000,
+            search_queries=[],
+            sources_used=[],
+            raw_response={},
+            data_source="api",
+        )
+
+        assert repository.delete(response_id) is True
+        assert db_session.query(SessionModel).count() == 0
+        assert db_session.query(Provider).count() == 0
+
+    def test_delete_keeps_provider_with_other_sessions(self, db_session, repository):
+        """
+        Provider should stay if other sessions still exist.
+        """
+        first_id = repository.save(
+            prompt_text="Prompt 1",
+            provider_name="shared_provider",
+            model_name="gpt-4o",
+            response_text="Response 1",
+            response_time_ms=1000,
+            search_queries=[],
+            sources_used=[],
+            raw_response={},
+            data_source="api",
+        )
+
+        second_id = repository.save(
+            prompt_text="Prompt 2",
+            provider_name="shared_provider",
+            model_name="gpt-4o",
+            response_text="Response 2",
+            response_time_ms=1000,
+            search_queries=[],
+            sources_used=[],
+            raw_response={},
+            data_source="api",
+        )
+
+        assert repository.delete(first_id) is True
+        assert db_session.query(Provider).filter_by(name="shared_provider").first() is not None
+
+        assert repository.delete(second_id) is True
+        assert db_session.query(Provider).filter_by(name="shared_provider").first() is None
+
 
 class TestEdgeCaseQueries:
     """Test edge cases in query operations."""

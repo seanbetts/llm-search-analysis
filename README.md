@@ -49,6 +49,7 @@ docker compose up -d
 - Apply latest schema: `cd backend && alembic upgrade head`.
 - Generate new revisions after model changes: `alembic revision --autogenerate -m "describe change"`.
 - For existing SQLite files created before Alembic, run `alembic stamp head` once so migrations start from the current schema.
+- Recompute historical response metrics if needed: `cd backend && python scripts/backfill_metrics.py` (use `--dry-run` to preview).
 
 ## Documentation Map
 - **Architecture & API** – `docs/backend/overview.md` (links to `docs/backend/API_DOCUMENTATION.md` and `docs/backend/TESTING.md`).

@@ -348,6 +348,12 @@ class InteractionRepository:
       if not response:
         return False
 
+      prompt = response.prompt
+      session = prompt.session if prompt else None
+      provider = session.provider if session else None
+      session_id = session.id if session else None
+      provider_id = provider.id if provider else None
+
       # Delete sources used
       self.db.query(SourceUsed).filter_by(response_id=response_id).delete()
 
@@ -371,6 +377,24 @@ class InteractionRepository:
         prompt = self.db.query(Prompt).filter_by(id=prompt_id).first()
         if prompt:
           self.db.delete(prompt)
+          self.db.flush()
+
+      # Delete session if no prompts remain
+      if session_id:
+        has_prompts = self.db.query(Prompt.id).filter_by(session_id=session_id).first()
+        if not has_prompts:
+          session_obj = self.db.query(SessionModel).filter_by(id=session_id).first()
+          if session_obj:
+            self.db.delete(session_obj)
+            self.db.flush()
+
+      # Delete provider if no sessions remain
+      if provider_id:
+        has_sessions = self.db.query(SessionModel.id).filter_by(provider_id=provider_id).first()
+        if not has_sessions:
+          provider_obj = self.db.query(Provider).filter_by(id=provider_id).first()
+          if provider_obj:
+            self.db.delete(provider_obj)
 
       self.db.commit()
       return True
