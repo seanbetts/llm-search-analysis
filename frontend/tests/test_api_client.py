@@ -277,6 +277,52 @@ class TestGetRecentInteractions:
     assert result["pagination"]["page_size"] == 5
 
 
+class TestApiClientResilience:
+  """Tests for connection resilience and retries."""
+
+  def test_retries_on_remote_protocol_error(self, monkeypatch):
+    """Ensure remote protocol errors reset client and retry."""
+    class DummyHTTPClient:
+      def __init__(self):
+        self.calls = 0
+
+      def request(self, method, path, **kwargs):
+        self.calls += 1
+        if self.calls == 1:
+          raise httpx.RemoteProtocolError("Server disconnected")
+        request = httpx.Request(method, f"http://testserver{path}")
+        return httpx.Response(
+          200,
+          json={
+            "items": [],
+            "pagination": {
+              "page": 1,
+              "page_size": 20,
+              "total_items": 0,
+              "total_pages": 0,
+              "has_next": False,
+              "has_prev": False,
+            },
+          },
+          request=request
+        )
+
+      def close(self):
+        pass
+
+    dummy = DummyHTTPClient()
+
+    def _build_client_stub(self):
+      return dummy
+
+    monkeypatch.setattr(APIClient, "_build_client", _build_client_stub)
+    resilient_client = APIClient(base_url="http://testserver", max_retries=2)
+    result = resilient_client.get_recent_interactions()
+    assert result["items"] == []
+    assert dummy.calls == 2
+    resilient_client.close()
+
+
 class TestGetInteraction:
   """Tests for get interaction details endpoint."""
 

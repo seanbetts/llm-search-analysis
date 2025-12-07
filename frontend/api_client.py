@@ -7,7 +7,6 @@ This module provides a client library for interacting with the FastAPI backend.
 import time
 from typing import Dict, List, Optional, Any
 import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 
 class APIClientError(Exception):
@@ -84,18 +83,12 @@ class APIClient:
     self.timeout_default = timeout_default
     self.timeout_send_prompt = timeout_send_prompt
     self.max_retries = max_retries
+    self.pool_connections = pool_connections
+    self.pool_maxsize = pool_maxsize
+    self._backoff_min = 1
+    self._backoff_max = 10
 
-    # Create httpx client with connection pooling
-    limits = httpx.Limits(
-      max_connections=pool_maxsize,
-      max_keepalive_connections=pool_connections
-    )
-
-    self.client = httpx.Client(
-      base_url=self.base_url,
-      limits=limits,
-      timeout=httpx.Timeout(timeout_default)
-    )
+    self.client = self._build_client()
 
   def __del__(self):
     """Clean up HTTP client on deletion."""
@@ -105,6 +98,27 @@ class APIClient:
   def close(self):
     """Explicitly close the HTTP client."""
     self.client.close()
+
+  def _build_client(self) -> httpx.Client:
+    """Create a configured httpx client instance."""
+    limits = httpx.Limits(
+      max_connections=self.pool_maxsize,
+      max_keepalive_connections=self.pool_connections
+    )
+    timeout = httpx.Timeout(self.timeout_default)
+    return httpx.Client(
+      base_url=self.base_url,
+      limits=limits,
+      timeout=timeout
+    )
+
+  def _reset_client(self):
+    """Reset the underlying HTTP client (used after connection errors)."""
+    try:
+      if hasattr(self, "client"):
+        self.client.close()
+    finally:
+      self.client = self._build_client()
 
   def _handle_response(self, response: httpx.Response) -> Dict[str, Any]:
     """
@@ -149,12 +163,6 @@ class APIClient:
       else:
         raise APIClientError(f"API error ({status_code}): {error_message}")
 
-  @retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=1, max=10),
-    retry=retry_if_exception_type((httpx.ConnectError, httpx.TimeoutException)),
-    reraise=True
-  )
   def _request(
     self,
     method: str,
@@ -179,23 +187,40 @@ class APIClient:
       APIConnectionError: If connection fails
       Various APIClientError subclasses for other errors
     """
-    try:
-      # Use custom timeout if provided, otherwise use default from client
-      if timeout is not None:
-        kwargs['timeout'] = timeout
+    backoff = self._backoff_min
+    attempts = 0
 
-      response = self.client.request(method, path, **kwargs)
-      return self._handle_response(response)
+    while attempts < self.max_retries:
+      try:
+        # Use custom timeout if provided, otherwise use default from client
+        if timeout is not None:
+          kwargs['timeout'] = timeout
 
-    except httpx.TimeoutException as e:
-      raise APITimeoutError(f"Request timed out: {str(e)}")
-    except httpx.ConnectError as e:
-      raise APIConnectionError(f"Failed to connect to API: {str(e)}")
-    except (APIClientError, APIValidationError, APINotFoundError, APIServerError):
-      # Re-raise our custom exceptions
-      raise
-    except Exception as e:
-      raise APIClientError(f"Unexpected error: {str(e)}")
+        response = self.client.request(method, path, **kwargs)
+        return self._handle_response(response)
+
+      except httpx.TimeoutException as e:
+        attempts += 1
+        if attempts >= self.max_retries:
+          raise APITimeoutError(f"Request timed out: {str(e)}")
+        time.sleep(min(backoff, self._backoff_max))
+        backoff *= 2
+        continue
+
+      except (httpx.ConnectError, httpx.RemoteProtocolError) as e:
+        attempts += 1
+        self._reset_client()
+        if attempts >= self.max_retries:
+          raise APIConnectionError(f"Failed to connect to API: {str(e)}")
+        time.sleep(min(backoff, self._backoff_max))
+        backoff *= 2
+        continue
+
+      except (APIClientError, APIValidationError, APINotFoundError, APIServerError):
+        # Re-raise our custom exceptions
+        raise
+      except Exception as e:
+        raise APIClientError(f"Unexpected error: {str(e)}")
 
   def send_prompt(
     self,
