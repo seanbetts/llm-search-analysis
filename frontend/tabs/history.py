@@ -10,6 +10,45 @@ from frontend.components.response import format_response_text, extract_images_fr
 from frontend.helpers.error_handling import safe_api_call
 
 
+@st.cache_data(ttl=60, show_spinner=False)
+def _fetch_recent_interactions_cached(base_url: str, page: int, page_size: int):
+  """
+  Cached wrapper for fetching recent interactions.
+
+  Cache TTL: 60 seconds to balance freshness with performance.
+  Cache is keyed on base_url, page, and page_size.
+  """
+  from frontend.api_client import APIClient
+  client = APIClient(base_url=base_url)
+  return client.get_recent_interactions(page=page, page_size=page_size)
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _fetch_interaction_details_cached(base_url: str, interaction_id: int):
+  """
+  Cached wrapper for fetching interaction details.
+
+  Cache TTL: 300 seconds (5 minutes) since interaction details rarely change.
+  Cache is keyed on base_url and interaction_id.
+  """
+  from frontend.api_client import APIClient
+  client = APIClient(base_url=base_url)
+  return client.get_interaction(interaction_id)
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _fetch_interaction_markdown_cached(base_url: str, interaction_id: int):
+  """
+  Cached wrapper for fetching interaction markdown export.
+
+  Cache TTL: 300 seconds (5 minutes) since exports are static.
+  Cache is keyed on base_url and interaction_id.
+  """
+  from frontend.api_client import APIClient
+  client = APIClient(base_url=base_url)
+  return client.export_interaction_markdown(interaction_id)
+
+
 def _build_model_display_mapping(model_display_options_df):
   """
   Build mapping of display_name -> set(raw model ids) for filtering.
@@ -31,20 +70,34 @@ def _build_model_display_mapping(model_display_options_df):
 def tab_history():
   """Tab 3: Query History."""
   st.markdown("### 📜 Query History")
-  # Get recent interactions
+
+  # Initialize pagination state
+  if 'history_page' not in st.session_state:
+    st.session_state.history_page = 1
+  if 'history_page_size' not in st.session_state:
+    st.session_state.history_page_size = 20
+
+  # Get recent interactions with pagination (cached)
   try:
-    interactions, error = safe_api_call(
-      st.session_state.api_client.get_recent_interactions,
-      limit=100,
+    base_url = st.session_state.api_client.base_url
+    result, error = safe_api_call(
+      _fetch_recent_interactions_cached,
+      base_url,
+      st.session_state.history_page,
+      st.session_state.history_page_size,
       spinner_text="Loading interaction history..."
     )
     if error:
       st.error(f"Error loading history: {error}")
       return
 
-    if not interactions:
+    if not result or not result.get('items'):
       st.info("No interactions recorded yet. Start by submitting prompts in the Interactive tab!")
       return
+
+    # Extract items and pagination metadata
+    interactions = result['items']
+    pagination = result['pagination']
 
     # Convert to DataFrame
     df = pd.DataFrame(interactions)
@@ -163,6 +216,28 @@ def tab_history():
       column_config=column_config,
     )
 
+    # Pagination controls
+    col_prev, col_info, col_next = st.columns([1, 2, 1])
+
+    with col_prev:
+      if st.button("← Previous", disabled=not pagination['has_prev'], use_container_width=True):
+        st.session_state.history_page -= 1
+        st.rerun()
+
+    with col_info:
+      st.markdown(
+        f"<div style='text-align: center; padding-top: 8px;'>"
+        f"Page {pagination['page']} of {pagination['total_pages']} "
+        f"({pagination['total_items']} total items)"
+        f"</div>",
+        unsafe_allow_html=True
+      )
+
+    with col_next:
+      if st.button("Next →", disabled=not pagination['has_next'], use_container_width=True):
+        st.session_state.history_page += 1
+        st.rerun()
+
     # Export button (aligned width with action buttons)
     csv = display_df.to_csv(index=False)
     export_col, _export_spacer = st.columns([1, 4])
@@ -185,17 +260,21 @@ def tab_history():
     )
 
     if selected_id:
+      base_url = st.session_state.api_client.base_url
+      # Fetch interaction details (cached)
       details, details_error = safe_api_call(
-        st.session_state.api_client.get_interaction,
+        _fetch_interaction_details_cached,
+        base_url,
         selected_id,
         show_spinner=False
       )
       if details_error:
         st.error(f"Error loading interaction: {details_error}")
       elif details:
-        # Download interaction as markdown (placed directly after selector)
+        # Download interaction as markdown (cached)
         md_export, export_error = safe_api_call(
-          st.session_state.api_client.export_interaction_markdown,
+          _fetch_interaction_markdown_cached,
+          base_url,
           selected_id,
           show_spinner=False
         )

@@ -283,43 +283,63 @@ Send a prompt to an LLM provider and get response with search data.
 
 #### GET /api/v1/interactions/recent
 
-Get a list of recent interactions with summary information.
+Get a paginated list of recent interactions with summary information.
 
 **Query Parameters:**
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| limit | integer | No | 50 | Max results (1-1000) |
+| page | integer | No | 1 | Page number (1-indexed) |
+| page_size | integer | No | 20 | Items per page (1-100) |
 | data_source | string | No | null | Filter by source: "api" or "network_log" |
+| provider | string | No | null | Filter by provider: "openai", "google", "anthropic" |
+| model | string | No | null | Filter by model (e.g., "gpt-5.1") |
+| date_from | string | No | null | Filter by created_at >= date_from (ISO 8601) |
+| date_to | string | No | null | Filter by created_at <= date_to (ISO 8601) |
 
 **Example Request:**
 ```
-GET /api/v1/interactions/recent?limit=10&data_source=api
+GET /api/v1/interactions/recent?page=1&page_size=10&provider=openai&model=gpt-5.1
 ```
 
 **Response (200 OK):**
 ```json
-[
-  {
-    "interaction_id": 123,
-    "prompt": "What are the latest developments in AI?",
-    "response_text": "Recent AI developments include...",
-    "provider": "openai",
-    "model": "gpt-5.1",
-    "data_source": "api",
-    "response_time_ms": 2341,
-    "timestamp": "2025-01-15T10:30:00Z",
-    "source_count": 5,
-    "citation_count": 3,
-    "search_query_count": 2,
-    "average_citation_rank": 2.3
+{
+  "items": [
+    {
+      "interaction_id": 123,
+      "prompt": "What are the latest developments in AI?",
+      "response_preview": "Recent AI developments include...",
+      "provider": "OpenAI",
+      "model": "gpt-5.1",
+      "model_display_name": "GPT-5.1",
+      "data_source": "api",
+      "response_time_ms": 2341,
+      "created_at": "2025-01-15T10:30:00Z",
+      "source_count": 5,
+      "citation_count": 3,
+      "search_query_count": 2,
+      "average_rank": 2.3,
+      "extra_links_count": 1
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "page_size": 10,
+    "total_items": 150,
+    "total_pages": 15,
+    "has_next": true,
+    "has_prev": false
   }
-]
+}
 ```
 
 **Notes:**
-- Results are ordered by timestamp (most recent first)
+- Results are ordered by created_at (most recent first)
+- Response includes pagination metadata for building UI navigation
 - Summary includes counts and aggregates, not full nested data
-- `average_citation_rank` shows average position of cited sources
+- `average_rank` shows average position of cited sources (lower is better)
+- `extra_links_count` shows citations not from search results
+- Filters can be combined (e.g., provider + model + date range)
 
 #### GET /api/v1/interactions/{interaction_id}
 
@@ -529,6 +549,123 @@ Full interaction response with all nested data.
 
 ---
 
+## TypeScript Type Definitions
+
+For TypeScript/JavaScript developers, here are the type definitions for all API responses:
+
+```typescript
+// Source types
+interface Source {
+  url: string;
+  title: string | null;
+  domain: string;
+  rank: number;
+  pub_date?: string | null;
+  snippet_text?: string | null;
+  internal_score?: number | null;
+  metadata?: Record<string, any> | null;
+}
+
+interface Citation {
+  url: string;
+  title: string | null;
+  rank: number | null;
+  snippet_used?: string | null;
+  citation_confidence?: number | null;
+  metadata?: Record<string, any> | null;
+}
+
+interface SearchQuery {
+  query: string;
+  sources: Source[];
+  timestamp: string | null;
+  order_index: number;
+  internal_ranking_scores?: Record<string, any> | null;
+  query_reformulations?: string[] | null;
+}
+
+// Pagination
+interface PaginationMeta {
+  page: number;
+  page_size: number;
+  total_items: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
+}
+
+// Interaction types
+interface InteractionSummary {
+  interaction_id: number;
+  prompt: string;
+  response_preview: string;
+  provider: string;
+  model: string;
+  model_display_name: string | null;
+  data_source: string;
+  response_time_ms: number;
+  created_at: string;
+  source_count: number;
+  citation_count: number;
+  search_query_count: number;
+  average_rank: number | null;
+  extra_links_count: number;
+}
+
+interface SendPromptResponse {
+  interaction_id: number;
+  prompt: string;
+  response_text: string;
+  provider: string;
+  model: string;
+  model_display_name: string | null;
+  data_source: string;
+  response_time_ms: number;
+  created_at: string;
+  search_queries: SearchQuery[];
+  all_sources: Source[];
+  citations: Citation[];
+  sources_found: number;
+  sources_used: number;
+  avg_rank: number | null;
+  extra_links_count: number;
+  raw_response?: Record<string, any> | null;
+  metadata?: Record<string, any> | null;
+}
+
+interface PaginatedInteractionList {
+  items: InteractionSummary[];
+  pagination: PaginationMeta;
+}
+
+// Provider types
+interface Provider {
+  name: string;
+  display_name: string;
+  supported_models: string[];
+  is_active: boolean;
+}
+
+// Request types
+interface SendPromptRequest {
+  prompt: string;
+  model: string;
+  data_mode?: 'api' | 'network_log';
+  headless?: boolean;
+}
+
+// Error types
+interface APIError {
+  error: {
+    message: string;
+    code: string;
+    details?: Record<string, any>;
+  };
+}
+```
+
+---
+
 ## Error Handling
 
 All errors follow a consistent format:
@@ -573,7 +710,7 @@ Use this ID when reporting issues or debugging.
 
 ### Example 1: Send Prompt to OpenAI
 
-**Request:**
+**cURL:**
 ```bash
 curl -X POST http://localhost:8000/api/v1/interactions/send \
   -H "Content-Type: application/json" \
@@ -583,17 +720,102 @@ curl -X POST http://localhost:8000/api/v1/interactions/send \
   }'
 ```
 
+**TypeScript/JavaScript (fetch):**
+```typescript
+const response = await fetch('http://localhost:8000/api/v1/interactions/send', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    prompt: 'What are the latest breakthroughs in quantum computing?',
+    model: 'gpt-5.1',
+  }),
+});
+
+const data: SendPromptResponse = await response.json();
+console.log(data.response_text);
+console.log(`Found ${data.search_queries.length} search queries`);
+```
+
+**TypeScript/JavaScript (axios):**
+```typescript
+import axios from 'axios';
+
+const { data } = await axios.post<SendPromptResponse>(
+  'http://localhost:8000/api/v1/interactions/send',
+  {
+    prompt: 'What are the latest breakthroughs in quantum computing?',
+    model: 'gpt-5.1',
+  }
+);
+
+console.log(data.response_text);
+console.log(`Response time: ${data.response_time_ms}ms`);
+```
+
+**React Example:**
+```tsx
+import { useState } from 'react';
+
+function PromptForm() {
+  const [result, setResult] = useState<SendPromptResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (prompt: string, model: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('http://localhost:8000/api/v1/interactions/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, model }),
+      });
+
+      if (!response.ok) {
+        const error: APIError = await response.json();
+        throw new Error(error.error.message);
+      }
+
+      const data: SendPromptResponse = await response.json();
+      setResult(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      {loading && <p>Loading...</p>}
+      {error && <p>Error: {error}</p>}
+      {result && (
+        <div>
+          <h3>{result.provider} - {result.model}</h3>
+          <p>{result.response_text}</p>
+          <p>Response time: {result.response_time_ms}ms</p>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
 **Response:**
 ```json
 {
   "interaction_id": 456,
   "prompt": "What are the latest breakthroughs in quantum computing?",
   "response_text": "Recent quantum computing breakthroughs include...",
-  "provider": "openai",
+  "provider": "OpenAI",
   "model": "gpt-5.1",
+  "model_display_name": "GPT-5.1",
   "data_source": "api",
   "response_time_ms": 3200,
-  "timestamp": "2025-01-15T11:00:00Z",
+  "created_at": "2025-01-15T11:00:00Z",
   "search_queries": [
     {
       "query": "quantum computing breakthroughs 2025",
@@ -609,7 +831,7 @@ curl -X POST http://localhost:8000/api/v1/interactions/send \
       "order_index": 0
     }
   ],
-  "sources": [
+  "all_sources": [
     {
       "url": "https://quantumtech.com/breakthroughs",
       "title": "Quantum Breakthroughs 2025",
@@ -624,44 +846,198 @@ curl -X POST http://localhost:8000/api/v1/interactions/send \
       "rank": 1
     }
   ],
-  "source_count": 1,
-  "citation_count": 1,
-  "search_query_count": 1
+  "sources_found": 1,
+  "sources_used": 1,
+  "avg_rank": 1.0,
+  "extra_links_count": 0
 }
 ```
 
-### Example 2: Get Recent Interactions
+### Example 2: Get Recent Interactions with Pagination
 
-**Request:**
+**cURL:**
 ```bash
-curl http://localhost:8000/api/v1/interactions/recent?limit=5
+curl "http://localhost:8000/api/v1/interactions/recent?page=1&page_size=10&provider=openai"
+```
+
+**TypeScript/JavaScript (fetch):**
+```typescript
+const params = new URLSearchParams({
+  page: '1',
+  page_size: '10',
+  provider: 'openai',
+});
+
+const response = await fetch(
+  `http://localhost:8000/api/v1/interactions/recent?${params}`
+);
+
+const data: PaginatedInteractionList = await response.json();
+
+console.log(`Page ${data.pagination.page} of ${data.pagination.total_pages}`);
+console.log(`Total items: ${data.pagination.total_items}`);
+
+data.items.forEach(interaction => {
+  console.log(`${interaction.model}: ${interaction.prompt}`);
+});
+```
+
+**TypeScript/JavaScript (axios):**
+```typescript
+import axios from 'axios';
+
+const { data } = await axios.get<PaginatedInteractionList>(
+  'http://localhost:8000/api/v1/interactions/recent',
+  {
+    params: {
+      page: 1,
+      page_size: 10,
+      provider: 'openai',
+      model: 'gpt-5.1',
+    },
+  }
+);
+
+console.log(`Showing ${data.items.length} of ${data.pagination.total_items} total`);
+```
+
+**React Pagination Example:**
+```tsx
+import { useState, useEffect } from 'react';
+
+function InteractionHistory() {
+  const [data, setData] = useState<PaginatedInteractionList | null>(null);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchInteractions = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          page_size: '20',
+          provider: 'openai',
+        });
+
+        const response = await fetch(
+          `http://localhost:8000/api/v1/interactions/recent?${params}`
+        );
+        const result: PaginatedInteractionList = await response.json();
+        setData(result);
+      } catch (error) {
+        console.error('Failed to fetch interactions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInteractions();
+  }, [page]);
+
+  if (loading) return <div>Loading...</div>;
+  if (!data) return <div>No data</div>;
+
+  return (
+    <div>
+      <h2>Interaction History</h2>
+
+      {data.items.map(interaction => (
+        <div key={interaction.interaction_id}>
+          <h3>{interaction.model}</h3>
+          <p>{interaction.prompt}</p>
+          <small>{interaction.created_at}</small>
+        </div>
+      ))}
+
+      <div className="pagination">
+        <button
+          onClick={() => setPage(p => p - 1)}
+          disabled={!data.pagination.has_prev}
+        >
+          Previous
+        </button>
+
+        <span>
+          Page {data.pagination.page} of {data.pagination.total_pages}
+        </span>
+
+        <button
+          onClick={() => setPage(p => p + 1)}
+          disabled={!data.pagination.has_next}
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
 ```
 
 **Response:**
 ```json
-[
-  {
-    "interaction_id": 456,
-    "prompt": "What are the latest breakthroughs in quantum computing?",
-    "response_text": "Recent quantum computing breakthroughs include...",
-    "provider": "openai",
-    "model": "gpt-5.1",
-    "data_source": "api",
-    "response_time_ms": 3200,
-    "timestamp": "2025-01-15T11:00:00Z",
-    "source_count": 1,
-    "citation_count": 1,
-    "search_query_count": 1,
-    "average_citation_rank": 1.0
+{
+  "items": [
+    {
+      "interaction_id": 456,
+      "prompt": "What are the latest breakthroughs in quantum computing?",
+      "response_preview": "Recent quantum computing breakthroughs include...",
+      "provider": "OpenAI",
+      "model": "gpt-5.1",
+      "model_display_name": "GPT-5.1",
+      "data_source": "api",
+      "response_time_ms": 3200,
+      "created_at": "2025-01-15T11:00:00Z",
+      "source_count": 1,
+      "citation_count": 1,
+      "search_query_count": 1,
+      "average_rank": 1.0,
+      "extra_links_count": 0
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "page_size": 10,
+    "total_items": 150,
+    "total_pages": 15,
+    "has_next": true,
+    "has_prev": false
   }
-]
+}
 ```
 
 ### Example 3: Get Available Providers
 
-**Request:**
+**cURL:**
 ```bash
 curl http://localhost:8000/api/v1/providers
+```
+
+**TypeScript/JavaScript (fetch):**
+```typescript
+const response = await fetch('http://localhost:8000/api/v1/providers');
+const providers: Provider[] = await response.json();
+
+providers.forEach(provider => {
+  if (provider.is_active) {
+    console.log(`${provider.display_name}:`);
+    provider.supported_models.forEach(model => {
+      console.log(`  - ${model}`);
+    });
+  }
+});
+```
+
+**TypeScript/JavaScript (axios):**
+```typescript
+import axios from 'axios';
+
+const { data } = await axios.get<Provider[]>(
+  'http://localhost:8000/api/v1/providers'
+);
+
+const activeProviders = data.filter(p => p.is_active);
+console.log(`Found ${activeProviders.length} active providers`);
 ```
 
 **Response:**
@@ -672,15 +1048,92 @@ curl http://localhost:8000/api/v1/providers
     "display_name": "OpenAI",
     "supported_models": ["gpt-5.1", "gpt-5-mini", "gpt-5-nano"],
     "is_active": true
+  },
+  {
+    "name": "google",
+    "display_name": "Google",
+    "supported_models": ["gemini-3-pro-preview", "gemini-2.5-flash"],
+    "is_active": true
   }
 ]
 ```
 
 ### Example 4: Delete Interaction
 
-**Request:**
+**cURL:**
 ```bash
 curl -X DELETE http://localhost:8000/api/v1/interactions/456
+```
+
+**TypeScript/JavaScript (fetch):**
+```typescript
+const response = await fetch(
+  'http://localhost:8000/api/v1/interactions/456',
+  {
+    method: 'DELETE',
+  }
+);
+
+if (response.status === 204) {
+  console.log('Interaction deleted successfully');
+} else if (response.status === 404) {
+  const error: APIError = await response.json();
+  console.error('Not found:', error.error.message);
+}
+```
+
+**TypeScript/JavaScript (axios):**
+```typescript
+import axios from 'axios';
+
+try {
+  await axios.delete('http://localhost:8000/api/v1/interactions/456');
+  console.log('Interaction deleted successfully');
+} catch (error) {
+  if (axios.isAxiosError(error) && error.response?.status === 404) {
+    console.error('Interaction not found');
+  } else {
+    console.error('Failed to delete interaction');
+  }
+}
+```
+
+**React Example with Confirmation:**
+```tsx
+function DeleteButton({ interactionId }: { interactionId: number }) {
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this interaction?')) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/v1/interactions/${interactionId}`,
+        { method: 'DELETE' }
+      );
+
+      if (response.status === 204) {
+        alert('Interaction deleted successfully');
+        // Refresh list or navigate away
+      } else if (response.status === 404) {
+        alert('Interaction not found');
+      }
+    } catch (error) {
+      alert('Failed to delete interaction');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <button onClick={handleDelete} disabled={deleting}>
+      {deleting ? 'Deleting...' : 'Delete'}
+    </button>
+  );
+}
 ```
 
 **Response:**
@@ -714,7 +1167,148 @@ Currently, there are no API-level rate limits. However, be aware of:
 
 ---
 
+## React/TypeScript Integration
+
+### Creating an API Client Class
+
+For React applications, we recommend creating a reusable API client:
+
+```typescript
+// api/llm-analysis-client.ts
+class LLMAnalysisClient {
+  private baseUrl: string;
+
+  constructor(baseUrl: string = 'http://localhost:8000') {
+    this.baseUrl = baseUrl;
+  }
+
+  async sendPrompt(
+    prompt: string,
+    model: string
+  ): Promise<SendPromptResponse> {
+    const response = await fetch(`${this.baseUrl}/api/v1/interactions/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, model }),
+    });
+
+    if (!response.ok) {
+      const error: APIError = await response.json();
+      throw new Error(error.error.message);
+    }
+
+    return response.json();
+  }
+
+  async getInteractions(params?: {
+    page?: number;
+    page_size?: number;
+    provider?: string;
+    model?: string;
+    data_source?: string;
+  }): Promise<PaginatedInteractionList> {
+    const queryParams = new URLSearchParams(
+      Object.entries(params || {})
+        .filter(([_, v]) => v !== undefined)
+        .map(([k, v]) => [k, String(v)])
+    );
+
+    const response = await fetch(
+      `${this.baseUrl}/api/v1/interactions/recent?${queryParams}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch interactions');
+    }
+
+    return response.json();
+  }
+
+  async getInteraction(id: number): Promise<SendPromptResponse> {
+    const response = await fetch(
+      `${this.baseUrl}/api/v1/interactions/${id}`
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error(`Interaction ${id} not found`);
+      }
+      throw new Error('Failed to fetch interaction');
+    }
+
+    return response.json();
+  }
+
+  async deleteInteraction(id: number): Promise<void> {
+    const response = await fetch(
+      `${this.baseUrl}/api/v1/interactions/${id}`,
+      { method: 'DELETE' }
+    );
+
+    if (!response.ok && response.status !== 404) {
+      throw new Error('Failed to delete interaction');
+    }
+  }
+
+  async getProviders(): Promise<Provider[]> {
+    const response = await fetch(`${this.baseUrl}/api/v1/providers`);
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch providers');
+    }
+
+    return response.json();
+  }
+}
+
+export const apiClient = new LLMAnalysisClient();
+```
+
+### React Hook Example
+
+```typescript
+// hooks/useInteractions.ts
+import { useState, useEffect } from 'react';
+import { apiClient } from '../api/llm-analysis-client';
+
+export function useInteractions(page: number = 1) {
+  const [data, setData] = useState<PaginatedInteractionList | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await apiClient.getInteractions({ page, page_size: 20 });
+        setData(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [page]);
+
+  return { data, loading, error };
+}
+```
+
+---
+
 ## Changelog
+
+### Version 1.1.0 (2025-12-07)
+- Added pagination and filtering to GET /api/v1/interactions/recent
+- Updated response format to include pagination metadata
+- Added comprehensive TypeScript type definitions
+- Added TypeScript/JavaScript code examples for all endpoints
+- Added React integration examples and best practices
+- Updated all data models to reflect current API schema
 
 ### Version 1.0.0 (2025-01-15)
 - Initial release

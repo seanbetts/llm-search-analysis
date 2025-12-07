@@ -330,42 +330,69 @@ class APIClient:
 
   def get_recent_interactions(
     self,
-    limit: int = 50,
-    data_source: Optional[str] = None
-  ) -> List[Dict[str, Any]]:
+    page: int = 1,
+    page_size: int = 20,
+    data_source: Optional[str] = None,
+    provider: Optional[str] = None,
+    model: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None
+  ) -> Dict[str, Any]:
     """
-    Get recent interactions with optional filtering.
+    Get recent interactions with pagination and optional filtering.
 
     Args:
-      limit: Maximum number of interactions to return (1-1000, default: 50)
+      page: Page number (1-indexed, default: 1)
+      page_size: Number of items per page (1-100, default: 20)
       data_source: Optional filter by data source ("api" or "network_log")
+      provider: Optional filter by provider name (e.g., "openai")
+      model: Optional filter by model name (e.g., "gpt-5.1")
+      date_from: Optional filter by created_at >= date_from (ISO 8601 format)
+      date_to: Optional filter by created_at <= date_to (ISO 8601 format)
 
     Returns:
-      List of interaction summaries, each containing:
-        - interaction_id: Unique interaction ID
-        - prompt: The prompt text
-        - provider: Provider used
-        - model: Model used
-        - response_time_ms: Response time
-        - data_source: Data source (api/network_log)
-        - created_at: Timestamp
-        - search_queries_count: Number of search queries
-        - sources_count: Number of sources
-        - citations_count: Number of citations
-        - extra_links_count: Number of extra links
-        - average_rank: Average rank of sources
+      Dict containing:
+        - items: List of interaction summaries, each containing:
+          - interaction_id: Unique interaction ID
+          - prompt: The prompt text
+          - provider: Provider used
+          - model: Model used
+          - response_time_ms: Response time
+          - data_source: Data source (api/network_log)
+          - created_at: Timestamp
+          - search_query_count: Number of search queries
+          - source_count: Number of sources
+          - citation_count: Number of citations
+          - extra_links_count: Number of extra links
+          - average_rank: Average rank of sources
+        - pagination: Pagination metadata containing:
+          - page: Current page number
+          - page_size: Items per page
+          - total_items: Total number of items
+          - total_pages: Total number of pages
+          - has_next: Whether there is a next page
+          - has_prev: Whether there is a previous page
 
     Raises:
       APIServerError: If backend fails
 
     Example:
-      >>> interactions = client.get_recent_interactions(limit=10, data_source="api")
-      >>> for interaction in interactions:
+      >>> result = client.get_recent_interactions(page=1, page_size=10, provider="openai")
+      >>> for interaction in result["items"]:
       ...     print(f"{interaction['model']}: {interaction['prompt'][:50]}")
+      >>> print(f"Page {result['pagination']['page']} of {result['pagination']['total_pages']}")
     """
-    params = {"limit": limit}
+    params = {"page": page, "page_size": page_size}
     if data_source:
       params["data_source"] = data_source
+    if provider:
+      params["provider"] = provider
+    if model:
+      params["model"] = model
+    if date_from:
+      params["date_from"] = date_from
+    if date_to:
+      params["date_to"] = date_to
 
     return self._request("GET", "/api/v1/interactions/recent", params=params)
 
