@@ -23,11 +23,10 @@ If these tests fail, your SDK versions are incompatible and unit tests will give
 
 ### Quick Start (Recommended)
 
-Use the test runner script which ensures SDK validation tests run first:
+From the repository root, run the helper script that executes SDK validation before the rest of the suite:
 
 ```bash
-cd backend
-./scripts/run_tests.sh
+./scripts/run_all_tests.sh
 ```
 
 ### Manual Test Execution
@@ -113,7 +112,7 @@ pip install openai==2.8.1  # or latest
 
 ## Best Practices
 
-1. **Always run SDK validation tests first** - Use `./scripts/run_tests.sh`
+1. **Always run SDK validation tests first** - Use `./scripts/run_all_tests.sh`
 2. **Don't over-mock** - Use real SDK classes and only mock network calls
 3. **Validate SDK structure** - Check that attributes exist before mocking methods
 4. **Update SDK versions carefully** - Run full test suite after updates
