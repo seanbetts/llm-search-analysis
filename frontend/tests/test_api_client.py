@@ -207,51 +207,74 @@ class TestGetRecentInteractions:
 
   def test_get_recent_interactions_success(self, client, mock_api):
     """Test getting recent interactions."""
-    mock_response = [
-      {
-        "interaction_id": 1,
-        "prompt": "Test prompt 1",
-        "provider": "openai",
-        "model": "gpt-5.1",
-        "created_at": "2024-01-01T00:00:00Z"
-      },
-      {
-        "interaction_id": 2,
-        "prompt": "Test prompt 2",
-        "provider": "google",
-        "model": "gemini-2.5-flash",
-        "created_at": "2024-01-02T00:00:00Z"
+    mock_response = {
+      "items": [
+        {
+          "interaction_id": 1,
+          "prompt": "Test prompt 1",
+          "provider": "openai",
+          "model": "gpt-5.1",
+          "created_at": "2024-01-01T00:00:00Z"
+        },
+        {
+          "interaction_id": 2,
+          "prompt": "Test prompt 2",
+          "provider": "google",
+          "model": "gemini-2.5-flash",
+          "created_at": "2024-01-02T00:00:00Z"
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "page_size": 10,
+        "total_items": 2,
+        "total_pages": 1,
+        "has_next": False,
+        "has_prev": False
       }
-    ]
+    }
 
     mock_api.get("/api/v1/interactions/recent").mock(return_value=httpx.Response(
       200,
       json=mock_response
     ))
 
-    result = client.get_recent_interactions(limit=10)
-    assert len(result) == 2
-    assert result[0]["interaction_id"] == 1
-    assert result[1]["provider"] == "google"
+    result = client.get_recent_interactions(page=1, page_size=10)
+    assert "items" in result
+    assert len(result["items"]) == 2
+    assert result["items"][0]["interaction_id"] == 1
+    assert result["items"][1]["provider"] == "google"
+    assert result["pagination"]["page_size"] == 10
 
   def test_get_recent_interactions_with_filter(self, client, mock_api):
     """Test getting recent interactions with data source filter."""
-    mock_response = [
-      {
-        "interaction_id": 1,
-        "prompt": "Test",
-        "data_source": "api"
+    mock_response = {
+      "items": [
+        {
+          "interaction_id": 1,
+          "prompt": "Test",
+          "data_source": "api"
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "page_size": 5,
+        "total_items": 1,
+        "total_pages": 1,
+        "has_next": False,
+        "has_prev": False
       }
-    ]
+    }
 
     mock_api.get("/api/v1/interactions/recent").mock(return_value=httpx.Response(
       200,
       json=mock_response
     ))
 
-    result = client.get_recent_interactions(limit=5, data_source="api")
-    assert len(result) == 1
-    assert result[0]["data_source"] == "api"
+    result = client.get_recent_interactions(page=1, page_size=5, data_source="api")
+    assert len(result["items"]) == 1
+    assert result["items"][0]["data_source"] == "api"
+    assert result["pagination"]["page_size"] == 5
 
 
 class TestGetInteraction:
