@@ -97,6 +97,57 @@ class TestInteractionService:
     assert saved_citations[0]["domain"] == "example.com"
     assert saved_citations[1]["domain"] == "source.net"
 
+  def test_save_interaction_invalid_source_metadata(self, service):
+    """Invalid source metadata should raise ValueError."""
+    with pytest.raises(ValueError):
+      service.save_interaction(
+        prompt="Test",
+        provider="openai",
+        model="gpt-4o",
+        response_text="Response",
+        response_time_ms=1000,
+        search_queries=[{
+          "query": "test",
+          "sources": [{
+            "url": "https://example.com",
+            "metadata": "not-a-dict"
+          }]
+        }],
+        citations=[],
+        raw_response={}
+      )
+
+  def test_save_interaction_invalid_citation_metadata(self, service):
+    """Invalid citation metadata should raise ValueError."""
+    with pytest.raises(ValueError):
+      service.save_interaction(
+        prompt="Test",
+        provider="openai",
+        model="gpt-4o",
+        response_text="Response",
+        response_time_ms=1000,
+        search_queries=[],
+        citations=[{
+          "url": "https://example.com",
+          "metadata": 123
+        }],
+        raw_response={}
+      )
+
+  def test_save_interaction_invalid_raw_response(self, service):
+    """Non-dict raw responses should raise ValueError."""
+    with pytest.raises(ValueError):
+      service.save_interaction(
+        prompt="Test",
+        provider="openai",
+        model="gpt-4o",
+        response_text="Response",
+        response_time_ms=1000,
+        search_queries=[],
+        citations=[],
+        raw_response=["not", "a", "dict"]
+      )
+
   def test_get_recent_interactions_calculates_counts(self, service, mock_repository):
     """Test that get_recent_interactions calculates query/source/citation counts."""
     # Create mock response object

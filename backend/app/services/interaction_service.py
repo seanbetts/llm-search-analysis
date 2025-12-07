@@ -1,6 +1,6 @@
 """Service layer for interaction business logic."""
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Any
 from datetime import datetime
 from types import SimpleNamespace
 
@@ -18,10 +18,18 @@ from app.api.v1.schemas.responses import (
   Source as SourceSchema,
   Citation as CitationSchema,
 )
+from app.core.json_schemas import (
+  SourceMetadata,
+  CitationMetadata,
+  dump_metadata,
+)
+from pydantic import TypeAdapter, ValidationError
 
 
 class InteractionService:
   """Service for managing interactions with business logic."""
+  _json_dict_adapter = TypeAdapter(Dict[str, Any])
+  _list_str_adapter = TypeAdapter(List[str])
 
   def __init__(self, repository: InteractionRepository):
     """
@@ -41,7 +49,7 @@ class InteractionService:
     response_time_ms: int,
     search_queries: List[dict],
     citations: List[dict],
-    raw_response: dict,
+    raw_response: Optional[dict],
     data_source: str = "api",
     extra_links_count: int = 0,
     sources: List[dict] = None,
@@ -62,7 +70,7 @@ class InteractionService:
       response_time_ms: Response time in milliseconds
       search_queries: List of search query dicts
       citations: List of citation dicts
-      raw_response: Raw API response
+      raw_response: Raw API response (validated JSON)
       data_source: Data collection mode
       extra_links_count: Number of extra links
       sources: List of source dicts linked directly to response (for network_log mode)
@@ -73,36 +81,41 @@ class InteractionService:
     # Normalize model name (e.g., gpt-5-1 → gpt-5.1)
     normalized_model = normalize_model_name(model)
 
+    normalized_queries = self._normalize_search_queries(search_queries)
+    normalized_citations = self._normalize_citations(citations)
+    normalized_sources = self._normalize_sources(sources)
+    normalized_raw_response = self._normalize_raw_response(raw_response)
+
     # Extract domains from search query sources
-    for query in search_queries:
+    for query in normalized_queries:
       for source in query.get("sources", []):
         if "url" in source and not source.get("domain"):
           source["domain"] = extract_domain(source["url"])
 
     # Extract domains from citations
-    for citation in citations:
+    for citation in normalized_citations:
       if "url" in citation and not citation.get("domain"):
         citation["domain"] = extract_domain(citation["url"])
 
     # Extract domains from top-level sources (network_log mode)
-    if sources:
-      for source in sources:
+    if normalized_sources:
+      for source in normalized_sources:
         if "url" in source and not source.get("domain"):
           source["domain"] = extract_domain(source["url"])
 
     # Compute metrics
     # sources_found: Total sources from search queries or top-level sources (network_log)
-    if data_source == "network_log" and sources:
-      sources_found = len(sources)
+    if data_source == "network_log" and normalized_sources:
+      sources_found = len(normalized_sources)
     else:
-      sources_found = sum(len(q.get("sources", [])) for q in search_queries)
+      sources_found = sum(len(q.get("sources", [])) for q in normalized_queries)
 
     # sources_used: Count of citations with rank (from search results)
-    sources_used = len([c for c in citations if c.get("rank") is not None])
+    sources_used = len([c for c in normalized_citations if c.get("rank") is not None])
 
     # avg_rank: Average rank of citations (excluding None)
     # Convert dicts to objects for calculate_average_rank
-    citation_objects = [SimpleNamespace(**c) for c in citations]
+    citation_objects = [SimpleNamespace(**c) for c in normalized_citations]
     avg_rank = calculate_average_rank(citation_objects)
 
     # Save to database
@@ -112,12 +125,12 @@ class InteractionService:
       model_name=normalized_model,
       response_text=response_text,
       response_time_ms=response_time_ms,
-      search_queries=search_queries,
-      sources_used=citations,
-      raw_response=raw_response,
+      search_queries=normalized_queries,
+      sources_used=normalized_citations,
+      raw_response=normalized_raw_response,
       data_source=data_source,
       extra_links_count=extra_links_count,
-      sources=sources,
+      sources=normalized_sources,
       sources_found=sources_found,
       sources_used_count=sources_used,
       avg_rank=avg_rank,
@@ -387,3 +400,72 @@ class InteractionService:
       True if deleted, False if not found
     """
     return self.repository.delete(interaction_id)
+
+  # Internal helpers -----------------------------------------------------
+
+  def _normalize_raw_response(self, raw_response: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    if raw_response is None:
+      return None
+    try:
+      return self._json_dict_adapter.validate_python(raw_response)
+    except ValidationError as exc:
+      raise ValueError(f"Invalid raw_response payload: {exc}") from exc
+
+  def _normalize_search_queries(self, search_queries: List[dict]) -> List[dict]:
+    normalized = []
+    for query in search_queries or []:
+      if not isinstance(query, dict):
+        raise ValueError("Each search query must be an object")
+      normalized_query = dict(query)
+      sources = normalized_query.get("sources", []) or []
+      normalized_query["sources"] = [self._normalize_source_dict(src) for src in sources]
+
+      if "internal_ranking_scores" in normalized_query:
+        normalized_query["internal_ranking_scores"] = self._ensure_optional_dict(
+          normalized_query["internal_ranking_scores"],
+          "internal_ranking_scores",
+        )
+
+      if normalized_query.get("query_reformulations") is not None:
+        try:
+          normalized_query["query_reformulations"] = self._list_str_adapter.validate_python(
+            normalized_query["query_reformulations"]
+          )
+        except ValidationError as exc:
+          raise ValueError(f"query_reformulations must be a list of strings: {exc}") from exc
+
+      normalized.append(normalized_query)
+    return normalized
+
+  def _normalize_sources(self, sources: Optional[List[dict]]) -> Optional[List[dict]]:
+    if not sources:
+      return None
+    return [self._normalize_source_dict(source) for source in sources]
+
+  def _normalize_source_dict(self, source: dict) -> dict:
+    if not isinstance(source, dict):
+      raise ValueError("Source entries must be objects")
+    normalized = dict(source)
+    normalized["metadata"] = self._normalize_source_metadata(normalized.get("metadata"))
+    return normalized
+
+  def _normalize_source_metadata(self, metadata: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    return dump_metadata(SourceMetadata, metadata)
+
+  def _normalize_citations(self, citations: List[dict]) -> List[dict]:
+    normalized = []
+    for citation in citations or []:
+      if not isinstance(citation, dict):
+        raise ValueError("Citation entries must be objects")
+      normalized_citation = dict(citation)
+      normalized_citation["metadata"] = dump_metadata(CitationMetadata, normalized_citation.get("metadata"))
+      normalized.append(normalized_citation)
+    return normalized
+
+  def _ensure_optional_dict(self, value: Any, label: str) -> Optional[Dict[str, Any]]:
+    if value is None:
+      return None
+    try:
+      return self._json_dict_adapter.validate_python(value)
+    except ValidationError as exc:
+      raise ValueError(f"{label} must be a JSON object: {exc}") from exc
