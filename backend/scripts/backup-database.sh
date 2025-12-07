@@ -4,29 +4,40 @@
 # ============================================================================
 # Creates a timestamped backup of the SQLite database
 #
-# Usage: ./scripts/backup-database.sh [backup_dir]
+# Usage: ./backend/scripts/backup-database.sh [backup_dir]
 #
 # Options:
-#   backup_dir - Optional backup directory (default: ./backups)
+#   backup_dir - Optional backup directory (default: <repo>/backups)
 #
 # Examples:
-#   ./scripts/backup-database.sh
-#   ./scripts/backup-database.sh /path/to/backups
+#   ./backend/scripts/backup-database.sh
+#   ./backend/scripts/backup-database.sh /path/to/backups
 # ============================================================================
 
 set -e  # Exit on any error
 
+# Resolve project paths regardless of invocation directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 # Configuration
-DB_FILE="backend/data/llm_search.db"
-BACKUP_DIR="${1:-./backups}"
+DB_FILE="${LLM_SEARCH_DB_FILE:-$REPO_ROOT/backend/data/llm_search.db}"
+if [ -n "$1" ]; then
+    BACKUP_DIR="$1"
+else
+    BACKUP_DIR="$REPO_ROOT/backend/backups"
+fi
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-BACKUP_FILE="$BACKUP_DIR/llm_search_${TIMESTAMP}.db"
 
 # Colors
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
+
+# Expand backup dir for display/logging
+BACKUP_DIR="$(mkdir -p "$BACKUP_DIR" && cd "$BACKUP_DIR" && pwd)"
+BACKUP_FILE="$BACKUP_DIR/llm_search_${TIMESTAMP}.db"
 
 echo "🗄️  SQLite Database Backup"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -35,20 +46,19 @@ echo ""
 # Check if database file exists
 if [ ! -f "$DB_FILE" ]; then
     echo -e "${RED}❌ Database file not found: $DB_FILE${NC}"
-    echo "Make sure you're running this from the project root directory"
+    echo "Set LLM_SEARCH_DB_FILE or run alembic migrations to create it."
     exit 1
 fi
 
-# Create backup directory if it doesn't exist
-mkdir -p "$BACKUP_DIR"
-
 # Get database info before backup
 DB_SIZE=$(ls -lh "$DB_FILE" | awk '{print $5}')
-INTERACTION_COUNT=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM responses;" 2>/dev/null || echo "0")
+INTERACTION_COUNT=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM interactions;" 2>/dev/null || echo "0")
+RESPONSE_COUNT=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM responses;" 2>/dev/null || echo "0")
 echo "📊 Database Info:"
 echo "   File: $DB_FILE"
 echo "   Size: $DB_SIZE"
 echo "   Interactions: $INTERACTION_COUNT"
+echo "   Responses: $RESPONSE_COUNT"
 echo ""
 
 # Create backup using SQLite's backup command (hot backup)
@@ -107,5 +117,5 @@ echo -e "${GREEN}✅ Backup complete!${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "💡 To restore this backup:"
-echo "   ./scripts/restore-database.sh $BACKUP_FILE"
+echo "   ./backend/scripts/restore-database.sh $BACKUP_FILE"
 echo ""

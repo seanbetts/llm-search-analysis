@@ -4,19 +4,23 @@
 # ============================================================================
 # Restores the SQLite database from a backup file
 #
-# Usage: ./scripts/restore-database.sh <backup_file>
+# Usage: ./backend/scripts/restore-database.sh <backup_file>
 #
 # WARNING: This will replace the current database!
 #
 # Examples:
-#   ./scripts/restore-database.sh ./backups/llm_search_20250102_143000.db
-#   ./scripts/restore-database.sh ./backups/llm_search_20250102_143000.db --force
+#   ./backend/scripts/restore-database.sh ./backend/backups/llm_search_20250102_143000.db
+#   ./backend/scripts/restore-database.sh ./backend/backups/llm_search_20250102_143000.db --force
 # ============================================================================
 
 set -e  # Exit on any error
 
+# Resolve project paths regardless of invocation directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 # Configuration
-DB_FILE="backend/data/llm_search.db"
+DB_FILE="${LLM_SEARCH_DB_FILE:-$REPO_ROOT/backend/data/llm_search.db}"
 BACKUP_FILE="$1"
 FORCE="${2}"
 
@@ -25,6 +29,15 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
+DEFAULT_BACKUP_DIR="$REPO_ROOT/backend/backups"
+CONTAINERS_STOPPED=false
+DOCKER_CMD=()
+
+if command -v docker-compose >/dev/null 2>&1; then
+    DOCKER_CMD=(docker-compose)
+elif command -v docker >/dev/null 2>&1; then
+    DOCKER_CMD=(docker compose)
+fi
 
 echo "♻️  SQLite Database Restore"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -34,16 +47,16 @@ echo ""
 if [ -z "$BACKUP_FILE" ]; then
     echo -e "${RED}❌ No backup file specified${NC}"
     echo ""
-    echo "Usage: ./scripts/restore-database.sh <backup_file>"
+    echo "Usage: ./backend/scripts/restore-database.sh <backup_file>"
     echo ""
     echo "Available backups:"
-    if ls -1 ./backups/*.db 2>/dev/null | head -10; then
+    if ls -1 "$DEFAULT_BACKUP_DIR"/*.db 2>/dev/null | head -10; then
         echo ""
         echo "Example:"
-        LATEST_BACKUP=$(ls -1t ./backups/*.db 2>/dev/null | head -1)
-        echo "  ./scripts/restore-database.sh $LATEST_BACKUP"
+        LATEST_BACKUP=$(ls -1t "$DEFAULT_BACKUP_DIR"/*.db 2>/dev/null | head -1)
+        echo "  ./backend/scripts/restore-database.sh $LATEST_BACKUP"
     else
-        echo "  No backups found in ./backups/"
+        echo "  No backups found in $DEFAULT_BACKUP_DIR"
     fi
     echo ""
     exit 1
@@ -67,24 +80,28 @@ echo ""
 # Get backup info
 BACKUP_SIZE=$(ls -lh "$BACKUP_FILE" | awk '{print $5}')
 BACKUP_DATE=$(ls -l "$BACKUP_FILE" | awk '{print $6 " " $7 " " $8}')
-BACKUP_INTERACTIONS=$(sqlite3 "$BACKUP_FILE" "SELECT COUNT(*) FROM responses;" 2>/dev/null || echo "0")
+BACKUP_INTERACTIONS=$(sqlite3 "$BACKUP_FILE" "SELECT COUNT(*) FROM interactions;" 2>/dev/null || echo "0")
+BACKUP_RESPONSES=$(sqlite3 "$BACKUP_FILE" "SELECT COUNT(*) FROM responses;" 2>/dev/null || echo "0")
 
 echo "📊 Backup Info:"
 echo "   File: $BACKUP_FILE"
 echo "   Size: $BACKUP_SIZE"
 echo "   Date: $BACKUP_DATE"
 echo "   Interactions: $BACKUP_INTERACTIONS"
+echo "   Responses: $BACKUP_RESPONSES"
 echo ""
 
 # Check if current database exists
 if [ -f "$DB_FILE" ]; then
     CURRENT_SIZE=$(ls -lh "$DB_FILE" | awk '{print $5}')
-    CURRENT_INTERACTIONS=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM responses;" 2>/dev/null || echo "0")
+    CURRENT_INTERACTIONS=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM interactions;" 2>/dev/null || echo "0")
+    CURRENT_RESPONSES=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM responses;" 2>/dev/null || echo "0")
 
     echo "⚠️  Current Database (will be replaced):"
     echo "   File: $DB_FILE"
     echo "   Size: $CURRENT_SIZE"
     echo "   Interactions: $CURRENT_INTERACTIONS"
+    echo "   Responses: $CURRENT_RESPONSES"
     echo ""
 
     # Create automatic backup of current database before restore
@@ -104,16 +121,20 @@ if [ -f "$DB_FILE" ]; then
     # Create backup of current database before restore
     echo ""
     echo "💾 Creating backup of current database..."
-    PRE_RESTORE_BACKUP="./backups/pre_restore_$(date +"%Y%m%d_%H%M%S").db"
-    mkdir -p ./backups
+    PRE_RESTORE_BACKUP="$DEFAULT_BACKUP_DIR/pre_restore_$(date +"%Y%m%d_%H%M%S").db"
+    mkdir -p "$DEFAULT_BACKUP_DIR"
     sqlite3 "$DB_FILE" ".backup '$PRE_RESTORE_BACKUP'"
     echo -e "${GREEN}✅ Current database backed up to: $PRE_RESTORE_BACKUP${NC}"
     echo ""
 fi
 
 # Stop Docker containers if they're running
-echo "🛑 Checking if Docker containers are running..."
-if docker-compose ps 2>/dev/null | grep -q "Up"; then
+if [ ${#DOCKER_CMD[@]} -gt 0 ]; then
+    echo "🛑 Checking if Docker containers are running..."
+else
+    echo "🛑 Docker not detected (skipping container stop/start checks)."
+fi
+if [ ${#DOCKER_CMD[@]} -gt 0 ] && "${DOCKER_CMD[@]}" ps 2>/dev/null | grep -q "Up"; then
     echo -e "${YELLOW}⚠️  Docker containers are running. They should be stopped during restore.${NC}"
 
     if [ "$FORCE" != "--force" ]; then
@@ -121,14 +142,14 @@ if docker-compose ps 2>/dev/null | grep -q "Up"; then
 
         if [ "$stop_containers" = "yes" ]; then
             echo "Stopping containers..."
-            docker-compose down
+            "${DOCKER_CMD[@]}" down
             CONTAINERS_STOPPED=true
         else
             echo -e "${YELLOW}⚠️  Restoring while containers are running may cause issues${NC}"
         fi
     else
         echo "Stopping containers..."
-        docker-compose down
+        "${DOCKER_CMD[@]}" down
         CONTAINERS_STOPPED=true
     fi
 fi
@@ -149,19 +170,21 @@ if ! sqlite3 "$DB_FILE" "PRAGMA integrity_check;" | grep -q "ok"; then
     exit 1
 fi
 
-RESTORED_INTERACTIONS=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM responses;" 2>/dev/null || echo "0")
+RESTORED_INTERACTIONS=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM interactions;" 2>/dev/null || echo "0")
+RESTORED_RESPONSES=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM responses;" 2>/dev/null || echo "0")
 echo -e "${GREEN}✅ Database restored successfully${NC}"
 echo ""
 echo "📊 Restored Database:"
 echo "   File: $DB_FILE"
 echo "   Size: $(ls -lh "$DB_FILE" | awk '{print $5}')"
 echo "   Interactions: $RESTORED_INTERACTIONS"
+echo "   Responses: $RESTORED_RESPONSES"
 echo ""
 
 # Restart Docker containers if we stopped them
 if [ "$CONTAINERS_STOPPED" = true ]; then
     echo "🚀 Restarting Docker containers..."
-    docker-compose up -d
+    "${DOCKER_CMD[@]}" up -d
     echo "Waiting for containers to be healthy (15s)..."
     sleep 15
     echo ""
