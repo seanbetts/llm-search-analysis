@@ -3,9 +3,11 @@ Repository for database operations on interactions (prompts + responses).
 """
 
 import logging
-from typing import List, Optional
+from typing import List, Optional, Tuple
+from datetime import datetime
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func
 
 from app.models.database import (
   Provider,
@@ -219,21 +221,35 @@ class InteractionRepository:
 
   def get_recent(
     self,
-    limit: int = 50,
-    data_source: Optional[str] = None
-  ) -> List[Response]:
+    page: int = 1,
+    page_size: int = 20,
+    data_source: Optional[str] = None,
+    provider: Optional[str] = None,
+    model: Optional[str] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None
+  ) -> Tuple[List[Response], int]:
     """
-    Get recent interactions with eager loading.
+    Get recent interactions with pagination and filtering.
 
     Args:
-      limit: Maximum number of results
+      page: Page number (1-indexed)
+      page_size: Number of items per page (max 100)
       data_source: Filter by data source ("api", "network_log"), or None for all
+      provider: Filter by provider name (e.g., "openai"), or None for all
+      model: Filter by model name (e.g., "gpt-4o"), or None for all
+      date_from: Filter by created_at >= date_from, or None for no lower bound
+      date_to: Filter by created_at <= date_to, or None for no upper bound
 
     Returns:
-      List of Response objects with relationships loaded
+      Tuple of (List of Response objects with relationships loaded, total count)
     """
+    # Build base query with eager loading
     query = (
       self.db.query(Response)
+      .join(Response.prompt)
+      .join(Prompt.session)
+      .join(SessionModel.provider)
       .options(
         joinedload(Response.prompt)
         .joinedload(Prompt.session)
@@ -244,13 +260,32 @@ class InteractionRepository:
         # Temporarily disable direct sources loading to debug crash
         # joinedload(Response.sources),  # Load direct sources for network_log mode
       )
-      .order_by(Response.created_at.desc())
     )
 
+    # Apply filters
     if data_source:
       query = query.filter(Response.data_source == data_source)
 
-    return query.limit(limit).all()
+    if provider:
+      query = query.filter(Provider.name == provider)
+
+    if model:
+      query = query.filter(SessionModel.model_used == model)
+
+    if date_from:
+      query = query.filter(Response.created_at >= date_from)
+
+    if date_to:
+      query = query.filter(Response.created_at <= date_to)
+
+    # Get total count before pagination
+    total_count = query.with_entities(func.count(Response.id)).scalar()
+
+    # Apply pagination and ordering
+    offset = (page - 1) * page_size
+    results = query.order_by(Response.created_at.desc()).offset(offset).limit(page_size).all()
+
+    return results, total_count
 
   def delete(self, response_id: int) -> bool:
     """

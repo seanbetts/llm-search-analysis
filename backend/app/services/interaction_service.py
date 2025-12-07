@@ -1,6 +1,6 @@
 """Service layer for interaction business logic."""
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from datetime import datetime
 from types import SimpleNamespace
 
@@ -125,24 +125,42 @@ class InteractionService:
 
   def get_recent_interactions(
     self,
-    limit: int = 50,
-    data_source: Optional[str] = None
-  ) -> List[InteractionSummary]:
+    page: int = 1,
+    page_size: int = 20,
+    data_source: Optional[str] = None,
+    provider: Optional[str] = None,
+    model: Optional[str] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None
+  ) -> Tuple[List[InteractionSummary], int]:
     """
-    Get recent interactions with citation classification.
+    Get recent interactions with pagination and filtering.
 
     Classifies citations into:
     - Sources Used: Citations that came from search results
     - Extra Links: Citations not from search results
 
     Args:
-      limit: Maximum number of results
-      data_source: Filter by data source
+      page: Page number (1-indexed)
+      page_size: Number of items per page (max 100)
+      data_source: Filter by data source ("api", "network_log")
+      provider: Filter by provider name (e.g., "openai")
+      model: Filter by model name (e.g., "gpt-4o")
+      date_from: Filter by created_at >= date_from
+      date_to: Filter by created_at <= date_to
 
     Returns:
-      List of InteractionSummary objects
+      Tuple of (List of InteractionSummary objects, total count)
     """
-    responses = self.repository.get_recent(limit=limit, data_source=data_source)
+    responses, total_count = self.repository.get_recent(
+      page=page,
+      page_size=page_size,
+      data_source=data_source,
+      provider=provider,
+      model=model,
+      date_from=date_from,
+      date_to=date_to
+    )
 
     summaries = []
     for response in responses:
@@ -188,7 +206,7 @@ class InteractionService:
       )
       summaries.append(summary)
 
-    return summaries
+    return summaries, total_count
 
   def get_interaction_details(self, interaction_id: int) -> Optional[SendPromptResponse]:
     """

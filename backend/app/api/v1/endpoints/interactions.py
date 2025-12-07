@@ -1,6 +1,8 @@
 """Interactions API endpoints."""
 
+import math
 from typing import List, Optional
+from datetime import datetime
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import PlainTextResponse
 
@@ -8,6 +10,8 @@ from app.api.v1.schemas.requests import SendPromptRequest, SaveNetworkLogRequest
 from app.api.v1.schemas.responses import (
   SendPromptResponse,
   InteractionSummary,
+  PaginatedInteractionList,
+  PaginationMeta,
 )
 from app.services.interaction_service import InteractionService
 from app.services.provider_service import ProviderService
@@ -245,36 +249,69 @@ async def save_network_log_data(
 
 @router.get(
   "/recent",
-  response_model=List[InteractionSummary],
+  response_model=PaginatedInteractionList,
   status_code=status.HTTP_200_OK,
   summary="Get recent interactions",
-  description="Get a list of recent interactions with summary information. "
-  "Supports filtering by data source and limiting results.",
+  description="Get a paginated list of recent interactions with summary information. "
+  "Supports filtering by data source, provider, model, and date range.",
 )
 async def get_recent_interactions(
-  limit: int = Query(default=50, ge=1, le=1000, description="Maximum number of results"),
+  page: int = Query(default=1, ge=1, description="Page number (1-indexed)"),
+  page_size: int = Query(default=20, ge=1, le=100, description="Items per page (max 100)"),
   data_source: Optional[str] = Query(default=None, description="Filter by data source (api or network_log)"),
+  provider: Optional[str] = Query(default=None, description="Filter by provider name (e.g., openai)"),
+  model: Optional[str] = Query(default=None, description="Filter by model name (e.g., gpt-4o)"),
+  date_from: Optional[datetime] = Query(default=None, description="Filter by created_at >= date_from (ISO 8601)"),
+  date_to: Optional[datetime] = Query(default=None, description="Filter by created_at <= date_to (ISO 8601)"),
   interaction_service: InteractionService = Depends(get_interaction_service),
 ):
   """
-  Get recent interactions.
+  Get recent interactions with pagination and filtering.
 
   Args:
-    limit: Maximum number of results (1-1000, default 50)
+    page: Page number (1-indexed, default 1)
+    page_size: Items per page (1-100, default 20)
     data_source: Optional filter by data source
+    provider: Optional filter by provider name
+    model: Optional filter by model name
+    date_from: Optional filter by created_at >= date_from
+    date_to: Optional filter by created_at <= date_to
     interaction_service: InteractionService dependency
 
   Returns:
-    List of InteractionSummary objects
+    PaginatedInteractionList with items and pagination metadata
 
   Raises:
     500: Internal server error
   """
-  interactions = interaction_service.get_recent_interactions(
-    limit=limit,
-    data_source=data_source
+  interactions, total_count = interaction_service.get_recent_interactions(
+    page=page,
+    page_size=page_size,
+    data_source=data_source,
+    provider=provider,
+    model=model,
+    date_from=date_from,
+    date_to=date_to
   )
-  return interactions
+
+  # Calculate pagination metadata
+  total_pages = math.ceil(total_count / page_size) if total_count > 0 else 0
+  has_next = page < total_pages
+  has_prev = page > 1
+
+  pagination = PaginationMeta(
+    page=page,
+    page_size=page_size,
+    total_items=total_count,
+    total_pages=total_pages,
+    has_next=has_next,
+    has_prev=has_prev
+  )
+
+  return PaginatedInteractionList(
+    items=interactions,
+    pagination=pagination
+  )
 
 
 @router.get(

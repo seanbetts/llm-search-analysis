@@ -217,6 +217,77 @@ class InteractionSummary(BaseModel):
   }
 
 
+class PaginationMeta(BaseModel):
+  """Pagination metadata for list responses."""
+
+  page: int = Field(..., ge=1, description="Current page number (1-indexed)")
+  page_size: int = Field(..., ge=1, le=100, description="Number of items per page")
+  total_items: int = Field(..., ge=0, description="Total number of items across all pages")
+  total_pages: int = Field(..., ge=0, description="Total number of pages")
+  has_next: bool = Field(..., description="Whether there is a next page available")
+  has_prev: bool = Field(..., description="Whether there is a previous page available")
+
+  model_config = {
+    "json_schema_extra": {
+      "examples": [
+        {
+          "page": 1,
+          "page_size": 20,
+          "total_items": 150,
+          "total_pages": 8,
+          "has_next": True,
+          "has_prev": False
+        }
+      ]
+    }
+  }
+
+
+class PaginatedInteractionList(BaseModel):
+  """Paginated list of interaction summaries."""
+
+  items: List[InteractionSummary] = Field(
+    default_factory=list,
+    description="List of interaction summaries for current page"
+  )
+  pagination: PaginationMeta = Field(..., description="Pagination metadata")
+
+  model_config = {
+    "json_schema_extra": {
+      "examples": [
+        {
+          "items": [
+            {
+              "interaction_id": 42,
+              "prompt": "What is the weather today?",
+              "provider": "openai",
+              "model": "gpt-4o",
+              "model_display_name": "GPT-4o",
+              "response_preview": "I don't have access to real-time weather data...",
+              "search_query_count": 2,
+              "source_count": 5,
+              "citation_count": 3,
+              "average_rank": 2.5,
+              "extra_links_count": 0,
+              "response_time_ms": 3500,
+              "data_source": "api",
+              "created_at": "2024-01-15T10:30:00Z"
+            }
+          ],
+          "pagination": {
+            "page": 1,
+            "page_size": 20,
+            "total_items": 150,
+            "total_pages": 8,
+            "has_next": True,
+            "has_prev": False
+          }
+        }
+      ]
+    }
+  }
+
+
 class BatchStatus(BaseModel):
   """Status of a batch processing request."""
 
