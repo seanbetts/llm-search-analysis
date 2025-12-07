@@ -470,3 +470,31 @@ mv backend/data/llm_search.db backend/data/llm_search_sqlite_backup.db
 - **Environment Variables:** [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md)
 - **Docker Setup Verification:** Run `./scripts/verify-docker-setup.sh`
 - **Deployment Guide:** [IMPLEMENTATION_PLAN.md](../IMPLEMENTATION_PLAN.md)
+
+## Production Deployment Checklist (Post-Interactions Schema)
+
+When rolling the new interaction-centric schema to production:
+
+1. **Take a fresh backup**  
+   ```bash
+   ./backend/scripts/backup-database.sh
+   ```
+
+2. **Stamp legacy DBs (only once)** – If the database predates Alembic versions, set the version to the last pre-interactions revision:  
+   ```bash
+   cd backend
+   DATABASE_URL=sqlite:////absolute/path/to/backend/data/llm_search.db alembic stamp 1faa14f77fa5
+   ```
+
+3. **Run migrations**  
+   ```bash
+   DATABASE_URL=sqlite:////absolute/path/to/backend/data/llm_search.db alembic upgrade head
+   ```
+
+4. **Audit stored JSON + metrics**  
+   ```bash
+   PYTHONPATH=. DATABASE_URL=sqlite:////absolute/path/to/backend/data/llm_search.db python scripts/audit_json_payloads.py
+   PYTHONPATH=. DATABASE_URL=sqlite:////absolute/path/to/backend/data/llm_search.db python scripts/backfill_metrics.py
+   ```
+
+5. **Redeploy backend services** – Ensure CI/CD runs `alembic upgrade head` before starting the app. Remove any legacy cleanup scripts that manually deleted orphaned rows; the DB now enforces cascades.

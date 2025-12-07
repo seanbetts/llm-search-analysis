@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '9b9f1c6a2e3f'
-down_revision: Union[str, None] = '1faa14f77fa5'
+down_revision: Union[str, None] = '8564cf28ae1f'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -40,14 +40,14 @@ def upgrade() -> None:
     with op.batch_alter_table('responses', schema=None) as batch:
         batch.add_column(sa.Column('interaction_id', sa.Integer(), nullable=True))
 
-    op.create_foreign_key(
-        'fk_responses_interactions',
-        'responses',
-        'interactions',
-        ['interaction_id'],
-        ['id'],
-        ondelete='CASCADE',
-    )
+    with op.batch_alter_table('responses', schema=None) as batch:
+        batch.create_foreign_key(
+            'fk_responses_interactions',
+            'interactions',
+            ['interaction_id'],
+            ['id'],
+            ondelete='CASCADE',
+        )
 
     conn = op.get_bind()
 
@@ -116,13 +116,13 @@ def downgrade() -> None:
 
     conn.execute(sa.text("UPDATE responses SET prompt_id = interaction_id"))
 
-    op.create_foreign_key(
-        'fk_responses_prompts',
-        'responses',
-        'prompts',
-        ['prompt_id'],
-        ['id'],
-    )
+    with op.batch_alter_table('responses', schema=None) as batch:
+        batch.create_foreign_key(
+            'fk_responses_prompts',
+            'prompts',
+            ['prompt_id'],
+            ['id'],
+        )
 
     with op.batch_alter_table('responses', schema=None) as batch:
         batch.drop_constraint('fk_responses_interactions', type_='foreignkey')
