@@ -133,7 +133,7 @@ Implementation notes:
 
 - Update `docs/DEVELOPMENT_PLAN.md` with an “In progress” section for this feature.
 - Add API reference snippets to `backend/API_DOCUMENTATION.md`.
-- Mention the new data source in `docs/ENVIRONMENT_VARIABLES.md` if extra env vars are introduced (e.g., for storage locations).
+- Mention the new data source in `docs/operations/ENVIRONMENT_VARIABLES.md` if extra env vars are introduced (e.g., for storage locations).
 
 ---
 
@@ -206,4 +206,3 @@ Implementation tips:
    - Highlight the feature and note any prerequisites.
 
 Once merged into `feat/frontend-refactor`, we can dogfood the feature before bringing it to `main`.
-

@@ -4,27 +4,27 @@ This module provides browser automation and network traffic interception capabil
 
 ## Status: Phase 2 Complete (ChatGPT Infrastructure)
 
-✅ Database schema updated with network log fields
-✅ Base classes and module structure created
-✅ UI toggle for mode selection implemented
-✅ ChatGPT browser automation with Chrome
-✅ Session persistence with storageState API
-✅ Automatic login and session restoration
-✅ Web search enablement (/search command + menu fallback)
-✅ Response text extraction with inline citations
-⚠️ Network log parsing not implemented (search metadata extraction pending)
-⏳ Claude capture (not started)
+✅ Database schema updated with network log fields  
+✅ Base classes and module structure created  
+✅ UI toggle for mode selection implemented  
+✅ ChatGPT browser automation with Chrome  
+✅ Session persistence with storageState API  
+✅ Automatic login and session restoration  
+✅ Web search enablement (/search command + menu fallback)  
+✅ Network log parsing and normalization (search queries, sources, ranks, scores)  
+✅ Response text extraction with inline citations  
+⏳ Claude capture (not started)  
 ⏳ Gemini capture (not started)
 
 ## Architecture
 
 ```
-network_capture/
+frontend/network_capture/
 ├── __init__.py              # Module exports
 ├── base_capturer.py         # Abstract base class for all capturers
 ├── browser_manager.py       # Browser lifecycle and network interception utilities
 ├── parser.py                # Network log parsers for different providers
-├── chatgpt_capturer.py      # ChatGPT-specific implementation (in progress)
+├── chatgpt_capturer.py      # ChatGPT-specific implementation
 ├── claude_capturer.py       # (future)
 └── gemini_capturer.py       # (future)
 ```
@@ -52,11 +52,6 @@ network_capture/
    - Subsequent runs skip authentication if session valid
    - Delete session file to force fresh login
 
-3. Migrate existing database (if you have one):
-   ```bash
-   python migrations/add_network_log_fields.py
-   ```
-
 ### In the UI
 
 1. Navigate to the "Interactive" tab
@@ -67,7 +62,7 @@ network_capture/
 ### Programmatic Usage
 
 ```python
-from src.network_capture.chatgpt_capturer import ChatGPTCapturer
+from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 
 # Create capturer (optionally specify session file path)
 capturer = ChatGPTCapturer()  # Uses default: data/chatgpt_session.json
@@ -85,11 +80,9 @@ if capturer.authenticate():
         enable_search=True  # Uses /search command + menu fallback
     )
 
-    # Response includes text and inline citations
+    # Response includes text, inline citations, and normalized metadata
     print(f"Response: {response.response_text}")
     print(f"Citations found: {len(response.sources_used)}")
-
-    # Note: Network log parsing for search metadata not yet implemented
 
 # Cleanup
 capturer.stop_browser()
@@ -131,19 +124,16 @@ Beyond what APIs provide, network logs can capture:
 - [x] Fallback menu navigation (Add → More → Web search)
 - [x] Search activation detection
 - [x] Response text extraction
-- [x] Inline citation parsing from response text
-- [ ] Network log parsing (search metadata extraction - pending)
+- [x] Inline citation parsing and normalization
+- [x] Network log parsing (search metadata, ranks, internal scores)
 
-### Phase 3: Parsing & Analysis ⏳
-- [ ] Complete ChatGPT network log parser implementation
-- [ ] Extract search queries from network responses
-- [ ] Extract sources with snippets and internal scores
-- [ ] Map queries to their corresponding results
-- [ ] Validate data accuracy
-- [ ] Add error handling for format changes
+### Phase 3: Live Streaming & Analysis ⏳
+- [ ] Implement live event streaming (see `docs/proposals/LIVE_NETWORK_LOGS_PLAN.md`)
+- [ ] Persist structured event logs for replay/download
 - [ ] Create comparison views (API vs Network Log)
-
-### Phase 4: Additional Providers ⏳
+- [ ] Claude network capture
+- [ ] Gemini network capture
+- [ ] Cross-provider analysis tools
 - [ ] Claude network capture
 - [ ] Gemini network capture
 - [ ] Cross-provider analysis tools
@@ -152,34 +142,9 @@ Beyond what APIs provide, network logs can capture:
 
 To continue development:
 
-1. **Capture real free ChatGPT network logs:**
-   - Open https://chatgpt.com (no login)
-   - Open browser DevTools → Network tab
-   - Submit a test prompt
-   - Copy chat ID from URL (if present)
-   - Filter network logs for relevant endpoints
-   - Analyze response structure (search queries, snippets, etc.)
-   - Document JSON format
-
-2. **Update `chatgpt_capturer.py`:**
-   - Find actual textarea selector for prompt input
-   - Implement prompt submission logic
-   - Detect response completion
-   - Filter captured network responses for search data
-   - Extract the relevant response containing snippets/scores
-
-3. **Update `parser.py`:**
-   - Parse actual ChatGPT response format
-   - Extract search queries, snippets, internal scores
-   - Map to our ProviderResponse data model
-   - Handle edge cases (no search performed, etc.)
-
-4. **Test end-to-end:**
-   - Toggle network log mode in UI
-   - Submit test prompt
-   - Verify headless browser captures data correctly
-   - Compare with OpenAI API data for same prompt
-   - Validate network log fields are populated
+1. **Build the Live Network Log tab** – follow `docs/proposals/LIVE_NETWORK_LOGS_PLAN.md` for backend SSE endpoints and Streamlit UX.
+2. **Extend provider coverage** – add Claude/Gemini capturers that reuse the shared abstractions.
+3. **Enhance analytics** – ship comparison and visualization tooling that showcases the richer metadata captured from network logs.
 
 ## Key Advantages of This Approach
 
@@ -188,7 +153,7 @@ To continue development:
 3. **Dual Search Methods:** /search command (primary) + menu navigation (fallback)
 4. **Automatic Login:** Credentials from .env, manual 2FA/CAPTCHA when needed
 5. **Detection Bypass:** Chrome browser successfully bypasses OpenAI detection
-6. **Rich Data:** Response text + inline citations (network log parsing pending)
+6. **Rich Data:** Response text + inline citations + network metadata (queries, ranks, scores)
 
 ## Legal & Ethical Notes
 

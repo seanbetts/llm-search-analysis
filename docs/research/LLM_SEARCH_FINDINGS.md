@@ -741,14 +741,14 @@ response_time_s = f"{response_time_ms / 1000:.1f}s"
 
 ### Related Documents
 - `README.md` - Project overview and setup
-- `DEVELOPMENT_PLAN.md` - Development roadmap and status
+- `docs/proposals/LIVE_NETWORK_LOGS_PLAN.md` - Live log tab design
 - `tests/test_parse_interaction_61.py` - Network log validation script
 
 ### Key Code Locations
-- `src/providers/` - API provider implementations
-- `src/network_capture/parser.py` - Network log parsing
-- `src/database.py` - Schema and metrics calculation
-- `app.py` - UI and display logic
+- `backend/app/services/providers/` - API provider implementations
+- `frontend/network_capture/parser.py` - Network log parsing
+- `backend/app/models/database.py` - Schema and metrics calculation
+- `frontend/components/` - UI rendering helpers
 
 ---
 

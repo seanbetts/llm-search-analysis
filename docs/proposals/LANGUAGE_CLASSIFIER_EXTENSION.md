@@ -1,3 +1,5 @@
+> **Note:** References to a `src/` package in this document describe the proposed classifier project structure, not the main app’s current `backend/` and `frontend/` directories.
+
 1. Objective
 
 Build a Python-based classification system that can take any LLM prompt/response pair and attach three independent but related layers of metadata:

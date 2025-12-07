@@ -544,7 +544,7 @@ Streamlit → FastAPI API → Services → Repository → SQLite
 
 - [x] Standardize environment configuration
   - Restructured `.env.example` with clear deployment modes (Docker vs Local)
-  - Created `docs/ENVIRONMENT_VARIABLES.md` - comprehensive reference (400+ lines)
+  - Created `docs/operations/ENVIRONMENT_VARIABLES.md` - comprehensive reference (400+ lines)
   - Documented all variables with defaults, security best practices, troubleshooting
   - Separated Docker vs local development configuration
 
@@ -557,7 +557,7 @@ Streamlit → FastAPI API → Services → Repository → SQLite
 - [x] Add simple backup & restore for SQLite
   - Created `scripts/backup-database.sh` - hot backups with integrity checks
   - Created `scripts/restore-database.sh` - safe restore with rollback capability
-  - Created `docs/BACKUP_AND_RESTORE.md` - complete guide (550+ lines)
+  - Created `docs/operations/BACKUP_AND_RESTORE.md` - complete guide (550+ lines)
   - Automatic backup retention (keeps 10 most recent)
   - Docker-aware (stops containers during restore, restarts after)
   - Successfully tested backup creation and verification
@@ -583,8 +583,8 @@ Streamlit → FastAPI API → Services → Repository → SQLite
 **Deliverable:** Stable "local production" environment using Docker Compose ✅
 
 **Files Created:**
-- `docs/ENVIRONMENT_VARIABLES.md` (400+ lines)
-- `docs/BACKUP_AND_RESTORE.md` (550+ lines)
+- `docs/operations/ENVIRONMENT_VARIABLES.md` (400+ lines)
+- `docs/operations/BACKUP_AND_RESTORE.md` (550+ lines)
 - `scripts/verify-docker-setup.sh` (executable, 147 lines)
 - `scripts/backup-database.sh` (executable, 111 lines)
 - `scripts/restore-database.sh` (executable, 184 lines)
@@ -798,7 +798,7 @@ Streamlit → FastAPI API → Services → Repository → SQLite
 - **SQLAlchemy Documentation**: https://docs.sqlalchemy.org/
 - **Deployment Guide**: See `docs/REFACTORING_RECOMMENDATIONS.md`
 - **Architecture Analysis**: See `docs/REFACTORING_RECOMMENDATIONS.md`
-- **Research Findings**: See `docs/LLM_SEARCH_FINDINGS.md`
+- **Research Findings**: See `docs/research/LLM_SEARCH_FINDINGS.md`
 
 ---
 
