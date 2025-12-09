@@ -1,11 +1,12 @@
 """Providers API endpoints."""
 
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.v1.schemas.responses import ProviderInfo
-from app.services.provider_service import ProviderService
 from app.dependencies import get_provider_service
+from app.services.provider_service import ProviderService
 
 router = APIRouter(prefix="/providers", tags=["providers"])
 

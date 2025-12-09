@@ -16,11 +16,12 @@ The schemas enforce:
 - Automatic OpenAPI documentation generation
 """
 
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 import re
+from typing import Any, Dict, List, Optional
 
-from app.core.json_schemas import SourceMetadata, CitationMetadata, dump_metadata
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from app.core.json_schemas import CitationMetadata, SourceMetadata, dump_metadata
 
 
 class SendPromptRequest(BaseModel):
@@ -154,12 +155,6 @@ class BatchRequest(BaseModel):
     examples=[["What is AI?", "What is ML?"]]
   )
 
-  provider: str = Field(
-    ...,
-    description="LLM provider name (openai, google, anthropic, chatgpt)",
-    examples=["openai"]
-  )
-
   models: List[str] = Field(
     ...,
     min_length=1,
@@ -196,18 +191,6 @@ class BatchRequest(BaseModel):
       validated_prompts.append(prompt)
 
     return validated_prompts
-
-  @field_validator("provider")
-  @classmethod
-  def validate_provider(cls, v: str) -> str:
-    """Validate provider name."""
-    valid_providers = ["openai", "google", "anthropic", "chatgpt"]
-    v_lower = v.lower()
-    if v_lower not in valid_providers:
-      raise ValueError(
-        f"Invalid provider '{v}'. Must be one of: {', '.join(valid_providers)}"
-      )
-    return v_lower
 
   @field_validator("models")
   @classmethod
@@ -277,7 +260,10 @@ class NetworkLogCitation(BaseModel):
   title: Optional[str] = Field(None, description="Citation title")
   rank: Optional[int] = Field(None, ge=1, description="Rank from search results")
   snippet_used: Optional[str] = Field(None, description="Snippet text used in the response")
-  metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata about the citation")
+  metadata: Optional[Dict[str, Any]] = Field(
+    None,
+    description="Additional metadata about the citation"
+  )
 
   @field_validator("metadata")
   @classmethod
@@ -292,8 +278,15 @@ class NetworkLogSearchQuery(BaseModel):
   model_config = ConfigDict(extra="forbid")
 
   query: str = Field(..., description="Search query text")
-  order_index: Optional[int] = Field(default=0, ge=0, description="Order of the query in the sequence")
-  sources: List[NetworkLogSource] = Field(default_factory=list, description="Sources returned for this query")
+  order_index: Optional[int] = Field(
+    default=0,
+    ge=0,
+    description="Order of the query in the sequence"
+  )
+  sources: List[NetworkLogSource] = Field(
+    default_factory=list,
+    description="Sources returned for this query"
+  )
   internal_ranking_scores: Optional[Dict[str, Any]] = Field(
     default=None,
     description="Provider-specific ranking metadata"

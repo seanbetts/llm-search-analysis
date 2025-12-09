@@ -29,7 +29,7 @@ Database URL Normalization:
     development (backend/data relative paths).
 """
 
-from typing import List
+from typing import Dict, List
 import logging
 from pathlib import Path
 from pydantic import Field, field_validator
@@ -112,6 +112,28 @@ class Settings(BaseSettings):
     description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)"
   )
 
+  # Batch processing settings
+  BATCH_MAX_CONCURRENCY: int = Field(
+    default=6,
+    description="Maximum number of concurrent provider requests for batch jobs"
+  )
+  BATCH_PER_PROVIDER_CONCURRENCY: int = Field(
+    default=2,
+    description="Default concurrency per provider for batch jobs"
+  )
+  BATCH_MAX_CONCURRENCY_OPENAI: int = Field(
+    default=0,
+    description="Override concurrency limit for OpenAI (0 = use default)"
+  )
+  BATCH_MAX_CONCURRENCY_GOOGLE: int = Field(
+    default=0,
+    description="Override concurrency limit for Google (0 = use default)"
+  )
+  BATCH_MAX_CONCURRENCY_ANTHROPIC: int = Field(
+    default=0,
+    description="Override concurrency limit for Anthropic (0 = use default)"
+  )
+
   model_config = SettingsConfigDict(
     env_file=".env",
     env_file_encoding="utf-8",
@@ -153,6 +175,15 @@ class Settings(BaseSettings):
       )
       return BACKEND_FALLBACK_URL
     return value
+
+  def get_batch_provider_limits(self) -> Dict[str, int]:
+    """Return per-provider concurrency limits, applying overrides when set."""
+    base = self.BATCH_PER_PROVIDER_CONCURRENCY
+    return {
+      "openai": self.BATCH_MAX_CONCURRENCY_OPENAI or base,
+      "google": self.BATCH_MAX_CONCURRENCY_GOOGLE or base,
+      "anthropic": self.BATCH_MAX_CONCURRENCY_ANTHROPIC or base,
+    }
 
 
 # Create global settings instance

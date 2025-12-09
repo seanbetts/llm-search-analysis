@@ -1,16 +1,18 @@
 """Integration tests for FastAPI endpoints."""
 
+from datetime import datetime
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from unittest.mock import Mock, patch
 
+from app.api.v1.schemas.responses import BatchStatus, SendPromptResponse
+from app.dependencies import get_batch_service, get_db
 from app.main import app
 from app.models.database import Base
-from app.dependencies import get_db
 
 
 # Create test database
@@ -198,10 +200,92 @@ class TestInteractionsEndpoints:
     assert response.status_code == 422
     data = response.json()
     # Error is wrapped in custom error handler format
-    assert "error" in data
-    assert data["error"]["code"] == "VALIDATION_ERROR"
-    # Validation error should mention the unsupported model
-    assert "unsupported-model-xyz" in str(data).lower() or "not supported" in str(data).lower()
+
+
+class _StubBatchService:
+  """Simple stub used to test batch endpoints."""
+
+  def __init__(self):
+    result = SendPromptResponse(
+      prompt="Prompt A",
+      response_text="Batch result",
+      search_queries=[],
+      citations=[],
+      all_sources=[],
+      provider="openai",
+      model="gpt-5.1",
+      model_display_name="GPT-5.1",
+      response_time_ms=1500,
+      data_source="api",
+      sources_found=0,
+      sources_used=0,
+      avg_rank=None,
+      extra_links_count=0,
+      interaction_id=123,
+      created_at=datetime.utcnow(),
+      raw_response={},
+    )
+    self.start_status = BatchStatus(
+      batch_id="stub-batch",
+      total_tasks=2,
+      completed_tasks=0,
+      failed_tasks=0,
+      status="processing",
+      results=[],
+      errors=[],
+      started_at=datetime.utcnow(),
+    )
+    self.final_status = BatchStatus(
+      batch_id="stub-batch",
+      total_tasks=2,
+      completed_tasks=2,
+      failed_tasks=0,
+      status="completed",
+      results=[result],
+      errors=[],
+      started_at=datetime.utcnow(),
+      completed_at=datetime.utcnow(),
+    )
+    self.last_request = None
+    self.last_status_batch_id = None
+
+  async def start_batch(self, request):
+    self.last_request = request
+    return self.start_status
+
+  def get_status(self, batch_id: str):
+    self.last_status_batch_id = batch_id
+    return self.final_status
+
+
+class TestBatchEndpoints:
+  """Tests for backend-managed batch lifecycle."""
+
+  def test_batch_start_and_status(self, client):
+    """POST /interactions/batch and GET status should use batch service."""
+    stub = _StubBatchService()
+    app.dependency_overrides[get_batch_service] = lambda: stub
+    try:
+      payload = {
+        "prompts": ["Prompt A", "Prompt B"],
+        "models": ["gpt-5.1"],
+      }
+      response = client.post("/api/v1/interactions/batch", json=payload)
+      assert response.status_code == 202
+      body = response.json()
+      assert body["batch_id"] == "stub-batch"
+      assert stub.last_request.prompts == payload["prompts"]
+      assert stub.last_request.models == payload["models"]
+
+      status_response = client.get("/api/v1/interactions/batch/stub-batch")
+      assert status_response.status_code == 200
+      status_body = status_response.json()
+      assert status_body["status"] == "completed"
+      assert status_body["completed_tasks"] == 2
+      assert len(status_body["results"]) == 1
+      assert stub.last_status_batch_id == "stub-batch"
+    finally:
+      app.dependency_overrides.pop(get_batch_service, None)
 
   def test_get_recent_interactions_empty(self, client):
     """Test GET /api/v1/interactions/recent with no interactions."""

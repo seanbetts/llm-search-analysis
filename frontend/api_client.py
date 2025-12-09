@@ -280,6 +280,51 @@ class APIClient:
       timeout=self.timeout_send_prompt
     )
 
+  def start_batch(
+    self,
+    prompts: List[str],
+    models: List[str],
+    data_mode: str = "api"
+  ) -> Dict[str, Any]:
+    """
+    Submit a batch of prompts/models for backend processing.
+
+    Args:
+      prompts: List of prompt strings
+      models: List of model identifiers
+      data_mode: Data collection mode (default "api")
+
+    Returns:
+      Batch status snapshot containing batch_id and counts.
+    """
+    payload = {
+      "prompts": prompts,
+      "models": models,
+      "data_mode": data_mode
+    }
+    return self._request(
+      "POST",
+      "/api/v1/interactions/batch",
+      json=payload,
+      timeout=self.timeout_send_prompt
+    )
+
+  def get_batch_status(self, batch_id: str) -> Dict[str, Any]:
+    """
+    Retrieve the latest status/results for a batch job.
+
+    Args:
+      batch_id: Identifier returned from start_batch
+
+    Returns:
+      BatchStatus payload
+    """
+    return self._request(
+      "GET",
+      f"/api/v1/interactions/batch/{batch_id}",
+      timeout=self.timeout_default
+    )
+
   def save_network_log(
     self,
     provider: str,

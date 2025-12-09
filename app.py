@@ -1,28 +1,12 @@
-"""
-LLM Search Analysis - Streamlit UI
-
-Interactive web interface for testing and analyzing LLM search capabilities
-across OpenAI, Google Gemini, and Anthropic Claude models.
-"""
+"""Streamlit UI for the LLM Search Analysis app."""
 
 import os
-import re
-import traceback
+
 import streamlit as st
-import pandas as pd
-from datetime import datetime
-from urllib.parse import urlparse
-from frontend.api_client import APIClient, APIClientError, APINotFoundError
+
+from frontend.api_client import APIClient
 from frontend.styles import load_styles
-from frontend.utils import format_pub_date
-from frontend.components.response import (
-  sanitize_response_markdown,
-  format_response_text,
-  extract_images_from_response,
-  display_response
-)
-from frontend.components.models import get_all_models
-from frontend.tabs import tab_interactive, tab_batch, tab_history
+from frontend.tabs import tab_batch, tab_history, tab_interactive
 
 # Page config
 st.set_page_config(
@@ -73,12 +57,17 @@ def sidebar_info():
         "Choose data collection method:",
         mode_options,
         index=0 if st.session_state.data_collection_mode == 'api' else 1,
-        help="API mode uses official provider APIs. Network Log mode captures browser traffic for deeper insights.",
+        help=(
+            "API mode uses official provider APIs. "
+            "Network Log mode captures browser traffic for deeper insights."
+        ),
         label_visibility="collapsed"
     )
 
     # Update session state based on selection
-    st.session_state.data_collection_mode = 'api' if selected_mode == mode_options[0] else 'network_log'
+    st.session_state.data_collection_mode = (
+        'api' if selected_mode == mode_options[0] else 'network_log'
+    )
 
     # Show info for network log mode
     if st.session_state.data_collection_mode == 'network_log':
@@ -102,7 +91,8 @@ def sidebar_info():
         - Optional browser window display (may help with CAPTCHA)
 
         **Additional Metadata:**
-        Network logs provide internal scores, snippet text, and query reformulation data not available via API.
+        Network logs provide internal scores, snippet text, and query reformulation
+        data not available via API.
 
         **Status:** ✅ Working
         """)

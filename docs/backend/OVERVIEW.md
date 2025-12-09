@@ -483,6 +483,8 @@ See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) for detailed endpoint documenta
 - `GET /api/v1/providers` - List providers
 - `GET /api/v1/providers/models` - List models
 - `POST /api/v1/interactions/send` - Send prompt
+- `POST /api/v1/interactions/batch` - Submit batch job
+- `GET /api/v1/interactions/batch/{batch_id}` - Poll batch status/results
 - `GET /api/v1/interactions/recent` - Get recent interactions
 - `GET /api/v1/interactions/{id}` - Get interaction details
 - `DELETE /api/v1/interactions/{id}` - Delete interaction
@@ -490,6 +492,35 @@ See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) for detailed endpoint documenta
 **Interactive Docs:**
 - Swagger: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
+
+### Backend-managed Batch Processing
+
+The backend now orchestrates batch runs rather than relying on client-side loops.
+
+1. `POST /api/v1/interactions/batch` with `{"prompts": [...], "models": [...]}`. The API validates payloads,
+   expands the Cartesian product, and returns a `BatchStatus` snapshot containing a `batch_id`, total task count,
+   and initial status.
+2. Poll `GET /api/v1/interactions/batch/{batch_id}` until `status` is `completed` or `failed`. Each response
+   contains all completed `results` (full `SendPromptResponse` objects) plus any `errors`.
+
+The service executes provider calls concurrently using per-provider semaphores so OpenAI, Google, and Anthropic each
+adhere to their own throttle. Results are stored in-memory keyed by `batch_id`, which keeps the plumbing simple while
+the Streamlit frontend polls every second. If you need durability across restarts, add persistent tables for
+`batch_jobs`/`batch_results` before running unattended workloads.
+
+**Configuration**
+
+| Environment Variable | Description | Default |
+| --- | --- | --- |
+| `BATCH_MAX_CONCURRENCY` | Hard cap on simultaneous provider calls across all batches | `6` |
+| `BATCH_PER_PROVIDER_CONCURRENCY` | Default concurrency per provider | `2` |
+| `BATCH_MAX_CONCURRENCY_OPENAI` | Override OpenAI concurrency (0 = use default) | `0` |
+| `BATCH_MAX_CONCURRENCY_GOOGLE` | Override Google concurrency (0 = use default) | `0` |
+| `BATCH_MAX_CONCURRENCY_ANTHROPIC` | Override Anthropic concurrency (0 = use default) | `0` |
+
+Tune these in `.env` (or your deployment environment) to reflect provider quota agreements. Setting a provider-specific
+value to `0` falls back to the default per-provider limit. You can observe current caps in API logs when a batch job
+starts.
 
 ## Testing
 

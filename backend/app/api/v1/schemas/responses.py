@@ -19,7 +19,8 @@ The schemas ensure:
 """
 
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -133,13 +134,20 @@ class SendPromptResponse(BaseModel):
   )
   all_sources: Optional[List[Source]] = Field(
     default_factory=list,
-    description="All sources aggregated from all search queries (API mode) or directly from response (network_log mode). Always populated for consistent frontend handling."
+    description=(
+      "All sources aggregated from all search queries (API mode) or directly "
+      "from response (network_log mode). Always populated for consistent "
+      "frontend handling."
+    )
   )
 
   # Metadata
   provider: str = Field(..., description="LLM provider name")
   model: str = Field(..., description="Model name used")
-  model_display_name: Optional[str] = Field(None, description="Formatted display name for the model")
+  model_display_name: Optional[str] = Field(
+    None,
+    description="Formatted display name for the model"
+  )
   response_time_ms: Optional[int] = Field(None, ge=0, description="Response time in milliseconds")
   data_source: str = Field(default="api", description="Data collection mode (api/network_log)")
 
@@ -202,14 +210,21 @@ class InteractionSummary(BaseModel):
   prompt: str = Field(..., description="The prompt text")
   provider: str = Field(..., description="LLM provider name")
   model: str = Field(..., description="Model name used")
-  model_display_name: Optional[str] = Field(None, description="Formatted display name for the model")
+  model_display_name: Optional[str] = Field(
+    None,
+    description="Formatted display name for the model"
+  )
   response_preview: str = Field(..., description="First 200 chars of response")
 
   search_query_count: int = Field(default=0, ge=0, description="Number of search queries")
   source_count: int = Field(default=0, ge=0, description="Number of sources found")
   citation_count: int = Field(default=0, ge=0, description="Number of citations used")
   average_rank: Optional[float] = Field(None, description="Average rank of citations")
-  extra_links_count: int = Field(default=0, ge=0, description="Number of extra links not from search")
+  extra_links_count: int = Field(
+    default=0,
+    ge=0,
+    description="Number of extra links not from search"
+  )
 
   response_time_ms: Optional[int] = Field(None, ge=0, description="Response time in milliseconds")
   data_source: str = Field(default="api", description="Data collection mode")
@@ -223,7 +238,9 @@ class InteractionSummary(BaseModel):
           "prompt": "What is artificial intelligence?",
           "provider": "openai",
           "model": "gpt-4o",
-          "response_preview": "Artificial intelligence (AI) is the simulation of human intelligence...",
+          "response_preview": (
+            "Artificial intelligence (AI) is the simulation of human intelligence..."
+          ),
           "search_query_count": 2,
           "source_count": 5,
           "citation_count": 3,

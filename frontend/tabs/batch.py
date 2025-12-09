@@ -1,5 +1,6 @@
 """Batch analysis tab for testing multiple prompts."""
 
+import time
 from datetime import datetime
 from types import SimpleNamespace
 from typing import Any, Dict, List, Optional
@@ -39,6 +40,32 @@ def summarize_batch_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     'avg_sources_used': avg_sources_used,
     'avg_rank': avg_rank,
   }
+
+
+def build_rows_from_batch_status(status_payload: Dict[str, Any]) -> List[Dict[str, Any]]:
+  """Convert backend batch status payload into table rows."""
+  rows: List[Dict[str, Any]] = []
+  for response in status_payload.get('results', []):
+    model_label = response.get('model_display_name') or get_model_display_name(response.get('model', ''))
+    rows.append({
+      'prompt': response.get('prompt'),
+      'model': model_label,
+      'searches': len(response.get('search_queries', [])),
+      'sources': response.get('sources_found', 0),
+      'sources_used': response.get('sources_used', 0),
+      'avg_rank': response.get('avg_rank'),
+      'response_time_s': (response.get('response_time_ms') or 0) / 1000,
+    })
+
+  for error in status_payload.get('errors', []):
+    model_label = get_model_display_name(error.get('model', '')) if error.get('model') else error.get('provider')
+    rows.append({
+      'prompt': error.get('prompt'),
+      'model': model_label,
+      'error': error.get('error', 'Unknown error'),
+    })
+
+  return rows
 
 
 def render_batch_results(results: List[Dict[str, Any]], placeholder: Optional[Any] = None):
@@ -188,24 +215,72 @@ def tab_batch():
   if st.button("▶️ Run Batch Analysis", type="primary", disabled=len(prompts) == 0 or len(selected_models) == 0):
     st.session_state.batch_results = []
 
-    # Progress tracking
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-    results_placeholder = st.empty()
+    if st.session_state.data_collection_mode == 'api':
+      model_ids = [model_name for (_, _, model_name) in selected_models]
+      progress_bar = st.progress(0)
+      status_text = st.empty()
+      results_placeholder = st.empty()
 
-    # Calculate total runs
-    total_runs = len(prompts) * len(selected_models)
-    current_run = 0
+      batch_payload, creation_error = safe_api_call(
+        st.session_state.api_client.start_batch,
+        prompts=prompts,
+        models=model_ids,
+        show_spinner=True,
+        spinner_text="Submitting batch to backend..."
+      )
+      if creation_error:
+        st.error(creation_error)
+        return
 
-    # Process each prompt with each model
-    for prompt_idx, prompt in enumerate(prompts):
-      for model_label, provider_name, model_name in selected_models:
-        current_run += 1
-        status_text.text(f"Processing run {current_run}/{total_runs}: {model_label} - Prompt {prompt_idx + 1}/{len(prompts)}")
+      batch_id = batch_payload.get('batch_id')
+      total_tasks = batch_payload.get('total_tasks', len(prompts) * len(selected_models))
 
-        try:
-          # Check data collection mode and route accordingly
-          if st.session_state.data_collection_mode == 'network_log':
+      status_text.text(f"Batch {batch_id} submitted. Waiting for first results...")
+
+      while True:
+        status_data, status_error = safe_api_call(
+          st.session_state.api_client.get_batch_status,
+          batch_id=batch_id,
+          show_spinner=False
+        )
+        if status_error:
+          st.error(status_error)
+          break
+
+        rows = build_rows_from_batch_status(status_data)
+        st.session_state.batch_results = rows
+
+        completed = status_data.get('completed_tasks', 0)
+        status_label = status_data.get('status', 'processing').title()
+        progress = completed / total_tasks if total_tasks else 0
+        progress_bar.progress(progress)
+        status_text.text(f"{status_label}: {completed}/{total_tasks} runs complete")
+
+        render_batch_results(rows, placeholder=results_placeholder)
+
+        if status_data.get('status') in ('completed', 'failed'):
+          break
+        time.sleep(1)
+
+      status_text.text("✅ Batch processing complete!")
+
+    else:
+      # Progress tracking
+      progress_bar = st.progress(0)
+      status_text = st.empty()
+      results_placeholder = st.empty()
+
+      # Calculate total runs
+      total_runs = len(prompts) * len(selected_models)
+      current_run = 0
+
+      # Process each prompt with each model in network capture mode
+      for prompt_idx, prompt in enumerate(prompts):
+        for model_label, provider_name, model_name in selected_models:
+          current_run += 1
+          status_text.text(f"Processing run {current_run}/{total_runs}: {model_label} - Prompt {prompt_idx + 1}/{len(prompts)}")
+
+          try:
             # Only ChatGPT is supported for network logs currently
             if provider_name != 'openai':
               raise Exception(f"Network log mode only supports OpenAI/ChatGPT. Skipping {provider_name}")
@@ -300,34 +375,7 @@ def tab_batch():
               # Always cleanup browser
               capturer.stop_browser()
 
-          else:
-            # Use API client to send prompt (handles provider call AND database save)
-            response_data, api_error = safe_api_call(
-              st.session_state.api_client.send_prompt,
-              prompt=prompt,
-              provider=provider_name,
-              model=model_name,
-              data_mode="api",
-              headless=True,
-              show_spinner=False
-            )
-            if api_error:
-              raise Exception(api_error)
-
-          # Store result using backend-computed metrics
-          if st.session_state.data_collection_mode == 'api':
-            # For API mode, use backend-computed metrics from response_data dict
-            st.session_state.batch_results.append({
-              'prompt': prompt,
-              'model': model_label,
-              'searches': len(response_data.get('search_queries', [])),
-              'sources': response_data.get('sources_found', 0),
-              'sources_used': response_data.get('sources_used', 0),
-              'avg_rank': response_data.get('avg_rank'),
-              'response_time_s': response_data.get('response_time_ms', 0) / 1000
-            })
-          else:
-            # For network log mode, use backend-computed metrics from response object
+            # Store result using backend-computed metrics
             st.session_state.batch_results.append({
               'prompt': prompt,
               'model': model_label,
@@ -338,18 +386,18 @@ def tab_batch():
               'response_time_s': response.response_time_ms / 1000
             })
 
-        except Exception as e:
-          st.session_state.batch_results.append({
-            'prompt': prompt,
-            'model': model_label,
-            'error': str(e)
-          })
+          except Exception as e:
+            st.session_state.batch_results.append({
+              'prompt': prompt,
+              'model': model_label,
+              'error': str(e)
+            })
 
-        # Update progress
-        progress_bar.progress(current_run / total_runs)
-        render_batch_results(st.session_state.batch_results, placeholder=results_placeholder)
+          # Update progress
+          progress_bar.progress(current_run / total_runs)
+          render_batch_results(st.session_state.batch_results, placeholder=results_placeholder)
 
-    status_text.text("✅ Batch processing complete!")
+      status_text.text("✅ Batch processing complete!")
 
   # Display results
   if st.session_state.batch_results:

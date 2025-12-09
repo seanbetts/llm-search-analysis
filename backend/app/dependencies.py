@@ -34,6 +34,7 @@ from app.repositories.interaction_repository import InteractionRepository
 from app.services.interaction_service import InteractionService
 from app.services.provider_service import ProviderService
 from app.services.export_service import ExportService
+from app.services.batch_service import BatchService
 
 # Create database engine
 engine = create_engine(
@@ -44,6 +45,9 @@ engine = create_engine(
 
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Singleton batch service (needs session factory for background jobs)
+batch_service_instance = BatchService(SessionLocal)
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -120,3 +124,8 @@ def get_export_service(
     ExportService instance
   """
   return ExportService(interaction_service)
+
+
+def get_batch_service() -> BatchService:
+  """Provide the singleton BatchService instance."""
+  return batch_service_instance

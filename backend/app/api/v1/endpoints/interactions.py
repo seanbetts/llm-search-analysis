@@ -1,31 +1,75 @@
 """Interactions API endpoints."""
 
 import math
-from typing import List, Optional
 from datetime import datetime
+from typing import Optional
+
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import PlainTextResponse
 
-from app.api.v1.schemas.requests import SendPromptRequest, SaveNetworkLogRequest
+from app.api.v1.schemas.requests import BatchRequest, SaveNetworkLogRequest, SendPromptRequest
 from app.api.v1.schemas.responses import (
-  SendPromptResponse,
-  InteractionSummary,
+  BatchStatus,
   PaginatedInteractionList,
   PaginationMeta,
+  SendPromptResponse,
 )
-from app.services.interaction_service import InteractionService
-from app.services.provider_service import ProviderService
-from app.services.export_service import ExportService
-from app.dependencies import get_interaction_service, get_provider_service, get_export_service
 from app.core.exceptions import (
-  ProviderError,
-  ModelNotSupportedError,
   APIKeyMissingError,
   InteractionNotFoundError,
-  InternalServerError,
+  InvalidRequestError,
+  ModelNotSupportedError,
+  ProviderError,
 )
+from app.dependencies import (
+  get_batch_service,
+  get_export_service,
+  get_interaction_service,
+  get_provider_service,
+)
+from app.services.batch_service import BatchService
+from app.services.export_service import ExportService
+from app.services.interaction_service import InteractionService
+from app.services.provider_service import ProviderService
 
 router = APIRouter(prefix="/interactions", tags=["interactions"])
+
+
+@router.post(
+  "/batch",
+  response_model=BatchStatus,
+  status_code=status.HTTP_202_ACCEPTED,
+  summary="Start backend-managed batch processing",
+  description="Submit prompts and models for asynchronous batch execution. "
+  "Use GET /interactions/batch/{batch_id} to poll status as results complete.",
+)
+async def start_batch(
+  request: BatchRequest,
+  batch_service: BatchService = Depends(get_batch_service),
+):
+  """Start a backend-managed batch job."""
+  try:
+    return await batch_service.start_batch(request)
+  except ValueError as exc:
+    raise InvalidRequestError(str(exc))
+
+
+@router.get(
+  "/batch/{batch_id}",
+  response_model=BatchStatus,
+  status_code=status.HTTP_200_OK,
+  summary="Get batch processing status",
+  description="Returns current progress and completed results for a batch job.",
+)
+async def get_batch_status(
+  batch_id: str,
+  batch_service: BatchService = Depends(get_batch_service),
+):
+  """Return current status/results for a batch job."""
+  try:
+    return batch_service.get_status(batch_id)
+  except ValueError:
+    raise InteractionNotFoundError(batch_id)
 
 
 @router.post(
@@ -156,11 +200,11 @@ async def send_prompt(
       # Generic invalid request
       from app.core.exceptions import InvalidRequestError
       raise InvalidRequestError(str(e))
-  except Exception as e:
+  except Exception as exc:
     # Check if it's a provider API error
-    if "API error" in str(e) or "provider" in str(e).lower():
+    if "API error" in str(exc) or "provider" in str(exc).lower():
       provider_name = request.model.split('-')[0] if request.model else "unknown"
-      raise ProviderError(provider_name, str(e))
+      raise ProviderError(provider_name, str(exc))
     # Otherwise, let global handler catch it
     raise
 
@@ -240,7 +284,7 @@ async def save_network_log_data(
   except ValueError as e:
     from app.core.exceptions import InvalidRequestError
     raise InvalidRequestError(str(e))
-  except Exception as e:
+  except Exception:
     # Let global handler catch it
     raise
 
@@ -255,12 +299,32 @@ async def save_network_log_data(
 )
 async def get_recent_interactions(
   page: int = Query(default=1, ge=1, description="Page number (1-indexed)"),
-  page_size: int = Query(default=20, ge=1, le=100, description="Items per page (max 100)"),
-  data_source: Optional[str] = Query(default=None, description="Filter by data source (api or network_log)"),
-  provider: Optional[str] = Query(default=None, description="Filter by provider name (e.g., openai)"),
-  model: Optional[str] = Query(default=None, description="Filter by model name (e.g., gpt-4o)"),
-  date_from: Optional[datetime] = Query(default=None, description="Filter by created_at >= date_from (ISO 8601)"),
-  date_to: Optional[datetime] = Query(default=None, description="Filter by created_at <= date_to (ISO 8601)"),
+  page_size: int = Query(
+    default=20,
+    ge=1,
+    le=100,
+    description="Items per page (max 100)"
+  ),
+  data_source: Optional[str] = Query(
+    default=None,
+    description="Filter by data source (api or network_log)"
+  ),
+  provider: Optional[str] = Query(
+    default=None,
+    description="Filter by provider name (e.g., openai)"
+  ),
+  model: Optional[str] = Query(
+    default=None,
+    description="Filter by model name (e.g., gpt-4o)"
+  ),
+  date_from: Optional[datetime] = Query(
+    default=None,
+    description="Filter by created_at >= date_from (ISO 8601)"
+  ),
+  date_to: Optional[datetime] = Query(
+    default=None,
+    description="Filter by created_at <= date_to (ISO 8601)"
+  ),
   interaction_service: InteractionService = Depends(get_interaction_service),
 ):
   """Get recent interactions with pagination and filtering.
@@ -316,7 +380,10 @@ async def get_recent_interactions(
   response_model=SendPromptResponse,
   status_code=status.HTTP_200_OK,
   summary="Get interaction details",
-  description="Get full details of a specific interaction including all search queries, sources, and citations.",
+  description=(
+    "Get full details of a specific interaction including all search queries, "
+    "sources, and citations."
+  ),
   responses={
     404: {
       "description": "Interaction not found",
@@ -378,7 +445,10 @@ async def get_interaction_details(
   response_class=PlainTextResponse,
   status_code=status.HTTP_200_OK,
   summary="Export interaction as Markdown",
-  description="Export an interaction as formatted Markdown with all details, sources, and citations.",
+  description=(
+    "Export an interaction as formatted Markdown with all details, "
+    "sources, and citations."
+  ),
   responses={
     404: {
       "description": "Interaction not found",
