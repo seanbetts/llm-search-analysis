@@ -1,3 +1,21 @@
+"""Request schemas for API endpoints.
+
+This module defines Pydantic models for validating incoming API requests.
+All request schemas include field validation, type checking, and helpful
+examples for API documentation.
+
+Key Schemas:
+- SendPromptRequest: Submit a prompt to an LLM provider
+- SaveNetworkLogRequest: Save network-captured interaction data
+- UpdateInteractionRequest: Update existing interaction metadata
+
+The schemas enforce:
+- Type safety with Pydantic validation
+- Field constraints (min/max length, allowed values)
+- Custom validators for security (XSS prevention, URL validation)
+- Automatic OpenAPI documentation generation
+"""
+
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 import re
