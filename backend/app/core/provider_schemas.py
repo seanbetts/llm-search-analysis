@@ -24,18 +24,24 @@ class _BaseModel(BaseModel):
 # ---------------------------------------------------------------------------
 
 class OpenAIUrlSource(_BaseModel):
+  """Source URL found during OpenAI web search."""
+
   url: str
   title: Optional[str] = None
   type: Optional[str] = None
 
 
 class OpenAIWebSearchAction(_BaseModel):
+  """Web search action performed by OpenAI model."""
+
   type: Optional[str] = None
   query: Optional[str] = None
   sources: Optional[List[OpenAIUrlSource]] = None
 
 
 class OpenAIAnnotation(_BaseModel):
+  """Citation annotation in OpenAI response text."""
+
   type: Optional[str] = None
   url: Optional[str] = None
   title: Optional[str] = None
@@ -44,12 +50,16 @@ class OpenAIAnnotation(_BaseModel):
 
 
 class OpenAIContentItem(_BaseModel):
+  """Content block in OpenAI output with optional annotations."""
+
   type: str
   text: Optional[str] = None
   annotations: Optional[List[OpenAIAnnotation]] = None
 
 
 class OpenAIOutputItem(_BaseModel):
+  """Individual output item from OpenAI response."""
+
   type: str
   status: Optional[str] = None
   action: Optional[OpenAIWebSearchAction] = None
@@ -57,6 +67,8 @@ class OpenAIOutputItem(_BaseModel):
 
 
 class OpenAIResponse(_BaseModel):
+  """Top-level OpenAI Responses API response structure."""
+
   id: str
   model: str
   output: List[OpenAIOutputItem]
@@ -67,28 +79,38 @@ class OpenAIResponse(_BaseModel):
 # ---------------------------------------------------------------------------
 
 class AnthropicCitation(_BaseModel):
+  """Citation embedded in Anthropic response text."""
+
   url: Optional[str] = None
   title: Optional[str] = None
 
 
 class AnthropicTextBlock(_BaseModel):
+  """Text content block with inline citations from Anthropic."""
+
   type: str
   text: Optional[str] = None
   citations: Optional[List[AnthropicCitation]] = None
 
 
 class AnthropicServerToolUse(_BaseModel):
+  """Server-side tool invocation from Anthropic model."""
+
   type: str
   name: Optional[str] = None
   input: Optional[Dict[str, Any]] = None
 
 
 class AnthropicSearchResult(_BaseModel):
+  """Individual search result from Anthropic web search."""
+
   url: Optional[str] = None
   title: Optional[str] = None
 
 
 class AnthropicWebSearchResult(_BaseModel):
+  """Web search tool result containing multiple search results."""
+
   type: str
   content: Optional[List[AnthropicSearchResult]] = None
 
@@ -105,6 +127,8 @@ class AnthropicContentBlock(_BaseModel):
 
 
 class AnthropicResponse(_BaseModel):
+  """Top-level Anthropic Claude API response structure."""
+
   id: str
   content: List[AnthropicContentBlock]
   model: Optional[str] = None
@@ -115,24 +139,34 @@ class AnthropicResponse(_BaseModel):
 # ---------------------------------------------------------------------------
 
 class GoogleGroundingWeb(_BaseModel):
+  """Web source used for grounding in Google Gemini response."""
+
   uri: Optional[str] = None
   title: Optional[str] = None
 
 
 class GoogleGroundingChunk(_BaseModel):
+  """Individual grounding chunk from Google Gemini."""
+
   web: Optional[GoogleGroundingWeb] = None
 
 
 class GoogleGroundingMetadata(_BaseModel):
+  """Metadata about grounding sources and queries from Google Gemini."""
+
   web_search_queries: Optional[List[str]] = None
   grounding_chunks: Optional[List[GoogleGroundingChunk]] = None
 
 
 class GoogleCandidate(_BaseModel):
+  """Response candidate from Google Gemini with grounding metadata."""
+
   grounding_metadata: Optional[GoogleGroundingMetadata] = None
 
 
 class GoogleResponse(_BaseModel):
+  """Top-level Google Gemini API response structure."""
+
   text: Optional[str] = None
   candidates: Optional[List[GoogleCandidate]] = None
 

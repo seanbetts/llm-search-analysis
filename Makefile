@@ -29,13 +29,13 @@ docstring-check:
 	@echo "Checking docstring coverage and style..."
 	@echo ""
 	@echo "Backend modules:"
-	ruff check backend/ --select D
+	ruff check backend/
 	@echo ""
 	@echo "Frontend modules:"
-	ruff check frontend/ --select D
+	ruff check frontend/
 	@echo ""
 	@echo "Scripts:"
-	ruff check scripts/ --select D
+	ruff check scripts/
 
 docstring-fix:
 	@echo "Auto-fixing docstring formatting..."

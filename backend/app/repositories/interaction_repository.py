@@ -89,6 +89,7 @@ class InteractionRepository:
       response_source_lookup: dict = {}
 
       def register_source(lookup: dict, url: str, rank: Optional[int], source_id: int):
+        """Register a source in the lookup dictionary for deduplication."""
         if not url:
           return
         normalized_url = url.strip()
@@ -98,6 +99,7 @@ class InteractionRepository:
         lookup.setdefault(fallback_key, []).append(source_id)
 
       def match_source(lookup: dict, url: Optional[str], rank: Optional[int]) -> Optional[int]:
+        """Find matching source ID from lookup dictionary by URL and rank."""
         if not url:
           return None
         normalized_url = url.strip()

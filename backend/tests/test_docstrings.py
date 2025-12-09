@@ -332,12 +332,11 @@ def test_module_docstrings(python_files: List[Path]):
         )
 
 
-@pytest.mark.xfail(reason="Not all classes have docstrings yet - gradual improvement")
 def test_class_docstrings(python_files: List[Path]):
     """Test that all classes have docstrings.
 
     This test checks for D101 violations (missing class docstrings).
-    Currently set to XFAIL to allow gradual improvement.
+    Phase 2 complete - all classes now have docstrings.
     """
     all_errors = []
     for file_path in python_files:
@@ -356,12 +355,11 @@ def test_class_docstrings(python_files: List[Path]):
         )
 
 
-@pytest.mark.xfail(reason="Not all functions have docstrings yet - gradual improvement")
 def test_function_docstrings(python_files: List[Path]):
     """Test that all public functions have docstrings.
 
     This test checks for D102/D103 violations (missing function docstrings).
-    Currently set to XFAIL to allow gradual improvement.
+    Phase 2 complete - all public functions now have docstrings.
     """
     all_errors = []
     for file_path in python_files:
