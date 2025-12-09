@@ -248,6 +248,7 @@ def tab_history():
         file_name=f"query_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
         mime="text/csv",
         use_container_width=True,
+        key="history-export-csv",
       )
     st.divider()
 
@@ -291,6 +292,7 @@ def tab_history():
               file_name=f"interaction_{selected_id}.md",
               mime="text/markdown",
               use_container_width=True,
+              key=f"history-detail-md-{selected_id}",
             )
           with btn_col2:
             if st.button("🗑️ Delete Interaction", type="secondary", use_container_width=True):

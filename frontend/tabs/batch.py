@@ -129,7 +129,8 @@ def render_batch_results(results: List[Dict[str, Any]], placeholder: Optional[An
     label="📥 Download Results as CSV",
     data=csv,
     file_name=f"batch_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-    mime="text/csv"
+    mime="text/csv",
+    key="batch-results-download"
   )
 
   if summary['failed']:
