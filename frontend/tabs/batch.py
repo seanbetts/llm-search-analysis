@@ -125,12 +125,15 @@ def render_batch_results(results: List[Dict[str, Any]], placeholder: Optional[An
     target.dataframe(df_results, use_container_width=True)
 
   csv = df_results.to_csv(index=False)
+  download_key_suffix = st.session_state.get('batch_results_download_key', 'default')
+  render_counter = st.session_state.get('batch_results_render_counter', 0) + 1
+  st.session_state['batch_results_render_counter'] = render_counter
   target.download_button(
     label="📥 Download Results as CSV",
     data=csv,
     file_name=f"batch_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
     mime="text/csv",
-    key="batch-results-download"
+    key=f"batch-results-download-{download_key_suffix}-{render_counter}"
   )
 
   if summary['failed']:
@@ -143,6 +146,8 @@ def render_batch_results(results: List[Dict[str, Any]], placeholder: Optional[An
 def tab_batch():
   """Tab 2: Batch Analysis."""
   st.session_state.setdefault('batch_results', [])
+  st.session_state.setdefault('batch_results_download_key', 'initial')
+  st.session_state.setdefault('batch_results_render_counter', 0)
   st.markdown("### 📦 Batch Analysis")
   st.caption("Run multiple prompts and analyze aggregate results")
 
@@ -212,9 +217,18 @@ def tab_batch():
     total_runs = len(prompts) * len(selected_models)
     st.info(f"Ready to process {len(prompts)} prompt(s) × {len(selected_models)} model(s) = {total_runs} total runs")
 
-  # Run button
-  if st.button("▶️ Run Batch Analysis", type="primary", disabled=len(prompts) == 0 or len(selected_models) == 0):
+  run_batch_clicked = st.button(
+    "▶️ Run Batch Analysis",
+    type="primary",
+    disabled=len(prompts) == 0 or len(selected_models) == 0
+  )
+
+  rendered_results = False
+  results_placeholder = None
+
+  if run_batch_clicked:
     st.session_state.batch_results = []
+    st.session_state.batch_results_render_counter = 0
 
     if st.session_state.data_collection_mode == 'api':
       model_ids = [model_name for (_, _, model_name) in selected_models]
@@ -235,6 +249,7 @@ def tab_batch():
 
       batch_id = batch_payload.get('batch_id')
       total_tasks = batch_payload.get('total_tasks', len(prompts) * len(selected_models))
+      st.session_state.batch_results_download_key = f"api-{batch_id or int(time.time())}"
 
       status_text.text(f"Batch {batch_id} submitted. Waiting for first results...")
 
@@ -258,6 +273,7 @@ def tab_batch():
         status_text.text(f"{status_label}: {completed}/{total_tasks} runs complete")
 
         render_batch_results(rows, placeholder=results_placeholder)
+        rendered_results = True
 
         if status_data.get('status') in ('completed', 'failed'):
           break
@@ -274,6 +290,7 @@ def tab_batch():
       # Calculate total runs
       total_runs = len(prompts) * len(selected_models)
       current_run = 0
+      st.session_state.batch_results_download_key = f"net-{int(time.time())}"
 
       # Process each prompt with each model in network capture mode
       for prompt_idx, prompt in enumerate(prompts):
@@ -397,9 +414,12 @@ def tab_batch():
           # Update progress
           progress_bar.progress(current_run / total_runs)
           render_batch_results(st.session_state.batch_results, placeholder=results_placeholder)
+          rendered_results = True
 
       status_text.text("✅ Batch processing complete!")
 
-  # Display results
-  if st.session_state.batch_results:
-    render_batch_results(st.session_state.batch_results)
+  if results_placeholder is None:
+    results_placeholder = st.empty()
+
+  if st.session_state.batch_results and not rendered_results:
+    render_batch_results(st.session_state.batch_results, placeholder=results_placeholder)
