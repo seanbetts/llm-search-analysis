@@ -233,7 +233,7 @@ def tab_batch():
     if st.session_state.data_collection_mode == 'api':
       model_ids = [model_name for (_, _, model_name) in selected_models]
       progress_bar = st.progress(0)
-      status_text = st.empty()
+      status_indicator = st.status("Preparing batch...", expanded=False)
       results_placeholder = st.empty()
 
       batch_payload, creation_error = safe_api_call(
@@ -251,7 +251,10 @@ def tab_batch():
       total_tasks = batch_payload.get('total_tasks', len(prompts) * len(selected_models))
       st.session_state.batch_results_download_key = f"api-{batch_id or int(time.time())}"
 
-      status_text.text(f"Batch {batch_id} submitted. Waiting for first results...")
+      status_indicator.update(
+        label=f"Submitting Batch {batch_id}... Waiting for first results.",
+        state="running"
+      )
 
       while True:
         status_data, status_error = safe_api_call(
@@ -270,7 +273,10 @@ def tab_batch():
         status_label = status_data.get('status', 'processing').title()
         progress = completed / total_tasks if total_tasks else 0
         progress_bar.progress(progress)
-        status_text.text(f"{status_label}: {completed}/{total_tasks} runs complete")
+        status_indicator.update(
+          label=f"{status_label}: {completed}/{total_tasks} runs complete",
+          state="running"
+        )
 
         render_batch_results(rows, placeholder=results_placeholder)
         rendered_results = True
@@ -279,12 +285,12 @@ def tab_batch():
           break
         time.sleep(1)
 
-      status_text.text("✅ Batch processing complete!")
+      status_indicator.update(label="✅ Batch processing complete!", state="complete")
 
     else:
       # Progress tracking
       progress_bar = st.progress(0)
-      status_text = st.empty()
+      status_indicator = st.status("Preparing batch...", expanded=False)
       results_placeholder = st.empty()
 
       # Calculate total runs
@@ -296,7 +302,10 @@ def tab_batch():
       for prompt_idx, prompt in enumerate(prompts):
         for model_label, provider_name, model_name in selected_models:
           current_run += 1
-          status_text.text(f"Processing run {current_run}/{total_runs}: {model_label} - Prompt {prompt_idx + 1}/{len(prompts)}")
+          status_indicator.update(
+            label=f"Processing {current_run}/{total_runs} · {model_label} · Prompt {prompt_idx + 1}/{len(prompts)}",
+            state="running"
+          )
 
           try:
             # Only ChatGPT is supported for network logs currently
@@ -416,7 +425,7 @@ def tab_batch():
           render_batch_results(st.session_state.batch_results, placeholder=results_placeholder)
           rendered_results = True
 
-      status_text.text("✅ Batch processing complete!")
+      status_indicator.update(label="✅ Batch processing complete!", state="complete")
 
   if results_placeholder is None:
     results_placeholder = st.empty()
