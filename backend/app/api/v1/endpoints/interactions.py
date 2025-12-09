@@ -123,8 +123,7 @@ async def send_prompt(
   request: SendPromptRequest,
   provider_service: ProviderService = Depends(get_provider_service),
 ):
-  """
-  Send a prompt to an LLM provider.
+  """Send a prompt to an LLM provider.
 
   Args:
     request: SendPromptRequest with prompt, provider, model, and options
@@ -206,8 +205,7 @@ async def save_network_log_data(
   request: SaveNetworkLogRequest,
   interaction_service: InteractionService = Depends(get_interaction_service),
 ):
-  """
-  Save network_log mode data captured by frontend.
+  """Save network_log mode data captured by frontend.
 
   This endpoint is used when the frontend captures LLM interaction data via
   browser automation (network_log mode). The frontend sends the captured data
@@ -265,8 +263,7 @@ async def get_recent_interactions(
   date_to: Optional[datetime] = Query(default=None, description="Filter by created_at <= date_to (ISO 8601)"),
   interaction_service: InteractionService = Depends(get_interaction_service),
 ):
-  """
-  Get recent interactions with pagination and filtering.
+  """Get recent interactions with pagination and filtering.
 
   Args:
     page: Page number (1-indexed, default 1)
@@ -357,8 +354,7 @@ async def get_interaction_details(
   interaction_id: int,
   interaction_service: InteractionService = Depends(get_interaction_service),
 ):
-  """
-  Get interaction details by ID.
+  """Get interaction details by ID.
 
   Args:
     interaction_id: The interaction ID
@@ -420,8 +416,7 @@ async def export_interaction_markdown(
   interaction_id: int,
   export_service: ExportService = Depends(get_export_service),
 ):
-  """
-  Export interaction as Markdown.
+  """Export interaction as Markdown.
 
   Args:
     interaction_id: The interaction ID to export
@@ -482,8 +477,7 @@ async def delete_interaction(
   interaction_id: int,
   interaction_service: InteractionService = Depends(get_interaction_service),
 ):
-  """
-  Delete an interaction.
+  """Delete an interaction.
 
   Args:
     interaction_id: The interaction ID
