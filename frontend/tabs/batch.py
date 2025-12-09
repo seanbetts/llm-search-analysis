@@ -215,12 +215,13 @@ def tab_batch():
   # Run button
   if st.button("▶️ Run Batch Analysis", type="primary", disabled=len(prompts) == 0 or len(selected_models) == 0):
     st.session_state.batch_results = []
+    results_placeholder = st.empty()
+    render_batch_results([], placeholder=results_placeholder)
 
     if st.session_state.data_collection_mode == 'api':
       model_ids = [model_name for (_, _, model_name) in selected_models]
       progress_bar = st.progress(0)
       status_text = st.empty()
-      results_placeholder = st.empty()
 
       batch_payload, creation_error = safe_api_call(
         st.session_state.api_client.start_batch,
