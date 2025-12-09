@@ -264,6 +264,7 @@ class NetworkLogSource(BaseModel):
   @field_validator("metadata")
   @classmethod
   def validate_metadata(cls, value: Optional[Dict[str, Any]]):
+    """Validate and serialize metadata to JSON-safe format."""
     return dump_metadata(SourceMetadata, value)
 
 
@@ -281,6 +282,7 @@ class NetworkLogCitation(BaseModel):
   @field_validator("metadata")
   @classmethod
   def validate_metadata(cls, value: Optional[Dict[str, Any]]):
+    """Validate and serialize citation metadata to JSON-safe format."""
     return dump_metadata(CitationMetadata, value)
 
 
@@ -304,6 +306,7 @@ class NetworkLogSearchQuery(BaseModel):
   @field_validator("internal_ranking_scores")
   @classmethod
   def validate_internal_scores(cls, value: Optional[Dict[str, Any]]):
+    """Validate internal ranking scores are a dictionary."""
     if value is None:
       return None
     if not isinstance(value, dict):
