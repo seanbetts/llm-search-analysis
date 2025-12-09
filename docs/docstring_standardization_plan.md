@@ -212,7 +212,7 @@ convention = "google"
 
 **Short-term** (Week 2-3):
 7. ✅ Phase 1 backfill complete: Added module docstrings to `main.py`, `config.py`, fixed formatting issues
-8. Implement pytest enforcement tests (`backend/tests/test_docstrings.py`, `frontend/tests/test_docstrings.py`)
+8. ✅ Pytest enforcement tests implemented with AST-based coverage checking and reporting
 9. Validate tooling on existing well-documented modules (exceptions, utils, repositories)
 
 **Medium-term** (Week 4-6):
