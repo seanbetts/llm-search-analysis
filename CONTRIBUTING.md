@@ -7,6 +7,11 @@ Thank you for your interest in contributing to LLM Search Analysis! This guide w
 - [Getting Started](#getting-started)
 - [Development Setup](#development-setup)
 - [Docstring Style (Google)](#docstring-style-google)
+  - [Quick Reference Templates](#quick-reference-templates)
+  - [VS Code Snippets](#vs-code-snippets)
+  - [Validation Tools](#validation-tools)
+  - [CI Enforcement](#ci-enforcement)
+  - [Pre-commit Hook](#pre-commit-hook-optional)
 - [Testing Requirements](#testing-requirements)
 - [Pull Request Process](#pull-request-process)
 - [Code Review Guidelines](#code-review-guidelines)
@@ -393,6 +398,149 @@ Before submitting a PR, verify your docstrings:
 - [ ] Grammar and spelling are correct
 - [ ] Lines wrapped at reasonable length (recommendation: 88 characters)
 
+### Quick Reference Templates
+
+Copy-paste these templates as starting points for your docstrings:
+
+**Module Template**:
+```python
+"""Brief description of what this module does.
+
+More detailed explanation if needed. Describe the module's purpose,
+key classes/functions, and how it fits into the larger system.
+
+Common use cases:
+- Use case 1
+- Use case 2
+
+Key components:
+- Component1: What it does
+- Component2: What it does
+"""
+```
+
+**Class Template**:
+```python
+class MyClass:
+    """One-line summary of the class purpose.
+
+    More detailed description of what the class represents and its
+    responsibilities. Describe key design decisions or patterns used.
+
+    Attributes:
+        attr1: Description of attribute
+        attr2: Description of attribute
+
+    Example:
+        >>> obj = MyClass(param1="value")
+        >>> result = obj.method()
+    """
+```
+
+**Function Template (Simple)**:
+```python
+def simple_function(param: str) -> bool:
+    """One-line description of what the function does."""
+```
+
+**Function Template (Complex)**:
+```python
+def complex_function(
+    param1: str,
+    param2: int,
+    param3: Optional[dict] = None
+) -> Dict[str, Any]:
+    """One-line summary of the function's purpose.
+
+    Extended description with more context. Explain why this function
+    exists, any important algorithms or patterns, and gotchas.
+
+    Args:
+        param1: Description of param1 and its purpose
+        param2: Description of param2, including valid range if applicable
+        param3: Optional parameter description (default: None)
+
+    Returns:
+        Dictionary containing:
+            - 'key1': Description of this key
+            - 'key2': Description of this key
+
+    Raises:
+        ValueError: When param1 is empty or invalid
+        APIError: When external service call fails
+
+    Example:
+        >>> result = complex_function("test", 42)
+        >>> print(result['key1'])
+    """
+```
+
+**Async Function Template**:
+```python
+async def async_function(param: str) -> None:
+    """One-line description of async operation.
+
+    Args:
+        param: Parameter description
+
+    Raises:
+        TimeoutError: If operation takes too long
+    """
+```
+
+**Property Template**:
+```python
+@property
+def my_property(self) -> str:
+    """Brief description of what this property represents."""
+```
+
+### VS Code Snippets
+
+Add these to your VS Code user snippets (Python) for quick access:
+
+```json
+{
+  "Google-style Module Docstring": {
+    "prefix": "docmod",
+    "body": [
+      "\"\"\"${1:Brief module description.}",
+      "",
+      "${2:Extended description of module purpose and contents.}",
+      "\"\"\""
+    ]
+  },
+  "Google-style Function Docstring": {
+    "prefix": "docfunc",
+    "body": [
+      "\"\"\"${1:Brief function description.}",
+      "",
+      "Args:",
+      "    ${2:param}: ${3:Parameter description}",
+      "",
+      "Returns:",
+      "    ${4:Return value description}",
+      "",
+      "Raises:",
+      "    ${5:ExceptionType}: ${6:When this is raised}",
+      "\"\"\""
+    ]
+  },
+  "Google-style Class Docstring": {
+    "prefix": "docclass",
+    "body": [
+      "\"\"\"${1:Brief class description.}",
+      "",
+      "${2:Extended description of class purpose.}",
+      "",
+      "Attributes:",
+      "    ${3:attr}: ${4:Attribute description}",
+      "\"\"\""
+    ]
+  }
+}
+```
+
 ### Validation Tools
 
 We use **Ruff** to enforce docstring standards. Use the convenient Make commands:
@@ -425,6 +573,55 @@ pytest backend/tests/test_docstrings.py -v
 # Frontend docstring coverage
 pytest frontend/tests/test_docstrings.py -v
 ```
+
+### CI Enforcement
+
+**Current Status**: Docstring checks are **enabled in local development** but **not yet enforced in CI**.
+
+We currently have:
+- ✅ 100% docstring coverage across modules, classes, and functions
+- ✅ Pytest tests that enforce coverage on new code
+- ✅ Ruff configuration for style checking
+- ✅ Make commands for convenient validation
+
+**What happens in CI**:
+- Tests run but docstring tests are informational only
+- No build failures for missing docstrings yet
+- Developers are expected to run `make docstring-check` locally
+
+**Planned**: We plan to enable strict CI enforcement in a future update. When enabled:
+- PRs will fail if docstring coverage drops below 100%
+- PRs will fail if Ruff finds docstring style violations
+- Only exceptions: `__init__.py` files (D104) and `__init__` methods (D107)
+
+**For now**: Please ensure your changes pass `make docstring-check` before submitting PRs. Reviewers will check docstring quality as part of code review.
+
+### Pre-commit Hook (Optional)
+
+You can optionally set up a pre-commit hook to check docstrings before each commit:
+
+Create `.git/hooks/pre-commit`:
+```bash
+#!/bin/bash
+# Check docstrings before commit
+
+echo "Running docstring checks..."
+if ! make docstring-check > /dev/null 2>&1; then
+    echo "❌ Docstring check failed. Run 'make docstring-check' to see issues."
+    echo "   You can skip this check with 'git commit --no-verify' if needed."
+    exit 1
+fi
+
+echo "✅ Docstring check passed"
+exit 0
+```
+
+Make it executable:
+```bash
+chmod +x .git/hooks/pre-commit
+```
+
+You can skip the hook temporarily with `git commit --no-verify`.
 
 ## Testing Requirements
 
