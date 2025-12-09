@@ -1,3 +1,23 @@
+"""Response schemas for API endpoints.
+
+This module defines Pydantic models for API responses returned to clients.
+All response schemas provide consistent structure and automatic OpenAPI
+documentation.
+
+Key Schemas:
+- SendPromptResponse: Full interaction data after sending a prompt
+- InteractionResponse: Individual interaction details
+- PaginatedInteractionList: Paginated list of interactions
+- Provider/ModelResponse: Available providers and models
+- Source/SearchQuery: Search data embedded in responses
+
+The schemas ensure:
+- Consistent response format across all endpoints
+- Type-safe serialization from database models
+- Rich metadata for API consumers
+- Automatic OpenAPI/Swagger documentation
+"""
+
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field

@@ -6,14 +6,17 @@ Complete guide for backing up and restoring the SQLite database in the LLM Searc
 
 ```bash
 # Create a backup
-./scripts/backup-database.sh
+./backend/scripts/backup-database.sh
 
 # Restore from a backup
-./scripts/restore-database.sh ./backups/llm_search_20250102_143000.db
+./backend/scripts/restore-database.sh ./backend/backups/llm_search_20250102_143000.db
 
 # Verify Docker setup
 ./scripts/verify-docker-setup.sh
 ```
+
+> **Note:** Database maintenance scripts now live under `backend/scripts`.
+> Run them from the project root so relative paths (e.g., `./backend/backups`) resolve.
 
 ---
 
@@ -48,7 +51,7 @@ The backup script automatically:
 
 **Customize retention:**
 ```bash
-# Edit scripts/backup-database.sh
+# Edit backend/scripts/backup-database.sh
 # Change this line to keep more/fewer backups:
 OLD_BACKUPS=$(ls -1t "$BACKUP_DIR"/*.db 2>/dev/null | tail -n +11)  # Keep 10
 ```
@@ -61,10 +64,10 @@ OLD_BACKUPS=$(ls -1t "$BACKUP_DIR"/*.db 2>/dev/null | tail -n +11)  # Keep 10
 
 ```bash
 # Run from project root
-./scripts/backup-database.sh
+./backend/scripts/backup-database.sh
 
 # Or specify custom backup directory
-./scripts/backup-database.sh /path/to/backups
+./backend/scripts/backup-database.sh /path/to/backups
 ```
 
 **Output:**
@@ -76,13 +79,14 @@ OLD_BACKUPS=$(ls -1t "$BACKUP_DIR"/*.db 2>/dev/null | tail -n +11)  # Keep 10
    File: backend/data/llm_search.db
    Size: 4.8M
    Interactions: 72
+   Responses: 72
 
 💾 Creating backup...
 🔍 Verifying backup integrity...
 ✅ Backup created successfully
 
 📁 Backup Details:
-   File: ./backups/llm_search_20250102_143000.db
+   File: ./backend/backups/llm_search_20250102_143000.db
    Size: 4.8M
    Created: Thu Jan 2 14:30:00 2025
 ```
@@ -98,7 +102,7 @@ OLD_BACKUPS=$(ls -1t "$BACKUP_DIR"/*.db 2>/dev/null | tail -n +11)  # Keep 10
 ### Backup File Format
 
 ```
-./backups/llm_search_YYYYMMDD_HHMMSS.db
+./backend/backups/llm_search_YYYYMMDD_HHMMSS.db
 ```
 
 **Example:**
@@ -116,10 +120,10 @@ llm_search_20250102_143000.db
 
 ```bash
 # 1. List available backups
-ls -lht ./backups/*.db
+ls -lht ./backend/backups/*.db
 
 # 2. Restore from specific backup
-./scripts/restore-database.sh ./backups/llm_search_20250102_143000.db
+./backend/scripts/restore-database.sh ./backend/backups/llm_search_20250102_143000.db
 ```
 
 **Interactive Restore:**
@@ -131,15 +135,17 @@ ls -lht ./backups/*.db
 ✅ Backup file is valid
 
 📊 Backup Info:
-   File: ./backups/llm_search_20250102_143000.db
+   File: ./backend/backups/llm_search_20250102_143000.db
    Size: 4.8M
    Date: Jan 2 14:30
    Interactions: 72
+   Responses: 72
 
 ⚠️  Current Database (will be replaced):
    File: backend/data/llm_search.db
    Size: 4.9M
    Interactions: 75
+   Responses: 75
 
 ⚠️  WARNING: This will replace the current database!
 
@@ -150,7 +156,7 @@ Continue with restore? (yes/no):
 
 **Force Restore (no prompts):**
 ```bash
-./scripts/restore-database.sh ./backups/llm_search_20250102_143000.db --force
+./backend/scripts/restore-database.sh ./backend/backups/llm_search_20250102_143000.db --force
 ```
 
 ### What the Restore Script Does
@@ -184,14 +190,14 @@ Add to your crontab:
 crontab -e
 
 # Add daily backup at 2 AM
-0 2 * * * cd /path/to/llm-search-analysis && ./scripts/backup-database.sh >> /var/log/llm-backup.log 2>&1
+0 2 * * * cd /path/to/llm-search-analysis && ./backend/scripts/backup-database.sh >> /var/log/llm-backup.log 2>&1
 ```
 
 ### Weekly Backup (Cron Job)
 
 ```bash
 # Add weekly backup every Sunday at 3 AM
-0 3 * * 0 cd /path/to/llm-search-analysis && ./scripts/backup-database.sh /path/to/weekly-backups >> /var/log/llm-backup-weekly.log 2>&1
+0 3 * * 0 cd /path/to/llm-search-analysis && ./backend/scripts/backup-database.sh /path/to/weekly-backups >> /var/log/llm-backup-weekly.log 2>&1
 ```
 
 ### Backup Before Docker Operations
@@ -200,7 +206,7 @@ crontab -e
 # In your deployment script
 #!/bin/bash
 echo "Creating backup before deployment..."
-./scripts/backup-database.sh
+./backend/scripts/backup-database.sh
 
 echo "Rebuilding containers..."
 docker-compose down
@@ -224,7 +230,7 @@ echo "Verifying deployment..."
 ```bash
 # Must run from project root
 cd /path/to/llm-search-analysis
-./scripts/backup-database.sh
+./backend/scripts/backup-database.sh
 ```
 
 #### "Backup integrity check failed"
@@ -237,7 +243,7 @@ cd /path/to/llm-search-analysis
 sqlite3 backend/data/llm_search.db "PRAGMA integrity_check;"
 
 # If corrupted, restore from previous backup
-./scripts/restore-database.sh ./backups/llm_search_YYYYMMDD_HHMMSS.db
+./backend/scripts/restore-database.sh ./backend/backups/llm_search_YYYYMMDD_HHMMSS.db
 ```
 
 ### Restore Script Issues
@@ -249,8 +255,8 @@ sqlite3 backend/data/llm_search.db "PRAGMA integrity_check;"
 **Solution:**
 ```bash
 # Try a different backup
-ls -lht ./backups/*.db
-./scripts/restore-database.sh ./backups/llm_search_OLDER_DATE.db
+ls -lht ./backend/backups/*.db
+./backend/scripts/restore-database.sh ./backend/backups/llm_search_OLDER_DATE.db
 ```
 
 #### "Docker containers still running"
@@ -261,7 +267,7 @@ ls -lht ./backups/*.db
 ```bash
 # Manual restore process
 docker-compose down
-./scripts/restore-database.sh ./backups/llm_search_20250102_143000.db --force
+./backend/scripts/restore-database.sh ./backend/backups/llm_search_20250102_143000.db --force
 docker-compose up -d
 ```
 
@@ -275,7 +281,7 @@ docker-compose up -d
 docker-compose down
 
 # Create backup
-./scripts/backup-database.sh
+./backend/scripts/backup-database.sh
 
 # Restart containers
 docker-compose up -d
@@ -315,7 +321,7 @@ If scripts aren't available, you can backup manually:
 docker-compose down
 
 # Hot backup (safe while app running)
-sqlite3 backend/data/llm_search.db ".backup './backups/manual_backup.db'"
+sqlite3 backend/data/llm_search.db ".backup './backend/backups/manual_backup.db'"
 
 # Restart containers
 docker-compose up -d
@@ -328,7 +334,7 @@ docker-compose up -d
 docker-compose down
 
 # Copy file
-cp backend/data/llm_search.db ./backups/manual_backup_$(date +%Y%m%d).db
+cp backend/data/llm_search.db ./backend/backups/manual_backup_$(date +%Y%m%d).db
 
 # Restart
 docker-compose up -d
@@ -338,11 +344,11 @@ docker-compose up -d
 
 ```bash
 # Check integrity
-sqlite3 ./backups/manual_backup.db "PRAGMA integrity_check;"
+sqlite3 ./backend/backups/manual_backup.db "PRAGMA integrity_check;"
 # Should output: ok
 
 # Check data
-sqlite3 ./backups/manual_backup.db "SELECT COUNT(*) FROM responses;"
+sqlite3 ./backend/backups/manual_backup.db "SELECT COUNT(*) FROM responses;"
 ```
 
 ---
@@ -360,7 +366,7 @@ If database is completely lost:
 
 2. **Restore from most recent backup**
    ```bash
-   ./scripts/restore-database.sh ./backups/llm_search_LATEST.db --force
+   ./backend/scripts/restore-database.sh ./backend/backups/llm_search_LATEST.db --force
    ```
 
 3. **Verify restoration**
@@ -385,11 +391,11 @@ To recover to a specific point in time:
 
 ```bash
 # List backups with timestamps
-ls -lht ./backups/*.db
+ls -lht ./backend/backups/*.db
 
 # Find backup closest to desired time
 # Example: Restore to Jan 2, 14:30
-./scripts/restore-database.sh ./backups/llm_search_20250102_143000.db
+./backend/scripts/restore-database.sh ./backend/backups/llm_search_20250102_143000.db
 ```
 
 ---
@@ -398,21 +404,21 @@ ls -lht ./backups/*.db
 
 ### Local Storage
 
-Backups are stored in `./backups/` by default:
+Backups are stored in `./backend/backups/` by default:
 
 ```
 llm-search-analysis/
-├── backups/
-│   ├── llm_search_20250102_143000.db (4.8M)
-│   ├── llm_search_20250102_020000.db (4.7M)
-│   ├── llm_search_20250101_143000.db (4.6M)
-│   └── ...
-├── backend/
-│   └── data/
-│       └── llm_search.db (current database)
-└── scripts/
-    ├── backup-database.sh
-    └── restore-database.sh
+└── backend/
+    ├── backups/
+    │   ├── llm_search_20250102_143000.db (4.8M)
+    │   ├── llm_search_20250102_020000.db (4.7M)
+    │   ├── llm_search_20250101_143000.db (4.6M)
+    │   └── ...
+    ├── data/
+    │   └── llm_search.db (current database)
+    └── scripts/
+        ├── backup-database.sh
+        └── restore-database.sh
 ```
 
 ### Cloud Storage (Recommended)
@@ -421,20 +427,20 @@ Copy backups to cloud storage for disaster recovery:
 
 ```bash
 # AWS S3
-aws s3 cp ./backups/ s3://my-bucket/llm-backups/ --recursive
+aws s3 cp ./backend/backups/ s3://my-bucket/llm-backups/ --recursive
 
 # Google Cloud Storage
-gsutil -m cp -r ./backups/ gs://my-bucket/llm-backups/
+gsutil -m cp -r ./backend/backups/ gs://my-bucket/llm-backups/
 
 # Rsync to remote server
-rsync -avz ./backups/ user@backup-server:/backups/llm-search/
+rsync -avz ./backend/backups/ user@backup-server:/backups/llm-search/
 ```
 
 ### Automated Cloud Upload
 
 ```bash
 # Add to cron after backup
-0 2 * * * cd /path/to/llm-search-analysis && ./scripts/backup-database.sh && aws s3 sync ./backups/ s3://my-bucket/llm-backups/
+0 2 * * * cd /path/to/llm-search-analysis && ./backend/scripts/backup-database.sh && aws s3 sync ./backend/backups/ s3://my-bucket/llm-backups/
 ```
 
 ---
@@ -445,7 +451,7 @@ When ready to migrate from SQLite to PostgreSQL, backups are still valuable:
 
 ```bash
 # 1. Final SQLite backup
-./scripts/backup-database.sh
+./backend/scripts/backup-database.sh
 
 # 2. Export to SQL
 sqlite3 backend/data/llm_search.db .dump > llm_search_export.sql
@@ -464,3 +470,31 @@ mv backend/data/llm_search.db backend/data/llm_search_sqlite_backup.db
 - **Environment Variables:** [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md)
 - **Docker Setup Verification:** Run `./scripts/verify-docker-setup.sh`
 - **Deployment Guide:** [IMPLEMENTATION_PLAN.md](../IMPLEMENTATION_PLAN.md)
+
+## Production Deployment Checklist (Post-Interactions Schema)
+
+When rolling the new interaction-centric schema to production:
+
+1. **Take a fresh backup**  
+   ```bash
+   ./backend/scripts/backup-database.sh
+   ```
+
+2. **Stamp legacy DBs (only once)** – If the database predates Alembic versions, set the version to the last pre-interactions revision:  
+   ```bash
+   cd backend
+   DATABASE_URL=sqlite:////absolute/path/to/backend/data/llm_search.db alembic stamp 1faa14f77fa5
+   ```
+
+3. **Run migrations**  
+   ```bash
+   DATABASE_URL=sqlite:////absolute/path/to/backend/data/llm_search.db alembic upgrade head
+   ```
+
+4. **Audit stored JSON + metrics**  
+   ```bash
+   PYTHONPATH=. DATABASE_URL=sqlite:////absolute/path/to/backend/data/llm_search.db python scripts/audit_json_payloads.py
+   PYTHONPATH=. DATABASE_URL=sqlite:////absolute/path/to/backend/data/llm_search.db python scripts/backfill_metrics.py
+   ```
+
+5. **Redeploy backend services** – Ensure CI/CD runs `alembic upgrade head` before starting the app. Remove any legacy cleanup scripts that manually deleted orphaned rows; the DB now enforces cascades.

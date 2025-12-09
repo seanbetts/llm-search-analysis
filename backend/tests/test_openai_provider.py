@@ -1,8 +1,10 @@
 """Tests for OpenAI provider implementation."""
 
 import pytest
+from copy import deepcopy
 from unittest.mock import Mock, MagicMock, patch
 from app.services.providers.openai_provider import OpenAIProvider
+from tests.fixtures import provider_payloads as payloads
 
 
 class TestOpenAIProvider:
@@ -109,7 +111,7 @@ class TestOpenAIProvider:
     mock_message.content = [mock_content]
 
     mock_response.output = [mock_search_call, mock_message]
-    mock_response.model_dump = Mock(return_value={"test": "data"})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.OPENAI_RESPONSE))
 
     provider.client.responses.create = Mock(return_value=mock_response)
 
@@ -145,7 +147,9 @@ class TestOpenAIProvider:
 
     mock_message.content = [mock_content]
     mock_response.output = [mock_message]
-    mock_response.model_dump = Mock(return_value={})
+    payload = deepcopy(payloads.OPENAI_RESPONSE)
+    payload["output"] = []
+    mock_response.model_dump = Mock(return_value=payload)
 
     provider.client.responses.create = Mock(return_value=mock_response)
 
@@ -182,7 +186,7 @@ class TestOpenAIProvider:
     mock_content.annotations = [mock_annotation1, mock_annotation2]
     mock_message.content = [mock_content]
     mock_response.output = [mock_message]
-    mock_response.model_dump = Mock(return_value={})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.OPENAI_RESPONSE))
 
     provider.client.responses.create = Mock(return_value=mock_response)
 
@@ -204,7 +208,7 @@ class TestOpenAIProvider:
     mock_search_call.action = None
 
     mock_response.output = [mock_search_call]
-    mock_response.model_dump = Mock(return_value={})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.OPENAI_RESPONSE))
 
     provider.client.responses.create = Mock(return_value=mock_response)
 
@@ -214,11 +218,24 @@ class TestOpenAIProvider:
     assert result.response_text == ""
     assert len(result.search_queries) == 0
 
+  def test_raw_payload_validation_failure(self, provider):
+    """Ensure invalid raw payloads raise a ValueError."""
+    mock_response = Mock()
+    mock_response.output = []
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.OPENAI_INVALID))
+
+    provider.client.responses.create = Mock(return_value=mock_response)
+
+    with pytest.raises(ValueError) as exc_info:
+      provider.send_prompt("Bad payload", "gpt-5.1")
+
+    assert "raw payload" in str(exc_info.value)
+
   def test_send_prompt_includes_response_time(self, provider):
     """Test send_prompt calculates response time."""
     mock_response = Mock()
     mock_response.output = []
-    mock_response.model_dump = Mock(return_value={})
+    mock_response.model_dump = Mock(return_value=deepcopy(payloads.OPENAI_RESPONSE))
 
     provider.client.responses.create = Mock(return_value=mock_response)
 

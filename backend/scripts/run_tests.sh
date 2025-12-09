@@ -9,6 +9,10 @@
 
 set -e  # Exit on error
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKEND_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$BACKEND_ROOT"
+
 # Colors
 GREEN='\033[0;32m'
 RED='\033[0;31m'

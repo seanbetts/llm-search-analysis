@@ -29,6 +29,17 @@ From the repository root, run the helper script that executes SDK validation bef
 ./scripts/run_all_tests.sh
 ```
 
+### Database Prep
+
+The suite assumes the Alembic schema (especially revision `9b9f1c6a2e3f`) has been applied. Run:
+
+```bash
+cd backend
+alembic upgrade head
+```
+
+before invoking pytest so the `interactions` table and cascade relationships exist.
+
 ### Manual Test Execution
 
 If you prefer to run tests manually:
@@ -79,6 +90,26 @@ export RUN_E2E=1
 
 Leave `RUN_E2E` unset/0 for normal development; the tests will show as skipped.
 
+### Provider Payload Schema Tests
+
+Raw provider responses are validated by `tests/test_provider_payload_schemas.py`, which uses canonical JSON fixtures stored under `backend/tests/fixtures/provider_payloads.py`. When SDK behavior changes, capture fresh samples and update those fixtures:
+
+1. Run the backend with real API keys and send a prompt using `app.py` or the `/interactions/send` endpoint.
+2. Copy the `raw_response` portion of the returned payload (or read `responses.raw_response_json` from SQLite).
+3. Sanitize/redact any private data, then paste into the corresponding fixture (OpenAI, Google, Anthropic).
+4. Run `pytest tests/test_provider_payload_schemas.py -v` to ensure the schema still accepts the new shape.
+
+### Auditing Stored JSON Payloads
+
+Use `backend/scripts/audit_json_payloads.py` to verify that historical rows still conform to the schemas:
+
+```bash
+cd backend
+DATABASE_URL=sqlite:///./data/llm_search.db python scripts/audit_json_payloads.py --dry-run
+```
+
+Add `--fix` to write sanitized payloads (invalid blobs are nulled so the API no longer crashes when reading them). The script also checks `internal_ranking_scores` and metadata JSON columns on query/response sources.
+
 ## Test Organization
 
 ```
@@ -88,9 +119,14 @@ backend/tests/
 ├── test_google_provider.py          # Google provider unit tests
 ├── test_anthropic_provider.py       # Anthropic provider unit tests
 ├── test_provider_factory.py         # Provider factory tests
-├── test_api.py                       # API endpoint tests
+├── test_api.py                      # API endpoint tests
 └── ...
 ```
+
+`test_integration_database.py`, `test_repository.py`, and `test_service.py`
+contain regression cases for the interaction-first persistence layer (creating,
+reading, and deleting interactions, responses, and search artifacts). Extend
+those files when making schema/repository changes so cascades stay covered.
 
 ## Understanding Test Markers
 

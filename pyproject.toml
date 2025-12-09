@@ -1,0 +1,76 @@
+[project]
+name = "llm-search-analysis"
+version = "0.1.0"
+description = "Compare how OpenAI, Google Gemini, Anthropic Claude, and ChatGPT perform live web search"
+requires-python = ">=3.11"
+
+[tool.ruff]
+# Exclude common directories
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "build",
+    "dist",
+    ".pytest_cache",
+    "backend/alembic/versions",  # Auto-generated migration files
+    "*.egg-info",
+]
+
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# Enable docstring rules (D-series) along with common linting rules
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "D",   # pydocstyle (docstring rules)
+]
+
+# Start with these ignores to enable gradual adoption
+extend-ignore = [
+    # Module docstrings - will remove these as we add them
+    "D100",  # Missing docstring in public module (TODO: enable after Phase 1 backfill)
+    "D104",  # Missing docstring in public package (__init__.py)
+
+    # Method docstrings - common exemptions
+    "D107",  # Missing docstring in __init__ (we document at class level)
+
+    # Docstring formatting - too strict for some cases
+    "D203",  # 1 blank line required before class docstring (conflicts with D211)
+    "D213",  # Multi-line docstring summary should start at the second line (conflicts with D212)
+
+    # We prefer D211 and D212 (summary on first line)
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+# Test files don't need docstrings for every function
+"**/tests/**/*.py" = ["D100", "D101", "D102", "D103"]
+"**/test_*.py" = ["D100", "D101", "D102", "D103"]
+
+# Scripts can have simpler docstring requirements
+"scripts/**/*.py" = ["D100", "D103"]
+
+# Alembic migrations are auto-generated
+"backend/alembic/versions/*.py" = ["D"]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests", "frontend/tests", "tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --strict-markers"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true

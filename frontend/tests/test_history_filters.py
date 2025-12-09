@@ -1,3 +1,10 @@
+"""Tests for history tab filter logic.
+
+This module tests the model display name mapping and filtering logic used
+in the History tab to handle cases where multiple model IDs map to the same
+display name (e.g., Anthropic's normalized vs legacy IDs).
+"""
+
 import pandas as pd
 
 from frontend.tabs.history import _build_model_display_mapping

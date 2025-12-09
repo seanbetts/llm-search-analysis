@@ -9,6 +9,8 @@ from urllib.parse import urlparse
 from google.genai import Client
 from google.genai.types import GenerateContentConfig, GoogleSearch, Tool
 
+from app.core.provider_schemas import validate_google_raw_response
+
 from .base_provider import (
   BaseProvider,
   ProviderResponse,
@@ -114,6 +116,8 @@ class GoogleProvider(BaseProvider):
       # Parse the response
       return self._parse_response(response, model, response_time_ms)
 
+    except ValueError:
+      raise
     except Exception as e:
       raise Exception(f"Google API error: {str(e)}")
 
@@ -208,12 +212,17 @@ class GoogleProvider(BaseProvider):
         seen_urls.add(citation.url)
         unique_citations.append(citation)
 
+    try:
+      raw_payload = validate_google_raw_response(response)
+    except ValueError as exc:
+      raise ValueError(f"Google raw payload validation failed: {exc}") from exc
+
     return ProviderResponse(
       response_text=response_text,
       search_queries=search_queries,
       sources=sources,
       citations=unique_citations,
-      raw_response={},  # Google responses may not be easily serializable
+      raw_response=raw_payload,
       model=model,
       provider=self.get_provider_name(),
       response_time_ms=response_time_ms

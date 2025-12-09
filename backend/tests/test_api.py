@@ -439,6 +439,30 @@ class TestInteractionsEndpoints:
     recent_data = recent.json()
     assert any(item["prompt"] == payload["prompt"] for item in recent_data["items"])
 
+  def test_save_network_log_invalid_payload(self, client):
+    """Invalid network log payloads should return 422 with detail."""
+    payload = {
+      "provider": "openai",
+      "model": "chatgpt-free",
+      "prompt": "Invalid data",
+      "response_text": "Body",
+      "search_queries": [
+        {
+          # Missing required query field
+          "sources": []
+        }
+      ],
+      "sources": [],
+      "citations": [],
+      "response_time_ms": 500,
+      "raw_response": {}
+    }
+
+    response = client.post("/api/v1/interactions/save-network-log", json=payload)
+    assert response.status_code == 422
+    error = response.json()
+    assert "search_queries" in str(error)
+
   def test_export_interaction_markdown_success(self, client):
     """Test GET /api/v1/interactions/{id}/export/markdown returns markdown."""
     payload = {

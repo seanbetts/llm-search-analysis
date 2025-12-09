@@ -11,8 +11,7 @@ from sqlalchemy import func
 
 from app.models.database import (
   Provider,
-  SessionModel,
-  Prompt,
+  InteractionModel,
   Response,
   SearchQuery,
   QuerySource,
@@ -90,6 +89,7 @@ class InteractionRepository:
       response_source_lookup: dict = {}
 
       def register_source(lookup: dict, url: str, rank: Optional[int], source_id: int):
+        """Register a source in the lookup dictionary for deduplication."""
         if not url:
           return
         normalized_url = url.strip()
@@ -99,6 +99,7 @@ class InteractionRepository:
         lookup.setdefault(fallback_key, []).append(source_id)
 
       def match_source(lookup: dict, url: Optional[str], rank: Optional[int]) -> Optional[int]:
+        """Find matching source ID from lookup dictionary by URL and rank."""
         if not url:
           return None
         normalized_url = url.strip()
@@ -123,25 +124,19 @@ class InteractionRepository:
         self.db.add(provider)
         self.db.flush()
 
-      # Create session
-      session = SessionModel(
+      # Create interaction
+      interaction = InteractionModel(
         provider_id=provider.id,
-        model_used=model_name
+        model_name=model_name,
+        prompt_text=prompt_text,
+        data_source=data_source,
       )
-      self.db.add(session)
-      self.db.flush()
-
-      # Create prompt
-      prompt = Prompt(
-        session_id=session.id,
-        prompt_text=prompt_text
-      )
-      self.db.add(prompt)
+      self.db.add(interaction)
       self.db.flush()
 
       # Create response
       response = Response(
-        prompt_id=prompt.id,
+        interaction_id=interaction.id,
         response_text=response_text,
         response_time_ms=response_time_ms,
         raw_response_json=raw_response,
@@ -251,9 +246,8 @@ class InteractionRepository:
     return (
       self.db.query(Response)
       .options(
-        joinedload(Response.prompt)
-        .joinedload(Prompt.session)
-        .joinedload(SessionModel.provider),
+        joinedload(Response.interaction)
+        .joinedload(InteractionModel.provider),
         joinedload(Response.search_queries)
         .joinedload(SearchQuery.sources),
         joinedload(Response.sources_used),
@@ -291,13 +285,11 @@ class InteractionRepository:
     # Build base query with eager loading
     query = (
       self.db.query(Response)
-      .join(Response.prompt)
-      .join(Prompt.session)
-      .join(SessionModel.provider)
+      .join(Response.interaction)
+      .join(InteractionModel.provider)
       .options(
-        joinedload(Response.prompt)
-        .joinedload(Prompt.session)
-        .joinedload(SessionModel.provider),
+        joinedload(Response.interaction)
+        .joinedload(InteractionModel.provider),
         joinedload(Response.search_queries)
         .joinedload(SearchQuery.sources),
         joinedload(Response.sources_used),
@@ -313,7 +305,7 @@ class InteractionRepository:
       query = query.filter(Provider.name == provider)
 
     if model:
-      query = query.filter(SessionModel.model_used == model)
+      query = query.filter(InteractionModel.model_name == model)
 
     if date_from:
       query = query.filter(Response.created_at >= date_from)
@@ -348,10 +340,9 @@ class InteractionRepository:
       if not response:
         return False
 
-      prompt = response.prompt
-      session = prompt.session if prompt else None
-      provider = session.provider if session else None
-      session_id = session.id if session else None
+      interaction = response.interaction
+      provider = interaction.provider if interaction else None
+      interaction_id = interaction.id if interaction else None
       provider_id = provider.id if provider else None
 
       # Delete sources used
@@ -369,29 +360,22 @@ class InteractionRepository:
       self.db.query(SearchQuery).filter_by(response_id=response_id).delete()
 
       # Delete response
-      prompt_id = response.prompt_id
       self.db.delete(response)
+      self.db.flush()
 
-      # Delete prompt (orphan)
-      if prompt_id:
-        prompt = self.db.query(Prompt).filter_by(id=prompt_id).first()
-        if prompt:
-          self.db.delete(prompt)
-          self.db.flush()
-
-      # Delete session if no prompts remain
-      if session_id:
-        has_prompts = self.db.query(Prompt.id).filter_by(session_id=session_id).first()
-        if not has_prompts:
-          session_obj = self.db.query(SessionModel).filter_by(id=session_id).first()
-          if session_obj:
-            self.db.delete(session_obj)
+      # Delete interaction if no other responses remain
+      if interaction_id:
+        has_responses = self.db.query(Response.id).filter_by(interaction_id=interaction_id).first()
+        if not has_responses:
+          interaction_obj = self.db.query(InteractionModel).filter_by(id=interaction_id).first()
+          if interaction_obj:
+            self.db.delete(interaction_obj)
             self.db.flush()
 
-      # Delete provider if no sessions remain
+      # Delete provider if no interactions remain
       if provider_id:
-        has_sessions = self.db.query(SessionModel.id).filter_by(provider_id=provider_id).first()
-        if not has_sessions:
+        has_interactions = self.db.query(InteractionModel.id).filter_by(provider_id=provider_id).first()
+        if not has_interactions:
           provider_obj = self.db.query(Provider).filter_by(id=provider_id).first()
           if provider_obj:
             self.db.delete(provider_obj)
