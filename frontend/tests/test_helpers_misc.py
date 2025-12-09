@@ -4,17 +4,18 @@ import types
 
 import pytest
 
-from frontend.helpers.serialization import namespace_to_dict
-from frontend.utils import format_pub_date
 from frontend.helpers.error_handling import (
-  safe_api_call,
-  APINotFoundError,
-  APITimeoutError,
-  APIConnectionError,
-  APIValidationError,
-  APIServerError,
   APIClientError,
+  APIConnectionError,
+  APINotFoundError,
+  APIServerError,
+  APITimeoutError,
+  APIValidationError,
+  safe_api_call,
 )
+from frontend.helpers.serialization import namespace_to_dict
+from frontend.tabs.batch import summarize_batch_results
+from frontend.utils import format_pub_date
 
 
 class DummySpinner:
@@ -100,3 +101,30 @@ def test_format_pub_date_handles_iso_and_invalid():
   assert formatted == "Mon, Jan 15, 2024 10:30 UTC"
   assert format_pub_date("") == ""
   assert format_pub_date("invalid-date") == "invalid-date"
+
+
+def test_summarize_batch_results_handles_success_and_failures():
+  """Summaries should separate successes from errors and compute averages."""
+  sample = [
+    {'prompt': 'one', 'model': 'A', 'sources': 2, 'sources_used': 1, 'avg_rank': 3.0},
+    {'prompt': 'two', 'model': 'B', 'sources': 4, 'sources_used': 2, 'avg_rank': 5.0},
+    {'prompt': 'three', 'model': 'C', 'error': 'boom'},
+  ]
+  summary = summarize_batch_results(sample)
+  assert summary['total_runs'] == 3
+  assert summary['successful'] == 2
+  assert len(summary['failed']) == 1
+  assert summary['avg_sources'] == pytest.approx(3.0)
+  assert summary['avg_sources_used'] == pytest.approx(1.5)
+  assert summary['avg_rank'] == pytest.approx(4.0)
+
+
+def test_summarize_batch_results_handles_empty():
+  """Empty inputs should return zero counts and None averages."""
+  summary = summarize_batch_results([])
+  assert summary['total_runs'] == 0
+  assert summary['successful'] == 0
+  assert summary['failed'] == []
+  assert summary['avg_sources'] is None
+  assert summary['avg_sources_used'] is None
+  assert summary['avg_rank'] is None

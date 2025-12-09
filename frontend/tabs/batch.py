@@ -1,19 +1,120 @@
 """Batch analysis tab for testing multiple prompts."""
 
-import streamlit as st
-import pandas as pd
 from datetime import datetime
 from types import SimpleNamespace
-from frontend.config import Config
-from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
+from typing import Any, Dict, List, Optional
+
+import pandas as pd
+import streamlit as st
+
 from frontend.components.models import get_all_models
+from frontend.config import Config
+from frontend.helpers.error_handling import safe_api_call
 from frontend.helpers.metrics import compute_metrics, get_model_display_name
 from frontend.helpers.serialization import namespace_to_dict
-from frontend.helpers.error_handling import safe_api_call
+from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
+
+
+def summarize_batch_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
+  """Compute summary statistics for a batch run."""
+  total_runs = len(results)
+  successful = [r for r in results if 'error' not in r]
+  failed = [r for r in results if 'error' in r]
+
+  def safe_average(values: List[Optional[float]]) -> Optional[float]:
+    valid = [v for v in values if v is not None]
+    if not valid:
+      return None
+    return sum(valid) / len(valid)
+
+  avg_sources = safe_average([r.get('sources') for r in successful])
+  avg_sources_used = safe_average([r.get('sources_used') for r in successful])
+  avg_rank = safe_average([r.get('avg_rank') for r in successful if r.get('avg_rank') is not None])
+
+  return {
+    'total_runs': total_runs,
+    'successful': len(successful),
+    'failed': failed,
+    'avg_sources': avg_sources,
+    'avg_sources_used': avg_sources_used,
+    'avg_rank': avg_rank,
+  }
+
+
+def render_batch_results(results: List[Dict[str, Any]], placeholder: Optional[Any] = None):
+  """Render batch result summary and table, optionally into a placeholder."""
+  if placeholder:
+    placeholder.empty()
+    target = placeholder.container()
+  else:
+    target = st
+
+  if not results:
+    return
+
+  summary = summarize_batch_results(results)
+
+  target.divider()
+  target.markdown("### 📊 Batch Results")
+
+  col1, col2, col3, col4, col5 = target.columns(5)
+  with col1:
+    col1.metric("Total Runs", summary['total_runs'])
+  with col2:
+    col2.metric("Successful", summary['successful'])
+  with col3:
+    if summary['avg_sources'] is not None:
+      col3.metric("Avg Sources", f"{summary['avg_sources']:.1f}")
+    else:
+      col3.metric("Avg Sources", "N/A")
+  with col4:
+    if summary['avg_sources_used'] is not None:
+      col4.metric("Avg Sources Used", f"{summary['avg_sources_used']:.1f}")
+    else:
+      col4.metric("Avg Sources Used", "N/A")
+  with col5:
+    if summary['avg_rank'] is not None:
+      col5.metric("Avg Rank", f"{summary['avg_rank']:.1f}")
+    else:
+      col5.metric("Avg Rank", "N/A")
+
+  target.markdown("#### Detailed Results")
+  df_results = pd.DataFrame(results)
+
+  if not df_results.empty and 'error' not in df_results.columns:
+    df_results['avg_rank_display'] = df_results['avg_rank'].apply(
+      lambda x: f"{x:.1f}" if pd.notna(x) else "N/A"
+    )
+    df_results['response_time_display'] = df_results['response_time_s'].apply(
+      lambda x: f"{x:.1f}s" if pd.notna(x) else "N/A"
+    )
+
+    display_df = df_results[['prompt', 'model', 'searches', 'sources', 'sources_used',
+                             'avg_rank_display', 'response_time_display']]
+    display_df.columns = ['Prompt', 'Model', 'Searches', 'Sources Found', 'Sources Used',
+                          'Avg. Rank', 'Response Time']
+    target.dataframe(display_df, use_container_width=True)
+  else:
+    target.dataframe(df_results, use_container_width=True)
+
+  csv = df_results.to_csv(index=False)
+  target.download_button(
+    label="📥 Download Results as CSV",
+    data=csv,
+    file_name=f"batch_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+    mime="text/csv"
+  )
+
+  if summary['failed']:
+    target.warning(f"⚠️ {len(summary['failed'])} prompts failed")
+    with target.expander("View Errors"):
+      for idx, result in enumerate(summary['failed'], 1):
+        target.error(f"{idx}. {result['prompt'][:50]}...\n Error: {result['error']}")
 
 
 def tab_batch():
   """Tab 2: Batch Analysis."""
+  st.session_state.setdefault('batch_results', [])
   st.markdown("### 📦 Batch Analysis")
   st.caption("Run multiple prompts and analyze aggregate results")
 
@@ -90,6 +191,7 @@ def tab_batch():
     # Progress tracking
     progress_bar = st.progress(0)
     status_text = st.empty()
+    results_placeholder = st.empty()
 
     # Calculate total runs
     total_runs = len(prompts) * len(selected_models)
@@ -245,78 +347,10 @@ def tab_batch():
 
         # Update progress
         progress_bar.progress(current_run / total_runs)
+        render_batch_results(st.session_state.batch_results, placeholder=results_placeholder)
 
     status_text.text("✅ Batch processing complete!")
 
   # Display results
   if st.session_state.batch_results:
-    st.divider()
-    st.markdown("### 📊 Batch Results")
-
-    # Summary stats
-    successful = [r for r in st.session_state.batch_results if 'error' not in r]
-    failed = [r for r in st.session_state.batch_results if 'error' in r]
-
-    col1, col2, col3, col4, col5 = st.columns(5)
-    with col1:
-      st.metric("Total Runs", len(st.session_state.batch_results))
-    with col2:
-      st.metric("Successful", len(successful))
-    with col3:
-      if successful:
-        avg_sources = sum(r['sources'] for r in successful) / len(successful)
-        st.metric("Avg Sources", f"{avg_sources:.1f}")
-    with col4:
-      if successful:
-        avg_sources_used = sum(r['sources_used'] for r in successful) / len(successful)
-        st.metric("Avg Sources Used", f"{avg_sources_used:.1f}")
-    with col5:
-      if successful:
-        ranks = [r['avg_rank'] for r in successful if r['avg_rank'] is not None]
-        if ranks:
-          overall_avg_rank = sum(ranks) / len(ranks)
-          st.metric("Avg Rank", f"{overall_avg_rank:.1f}")
-        else:
-          st.metric("Avg Rank", "N/A")
-
-    # Results table
-    st.markdown("#### Detailed Results")
-    df_results = pd.DataFrame(st.session_state.batch_results)
-
-    # Format the display columns
-    if not df_results.empty and 'error' not in df_results.columns:
-      # Format avg_rank for display
-      df_results['avg_rank_display'] = df_results['avg_rank'].apply(
-        lambda x: f"{x:.1f}" if pd.notna(x) else "N/A"
-      )
-
-      # Format response_time for display
-      df_results['response_time_display'] = df_results['response_time_s'].apply(
-        lambda x: f"{x:.1f}s" if pd.notna(x) else "N/A"
-      )
-
-      # Select and rename columns for display
-      display_df = df_results[['prompt', 'model', 'searches', 'sources', 'sources_used',
-                               'avg_rank_display', 'response_time_display']]
-      display_df.columns = ['Prompt', 'Model', 'Searches', 'Sources Found', 'Sources Used',
-                           'Avg. Rank', 'Response Time']
-
-      st.dataframe(display_df, use_container_width=True)
-    else:
-      st.dataframe(df_results, use_container_width=True)
-
-    # Export button
-    csv = df_results.to_csv(index=False)
-    st.download_button(
-      label="📥 Download Results as CSV",
-      data=csv,
-      file_name=f"batch_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-      mime="text/csv"
-    )
-
-    # Show errors if any
-    if failed:
-      st.warning(f"⚠️ {len(failed)} prompts failed")
-      with st.expander("View Errors"):
-        for idx, result in enumerate(failed, 1):
-          st.error(f"{idx}. {result['prompt'][:50]}...\n Error: {result['error']}")
+    render_batch_results(st.session_state.batch_results)
