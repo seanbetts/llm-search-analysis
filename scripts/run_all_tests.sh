@@ -1,5 +1,6 @@
 #!/bin/bash
 # Run backend and frontend tests for LLM Search Analysis
+# Also runs linting and docstring checks
 
 set -euo pipefail
 
@@ -8,6 +9,7 @@ USER_PYTEST_ADDOPTS="${PYTEST_ADDOPTS:-}"
 BACKEND_PYTEST_ADDOPTS="${BACKEND_PYTEST_ADDOPTS:-$USER_PYTEST_ADDOPTS}"
 FRONTEND_PYTEST_ADDOPTS="${FRONTEND_PYTEST_ADDOPTS:-$USER_PYTEST_ADDOPTS}"
 SKIP_EXTERNAL="${SKIP_EXTERNAL:-0}"
+SKIP_LINT="${SKIP_LINT:-0}"
 FRONTEND_PYTHON_BIN="${FRONTEND_PYTHON:-python}"
 COVERAGE_PYTHON="$FRONTEND_PYTHON_BIN"
 GENERATE_HTML_COVERAGE="${GENERATE_HTML_COVERAGE:-0}"
@@ -21,6 +23,34 @@ log_section() {
   echo "==================================================================="
   echo "🔸 $1"
   echo "==================================================================="
+}
+
+run_linting_checks() {
+  log_section "Running linting and docstring checks"
+
+  if ! command -v ruff &> /dev/null; then
+    echo "⚠️  Ruff not found. Skipping linting checks."
+    echo "   Install with: pip install ruff"
+    return 0
+  fi
+
+  (
+    cd "$REPO_ROOT"
+    echo "Running Ruff linting..."
+    if ! ruff check .; then
+      echo "❌ Linting errors found. Run 'make lint' for details."
+      return 1
+    fi
+
+    echo ""
+    echo "Running docstring checks..."
+    if ! ruff check --select D .; then
+      echo "❌ Docstring issues found. Run 'make docstring-check' for details."
+      return 1
+    fi
+
+    echo "✅ All linting and docstring checks passed"
+  )
 }
 
 run_backend_tests() {
@@ -90,7 +120,8 @@ combine_coverage_reports() {
 }
 
 main() {
-  echo "🧪 Running full test suite (backend + frontend)"
+  echo "🧪 Running full test suite (linting + backend + frontend)"
+  local lint_status=0
   local backend_status=0
   local frontend_status=0
 
@@ -98,9 +129,23 @@ main() {
   echo "Backend PYTEST_ADDOPTS: ${BACKEND_PYTEST_ADDOPTS:-<none>}"
   echo "Frontend PYTEST_ADDOPTS: ${FRONTEND_PYTEST_ADDOPTS:-<none>}"
   echo "Generate HTML coverage: ${GENERATE_HTML_COVERAGE}"
+  echo "Skip linting: ${SKIP_LINT}"
 
   if [[ "$SKIP_EXTERNAL" == "1" ]]; then
     echo "🔕 SKIP_EXTERNAL=1: backend run will ignore tests/test_e2e_persistence.py"
+  fi
+
+  # Run linting checks first (unless skipped)
+  if [[ "$SKIP_LINT" != "1" ]]; then
+    set +e
+    run_linting_checks
+    lint_status=$?
+    set -e
+    if [[ $lint_status -ne 0 ]]; then
+      echo "⚠️  Linting checks failed (exit code $lint_status). Continuing to tests..."
+    fi
+  else
+    echo "🔕 SKIP_LINT=1: skipping linting and docstring checks"
   fi
 
   set +e
@@ -118,12 +163,15 @@ main() {
 
   combine_coverage_reports
 
-  if [[ $backend_status -eq 0 && $frontend_status -eq 0 ]]; then
+  if [[ $lint_status -eq 0 && $backend_status -eq 0 && $frontend_status -eq 0 ]]; then
     echo ""
-    echo "✅ All frontend and backend tests completed successfully."
+    echo "✅ All linting checks and tests completed successfully."
   else
     echo ""
     echo "❌ Test suite completed with failures."
+    [[ $lint_status -ne 0 ]] && echo "   - Linting: FAILED"
+    [[ $backend_status -ne 0 ]] && echo "   - Backend tests: FAILED"
+    [[ $frontend_status -ne 0 ]] && echo "   - Frontend tests: FAILED"
     exit 1
   fi
 }

@@ -1,3 +1,29 @@
+"""Dependency injection for FastAPI endpoints.
+
+This module provides FastAPI dependency functions for database sessions and
+service instances. It follows the dependency injection pattern to ensure
+proper resource management and testability.
+
+Dependency Chain:
+1. get_db() -> SQLAlchemy Session
+2. get_interaction_repository() -> InteractionRepository (needs db)
+3. get_interaction_service() -> InteractionService (needs repository)
+4. get_provider_service() -> ProviderService (needs interaction_service)
+5. get_export_service() -> ExportService (needs interaction_service)
+
+The dependencies automatically handle:
+- Database connection lifecycle (open/close)
+- Proper resource cleanup via context managers
+- Service instance creation with correct parameters
+
+Example:
+    @app.get("/interactions")
+    def get_interactions(
+        interaction_service: InteractionService = Depends(get_interaction_service)
+    ):
+        return interaction_service.get_recent_interactions()
+"""
+
 from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker

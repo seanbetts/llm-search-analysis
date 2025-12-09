@@ -1,3 +1,21 @@
+"""Request schemas for API endpoints.
+
+This module defines Pydantic models for validating incoming API requests.
+All request schemas include field validation, type checking, and helpful
+examples for API documentation.
+
+Key Schemas:
+- SendPromptRequest: Submit a prompt to an LLM provider
+- SaveNetworkLogRequest: Save network-captured interaction data
+- UpdateInteractionRequest: Update existing interaction metadata
+
+The schemas enforce:
+- Type safety with Pydantic validation
+- Field constraints (min/max length, allowed values)
+- Custom validators for security (XSS prevention, URL validation)
+- Automatic OpenAPI documentation generation
+"""
+
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 import re
@@ -246,6 +264,7 @@ class NetworkLogSource(BaseModel):
   @field_validator("metadata")
   @classmethod
   def validate_metadata(cls, value: Optional[Dict[str, Any]]):
+    """Validate and serialize metadata to JSON-safe format."""
     return dump_metadata(SourceMetadata, value)
 
 
@@ -263,6 +282,7 @@ class NetworkLogCitation(BaseModel):
   @field_validator("metadata")
   @classmethod
   def validate_metadata(cls, value: Optional[Dict[str, Any]]):
+    """Validate and serialize citation metadata to JSON-safe format."""
     return dump_metadata(CitationMetadata, value)
 
 
@@ -286,6 +306,7 @@ class NetworkLogSearchQuery(BaseModel):
   @field_validator("internal_ranking_scores")
   @classmethod
   def validate_internal_scores(cls, value: Optional[Dict[str, Any]]):
+    """Validate internal ranking scores are a dictionary."""
     if value is None:
       return None
     if not isinstance(value, dict):

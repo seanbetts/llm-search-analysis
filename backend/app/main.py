@@ -1,3 +1,29 @@
+"""LLM Search Analysis API - Main application entry point.
+
+This module configures and initializes the FastAPI application for comparing
+how different LLM providers (OpenAI, Google Gemini, Anthropic Claude, ChatGPT)
+perform live web search.
+
+The application provides:
+- RESTful API endpoints for sending prompts and retrieving interactions
+- Multi-provider support with normalized response schemas
+- Search metrics tracking (queries, sources, citations, rankings)
+- Database persistence with SQLite/PostgreSQL support
+- CORS middleware for future React frontend integration
+- Structured logging with correlation IDs for request tracing
+- Comprehensive error handling with custom exception hierarchy
+
+API Documentation:
+- OpenAPI/Swagger UI: /docs
+- ReDoc: /redoc
+- Health check: /health
+
+Environment Configuration:
+- Configured via settings in app.config module
+- Database URL, API keys, CORS origins, and log level are configurable
+- See .env.example for required environment variables
+"""
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -17,6 +43,7 @@ class CorrelationIdFilter(logging.Filter):
   """Add default correlation_id to all log records."""
 
   def filter(self, record):
+    """Add correlation_id to log record if not present."""
     if not hasattr(record, 'correlation_id'):
       record.correlation_id = 'no-correlation-id'
     return True
@@ -62,7 +89,7 @@ app.include_router(providers.router, prefix="/api/v1")
 
 @app.get("/")
 async def root():
-  """Root endpoint - API information"""
+  """Root endpoint - API information."""
   return {
     "name": "LLM Search Analysis API",
     "version": "1.0.0",
@@ -73,7 +100,7 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-  """Health check endpoint - verifies API and database connectivity"""
+  """Health check endpoint - verifies API and database connectivity."""
   try:
     # Test database connectivity
     with engine.connect() as conn:

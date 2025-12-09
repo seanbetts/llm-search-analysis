@@ -1,3 +1,34 @@
+"""Application configuration settings.
+
+This module defines the application's configuration using Pydantic Settings,
+which loads values from environment variables and .env files with type validation.
+
+The Settings class manages:
+- Database connection (SQLite/PostgreSQL URLs)
+- LLM provider API keys (OpenAI, Google, Anthropic)
+- ChatGPT network capture configuration (session file, browser settings)
+- CORS origins for frontend integration
+- Server configuration (host, port, debug mode)
+- Logging levels
+
+Configuration Priority:
+1. Environment variables (highest priority)
+2. .env file in project root
+3. Default values defined in this module
+
+Example:
+    from app.config import settings
+
+    # Access configuration values
+    print(settings.DATABASE_URL)
+    print(settings.OPENAI_API_KEY)
+
+Database URL Normalization:
+    The DATABASE_URL validator handles legacy path formats and ensures
+    compatibility between Docker environments (/backend/data) and local
+    development (backend/data relative paths).
+"""
+
 from typing import List
 import logging
 from pathlib import Path
@@ -10,7 +41,28 @@ BACKEND_FALLBACK_URL = f"sqlite:///{BACKEND_FALLBACK_PATH.as_posix()}"
 
 
 class Settings(BaseSettings):
-  """Application configuration settings using Pydantic Settings"""
+  """Application configuration settings using Pydantic Settings.
+
+  This class defines all configurable settings for the LLM Search Analysis API.
+  Values are loaded from environment variables and .env files with automatic
+  type validation and conversion.
+
+  Attributes:
+    APP_NAME: Application name
+    VERSION: API version
+    DEBUG: Enable debug mode
+    HOST: Server bind address
+    PORT: Server port number
+    CORS_ORIGINS: Allowed CORS origins for frontend access
+    DATABASE_URL: SQLite or PostgreSQL connection URL
+    OPENAI_API_KEY: OpenAI API key for GPT models
+    GOOGLE_API_KEY: Google API key for Gemini models
+    ANTHROPIC_API_KEY: Anthropic API key for Claude models
+    CHATGPT_SESSION_FILE: Path to ChatGPT session file for network capture
+    NETWORK_LOGS_DIR: Directory for storing network capture logs
+    BROWSER_HEADLESS: Run browser in headless mode for network capture
+    LOG_LEVEL: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  """
 
   # Application settings
   APP_NAME: str = "LLM Search Analysis API"
@@ -70,8 +122,7 @@ class Settings(BaseSettings):
   @field_validator("DATABASE_URL", mode="before")
   @classmethod
   def normalize_database_url(cls, value: str) -> str:
-    """
-    Ensure old ../data paths are normalized to backend/data.
+    """Ensure old ../data paths are normalized to backend/data.
 
     Older configs pointed at sqlite:///../data/llm_search.db which
     resolves to the removed root-level data directory. This guard keeps

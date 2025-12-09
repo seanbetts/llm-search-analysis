@@ -21,8 +21,7 @@ router = APIRouter(prefix="/providers", tags=["providers"])
 async def get_providers(
   provider_service: ProviderService = Depends(get_provider_service),
 ):
-  """
-  Get list of available providers.
+  """Get list of available providers.
 
   Args:
     provider_service: ProviderService dependency
@@ -53,8 +52,7 @@ async def get_providers(
 async def get_all_models(
   provider_service: ProviderService = Depends(get_provider_service),
 ):
-  """
-  Get list of all available models.
+  """Get list of all available models.
 
   Args:
     provider_service: ProviderService dependency
