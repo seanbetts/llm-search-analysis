@@ -26,7 +26,7 @@ class _BaseModel(BaseModel):
 class OpenAIUrlSource(_BaseModel):
   """Source URL found during OpenAI web search."""
 
-  url: str
+  url: Optional[str] = None
   title: Optional[str] = None
   type: Optional[str] = None
 
