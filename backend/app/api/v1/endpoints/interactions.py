@@ -73,6 +73,24 @@ async def get_batch_status(
 
 
 @router.post(
+  "/batch/{batch_id}/cancel",
+  response_model=BatchStatus,
+  status_code=status.HTTP_200_OK,
+  summary="Cancel a batch job",
+  description="Request cancellation of an in-flight batch job.",
+)
+async def cancel_batch(
+  batch_id: str,
+  batch_service: BatchService = Depends(get_batch_service),
+):
+  """Cancel a backend-managed batch job."""
+  try:
+    return batch_service.cancel_batch(batch_id)
+  except ValueError:
+    raise InteractionNotFoundError(batch_id)
+
+
+@router.post(
   "/send",
   response_model=SendPromptResponse,
   status_code=status.HTTP_200_OK,

@@ -18,6 +18,7 @@ from app.models.database import Base
 # Create test database
 TEST_DB_PATH = Path(__file__).resolve().parent / "data" / "test.db"
 TEST_DATABASE_URL = f"sqlite:///{TEST_DB_PATH}"
+TEST_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 test_engine = create_engine(
   TEST_DATABASE_URL,
   connect_args={"check_same_thread": False}
@@ -248,6 +249,19 @@ class _StubBatchService:
     )
     self.last_request = None
     self.last_status_batch_id = None
+    self.last_cancel_batch_id = None
+    self.cancel_status = BatchStatus(
+      batch_id="stub-batch",
+      total_tasks=2,
+      completed_tasks=1,
+      failed_tasks=0,
+      status="cancelled",
+      cancel_reason="Cancelled in test",
+      results=[result],
+      errors=[],
+      started_at=datetime.utcnow(),
+      completed_at=datetime.utcnow(),
+    )
 
   async def start_batch(self, request):
     self.last_request = request
@@ -256,6 +270,10 @@ class _StubBatchService:
   def get_status(self, batch_id: str):
     self.last_status_batch_id = batch_id
     return self.final_status
+
+  def cancel_batch(self, batch_id: str):
+    self.last_cancel_batch_id = batch_id
+    return self.cancel_status
 
 
 class TestBatchEndpoints:
@@ -284,6 +302,20 @@ class TestBatchEndpoints:
       assert status_body["completed_tasks"] == 2
       assert len(status_body["results"]) == 1
       assert stub.last_status_batch_id == "stub-batch"
+    finally:
+      app.dependency_overrides.pop(get_batch_service, None)
+
+  def test_batch_cancel(self, client):
+    """POST /interactions/batch/{id}/cancel should cancel via service."""
+    stub = _StubBatchService()
+    app.dependency_overrides[get_batch_service] = lambda: stub
+    try:
+      response = client.post("/api/v1/interactions/batch/stub-batch/cancel")
+      assert response.status_code == 200
+      body = response.json()
+      assert body["status"] == "cancelled"
+      assert body["cancel_reason"] == "Cancelled in test"
+      assert stub.last_cancel_batch_id == "stub-batch"
     finally:
       app.dependency_overrides.pop(get_batch_service, None)
 

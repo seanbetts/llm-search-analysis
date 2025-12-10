@@ -17,6 +17,13 @@ from frontend.helpers.export_utils import dataframe_to_csv_bytes
 from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 
 
+def _safe_rerun():
+  """Streamlit rerun helper to support both old and new APIs."""
+  rerun_fn = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
+  if rerun_fn:
+    rerun_fn()
+
+
 def summarize_batch_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
   """Compute summary statistics for a batch run."""
   total_runs = len(results)
@@ -163,6 +170,11 @@ def tab_batch():
   st.session_state.setdefault('batch_results', [])
   st.session_state.setdefault('batch_results_download_key', 'initial')
   st.session_state.setdefault('batch_results_render_counter', 0)
+  st.session_state.setdefault('active_api_batch', None)
+  st.session_state.setdefault('api_cancel_requested', False)
+  st.session_state.setdefault('api_cancel_sent', False)
+  st.session_state.setdefault('network_batch_state', None)
+  st.session_state.setdefault('network_cancel_requested', False)
   st.markdown("### 📦 Batch Analysis")
   st.caption("Run multiple prompts and analyze aggregate results")
 
@@ -232,14 +244,234 @@ def tab_batch():
     total_runs = len(prompts) * len(selected_models)
     st.info(f"Ready to process {len(prompts)} prompt(s) × {len(selected_models)} model(s) = {total_runs} total runs")
 
+  disable_run = (
+    len(prompts) == 0
+    or len(selected_models) == 0
+    or bool(st.session_state.active_api_batch)
+    or bool(st.session_state.network_batch_state)
+  )
   run_batch_clicked = st.button(
     "▶️ Run Batch Analysis",
     type="primary",
-    disabled=len(prompts) == 0 or len(selected_models) == 0
+    disabled=disable_run
   )
 
   rendered_results = False
-  results_placeholder = None
+
+  active_api_batch = st.session_state.active_api_batch if st.session_state.data_collection_mode == 'api' else None
+  network_batch_state = st.session_state.network_batch_state if st.session_state.data_collection_mode == 'network_log' else None
+
+  # Handle ongoing API batch polling (non-blocking to allow cancel button)
+  if active_api_batch and st.session_state.data_collection_mode == 'api':
+    batch_id = active_api_batch.get('batch_id')
+    total_tasks = active_api_batch.get('total_tasks', 0)
+
+    status_indicator = st.status(f"Batch {batch_id} in progress...", expanded=False)
+    cancel_clicked = st.button("⏹ Cancel Batch", key="cancel_api_batch_btn")
+    if cancel_clicked:
+      st.session_state.api_cancel_requested = True
+
+    status_data = None
+    if st.session_state.api_cancel_requested and not st.session_state.api_cancel_sent:
+      status_data, cancel_error = safe_api_call(
+        st.session_state.api_client.cancel_batch,
+        batch_id=batch_id,
+        show_spinner=True,
+        spinner_text="Requesting cancellation..."
+      )
+      if cancel_error:
+        st.error(cancel_error)
+      else:
+        st.session_state.api_cancel_sent = True
+
+    if status_data is None:
+      status_data, status_error = safe_api_call(
+        st.session_state.api_client.get_batch_status,
+        batch_id=batch_id,
+        show_spinner=False
+      )
+      if status_error:
+        st.error(status_error)
+        status_data = None
+
+    if status_data:
+      rows = build_rows_from_batch_status(status_data)
+      st.session_state.batch_results = rows
+
+      completed = status_data.get('completed_tasks', 0)
+      status_label = status_data.get('status', 'processing').title()
+      progress = completed / total_tasks if total_tasks else 0
+
+      st.progress(progress)
+      status_indicator.update(
+        label=f"{status_label}: {completed}/{total_tasks} runs complete",
+        state="running"
+      )
+
+      render_batch_results(rows)
+      rendered_results = True
+
+      if status_data.get('status') == 'cancelled' and status_data.get('cancel_reason'):
+        st.warning(f"Batch cancelled: {status_data.get('cancel_reason')}")
+
+      if status_data.get('status') in ('completed', 'failed', 'cancelled'):
+        status_indicator.update(label=f"✅ Batch {status_data.get('status', '').title()}!", state="complete")
+        st.session_state.active_api_batch = None
+        st.session_state.api_cancel_requested = False
+        st.session_state.api_cancel_sent = False
+      else:
+        time.sleep(1)
+        _safe_rerun()
+
+  # Handle network capture batch execution one task per rerun to enable cancel
+  if network_batch_state and st.session_state.data_collection_mode == 'network_log':
+    total_runs = network_batch_state.get('total_runs', 0)
+    completed_runs = network_batch_state.get('completed_runs', 0)
+    tasks = network_batch_state.get('tasks', [])
+
+    status_indicator = st.status("Network capture batch running...", expanded=False)
+    cancel_clicked = st.button("⏹ Cancel Batch", key="cancel_network_batch_btn")
+    if cancel_clicked:
+      st.session_state.network_cancel_requested = True
+      network_batch_state['tasks'] = []
+
+    if tasks and not st.session_state.network_cancel_requested:
+      prompt_idx, prompt, model_label, provider_name, model_name = tasks.pop(0)
+      try:
+        if provider_name != 'openai':
+          raise Exception(f"Network log mode only supports OpenAI/ChatGPT. Skipping {provider_name}")
+
+        if not Config.CHATGPT_EMAIL or not Config.CHATGPT_PASSWORD:
+          raise Exception("ChatGPT credentials not found. Please add CHATGPT_EMAIL and CHATGPT_PASSWORD to your .env file.")
+
+        capturer = ChatGPTCapturer()
+        capturer.start_browser(headless=not st.session_state.network_show_browser)
+
+        try:
+          if not capturer.authenticate(
+            email=Config.CHATGPT_EMAIL,
+            password=Config.CHATGPT_PASSWORD
+          ):
+            raise Exception("Failed to authenticate with ChatGPT")
+
+          provider_response = capturer.send_prompt(prompt, 'chatgpt-free')
+
+          search_queries = [SimpleNamespace(
+            query=q.query,
+            sources=[SimpleNamespace(
+              url=s.url, title=s.title, domain=s.domain, rank=s.rank,
+              pub_date=s.pub_date, snippet_text=s.snippet_text,
+              internal_score=s.internal_score, metadata=s.metadata
+            ) for s in q.sources],
+            timestamp=q.timestamp,
+            order_index=q.order_index
+          ) for q in provider_response.search_queries]
+
+          citations = [SimpleNamespace(
+            url=c.url, title=c.title, rank=c.rank,
+            snippet_used=c.snippet_used,
+            citation_confidence=c.citation_confidence,
+            metadata=c.metadata
+          ) for c in provider_response.citations]
+
+          all_sources = [SimpleNamespace(
+            url=s.url, title=s.title, domain=s.domain, rank=s.rank,
+            pub_date=s.pub_date, snippet_text=s.snippet_text,
+            internal_score=s.internal_score, metadata=s.metadata
+          ) for s in provider_response.sources]
+
+          metrics = compute_metrics(search_queries, citations, all_sources)
+
+          response = SimpleNamespace(
+            provider=provider_response.provider,
+            model=provider_response.model,
+            model_display_name=get_model_display_name(provider_response.model),
+            response_text=provider_response.response_text,
+            search_queries=search_queries,
+            all_sources=all_sources,
+            citations=citations,
+            response_time_ms=provider_response.response_time_ms,
+            data_source='network_log',
+            sources_found=metrics['sources_found'],
+            sources_used=metrics['sources_used'],
+            avg_rank=metrics['avg_rank'],
+            extra_links_count=metrics['extra_links_count'],
+            raw_response=provider_response.raw_response
+          )
+
+          _, save_error = safe_api_call(
+            st.session_state.api_client.save_network_log,
+            provider=provider_response.provider,
+            model=provider_response.model,
+            prompt=prompt,
+            response_text=provider_response.response_text,
+            search_queries=namespace_to_dict(search_queries),
+            sources=namespace_to_dict(all_sources),
+            citations=namespace_to_dict(citations),
+            response_time_ms=provider_response.response_time_ms,
+            raw_response=provider_response.raw_response,
+            extra_links_count=metrics['extra_links_count'],
+            show_spinner=False
+          )
+          if save_error:
+            raise Exception(f"Failed to save: {save_error}")
+
+          st.session_state.batch_results.append({
+            'prompt': prompt,
+            'model': model_label,
+            'searches': len(response.search_queries),
+            'sources': getattr(response, 'sources_found', 0),
+            'sources_used': getattr(response, 'sources_used', 0),
+            'avg_rank': getattr(response, 'avg_rank', None),
+            'response_time_s': response.response_time_ms / 1000
+          })
+
+        finally:
+          capturer.stop_browser()
+
+      except Exception as e:
+        st.session_state.batch_results.append({
+          'prompt': prompt,
+          'model': model_label,
+          'error': str(e)
+        })
+
+      completed_runs += 1
+      network_batch_state['completed_runs'] = completed_runs
+      network_batch_state['tasks'] = tasks
+      network_batch_state['results'] = st.session_state.batch_results
+      st.session_state.network_batch_state = network_batch_state
+
+      st.progress(completed_runs / total_runs if total_runs else 0)
+      status_indicator.update(
+        label=f"Processing {completed_runs}/{total_runs} · {model_label} · Prompt {prompt_idx + 1}/{len(prompts)}",
+        state="running"
+      )
+      render_batch_results(st.session_state.batch_results)
+      rendered_results = True
+
+      if st.session_state.network_cancel_requested:
+        status_indicator.update(label="⏹ Batch cancelled", state="complete")
+        st.session_state.network_batch_state = None
+        st.session_state.network_cancel_requested = False
+      elif tasks:
+        time.sleep(0.5)
+        _safe_rerun()
+      else:
+        status_indicator.update(label="✅ Batch processing complete!", state="complete")
+        st.session_state.network_batch_state = None
+        st.session_state.network_cancel_requested = False
+    else:
+      # No tasks (either completed or cancelled before running)
+      if st.session_state.network_cancel_requested:
+        status_indicator.update(label="⏹ Batch cancelled", state="complete")
+      else:
+        status_indicator.update(label="✅ Batch processing complete!", state="complete")
+      st.session_state.network_batch_state = None
+      st.session_state.network_cancel_requested = False
+      if st.session_state.batch_results:
+        render_batch_results(st.session_state.batch_results)
+        rendered_results = True
 
   if run_batch_clicked:
     st.session_state.batch_results = []
@@ -247,10 +479,6 @@ def tab_batch():
 
     if st.session_state.data_collection_mode == 'api':
       model_ids = [model_name for (_, _, model_name) in selected_models]
-      progress_bar = st.progress(0)
-      status_indicator = st.status("Preparing batch...", expanded=False)
-      results_placeholder = st.empty()
-
       batch_payload, creation_error = safe_api_call(
         st.session_state.api_client.start_batch,
         prompts=prompts,
@@ -266,184 +494,31 @@ def tab_batch():
       total_tasks = batch_payload.get('total_tasks', len(prompts) * len(selected_models))
       st.session_state.batch_results_download_key = f"api-{batch_id or int(time.time())}"
 
-      status_indicator.update(
-        label=f"Submitting Batch {batch_id}... Waiting for first results.",
-        state="running"
-      )
-
-      while True:
-        status_data, status_error = safe_api_call(
-          st.session_state.api_client.get_batch_status,
-          batch_id=batch_id,
-          show_spinner=False
-        )
-        if status_error:
-          st.error(status_error)
-          break
-
-        rows = build_rows_from_batch_status(status_data)
-        st.session_state.batch_results = rows
-
-        completed = status_data.get('completed_tasks', 0)
-        status_label = status_data.get('status', 'processing').title()
-        progress = completed / total_tasks if total_tasks else 0
-        progress_bar.progress(progress)
-        status_indicator.update(
-          label=f"{status_label}: {completed}/{total_tasks} runs complete",
-          state="running"
-        )
-
-        render_batch_results(rows, placeholder=results_placeholder)
-        rendered_results = True
-
-        if status_data.get('status') in ('completed', 'failed'):
-          break
-        time.sleep(1)
-
-      status_indicator.update(label="✅ Batch processing complete!", state="complete")
+      st.session_state.active_api_batch = {
+        'batch_id': batch_id,
+        'total_tasks': total_tasks
+      }
+      st.session_state.api_cancel_requested = False
+      st.session_state.api_cancel_sent = False
+      _safe_rerun()
 
     else:
-      # Progress tracking
-      progress_bar = st.progress(0)
-      status_indicator = st.status("Preparing batch...", expanded=False)
-      results_placeholder = st.empty()
-
-      # Calculate total runs
-      total_runs = len(prompts) * len(selected_models)
-      current_run = 0
-      st.session_state.batch_results_download_key = f"net-{int(time.time())}"
-
-      # Process each prompt with each model in network capture mode
+      # Initialize network capture batch state; process one task per rerun
+      tasks = []
       for prompt_idx, prompt in enumerate(prompts):
         for model_label, provider_name, model_name in selected_models:
-          current_run += 1
-          status_indicator.update(
-            label=f"Processing {current_run}/{total_runs} · {model_label} · Prompt {prompt_idx + 1}/{len(prompts)}",
-            state="running"
-          )
+          tasks.append((prompt_idx, prompt, model_label, provider_name, model_name))
 
-          try:
-            # Only ChatGPT is supported for network logs currently
-            if provider_name != 'openai':
-              raise Exception(f"Network log mode only supports OpenAI/ChatGPT. Skipping {provider_name}")
-
-            # Check if ChatGPT credentials are configured
-            if not Config.CHATGPT_EMAIL or not Config.CHATGPT_PASSWORD:
-              raise Exception("ChatGPT credentials not found. Please add CHATGPT_EMAIL and CHATGPT_PASSWORD to your .env file.")
-
-            # Initialize and use capturer
-            capturer = ChatGPTCapturer()
-            capturer.start_browser(headless=not st.session_state.network_show_browser)
-
-            try:
-              # Authenticate with credentials from Config
-              # Session persistence will restore saved sessions automatically
-              if not capturer.authenticate(
-                email=Config.CHATGPT_EMAIL,
-                password=Config.CHATGPT_PASSWORD
-              ):
-                raise Exception("Failed to authenticate with ChatGPT")
-
-              # Send prompt and capture
-              # Always use 'chatgpt-free' for network capture (free accounts don't have model selection)
-              provider_response = capturer.send_prompt(prompt, 'chatgpt-free')
-
-              # Convert ProviderResponse to display format and save to database
-              search_queries = [SimpleNamespace(
-                query=q.query,
-                sources=[SimpleNamespace(
-                  url=s.url, title=s.title, domain=s.domain, rank=s.rank,
-                  pub_date=s.pub_date, snippet_text=s.snippet_text,
-                  internal_score=s.internal_score, metadata=s.metadata
-                ) for s in q.sources],
-                timestamp=q.timestamp,
-                order_index=q.order_index
-              ) for q in provider_response.search_queries]
-
-              citations = [SimpleNamespace(
-                url=c.url, title=c.title, rank=c.rank,
-                snippet_used=c.snippet_used,
-                citation_confidence=c.citation_confidence,
-                metadata=c.metadata
-              ) for c in provider_response.citations]
-
-              all_sources = [SimpleNamespace(
-                url=s.url, title=s.title, domain=s.domain, rank=s.rank,
-                pub_date=s.pub_date, snippet_text=s.snippet_text,
-                internal_score=s.internal_score, metadata=s.metadata
-              ) for s in provider_response.sources]
-
-              # Compute metrics
-              metrics = compute_metrics(search_queries, citations, all_sources)
-
-              # Create response object
-              response = SimpleNamespace(
-                provider=provider_response.provider,
-                model=provider_response.model,
-                model_display_name=get_model_display_name(provider_response.model),
-                response_text=provider_response.response_text,
-                search_queries=search_queries,
-                all_sources=all_sources,
-                citations=citations,
-                response_time_ms=provider_response.response_time_ms,
-                data_source='network_log',
-                sources_found=metrics['sources_found'],
-                sources_used=metrics['sources_used'],
-                avg_rank=metrics['avg_rank'],
-                extra_links_count=metrics['extra_links_count'],
-                raw_response=provider_response.raw_response
-              )
-
-              # Save to database via backend API
-              # Convert SimpleNamespace objects to dicts for JSON serialization
-              _, save_error = safe_api_call(
-                st.session_state.api_client.save_network_log,
-                provider=provider_response.provider,
-                model=provider_response.model,
-                prompt=prompt,
-                response_text=provider_response.response_text,
-                search_queries=namespace_to_dict(search_queries),
-                sources=namespace_to_dict(all_sources),
-                citations=namespace_to_dict(citations),
-                response_time_ms=provider_response.response_time_ms,
-                raw_response=provider_response.raw_response,
-                extra_links_count=metrics['extra_links_count'],
-                show_spinner=False
-              )
-              if save_error:
-                raise Exception(f"Failed to save: {save_error}")
-
-            finally:
-              # Always cleanup browser
-              capturer.stop_browser()
-
-            # Store result using backend-computed metrics
-            st.session_state.batch_results.append({
-              'prompt': prompt,
-              'model': model_label,
-              'searches': len(response.search_queries),
-              'sources': getattr(response, 'sources_found', 0),
-              'sources_used': getattr(response, 'sources_used', 0),
-              'avg_rank': getattr(response, 'avg_rank', None),
-              'response_time_s': response.response_time_ms / 1000
-            })
-
-          except Exception as e:
-            st.session_state.batch_results.append({
-              'prompt': prompt,
-              'model': model_label,
-              'error': str(e)
-            })
-
-          # Update progress
-          progress_bar.progress(current_run / total_runs)
-          render_batch_results(st.session_state.batch_results, placeholder=results_placeholder)
-          rendered_results = True
-
-      status_indicator.update(label="✅ Batch processing complete!", state="complete")
-
-  if results_placeholder is None:
-    results_placeholder = st.empty()
+      st.session_state.batch_results_download_key = f"net-{int(time.time())}"
+      st.session_state.batch_results = []
+      st.session_state.network_batch_state = {
+        'tasks': tasks,
+        'total_runs': len(tasks),
+        'completed_runs': 0,
+        'results': []
+      }
+      st.session_state.network_cancel_requested = False
+      _safe_rerun()
 
   if st.session_state.batch_results and not rendered_results:
-    render_batch_results(st.session_state.batch_results, placeholder=results_placeholder)
+    render_batch_results(st.session_state.batch_results)

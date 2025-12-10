@@ -58,3 +58,47 @@ def test_batch_service_processes_jobs(monkeypatch):
   assert final_status.status == "completed"
   assert final_status.completed_tasks == 2
   assert len(final_status.results) == 2
+
+
+def test_batch_service_cancel(monkeypatch):
+  """Cancelling a batch should mark it cancelled and skip accounting."""
+  service = BatchService(session_factory)
+
+  async def slow_run_provider_call(self, prompt, model):
+    await asyncio.sleep(0.05)
+    return SendPromptResponse(
+      prompt=prompt,
+      response_text="ok",
+      search_queries=[],
+      citations=[],
+      all_sources=[],
+      provider="openai",
+      model=model,
+      model_display_name=model,
+      response_time_ms=1000,
+      data_source="api",
+      sources_found=0,
+      sources_used=0,
+      avg_rank=None,
+      extra_links_count=0,
+      interaction_id=1,
+    )
+
+  monkeypatch.setattr(BatchService, "_run_provider_call", slow_run_provider_call)
+
+  request = BatchRequest(
+    prompts=["Prompt A", "Prompt B"],
+    provider="openai",
+    models=["gpt-5.1"],
+  )
+
+  async def run_and_cancel():
+    status = await service.start_batch(request)
+    service.cancel_batch(status.batch_id, reason="test cancel")
+    await asyncio.sleep(0.1)
+    return service.get_status(status.batch_id)
+
+  final_status = asyncio.run(run_and_cancel())
+  assert final_status.status == "cancelled"
+  assert final_status.cancel_reason == "test cancel"
+  assert final_status.completed_tasks == 0

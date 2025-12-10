@@ -384,7 +384,11 @@ class BatchStatus(BaseModel):
   failed_tasks: int = Field(default=0, ge=0, description="Number of failed tasks")
   status: str = Field(
     ...,
-    description="Batch status (pending, processing, completed, failed)"
+    description="Batch status (pending, processing, completed, failed, cancelled)"
+  )
+  cancel_reason: Optional[str] = Field(
+    default=None,
+    description="Reason provided when the batch was cancelled"
   )
 
   results: List[SendPromptResponse] = Field(
@@ -412,6 +416,7 @@ class BatchStatus(BaseModel):
           "completed_tasks": 7,
           "failed_tasks": 1,
           "status": "processing",
+          "cancel_reason": None,
           "results": [],
           "errors": [],
           "started_at": "2024-01-15T10:30:00Z"

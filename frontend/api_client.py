@@ -325,6 +325,22 @@ class APIClient:
       timeout=self.timeout_default
     )
 
+  def cancel_batch(self, batch_id: str) -> Dict[str, Any]:
+    """
+    Request cancellation of a running batch job.
+
+    Args:
+      batch_id: Identifier returned from start_batch
+
+    Returns:
+      Updated BatchStatus payload
+    """
+    return self._request(
+      "POST",
+      f"/api/v1/interactions/batch/{batch_id}/cancel",
+      timeout=self.timeout_default
+    )
+
   def save_network_log(
     self,
     provider: str,

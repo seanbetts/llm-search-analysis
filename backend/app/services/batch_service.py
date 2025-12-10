@@ -43,6 +43,8 @@ class _BatchJob:
   status: str = "pending"
   started_at: Optional[datetime] = None
   completed_at: Optional[datetime] = None
+  cancel_requested: bool = False
+  cancel_reason: Optional[str] = None
   results: List[SendPromptResponse] = field(default_factory=list)
   errors: List[Dict[str, str]] = field(default_factory=list)
   completed_tasks: int = 0
@@ -57,12 +59,26 @@ class _BatchJob:
   def mark_started(self) -> None:
     """Mark job as started and record timestamp."""
     with self.lock:
+      if self.cancel_requested:
+        self.status = "cancelled"
+        self.completed_at = datetime.utcnow()
+        return
       self.status = "processing"
       self.started_at = datetime.utcnow()
+
+  def mark_cancelled(self, reason: Optional[str] = None) -> None:
+    """Mark the job as cancelled and stop further accounting."""
+    with self.lock:
+      self.cancel_requested = True
+      self.cancel_reason = reason or "Cancelled by user"
+      self.status = "cancelled"
+      self.completed_at = datetime.utcnow()
 
   def add_result(self, response: SendPromptResponse) -> None:
     """Record a successful result."""
     with self.lock:
+      if self.cancel_requested:
+        return
       self.results.append(response)
       self.completed_tasks += 1
       self._update_status_locked()
@@ -70,6 +86,8 @@ class _BatchJob:
   def add_error(self, task: _BatchTask, error_message: str) -> None:
     """Record an error for the given task."""
     with self.lock:
+      if self.cancel_requested:
+        return
       self.errors.append({
         "prompt": task.prompt,
         "model": task.model,
@@ -81,6 +99,9 @@ class _BatchJob:
       self._update_status_locked()
 
   def _update_status_locked(self) -> None:
+    if self.cancel_requested:
+      self.status = "cancelled"
+      return
     if self.completed_tasks >= self.total_tasks:
       self.completed_at = datetime.utcnow()
       self.status = "failed" if self.failed_tasks else "completed"
@@ -94,6 +115,7 @@ class _BatchJob:
         completed_tasks=self.completed_tasks,
         failed_tasks=self.failed_tasks,
         status=self.status,
+        cancel_reason=self.cancel_reason,
         results=self.results.copy(),
         errors=self.errors.copy(),
         started_at=self.started_at,
@@ -130,19 +152,27 @@ class BatchService:
 
   async def _run_job(self, job: _BatchJob) -> None:
     job.mark_started()
+    if job.cancel_requested:
+      return
     provider_semaphores = {
       provider: asyncio.Semaphore(max(1, limit or self._default_provider_limit))
       for provider, limit in self._provider_limits.items()
     }
 
     async def _process_task(task: _BatchTask) -> None:
+      if job.cancel_requested:
+        return
       semaphore = provider_semaphores.setdefault(
         task.provider,
         asyncio.Semaphore(self._default_provider_limit)
       )
       async with semaphore:
+        if job.cancel_requested:
+          return
         try:
           response = await self._run_provider_call(task.prompt, task.model)
+          if job.cancel_requested:
+            return
           job.add_result(response)
         except Exception as exc:  # noqa: BLE001
           logger.exception("Batch task failed: prompt=%s model=%s", task.prompt, task.model)
@@ -182,4 +212,12 @@ class BatchService:
     job = self._jobs.get(batch_id)
     if not job:
       raise ValueError(f"Batch '{batch_id}' not found")
+    return job.snapshot()
+
+  def cancel_batch(self, batch_id: str, reason: Optional[str] = None) -> BatchStatus:
+    """Request cancellation of a running job."""
+    job = self._jobs.get(batch_id)
+    if not job:
+      raise ValueError(f"Batch '{batch_id}' not found")
+    job.mark_cancelled(reason)
     return job.snapshot()
