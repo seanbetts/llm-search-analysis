@@ -6,7 +6,6 @@ This catches issues like missing dependencies, circular imports, and
 architectural boundary violations (e.g., frontend importing backend code).
 """
 
-import pytest
 
 from frontend.tests.fixtures.send_prompt_responses import (
     api_send_prompt_response_namespace,
@@ -25,7 +24,7 @@ class TestImports:
 
     def test_import_frontend_tabs(self):
         """Test that all frontend tab modules can be imported."""
-        from frontend.tabs import tab_interactive, tab_batch, tab_history
+        from frontend.tabs import tab_batch, tab_history, tab_interactive
         assert callable(tab_interactive)
         assert callable(tab_batch)
         assert callable(tab_history)
@@ -44,7 +43,7 @@ class TestImports:
 
     def test_import_frontend_api_client(self):
         """Test that API client can be imported."""
-        from frontend.api_client import APIClient, APINotFoundError, APIClientError
+        from frontend.api_client import APIClient, APIClientError, APINotFoundError
         assert APIClient is not None
         assert APINotFoundError is not None
         assert APIClientError is not None
@@ -59,16 +58,10 @@ class TestImports:
         - Exception: frontend/network_capture can import backend data models
         """
         # Import all frontend modules
-        import frontend.tabs.interactive
-        import frontend.tabs.batch
-        import frontend.tabs.history
-        import frontend.components.models
-        import frontend.components.response
-        import frontend.helpers.metrics
-
         # Check that no backend imports leaked in
         import sys
-        backend_imports = [name for name in sys.modules.keys() if name.startswith('backend.') or name.startswith('app.')]
+
+        backend_imports = [name for name in sys.modules.keys() if name.startswith('backend.') or name.startswith('app.')]  # noqa: E501
 
         # Allowed backend imports: data models for network_capture
         # network_capture runs client-side and needs to produce data in backend format
@@ -87,7 +80,7 @@ class TestImports:
         disallowed_imports = [imp for imp in backend_imports if imp not in allowed_imports]
 
         # If this test fails, it means frontend is importing backend services/business logic
-        assert len(disallowed_imports) == 0, f"Frontend should only import backend data models. Found disallowed imports: {disallowed_imports}"
+        assert len(disallowed_imports) == 0, f"Frontend should only import backend data models. Found disallowed imports: {disallowed_imports}"  # noqa: E501
 
 
 class TestFunctionality:

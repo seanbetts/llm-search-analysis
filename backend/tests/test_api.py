@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,7 +13,6 @@ from app.api.v1.schemas.responses import BatchStatus, SendPromptResponse
 from app.dependencies import get_batch_service, get_db
 from app.main import app
 from app.models.database import Base
-
 
 # Create test database
 TEST_DB_PATH = Path(__file__).resolve().parent / "data" / "test.db"
@@ -110,7 +109,12 @@ class TestInteractionsEndpoints:
   def test_send_prompt_success(self, mock_send_prompt, client):
     """Test POST /api/v1/interactions/send creates interaction."""
     # Mock the provider response
-    from app.services.providers.openai_provider import ProviderResponse, SearchQuery, Source, Citation
+    from app.services.providers.openai_provider import (
+      Citation,
+      ProviderResponse,
+      SearchQuery,
+      Source,
+    )
 
     mock_send_prompt.return_value = ProviderResponse(
       provider="openai",
@@ -199,7 +203,6 @@ class TestInteractionsEndpoints:
 
     # Unsupported model returns 422 Unprocessable Entity (Pydantic validation error)
     assert response.status_code == 422
-    data = response.json()
     # Error is wrapped in custom error handler format
 
 
@@ -334,7 +337,9 @@ class TestBatchEndpoints:
   def test_get_recent_interactions_with_data(self, mock_send_prompt, client):
     """Test GET /api/v1/interactions/recent returns interactions."""
     # Mock the provider response
-    from app.services.providers.openai_provider import ProviderResponse, SearchQuery, Source, Citation
+    from app.services.providers.openai_provider import (
+      ProviderResponse,
+    )
 
     mock_send_prompt.return_value = ProviderResponse(
       provider="openai",
@@ -402,7 +407,12 @@ class TestBatchEndpoints:
   def test_get_interaction_details_success(self, mock_send_prompt, client):
     """Test GET /api/v1/interactions/{id} returns full details."""
     # Mock the provider response
-    from app.services.providers.openai_provider import ProviderResponse, SearchQuery, Source, Citation
+    from app.services.providers.openai_provider import (
+      Citation,
+      ProviderResponse,
+      SearchQuery,
+      Source,
+    )
 
     mock_send_prompt.return_value = ProviderResponse(
       provider="openai",

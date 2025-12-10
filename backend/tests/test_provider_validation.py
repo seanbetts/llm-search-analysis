@@ -2,6 +2,7 @@
 
 import pytest
 from pydantic import ValidationError
+
 from app.api.v1.schemas.requests import SendPromptRequest
 
 

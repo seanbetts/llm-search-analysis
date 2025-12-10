@@ -2,21 +2,16 @@
 Anthropic Claude provider implementation with web search.
 """
 
-import time
 import logging
+import time
 from typing import List
 from urllib.parse import urlparse
+
 from anthropic import Anthropic
 
 from app.core.provider_schemas import validate_anthropic_raw_response
 
-from .base_provider import (
-  BaseProvider,
-  ProviderResponse,
-  SearchQuery,
-  Source,
-  Citation
-)
+from .base_provider import BaseProvider, Citation, ProviderResponse, SearchQuery, Source
 
 logger = logging.getLogger(__name__)
 

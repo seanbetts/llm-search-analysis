@@ -3,19 +3,20 @@ Repository for database operations on interactions (prompts + responses).
 """
 
 import logging
-from typing import List, Optional, Tuple
 from datetime import datetime
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy.exc import SQLAlchemyError
+from typing import List, Optional, Tuple
+
 from sqlalchemy import func
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.database import (
-  Provider,
   InteractionModel,
-  Response,
-  SearchQuery,
+  Provider,
   QuerySource,
+  Response,
   ResponseSource,
+  SearchQuery,
   SourceUsed,
 )
 

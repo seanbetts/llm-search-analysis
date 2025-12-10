@@ -5,8 +5,8 @@ Defines the interface that all provider implementations must follow.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 
 @dataclass

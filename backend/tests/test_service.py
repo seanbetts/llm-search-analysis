@@ -1,11 +1,12 @@
 """Tests for InteractionService business logic."""
 
-import pytest
-from unittest.mock import Mock, MagicMock
 from datetime import datetime
+from unittest.mock import MagicMock, Mock
 
+import pytest
+
+from app.core.utils import calculate_average_rank, extract_domain, normalize_model_name
 from app.services.interaction_service import InteractionService
-from app.core.utils import normalize_model_name, extract_domain, calculate_average_rank
 
 
 class TestInteractionService:

@@ -1,8 +1,10 @@
 """Response formatting and display utilities."""
 
 import re
-import streamlit as st
 from urllib.parse import urlparse
+
+import streamlit as st
+
 from frontend.utils import format_pub_date
 
 
@@ -186,8 +188,8 @@ def display_response(response, prompt=None):
 
   if extracted_images:
     # Render images inline with minimal gaps
-    img_html = "".join([f'<img src="{url}" style="width:210px;height:135px;object-fit:cover;margin:4px 6px 4px 0;vertical-align:top;"/>' for url in extracted_images])
-    st.markdown(f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;'>{img_html}</div>", unsafe_allow_html=True)
+    img_html = "".join([f'<img src="{url}" style="width:210px;height:135px;object-fit:cover;margin:4px 6px 4px 0;vertical-align:top;"/>' for url in extracted_images])  # noqa: E501
+    st.markdown(f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;'>{img_html}</div>", unsafe_allow_html=True)  # noqa: E501
 
   # Render markdown with indented container styling
   # Use newlines around content to ensure markdown processing works inside the div
@@ -225,14 +227,13 @@ def display_response(response, prompt=None):
         with st.expander(f"📚 {query_text} ({len(query.sources)} sources)", expanded=False):
           for j, source in enumerate(query.sources, 1):
             url_display = source.url or 'No URL'
-            url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
             # Use domain as title fallback when title is missing
             display_title = source.title or source.domain or 'Unknown source'
             snippet = getattr(source, "snippet_text", None)
             pub_date = getattr(source, "pub_date", None)
             snippet_display = snippet if snippet else "N/A"
             pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
-            snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
+            snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
             pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
             domain_link = f'<a href="{url_display}" target="_blank">{source.domain or "Open source"}</a>'
             st.markdown(f"""
@@ -253,14 +254,13 @@ def display_response(response, prompt=None):
       with st.expander(f"View all {len(all_sources)} sources", expanded=False):
         for j, source in enumerate(all_sources, 1):
           url_display = source.url or 'No URL'
-          url_truncated = url_display[:80] + ('...' if len(url_display) > 80 else '')
           # Use domain as title fallback when title is missing
           display_title = source.title or source.domain or 'Unknown source'
           snippet = getattr(source, "snippet_text", None)
           pub_date = getattr(source, "pub_date", None)
           snippet_display = snippet if snippet else "N/A"
           pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
-          snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
+          snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
           pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
           domain_link = f'<a href="{url_display}" target="_blank">{source.domain or "Open source"}</a>'
           st.markdown(f"""
@@ -311,9 +311,9 @@ def display_response(response, prompt=None):
         display_title = citation.title or domain or 'Unknown source'
         snippet_used = getattr(citation, "snippet_used", None)
         source_fallback = url_to_source.get(citation.url)
-        snippet = snippet_used or (citation.metadata.get("snippet") if getattr(citation, "metadata", None) else None) or (getattr(source_fallback, "snippet_text", None))
-        pub_date_val = (citation.metadata.get("pub_date") if getattr(citation, "metadata", None) else None) or (getattr(source_fallback, "pub_date", None))
-        snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>"
+        snippet = snippet_used or (citation.metadata.get("snippet") if getattr(citation, "metadata", None) else None) or (getattr(source_fallback, "snippet_text", None))  # noqa: E501
+        pub_date_val = (citation.metadata.get("pub_date") if getattr(citation, "metadata", None) else None) or (getattr(source_fallback, "pub_date", None))  # noqa: E501
+        snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>"  # noqa: E501
         pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"
         pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
         st.markdown(f"""
@@ -343,7 +343,7 @@ def display_response(response, prompt=None):
         snippet = None
         if getattr(citation, "metadata", None):
           snippet = citation.metadata.get("snippet")
-        snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>" if snippet else ""
+        snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>" if snippet else ""  # noqa: E501
 
         st.markdown(f"""
         <div class="citation-item">

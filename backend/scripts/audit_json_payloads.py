@@ -28,8 +28,8 @@ from app.core.provider_schemas import (
   validate_openai_raw_response,
 )
 from app.models.database import (
-  Provider,
   InteractionModel,
+  Provider,
   QuerySource,
   Response,
   ResponseSource,

@@ -5,15 +5,17 @@ This module provides consistent error handling across the frontend,
 converting API client exceptions into user-friendly Streamlit messages.
 """
 
-from typing import Callable, Any, Optional
+from typing import Any, Callable, Optional
+
 import streamlit as st
+
 from frontend.api_client import (
   APIClientError,
-  APITimeoutError,
   APIConnectionError,
-  APIValidationError,
   APINotFoundError,
-  APIServerError
+  APIServerError,
+  APITimeoutError,
+  APIValidationError,
 )
 
 
@@ -75,13 +77,13 @@ def safe_api_call(
   except APINotFoundError as e:
     error_message = f"Resource not found: {str(e)}"
 
-  except APITimeoutError as e:
+  except APITimeoutError:
     error_message = (
       "Request timed out. The model may be taking too long to respond. "
       "Please try again."
     )
 
-  except APIConnectionError as e:
+  except APIConnectionError:
     error_message = (
       "Cannot connect to API server. Please ensure the backend is running "
       "on http://localhost:8000"

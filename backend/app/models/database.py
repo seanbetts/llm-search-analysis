@@ -3,7 +3,20 @@ Database models using SQLAlchemy.
 """
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, JSON, Float, Index, CheckConstraint
+
+from sqlalchemy import (
+  JSON,
+  Boolean,
+  CheckConstraint,
+  Column,
+  DateTime,
+  Float,
+  ForeignKey,
+  Index,
+  Integer,
+  String,
+  Text,
+)
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()

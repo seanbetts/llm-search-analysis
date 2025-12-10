@@ -3,21 +3,16 @@ Google Gemini provider implementation with Search Grounding.
 """
 
 import time
-import requests
 from typing import List
 from urllib.parse import urlparse
+
+import requests
 from google.genai import Client
 from google.genai.types import GenerateContentConfig, GoogleSearch, Tool
 
 from app.core.provider_schemas import validate_google_raw_response
 
-from .base_provider import (
-  BaseProvider,
-  ProviderResponse,
-  SearchQuery,
-  Source,
-  Citation
-)
+from .base_provider import BaseProvider, ProviderResponse, SearchQuery, Source
 
 
 class GoogleProvider(BaseProvider):

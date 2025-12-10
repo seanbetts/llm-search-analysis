@@ -4,11 +4,12 @@ ChatGPT network traffic capturer implementation.
 Uses browser automation to capture network logs from ChatGPT.
 """
 
-import time
-import re
 import html
-from typing import Optional, Any
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout, Locator
+import re
+import time
+from typing import Any, Optional
+
+from playwright.sync_api import sync_playwright
 
 try:
     from playwright_stealth import Stealth
@@ -22,12 +23,12 @@ try:
 except ImportError:
     STREAMLIT_AVAILABLE = False
 
+# Import ProviderResponse from backend
+from backend.app.services.providers.base_provider import ProviderResponse
+
 from .base_capturer import BaseCapturer
 from .browser_manager import BrowserManager
 from .parser import NetworkLogParser
-
-# Import ProviderResponse from backend
-from backend.app.services.providers.base_provider import ProviderResponse
 
 
 class ChatGPTCapturer(BaseCapturer):
@@ -71,7 +72,7 @@ class ChatGPTCapturer(BaseCapturer):
         if self._status_callback:
             try:
                 self._status_callback(message)
-            except:
+            except Exception:
                 pass  # Ignore callback errors
 
     def get_provider_name(self) -> str:
@@ -100,7 +101,6 @@ class ChatGPTCapturer(BaseCapturer):
             Exception: If browser fails to start or connect
         """
         try:
-            from pathlib import Path
             import os
 
             # Check if session file exists - if not, force headed mode for login
@@ -187,7 +187,7 @@ class ChatGPTCapturer(BaseCapturer):
             # Load storage state if available
             self.context = self.browser.new_context(
                 viewport={'width': 1920, 'height': 1080},
-                user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',  # noqa: E501
                 storage_state=storage_state,  # Will be None if file doesn't exist
                 permissions=["clipboard-read", "clipboard-write"]
             )
@@ -299,7 +299,7 @@ class ChatGPTCapturer(BaseCapturer):
                         print("⚠️  CAPTCHA detected!")
                         print("    Cloudflare is blocking automated access.")
                         break
-                except:
+                except Exception:
                     continue
 
             print("🔍 Looking for chat interface...")
@@ -352,16 +352,14 @@ class ChatGPTCapturer(BaseCapturer):
 
             # Look for chat interface
             has_chat_interface = False
-            matched_selector = None
             for selector in chat_interface_selectors:
                 try:
                     count = self.page.locator(selector).count()
                     if count > 0:
                         has_chat_interface = True
-                        matched_selector = selector
                         print(f"  ✓ Found chat interface: {selector} (count: {count})")
                         break
-                except:
+                except Exception:
                     continue
 
             if not has_chat_interface:
@@ -376,7 +374,7 @@ class ChatGPTCapturer(BaseCapturer):
                         has_login_button = True
                         print(f"  ✗ Found login button: {selector}")
                         break
-                except:
+                except Exception:
                     continue
 
             if has_login_button:
@@ -424,11 +422,11 @@ class ChatGPTCapturer(BaseCapturer):
             try:
                 # Get visible page text for better detection
                 page_text = self.page.inner_text('body').lower()
-            except:
+            except Exception:
                 pass
 
             # Check text content
-            if any(phrase in page_text for phrase in ['check your inbox', 'enter code', 'verification code', 'enter the code']):
+            if any(phrase in page_text for phrase in ['check your inbox', 'enter code', 'verification code', 'enter the code']):  # noqa: E501
                 verification_detected = True
                 print("  ✓ Email verification text detected in page")
 
@@ -439,7 +437,7 @@ class ChatGPTCapturer(BaseCapturer):
                         verification_detected = True
                         print(f"  ✓ Verification element detected: {selector}")
                         break
-                except:
+                except Exception:
                     continue
 
             if not verification_detected:
@@ -532,7 +530,7 @@ Waiting up to 120 seconds for you to complete this...
                             if warning_placeholder is not None:
                                 warning_placeholder.empty()
                             return True
-                    except:
+                    except Exception:
                         continue
 
                 # Wait before next check
@@ -554,7 +552,7 @@ Waiting up to 120 seconds for you to complete this...
                         if warning_placeholder is not None:
                             warning_placeholder.empty()
                         return True
-                except:
+                except Exception:
                     continue
 
             print("❌ Email verification not completed within timeout")
@@ -598,7 +596,7 @@ Waiting up to 120 seconds for you to complete this...
                         login_clicked = True
                         time.sleep(3)
                         break
-                except:
+                except Exception:
                     continue
 
             if not login_clicked:
@@ -626,7 +624,7 @@ Waiting up to 120 seconds for you to complete this...
                         button.click()
                         time.sleep(2)
                         break
-                except:
+                except Exception:
                     continue
 
             # Enter email
@@ -649,7 +647,7 @@ Waiting up to 120 seconds for you to complete this...
                         email_entered = True
                         time.sleep(1)
                         break
-                except Exception as e:
+                except Exception:
                     continue
 
             if not email_entered:
@@ -716,7 +714,7 @@ Waiting up to 120 seconds for you to complete this...
                             password_entered = True
                             time.sleep(1)
                             break
-                    except:
+                    except Exception:
                         continue
 
                 if not password_entered and attempt < 2:
@@ -728,7 +726,7 @@ Waiting up to 120 seconds for you to complete this...
                 try:
                     self.page.screenshot(path='password_not_found.png')
                     print("📸 Screenshot saved to: password_not_found.png")
-                except:
+                except Exception:
                     pass
                 raise Exception("Could not find password input field")
 
@@ -747,7 +745,7 @@ Waiting up to 120 seconds for you to complete this...
                     if button.count() > 0 and button.is_visible():
                         button.click()
                         break
-                except:
+                except Exception:
                     continue
 
             # Wait for login to complete
@@ -768,7 +766,7 @@ Waiting up to 120 seconds for you to complete this...
                     if self.page.locator(selector).count() > 0:
                         logged_in = True
                         break
-                except:
+                except Exception:
                     continue
 
             if logged_in:
@@ -794,7 +792,7 @@ Waiting up to 120 seconds for you to complete this...
                         if self.page.locator(selector).count() > 0:
                             logged_in = True
                             break
-                    except:
+                    except Exception:
                         continue
 
                 if logged_in:
@@ -809,7 +807,7 @@ Waiting up to 120 seconds for you to complete this...
             try:
                 self.page.screenshot(path='login_failed.png')
                 print("📸 Screenshot saved to: login_failed.png")
-            except:
+            except Exception:
                 pass
             raise Exception(f"Failed to login: {str(e)}")
 
@@ -937,7 +935,7 @@ Waiting up to 120 seconds for you to complete this...
                 print("⚠️  No event stream found in network capture")
                 # Return response with extracted text but no search data
                 return ProviderResponse(
-                    response_text=response_text if response_text else "ChatGPT responded but network capture did not find event stream data.",
+                    response_text=response_text if response_text else "ChatGPT responded but network capture did not find event stream data.",  # noqa: E501
                     search_queries=[],
                     sources=[],
                     citations=[],
@@ -1012,7 +1010,7 @@ Waiting up to 120 seconds for you to complete this...
                         # Fallback: convert anchor tags in HTML to markdown to preserve URLs
                         if html_content and len(html_content) > 10:
                             md = html_content
-                            md = re.sub(r'<a [^>]*href="([^"]+)"[^>]*>(.*?)</a>', r'[\2](\1)', md, flags=re.IGNORECASE|re.DOTALL)
+                            md = re.sub(r'<a [^>]*href="([^"]+)"[^>]*>(.*?)</a>', r'[\2](\1)', md, flags=re.IGNORECASE | re.DOTALL)  # noqa: E501
                             md = re.sub(r'<[^>]+>', '', md)  # strip other tags
                             md = html.unescape(md).strip()
                             if md:
@@ -1024,7 +1022,7 @@ Waiting up to 120 seconds for you to complete this...
                             text_content = text_content.replace("ChatGPT said:", "").replace("ChatGPT:", "").strip()
                             print(f"  ✓ Extracted response text (fallback)")
                             return text_content or "", ""
-                except:
+                except Exception:
                     continue
 
             print("  ⚠️  Could not extract response text from page")
@@ -1061,7 +1059,7 @@ Waiting up to 120 seconds for you to complete this...
                     print("  Response generation started...")
                     is_generating = True
                     break
-            except:
+            except Exception:
                 continue
 
         if is_generating:
@@ -1075,7 +1073,7 @@ Waiting up to 120 seconds for you to complete this...
                         if self.page.locator(selector).count() > 0:
                             all_gone = False
                             break
-                    except:
+                    except Exception:
                         continue
 
                 if all_gone:
@@ -1123,7 +1121,7 @@ Waiting up to 120 seconds for you to complete this...
                     if count > 0:
                         print(f"    ✓ Found search pill: {selector} ({count} matches)")
                         return True
-                except Exception as e:
+                except Exception:
                     continue
 
             # Debug: Print what's actually in the composer area
@@ -1132,7 +1130,7 @@ Waiting up to 120 seconds for you to complete this...
                 if composer.count() > 0:
                     text = composer.inner_text()
                     print(f"    Composer text: {text[:100]}")
-            except:
+            except Exception:
                 pass
 
             return False
@@ -1230,11 +1228,11 @@ Waiting up to 120 seconds for you to complete this...
                                 time.sleep(2)
                                 dismissed_any = True
                                 break
-                        except:
+                        except Exception:
                             continue
                     if dismissed_any:
                         break
-            except Exception as e:
+            except Exception:
                 continue
 
         if dismissed_any:
@@ -1287,7 +1285,7 @@ Waiting up to 120 seconds for you to complete this...
             screenshot_path = 'chatgpt_textarea_not_found.png'
             self.page.screenshot(path=screenshot_path)
             print(f"  📸 Screenshot saved to: {screenshot_path}")
-        except:
+        except Exception:
             pass
 
         print("  ❌ No textarea found with any selector")

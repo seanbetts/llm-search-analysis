@@ -13,7 +13,7 @@ import logging
 from typing import Tuple
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, joinedload
+from sqlalchemy.orm import joinedload, sessionmaker
 
 from app.config import settings
 from app.core.utils import calculate_average_rank

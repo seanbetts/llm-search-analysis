@@ -1,14 +1,16 @@
 """Interactive tab for single prompt testing."""
 
-import streamlit as st
 from types import SimpleNamespace
-from frontend.config import Config
-from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
+
+import streamlit as st
+
 from frontend.components.models import get_all_models
 from frontend.components.response import display_response
+from frontend.config import Config
+from frontend.helpers.error_handling import safe_api_call
 from frontend.helpers.metrics import compute_metrics, get_model_display_name
 from frontend.helpers.serialization import namespace_to_dict
-from frontend.helpers.error_handling import safe_api_call
+from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 
 
 def tab_interactive():
@@ -25,8 +27,12 @@ def tab_interactive():
   # Model selection (hide in network log mode since it always uses chatgpt-free)
   if st.session_state.data_collection_mode == 'network_log':
     st.info("🌐 **Network Capture Mode**: Using free ChatGPT (model selection not available)")
-    st.checkbox("Show browser window", value=st.session_state.network_show_browser, key="network_show_browser",
-               help="Check to see the browser window (may help with CAPTCHA). Unchecked runs in headless mode (faster, hidden).")
+    st.checkbox(
+      "Show browser window",
+      value=st.session_state.network_show_browser,
+      key="network_show_browser",
+      help="Check to see the browser window (may help with CAPTCHA). Unchecked runs in headless mode (faster, hidden)."
+    )
     # Fixed model for network capture
     selected_provider = 'openai'
     selected_model = 'chatgpt-free'
@@ -62,7 +68,7 @@ def tab_interactive():
         status_placeholder = st.empty()
 
         with status_placeholder.container():
-          with st.status("Analyzing with network capture...", expanded=True) as status:
+          with st.status("Analyzing with network capture...", expanded=True):
             status_container = st.empty()
 
             # Status callback to update UI
@@ -90,7 +96,7 @@ def tab_interactive():
               # Always stop browser
               try:
                 capturer.stop_browser()
-              except:
+              except Exception:
                 pass
 
           # Convert ProviderResponse to display format

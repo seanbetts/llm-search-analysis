@@ -1,10 +1,12 @@
 """Tests for round-trip persistence - save and retrieve model names correctly."""
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-from app.services.provider_service import ProviderService
-from app.services.interaction_service import InteractionService
+
 from app.repositories.interaction_repository import InteractionRepository
+from app.services.interaction_service import InteractionService
+from app.services.provider_service import ProviderService
 
 
 class TestRoundTripPersistence:
@@ -45,8 +47,9 @@ class TestRoundTripPersistence:
     Ensure saved interaction can be retrieved with correct model name.
     This is the critical test that would have caught the model name corruption bug.
     """
-    from app.api.v1.schemas.responses import SendPromptResponse
     from datetime import datetime
+
+    from app.api.v1.schemas.responses import SendPromptResponse
 
     # Mock the provider to avoid actual API calls
     with patch('app.services.providers.provider_factory.ProviderFactory.get_provider') as mock_get_provider:
@@ -108,8 +111,9 @@ class TestRoundTripPersistence:
     Specific test for Claude models with date suffixes.
     This was the original bug - date was being mangled during normalization.
     """
-    from app.api.v1.schemas.responses import SendPromptResponse
     from datetime import datetime
+
+    from app.api.v1.schemas.responses import SendPromptResponse
 
     model = "claude-sonnet-4-5-20250929"
 
@@ -168,8 +172,9 @@ class TestRoundTripPersistence:
     """
     Test multiple save/retrieve cycles to ensure model names remain stable.
     """
-    from app.api.v1.schemas.responses import SendPromptResponse
     from datetime import datetime
+
+    from app.api.v1.schemas.responses import SendPromptResponse
 
     test_models = [
       ("anthropic", "claude-sonnet-4-5-20250929"),
@@ -232,8 +237,9 @@ class TestRoundTripPersistence:
     Test that a retrieved model name can be used to make a new query.
     This validates that stored model names are in the correct canonical format.
     """
-    from app.api.v1.schemas.responses import SendPromptResponse
     from datetime import datetime
+
+    from app.api.v1.schemas.responses import SendPromptResponse
 
     model = "claude-sonnet-4-5-20250929"
 
@@ -313,18 +319,17 @@ class TestRoundTripPersistence:
     Test that model names are preserved even when there are sources and citations.
     This ensures the bug fix works in realistic scenarios.
     """
-    from app.api.v1.schemas.responses import SendPromptResponse, SearchQuery, Citation, Source
     from datetime import datetime
+
+    from app.api.v1.schemas.responses import Citation, SearchQuery, SendPromptResponse, Source
 
     model = "claude-sonnet-4-5-20250929"
 
     with patch('app.services.providers.provider_factory.ProviderFactory.get_provider') as mock_get_provider:
       # Create mock with sources and citations
-      from app.services.providers.base_provider import (
-        SearchQuery as ProviderSearchQuery,
-        Source as ProviderSource,
-        Citation as ProviderCitation
-      )
+      from app.services.providers.base_provider import Citation as ProviderCitation
+      from app.services.providers.base_provider import SearchQuery as ProviderSearchQuery
+      from app.services.providers.base_provider import Source as ProviderSource
 
       mock_source = ProviderSource(
         url="https://example.com",

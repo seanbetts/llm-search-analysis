@@ -9,7 +9,7 @@ def _build_sse_body():
     # Search query metadata
     'data: {"v":{"message":{"metadata":{"search_model_queries":{"queries":["latest ai news"]}}}}}',
     # Search result group with one entry
-    'data: {"v":{"message":{"metadata":{"search_result_groups":[{"domain":"example.com","entries":[{"type":"search_result","url":"https://example.com/article","title":"Example Title","snippet":"Snippet text"}]}]}}}}'
+    'data: {"v":{"message":{"metadata":{"search_result_groups":[{"domain":"example.com","entries":[{"type":"search_result","url":"https://example.com/article","title":"Example Title","snippet":"Snippet text"}]}]}}}}'  # noqa: E501
   ]
   return "\n".join(lines)
 

@@ -31,11 +31,8 @@ from app.core.utils import extract_domain  # noqa: E402  pylint: disable=wrong-i
 from app.models.database import (  # noqa: E402  pylint: disable=wrong-import-position
   InteractionModel,
   Provider,
-  QuerySource,
   Response,
-  ResponseSource,
   SearchQuery,
-  SourceUsed,
 )
 
 
@@ -163,7 +160,11 @@ def build_row(response: Response) -> dict:
     "provider": provider_obj.display_name or provider_obj.name,
     "model": interaction.model_name if interaction else "",
     "data_source": response.data_source,
-    "prompt_excerpt": (interaction.prompt_text[:200] if interaction and interaction.prompt_text else "").replace("\n", " ").strip(),
+    "prompt_excerpt": (
+      (interaction.prompt_text[:200] if interaction and interaction.prompt_text else "")
+      .replace("\n", " ")
+      .strip()
+    ),
     "response_time_ms": response.response_time_ms or 0,
     "search_query_count": search_query_count,
     "source_record_count": source_count,

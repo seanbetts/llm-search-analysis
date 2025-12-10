@@ -1,8 +1,8 @@
 """Shared metrics computation for responses."""
 
 import re
-from typing import List, Optional
 from types import SimpleNamespace
+from typing import List, Optional
 
 
 def get_model_display_name(model: str) -> str:

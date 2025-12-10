@@ -29,9 +29,10 @@ Database URL Normalization:
     development (backend/data relative paths).
 """
 
-from typing import Dict, List
 import logging
 from pathlib import Path
+from typing import Dict, List
+
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 

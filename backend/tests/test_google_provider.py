@@ -1,7 +1,9 @@
 """Tests for Google Gemini provider implementation."""
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, MagicMock, patch
+
 from app.services.providers.google_provider import GoogleProvider
 
 

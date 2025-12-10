@@ -5,8 +5,9 @@ metrics when saving interactions. Following TDD, these tests define the expected
 behavior BEFORE implementation.
 """
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from app.services.interaction_service import InteractionService
 

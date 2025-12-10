@@ -2,11 +2,12 @@
 
 import logging
 from typing import Dict, List
-from app.config import settings
-from app.services.providers import ProviderFactory, ProviderResponse
+
 from app.api.v1.schemas.responses import ProviderInfo, SendPromptResponse
-from app.services.interaction_service import InteractionService
+from app.config import settings
 from app.core.utils import get_model_display_name
+from app.services.interaction_service import InteractionService
+from app.services.providers import ProviderFactory, ProviderResponse
 
 logger = logging.getLogger(__name__)
 
@@ -139,8 +140,10 @@ class ProviderService:
       return self.interaction_service.get_interaction_details(interaction_id)
     else:
       # If not saved, construct response directly
-      from app.api.v1.schemas.responses import SearchQuery as SearchQuerySchema, Citation as CitationSchema
       from datetime import datetime
+
+      from app.api.v1.schemas.responses import Citation as CitationSchema
+      from app.api.v1.schemas.responses import SearchQuery as SearchQuerySchema
 
       search_queries_schema = []
       for query in provider_response.search_queries:

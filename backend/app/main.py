@@ -24,19 +24,20 @@ Environment Configuration:
 - See .env.example for required environment variables
 """
 
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
-from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
 import logging
 
-from app.config import settings
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+
 from app.api.v1.endpoints import interactions, providers
-from app.dependencies import engine
-from app.core.exceptions import APIException, DatabaseError, ValidationError
+from app.config import settings
+from app.core.exceptions import APIException, DatabaseError
 from app.core.middleware import LoggingMiddleware, get_correlation_id
+from app.dependencies import engine
 
 
 class CorrelationIdFilter(logging.Filter):

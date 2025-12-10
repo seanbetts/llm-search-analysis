@@ -19,22 +19,19 @@ from pathlib import Path
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from datetime import datetime
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import sessionmaker
 
 from app.models.database import (
     Base,
-    Provider,
     InteractionModel,
-    Response,
-    SearchQuery,
+    Provider,
     QuerySource,
+    Response,
     ResponseSource,
-    SourceUsed,
+    SearchQuery,
 )
 from app.repositories.interaction_repository import InteractionRepository
-
 
 # Create test database
 TEST_DB_PATH = Path(__file__).resolve().parent / "data" / "test_integration.db"

@@ -2,8 +2,9 @@
 
 from typing import Optional
 from urllib.parse import urlparse
-from app.services.interaction_service import InteractionService
+
 from app.core.utils import format_pub_date
+from app.services.interaction_service import InteractionService
 
 
 class ExportService:

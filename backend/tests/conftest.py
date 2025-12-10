@@ -1,7 +1,7 @@
 """Pytest configuration for loading environment variables from .env file."""
 
-import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 

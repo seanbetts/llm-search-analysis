@@ -5,6 +5,7 @@ Typed helpers for validating nested JSON blobs before persistence.
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
+
 from pydantic import BaseModel, ConfigDict, Field
 
 

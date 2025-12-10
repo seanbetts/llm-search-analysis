@@ -5,13 +5,13 @@ from unittest.mock import Mock
 
 import pytest
 
-from app.services.export_service import ExportService
 from app.api.v1.schemas.responses import (
-  SendPromptResponse,
-  SearchQuery,
-  Source,
   Citation,
+  SearchQuery,
+  SendPromptResponse,
+  Source,
 )
+from app.services.export_service import ExportService
 
 
 @pytest.fixture

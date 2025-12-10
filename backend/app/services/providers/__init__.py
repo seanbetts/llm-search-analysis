@@ -1,6 +1,6 @@
 """Provider implementations for LLM API integration."""
 
-from .base_provider import BaseProvider, ProviderResponse, SearchQuery, Source, Citation
+from .base_provider import BaseProvider, Citation, ProviderResponse, SearchQuery, Source
 from .provider_factory import ProviderFactory
 
 __all__ = [

@@ -1,10 +1,11 @@
 """Tests for ProviderService."""
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, MagicMock, patch
 
 from app.services.provider_service import ProviderService
-from app.services.providers.openai_provider import ProviderResponse, SearchQuery, Source, Citation
+from app.services.providers.openai_provider import Citation, ProviderResponse, SearchQuery, Source
 
 
 class TestProviderService:

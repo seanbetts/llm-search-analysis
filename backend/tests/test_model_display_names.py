@@ -3,7 +3,6 @@
 Following TDD, these tests define expected behavior BEFORE implementation.
 """
 
-import pytest
 from app.core.utils import get_model_display_name
 
 

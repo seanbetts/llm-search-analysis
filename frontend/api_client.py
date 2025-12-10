@@ -5,7 +5,8 @@ This module provides a client library for interacting with the FastAPI backend.
 """
 
 import time
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
+
 import httpx
 
 

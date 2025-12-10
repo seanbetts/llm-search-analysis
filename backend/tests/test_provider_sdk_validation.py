@@ -8,9 +8,8 @@ IMPORTANT: These tests should run FIRST before any unit tests to ensure
 SDK versions are compatible with our code.
 """
 
-import pytest
-import sys
 
+import pytest
 
 pytestmark = pytest.mark.sdk_validation
 
@@ -162,6 +161,7 @@ class TestProviderImplementationMatchesSDK:
     """Test that OpenAI provider calls the correct SDK methods."""
     try:
       from openai import OpenAI
+
       from app.services.providers.openai_provider import OpenAIProvider
     except ImportError as e:
       pytest.skip(f"Required libraries not installed: {e}")
@@ -183,6 +183,7 @@ class TestProviderImplementationMatchesSDK:
     """Test that Google provider calls the correct SDK methods."""
     try:
       from google.genai import Client
+
       from app.services.providers.google_provider import GoogleProvider
     except ImportError as e:
       pytest.skip(f"Required libraries not installed: {e}")
@@ -204,6 +205,7 @@ class TestProviderImplementationMatchesSDK:
     """Test that Anthropic provider calls the correct SDK methods."""
     try:
       from anthropic import Anthropic
+
       from app.services.providers.anthropic_provider import AnthropicProvider
     except ImportError as e:
       pytest.skip(f"Required libraries not installed: {e}")

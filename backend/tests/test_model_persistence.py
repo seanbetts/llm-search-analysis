@@ -1,6 +1,7 @@
 """Tests for model name persistence and normalization."""
 
 import pytest
+
 from app.core.utils import normalize_model_name
 
 

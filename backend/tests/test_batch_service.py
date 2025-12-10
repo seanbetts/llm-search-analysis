@@ -3,8 +3,8 @@
 import asyncio
 
 from app.api.v1.schemas.requests import BatchRequest
-from app.services.batch_service import BatchService
 from app.api.v1.schemas.responses import SendPromptResponse
+from app.services.batch_service import BatchService
 
 
 class DummySession:

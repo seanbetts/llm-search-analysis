@@ -1,6 +1,5 @@
 """History tab for viewing past interactions."""
 
-import base64
 import traceback
 from datetime import datetime
 from typing import Any, Dict, List
@@ -272,8 +271,18 @@ def tab_history():
     # Default sort (newest first); users can re-sort via table headers
     df = df.sort_values(by="timestamp", ascending=False, na_position="last")
 
-    display_df = df[['id', 'timestamp', 'analysis_type', 'prompt_preview', 'provider', 'model_display', 'response_time_display', 'searches', 'sources', 'citations', 'avg_rank_display', 'extra_links']]
-    display_df.columns = ['ID', 'Timestamp', 'Analysis Type', 'Prompt', 'Provider', 'Model', 'Response Time', 'Searches', 'Sources Found', 'Sources Used', 'Avg. Rank', 'Extra Links']
+    display_df = df[
+      [
+        'id', 'timestamp', 'analysis_type', 'prompt_preview', 'provider',
+        'model_display', 'response_time_display', 'searches', 'sources',
+        'citations', 'avg_rank_display', 'extra_links'
+      ]
+    ]
+    display_df.columns = [
+      'ID', 'Timestamp', 'Analysis Type', 'Prompt', 'Provider', 'Model',
+      'Response Time', 'Searches', 'Sources Found', 'Sources Used', 'Avg. Rank',
+      'Extra Links'
+    ]
 
     # Configure column widths and alignment
     # Let Streamlit autosize columns; avoid fixed widths
@@ -451,10 +460,10 @@ def tab_history():
         # Count only citations with ranks (from search results)
         citations_with_rank = [c for c in details.get('citations', []) if c.get('rank') is not None]
         num_sources_used = len(citations_with_rank)
-        avg_rank_display = f"{sum(c['rank'] for c in citations_with_rank) / len(citations_with_rank):.1f}" if citations_with_rank else "N/A"
+        avg_rank_display = f"{sum(c['rank'] for c in citations_with_rank) / len(citations_with_rank):.1f}" if citations_with_rank else "N/A"  # noqa: E501
         response_time_s = f"{details['response_time_ms'] / 1000:.1f}s"
         # Extra links from stored value; fallback to citations without rank
-        extra_links_count = details.get('extra_links', len([c for c in details.get('citations', []) if not c.get('rank')]))
+        extra_links_count = details.get('extra_links', len([c for c in details.get('citations', []) if not c.get('rank')]))  # noqa: E501
         # Response metadata
         col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1.5, 2, 1, 1, 1, 1, 1, 1])
 
@@ -493,8 +502,8 @@ def tab_history():
 
         if extracted_images:
           # Render images inline with minimal gaps
-          img_html = "".join([f'<img src="{url}" style="width:210px;height:135px;object-fit:cover;margin:4px 6px 4px 0;vertical-align:top;"/>' for url in extracted_images])
-          st.markdown(f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;'>{img_html}</div>", unsafe_allow_html=True)
+          img_html = "".join([f'<img src="{url}" style="width:210px;height:135px;object-fit:cover;margin:4px 6px 4px 0;vertical-align:top;"/>' for url in extracted_images])  # noqa: E501
+          st.markdown(f"<div style='display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;'>{img_html}</div>", unsafe_allow_html=True)  # noqa: E501
 
         # Render markdown with indented container styling
         # Use newlines around content to ensure markdown processing works inside the div
@@ -539,7 +548,7 @@ def tab_history():
                     pub_date = src.get('pub_date')
                     snippet_display = snippet if snippet else "N/A"
                     pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
-                    snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
+                    snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
                     pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
                     domain_link = f'<a href="{url_display}" target="_blank">{src.get("domain") or "Open source"}</a>'
                     st.markdown(f"""
@@ -565,7 +574,7 @@ def tab_history():
                   pub_date = src.get('pub_date')
                   snippet_display = snippet if snippet else "N/A"
                   pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
-                  snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
+                  snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
                   pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
                   domain_link = f'<a href="{url_display}" target="_blank">{src.get("domain") or "Open source"}</a>'
                   st.markdown(f"""
@@ -612,7 +621,7 @@ def tab_history():
                   snippet = snippet or source_fallback.get('snippet_text') or source_fallback.get('snippet')
                   pub_date_val = pub_date_val or source_fallback.get('pub_date')
 
-              snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>"
+              snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>"  # noqa: E501
               pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"
               pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
 
@@ -641,7 +650,7 @@ def tab_history():
 
               # Get snippet if available
               snippet = citation.get('snippet')
-              snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>" if snippet else ""
+              snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>" if snippet else ""  # noqa: E501
 
               st.markdown(f"""
               <div class="citation-item">

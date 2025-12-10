@@ -5,6 +5,7 @@ user-friendly messages for consistent error handling across the application.
 """
 
 from typing import Any, Dict, Optional
+
 from fastapi import status
 
 

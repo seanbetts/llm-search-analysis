@@ -25,16 +25,17 @@ Example:
 """
 
 from typing import Generator
+
+from fastapi import Depends
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
-from fastapi import Depends
 
 from app.config import settings
 from app.repositories.interaction_repository import InteractionRepository
+from app.services.batch_service import BatchService
+from app.services.export_service import ExportService
 from app.services.interaction_service import InteractionService
 from app.services.provider_service import ProviderService
-from app.services.export_service import ExportService
-from app.services.batch_service import BatchService
 
 # Create database engine
 engine = create_engine(

@@ -11,9 +11,9 @@ import streamlit as st
 from frontend.components.models import get_all_models
 from frontend.config import Config
 from frontend.helpers.error_handling import safe_api_call
+from frontend.helpers.export_utils import dataframe_to_csv_bytes
 from frontend.helpers.metrics import compute_metrics, get_model_display_name
 from frontend.helpers.serialization import namespace_to_dict
-from frontend.helpers.export_utils import dataframe_to_csv_bytes
 from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 
 
@@ -190,7 +190,7 @@ def tab_batch():
     # Only OpenAI models supported for network capture
     model_labels = [label for label in models.keys() if models[label][0] == 'openai']
     if not model_labels:
-      st.error("Network log mode requires OpenAI models. Please configure OPENAI_API_KEY in your .env file or switch to API mode.")
+      st.error("Network log mode requires OpenAI models. Please configure OPENAI_API_KEY in your .env file or switch to API mode.")  # noqa: E501
       return
     st.info("🌐 **Network Capture Mode**: Only OpenAI/ChatGPT models available")
   else:
@@ -258,8 +258,8 @@ def tab_batch():
 
   rendered_results = False
 
-  active_api_batch = st.session_state.active_api_batch if st.session_state.data_collection_mode == 'api' else None
-  network_batch_state = st.session_state.network_batch_state if st.session_state.data_collection_mode == 'network_log' else None
+  active_api_batch = st.session_state.active_api_batch if st.session_state.data_collection_mode == 'api' else None  # noqa: E501
+  network_batch_state = st.session_state.network_batch_state if st.session_state.data_collection_mode == 'network_log' else None  # noqa: E501
 
   # Handle ongoing API batch polling (non-blocking to allow cancel button)
   if active_api_batch and st.session_state.data_collection_mode == 'api':
@@ -342,7 +342,7 @@ def tab_batch():
           raise Exception(f"Network log mode only supports OpenAI/ChatGPT. Skipping {provider_name}")
 
         if not Config.CHATGPT_EMAIL or not Config.CHATGPT_PASSWORD:
-          raise Exception("ChatGPT credentials not found. Please add CHATGPT_EMAIL and CHATGPT_PASSWORD to your .env file.")
+          raise Exception("ChatGPT credentials not found. Please add CHATGPT_EMAIL and CHATGPT_PASSWORD to your .env file.")  # noqa: E501
 
         capturer = ChatGPTCapturer()
         capturer.start_browser(headless=not st.session_state.network_show_browser)

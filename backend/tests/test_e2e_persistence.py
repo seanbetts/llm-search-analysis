@@ -22,7 +22,6 @@ from app.dependencies import get_db
 from app.main import app
 from app.models.database import Base
 
-
 RUN_E2E = os.getenv("RUN_E2E") == "1"
 pytestmark = pytest.mark.integration
 
@@ -232,7 +231,8 @@ class TestAPIErrors:
 
     def test_provider_api_error_does_not_save(self, client):
         """Test that provider API errors don't create partial database entries."""
-        from unittest.mock import patch, Mock
+        from unittest.mock import patch
+
         from app.core.exceptions import APIException
 
         # Mock the OpenAI provider to raise an API error

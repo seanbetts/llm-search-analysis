@@ -2,8 +2,8 @@
 
 import re
 from datetime import datetime
-from urllib.parse import urlparse
 from typing import Optional
+from urllib.parse import urlparse
 
 
 def extract_domain(url: str) -> Optional[str]:

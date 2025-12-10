@@ -1,11 +1,11 @@
 """Tests for frontend response display components."""
 
-import pytest
 from types import SimpleNamespace
+
 from frontend.components.response import (
-  sanitize_response_markdown,
-  format_response_text,
   extract_images_from_response,
+  format_response_text,
+  sanitize_response_markdown,
 )
 from frontend.tests.fixtures.send_prompt_responses import (
   api_send_prompt_response_dict,

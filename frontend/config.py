@@ -5,6 +5,7 @@ Loads environment variables needed by the Streamlit frontend.
 """
 
 import os
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file

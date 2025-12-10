@@ -14,18 +14,17 @@ These tests would have caught the bugs fixed in commits:
 """
 
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from unittest.mock import patch
 
+from app.api.v1.schemas.responses import InteractionSummary, SendPromptResponse
+from app.dependencies import get_db
 from app.main import app
 from app.models.database import Base
-from app.dependencies import get_db
-from app.api.v1.schemas.responses import SendPromptResponse, InteractionSummary
-
 
 # Create test database
 TEST_DB_PATH = Path(__file__).resolve().parent / "data" / "test_contracts.db"
@@ -97,7 +96,7 @@ class TestInteractionResponseContract:
         data = response.json()
 
         # Validate against Pydantic schema
-        validated = SendPromptResponse(**data)
+        SendPromptResponse(**data)
         assert validated.response_text == "Test response"
 
         # Critical: List fields must never be None, always list type
@@ -148,7 +147,7 @@ class TestInteractionResponseContract:
         data = response.json()
 
         # Validate schema
-        validated = SendPromptResponse(**data)
+        SendPromptResponse(**data)
 
         # CRITICAL VALIDATION: These fields must be iterable
         # The frontend does: for c in details.get('citations', [])
@@ -375,7 +374,7 @@ class TestResponseSchemaEdgeCases:
 
         Both must work even if rank is None.
         """
-        from app.services.providers.openai_provider import ProviderResponse, Citation
+        from app.services.providers.openai_provider import Citation, ProviderResponse
 
         mock_send_prompt.return_value = ProviderResponse(
             provider="openai",

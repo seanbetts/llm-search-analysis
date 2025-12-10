@@ -9,20 +9,21 @@ since frontend code tends to be more UI-focused.
 """
 
 import ast
+
+# Import the backend test utilities (they're generic)
+import sys
 from pathlib import Path
 from typing import List
 
 import pytest
 
-# Import the backend test utilities (they're generic)
-import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "backend" / "tests"))
 from test_docstrings import (
+    calculate_coverage,
     get_python_files,
-    parse_file,
     has_docstring,
     is_public_function,
-    calculate_coverage,
+    parse_file,
 )
 
 

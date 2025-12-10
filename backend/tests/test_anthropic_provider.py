@@ -1,8 +1,10 @@
 """Tests for Anthropic Claude provider implementation."""
 
-import pytest
 from copy import deepcopy
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock, patch
+
+import pytest
+
 from app.services.providers.anthropic_provider import AnthropicProvider
 from tests.fixtures import provider_payloads as payloads
 

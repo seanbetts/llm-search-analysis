@@ -3,17 +3,17 @@
 import pytest
 from pydantic import ValidationError
 
-from app.api.v1.schemas.requests import SendPromptRequest, BatchRequest
+from app.api.v1.schemas.requests import BatchRequest, SendPromptRequest
 from app.api.v1.schemas.responses import (
-  Source,
-  SearchQuery,
-  Citation,
-  SendPromptResponse,
-  InteractionSummary,
   BatchStatus,
-  ProviderInfo,
-  HealthResponse,
+  Citation,
   ErrorResponse,
+  HealthResponse,
+  InteractionSummary,
+  ProviderInfo,
+  SearchQuery,
+  SendPromptResponse,
+  Source,
 )
 
 

@@ -4,8 +4,8 @@ Browser management utilities for network capture.
 Handles browser lifecycle, session management, and network interception setup.
 """
 
-from typing import Optional, Callable
 import json
+from typing import Callable, Optional
 
 
 class BrowserManager:
@@ -46,7 +46,7 @@ class BrowserManager:
             if request_filter is None or request_filter(request):
                 try:
                     post_data = request.post_data
-                except:
+                except Exception:
                     post_data = None
 
                 self.intercepted_requests.append({

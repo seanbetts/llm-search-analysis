@@ -5,7 +5,6 @@ Defines the interface that all network capturer implementations must follow.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 # Import ProviderResponse from backend
 from backend.app.services.providers.base_provider import ProviderResponse

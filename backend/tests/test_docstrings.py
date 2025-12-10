@@ -16,12 +16,10 @@ Exemptions are maintained for:
 """
 
 import ast
-import os
 from pathlib import Path
-from typing import List, Tuple, Set
+from typing import List, Tuple
 
 import pytest
-
 
 # Exemption lists
 EXEMPT_MODULES = {

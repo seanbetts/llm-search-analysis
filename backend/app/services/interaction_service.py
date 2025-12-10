@@ -1,30 +1,37 @@
 """Service layer for interaction business logic."""
 
-from typing import List, Optional, Tuple, Dict, Any
 from datetime import datetime
 from types import SimpleNamespace
+from typing import Any, Dict, List, Optional, Tuple
 
-from app.repositories.interaction_repository import InteractionRepository
-from app.core.utils import (
-  normalize_model_name,
-  extract_domain,
-  calculate_average_rank,
-  get_model_display_name,
-)
+from pydantic import TypeAdapter, ValidationError
+
 from app.api.v1.schemas.responses import (
-  SendPromptResponse,
-  InteractionSummary,
-  QueryHistoryStats,
-  SearchQuery as SearchQuerySchema,
-  Source as SourceSchema,
   Citation as CitationSchema,
 )
+from app.api.v1.schemas.responses import (
+  InteractionSummary,
+  QueryHistoryStats,
+  SendPromptResponse,
+)
+from app.api.v1.schemas.responses import (
+  SearchQuery as SearchQuerySchema,
+)
+from app.api.v1.schemas.responses import (
+  Source as SourceSchema,
+)
 from app.core.json_schemas import (
-  SourceMetadata,
   CitationMetadata,
+  SourceMetadata,
   dump_metadata,
 )
-from pydantic import TypeAdapter, ValidationError
+from app.core.utils import (
+  calculate_average_rank,
+  extract_domain,
+  get_model_display_name,
+  normalize_model_name,
+)
+from app.repositories.interaction_repository import InteractionRepository
 
 
 class InteractionService:
@@ -202,7 +209,12 @@ class InteractionService:
       model = interaction.model_name if interaction else ""
       # Use display_name if available, otherwise fall back to name
       provider_obj = interaction.provider if interaction else None
-      provider_display = provider_obj.display_name if provider_obj and provider_obj.display_name else (provider_obj.name if provider_obj else "")
+      if provider_obj and provider_obj.display_name:
+        provider_display = provider_obj.display_name
+      elif provider_obj:
+        provider_display = provider_obj.name
+      else:
+        provider_display = ""
       prompt_text = interaction.prompt_text if interaction else ""
       summary = InteractionSummary(
         interaction_id=response.id,
@@ -322,7 +334,12 @@ class InteractionService:
     model = interaction.model_name if interaction else ""
     # Use display_name if available, otherwise fall back to name
     provider_obj = interaction.provider if interaction else None
-    provider_display = provider_obj.display_name if provider_obj and provider_obj.display_name else (provider_obj.name if provider_obj else "")
+    if provider_obj and provider_obj.display_name:
+      provider_display = provider_obj.display_name
+    elif provider_obj:
+      provider_display = provider_obj.name
+    else:
+      provider_display = ""
     prompt_text = interaction.prompt_text if interaction else ""
     return SendPromptResponse(
       prompt=prompt_text,

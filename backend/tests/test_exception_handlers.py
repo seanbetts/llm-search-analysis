@@ -7,10 +7,10 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.exceptions import (
   APIException,
-  ValidationError,
-  ResourceNotFoundError,
-  InvalidRequestError,
   DatabaseError,
+  InvalidRequestError,
+  ResourceNotFoundError,
+  ValidationError,
 )
 
 
@@ -22,7 +22,6 @@ class TestExceptionHandlers:
     """Create a minimal test app with exception handlers."""
     from app.main import (
       api_exception_handler,
-      validation_exception_handler,
       database_exception_handler,
       global_exception_handler,
     )
@@ -150,7 +149,8 @@ class TestHealthCheckWithDatabaseError:
 
   def test_health_check_database_failure(self):
     """Test health check returns 503 when database is unavailable."""
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import MagicMock, patch
+
     from app.main import app
 
     client = TestClient(app)

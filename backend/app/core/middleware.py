@@ -6,13 +6,13 @@ This module provides middleware for:
 - Request context injection
 """
 
+import logging
 import time
 import uuid
-import logging
 from typing import Callable
+
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.datastructures import Headers
 
 logger = logging.getLogger(__name__)
 

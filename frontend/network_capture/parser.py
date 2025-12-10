@@ -11,15 +11,15 @@ NETWORK_LOG_FINDINGS.md for full analysis.
 
 import json
 import re
-from typing import Dict, Any, List, Tuple
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Tuple
 
 # Import data models from backend
 from backend.app.services.providers.base_provider import (
+    Citation,
     ProviderResponse,
     SearchQuery,
     Source,
-    Citation
 )
 
 
@@ -237,7 +237,7 @@ class NetworkLogParser:
 
             def clean_url(url: str) -> str:
                 """Normalize URL for comparison (remove tracking params)."""
-                from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
+                from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
                 if not url:
                     return ""
                 parsed = urlparse(url)
@@ -365,7 +365,7 @@ class NetworkLogParser:
             response_metadata["default_model_slug"] = default_model_slug
             response_metadata["classifier"] = classifier
             response_metadata["safe_urls"] = list(safe_url_set)
-            response_metadata["image_behavior"] = NetworkLogParser._extract_image_behavior(last_assistant_message) if last_assistant_message else None
+            response_metadata["image_behavior"] = NetworkLogParser._extract_image_behavior(last_assistant_message) if last_assistant_message else None  # noqa: E501
             response_metadata["extra_links_count"] = extra_links_count
 
             # Use discovered model slug if present
@@ -408,7 +408,7 @@ class NetworkLogParser:
             - Citations include both sources used (from search) and extra links
             - extra_links_count is the number of citations NOT from search results
         """
-        from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
+        from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
         def clean_url(url: str) -> str:
             """Normalize URL for comparison (remove tracking params)."""

@@ -5,17 +5,12 @@ OpenAI provider implementation using the Responses API with web_search tool.
 import time
 from typing import List
 from urllib.parse import urlparse
+
 from openai import OpenAI
 
 from app.core.provider_schemas import validate_openai_raw_response
 
-from .base_provider import (
-  BaseProvider,
-  ProviderResponse,
-  SearchQuery,
-  Source,
-  Citation
-)
+from .base_provider import BaseProvider, Citation, ProviderResponse, SearchQuery, Source
 
 
 class OpenAIProvider(BaseProvider):

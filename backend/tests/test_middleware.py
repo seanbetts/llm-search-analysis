@@ -3,11 +3,10 @@
 import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
-from fastapi.responses import JSONResponse
 
 from app.core.middleware import (
-  LoggingMiddleware,
   CorrelationIDMiddleware,
+  LoggingMiddleware,
   get_correlation_id,
 )
 

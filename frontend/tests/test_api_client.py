@@ -1,16 +1,17 @@
 """Unit tests for API Client."""
 
-import pytest
 import httpx
+import pytest
 import respx
+
 from frontend.api_client import (
   APIClient,
   APIClientError,
-  APITimeoutError,
   APIConnectionError,
-  APIValidationError,
   APINotFoundError,
   APIServerError,
+  APITimeoutError,
+  APIValidationError,
 )
 
 
