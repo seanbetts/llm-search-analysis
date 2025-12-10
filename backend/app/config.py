@@ -152,6 +152,7 @@ class Settings(BaseSettings):
     """
     logger = logging.getLogger(__name__)
 
+    candidate = value
     legacy_paths = {
       "sqlite:///../data/llm_search.db",
       "sqlite:///./data/llm_search.db",
@@ -165,16 +166,17 @@ class Settings(BaseSettings):
         value,
         DEFAULT_DB_URL,
       )
-      return DEFAULT_DB_URL
+      candidate = DEFAULT_DB_URL
 
-    app_path = Path("/app/data/llm_search.db")
-    if isinstance(value, str) and value == DEFAULT_DB_URL and not app_path.exists():
-      logger.info(
-        "/app/data/llm_search.db not found; falling back to %s",
-        BACKEND_FALLBACK_URL,
-      )
-      return BACKEND_FALLBACK_URL
-    return value
+    if isinstance(candidate, str) and candidate == DEFAULT_DB_URL:
+      app_path = Path("/app/data/llm_search.db")
+      if not app_path.exists():
+        logger.info(
+          "/app/data/llm_search.db not found; falling back to %s",
+          BACKEND_FALLBACK_URL,
+        )
+        return BACKEND_FALLBACK_URL
+    return candidate
 
   def get_batch_provider_limits(self) -> Dict[str, int]:
     """Return per-provider concurrency limits, applying overrides when set."""

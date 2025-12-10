@@ -14,6 +14,12 @@ FRONTEND_PYTHON_BIN="${FRONTEND_PYTHON:-python}"
 COVERAGE_PYTHON="$FRONTEND_PYTHON_BIN"
 GENERATE_HTML_COVERAGE="${GENERATE_HTML_COVERAGE:-0}"
 
+# Fallback to python3 if `python` is unavailable (e.g., macOS defaults)
+if ! command -v "$FRONTEND_PYTHON_BIN" >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
+  FRONTEND_PYTHON_BIN="python3"
+  COVERAGE_PYTHON="$FRONTEND_PYTHON_BIN"
+fi
+
 if [[ "$SKIP_EXTERNAL" == "1" ]]; then
   BACKEND_PYTEST_ADDOPTS="${BACKEND_PYTEST_ADDOPTS:+$BACKEND_PYTEST_ADDOPTS }--ignore=tests/test_e2e_persistence.py"
 fi
