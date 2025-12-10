@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 from frontend.utils import format_pub_date
 from frontend.components.response import format_response_text, extract_images_from_response
 from frontend.helpers.error_handling import safe_api_call
+from frontend.helpers.export_utils import dataframe_to_csv_bytes
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -268,13 +269,25 @@ def tab_history():
         st.session_state.history_page += 1
         st.rerun()
 
+    # Build export dataframe with full prompts (no truncation)
+    export_df = df[['id', 'timestamp', 'analysis_type', 'prompt', 'provider', 'model_display',
+                    'response_time_display', 'searches', 'sources', 'citations',
+                    'avg_rank_display', 'extra_links']].copy()
+    export_df.columns = ['ID', 'Timestamp', 'Analysis Type', 'Prompt', 'Provider', 'Model',
+                         'Response Time', 'Searches', 'Sources Found', 'Sources Used',
+                         'Avg. Rank', 'Extra Links']
+    # Normalize line endings for prompts to preserve formatting in CSV viewers
+    export_df['Prompt'] = export_df['Prompt'].apply(
+      lambda x: x.replace('\r\n', '\n').replace('\r', '\n') if isinstance(x, str) else x
+    )
+
     # Export button (aligned width with action buttons)
-    csv = display_df.to_csv(index=False)
+    csv_bytes = dataframe_to_csv_bytes(export_df, text_columns=['Prompt'])
     export_col, _export_spacer = st.columns([1, 4])
     with export_col:
       st.download_button(
         label="📥 Export History as CSV",
-        data=csv,
+        data=csv_bytes,
         file_name=f"query_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
         mime="text/csv",
         use_container_width=True,

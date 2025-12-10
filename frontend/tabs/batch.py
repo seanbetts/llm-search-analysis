@@ -13,6 +13,7 @@ from frontend.config import Config
 from frontend.helpers.error_handling import safe_api_call
 from frontend.helpers.metrics import compute_metrics, get_model_display_name
 from frontend.helpers.serialization import namespace_to_dict
+from frontend.helpers.export_utils import dataframe_to_csv_bytes
 from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 
 
@@ -108,6 +109,8 @@ def render_batch_results(results: List[Dict[str, Any]], placeholder: Optional[An
   target.markdown("#### Detailed Results")
   df_results = pd.DataFrame(results)
 
+  export_df = df_results.copy()
+
   if not df_results.empty and 'error' not in df_results.columns:
     df_results['avg_rank_display'] = df_results['avg_rank'].apply(
       lambda x: f"{x:.1f}" if pd.notna(x) else "N/A"
@@ -121,16 +124,28 @@ def render_batch_results(results: List[Dict[str, Any]], placeholder: Optional[An
     display_df.columns = ['Prompt', 'Model', 'Searches', 'Sources Found', 'Sources Used',
                           'Avg. Rank', 'Response Time']
     target.dataframe(display_df, use_container_width=True)
+    export_df = display_df.copy()
   else:
     target.dataframe(df_results, use_container_width=True)
+    rename_map = {
+      'prompt': 'Prompt',
+      'model': 'Model',
+      'searches': 'Searches',
+      'sources': 'Sources Found',
+      'sources_used': 'Sources Used',
+      'avg_rank': 'Avg. Rank',
+      'response_time_s': 'Response Time (s)',
+      'error': 'Error'
+    }
+    export_df = export_df.rename(columns={k: v for k, v in rename_map.items() if k in export_df.columns})
 
-  csv = df_results.to_csv(index=False)
+  csv_bytes = dataframe_to_csv_bytes(export_df, text_columns=['Prompt'])
   download_key_suffix = st.session_state.get('batch_results_download_key', 'default')
   render_counter = st.session_state.get('batch_results_render_counter', 0) + 1
   st.session_state['batch_results_render_counter'] = render_counter
   target.download_button(
     label="📥 Download Results as CSV",
-    data=csv,
+    data=csv_bytes,
     file_name=f"batch_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
     mime="text/csv",
     key=f"batch-results-download-{download_key_suffix}-{render_counter}"
