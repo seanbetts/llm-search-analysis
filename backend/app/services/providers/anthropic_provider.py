@@ -1,10 +1,12 @@
 """Anthropic Claude provider implementation with web search."""
 
 import logging
+import os
 import time
-from typing import List
+from typing import List, Union
 from urllib.parse import urlparse
 
+import httpx
 from anthropic import Anthropic
 
 from app.core.provider_schemas import validate_anthropic_raw_response
@@ -33,7 +35,18 @@ class AnthropicProvider(BaseProvider):
       api_key: Anthropic API key
     """
     super().__init__(api_key)
-    self.client = Anthropic(api_key=api_key)
+    verify: Union[bool, str] = True
+    if os.getenv("LLM_INSECURE_SKIP_VERIFY", "").lower() in {"1", "true", "yes"}:
+      verify = False
+    else:
+      verify = (
+        os.getenv("REQUESTS_CA_BUNDLE")
+        or os.getenv("SSL_CERT_FILE")
+        or True
+      )
+
+    http_client = httpx.Client(verify=verify, timeout=60)
+    self.client = Anthropic(api_key=api_key, http_client=http_client)
 
   def get_provider_name(self) -> str:
     """Get provider name."""

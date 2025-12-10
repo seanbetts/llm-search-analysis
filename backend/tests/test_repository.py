@@ -1,7 +1,7 @@
 """Tests for InteractionRepository."""
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 
 from app.models.database import Base
@@ -222,6 +222,26 @@ class TestInteractionRepository:
     results, total = repository.get_recent(page_size=5)
     assert total == 20
     assert len(results) == 5
+
+  def test_get_recent_defers_raw_payload(self, repository):
+    """Recent list should not load raw_response_json to avoid OOMs."""
+    repository.save(
+      prompt_text="Heavy payload prompt",
+      provider_name="openai",
+      model_name="gpt-4o",
+      response_text="ok",
+      response_time_ms=1000,
+      search_queries=[],
+      sources_used=[],
+      raw_response={"blob": "x" * 100_000},
+    )
+
+    results, total = repository.get_recent(page_size=1)
+
+    assert total == 1
+    assert len(results) == 1
+    state = inspect(results[0])
+    assert "raw_response_json" in state.unloaded
 
   def test_delete_existing_interaction(self, repository):
     """Test deleting an existing interaction."""

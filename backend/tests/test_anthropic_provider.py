@@ -1,5 +1,6 @@
 """Tests for Anthropic Claude provider implementation."""
 
+import ssl
 from copy import deepcopy
 from unittest.mock import Mock, patch
 
@@ -24,7 +25,11 @@ class TestAnthropicProvider:
       provider = AnthropicProvider("test-key-123")
 
       assert provider.api_key == "test-key-123"
-      mock_anthropic.assert_called_once_with(api_key="test-key-123")
+      args, kwargs = mock_anthropic.call_args
+      assert kwargs["api_key"] == "test-key-123"
+      assert "http_client" in kwargs
+      http_client = kwargs["http_client"]
+      assert http_client._transport._pool._ssl_context.verify_mode == ssl.CERT_REQUIRED  # type: ignore[attr-defined]
 
   def test_get_provider_name(self, provider):
     """Test get_provider_name returns 'anthropic'."""
@@ -69,6 +74,74 @@ class TestAnthropicProvider:
 
     assert "Anthropic API error" in str(exc_info.value)
     assert "API connection failed" in str(exc_info.value)
+
+  def test_respects_custom_ca_bundle(self, monkeypatch, tmp_path):
+    """Anthropic client should honor REQUESTS_CA_BUNDLE for TLS verification."""
+    cafile = tmp_path / "ca.pem"
+    cafile.write_text("dummy-cert")
+    captured = {}
+
+    class DummyClient:
+      def __init__(self, verify=True, timeout=None):
+        mode = ssl.CERT_REQUIRED if verify is not False else ssl.CERT_NONE
+        cafile = verify if isinstance(verify, str) else None
+        self._transport = type("T", (), {
+          "_pool": type("P", (), {
+            "_ssl_context": type("C", (), {
+              "verify_mode": mode,
+              "_cafile": cafile
+            })()
+          })()
+        })()
+
+    def fake_ctor(api_key: str, http_client):
+      captured["client"] = http_client
+      return Mock()
+
+    monkeypatch.setenv("REQUESTS_CA_BUNDLE", str(cafile))
+    monkeypatch.delenv("LLM_INSECURE_SKIP_VERIFY", raising=False)
+    monkeypatch.setattr("app.services.providers.anthropic_provider.httpx.Client", DummyClient)
+    monkeypatch.setattr("app.services.providers.anthropic_provider.Anthropic", fake_ctor)
+
+    AnthropicProvider("key")
+
+    client = captured["client"]
+    ssl_context = client._transport._pool._ssl_context  # type: ignore[attr-defined]
+    assert ssl_context.verify_mode == ssl.CERT_REQUIRED
+    assert ssl_context._cafile == str(cafile)  # type: ignore[attr-defined]
+
+  def test_allows_insecure_skip_verify(self, monkeypatch):
+    """Anthropic client can disable verification when explicitly configured."""
+    captured = {}
+
+    class DummyClient:
+      def __init__(self, verify=True, timeout=None):
+        mode = ssl.CERT_REQUIRED if verify is not False else ssl.CERT_NONE
+        cafile = verify if isinstance(verify, str) else None
+        self._transport = type("T", (), {
+          "_pool": type("P", (), {
+            "_ssl_context": type("C", (), {
+              "verify_mode": mode,
+              "_cafile": cafile
+            })()
+          })()
+        })()
+
+    def fake_ctor(api_key: str, http_client):
+      captured["client"] = http_client
+      return Mock()
+
+    monkeypatch.setenv("LLM_INSECURE_SKIP_VERIFY", "1")
+    monkeypatch.delenv("REQUESTS_CA_BUNDLE", raising=False)
+    monkeypatch.delenv("SSL_CERT_FILE", raising=False)
+    monkeypatch.setattr("app.services.providers.anthropic_provider.httpx.Client", DummyClient)
+    monkeypatch.setattr("app.services.providers.anthropic_provider.Anthropic", fake_ctor)
+
+    AnthropicProvider("key")
+
+    client = captured["client"]
+    ssl_context = client._transport._pool._ssl_context  # type: ignore[attr-defined]
+    assert ssl_context.verify_mode == ssl.CERT_NONE
 
   def test_send_prompt_success_with_web_search(self, provider):
     """Test send_prompt successfully parses response with web search results."""
