@@ -16,8 +16,7 @@ from frontend.utils import format_pub_date
 
 @st.cache_data(ttl=60, show_spinner=False)
 def _fetch_recent_interactions_cached(base_url: str, page: int, page_size: int):
-  """
-  Cached wrapper for fetching recent interactions.
+  """Cached wrapper for fetching recent interactions.
 
   Cache TTL: 60 seconds to balance freshness with performance.
   Cache is keyed on base_url, page, and page_size.
@@ -29,8 +28,7 @@ def _fetch_recent_interactions_cached(base_url: str, page: int, page_size: int):
 
 @st.cache_data(ttl=300, show_spinner=False)
 def _fetch_interaction_details_cached(base_url: str, interaction_id: int):
-  """
-  Cached wrapper for fetching interaction details.
+  """Cached wrapper for fetching interaction details.
 
   Cache TTL: 300 seconds (5 minutes) since interaction details rarely change.
   Cache is keyed on base_url and interaction_id.
@@ -42,8 +40,7 @@ def _fetch_interaction_details_cached(base_url: str, interaction_id: int):
 
 @st.cache_data(ttl=300, show_spinner=False)
 def _fetch_interaction_markdown_cached(base_url: str, interaction_id: int):
-  """
-  Cached wrapper for fetching interaction markdown export.
+  """Cached wrapper for fetching interaction markdown export.
 
   Cache TTL: 300 seconds (5 minutes) since exports are static.
   Cache is keyed on base_url and interaction_id.
@@ -54,9 +51,7 @@ def _fetch_interaction_markdown_cached(base_url: str, interaction_id: int):
 
 
 def _prepare_history_dataframe(interactions: List[Dict[str, Any]]) -> pd.DataFrame:
-  """
-  Normalize interaction list into a DataFrame with derived fields for display/export.
-  """
+  """Normalize interaction list into a DataFrame with derived fields for display/export."""
   if not interactions:
     return pd.DataFrame(columns=[
       'id', 'timestamp', 'analysis_type', 'prompt', 'prompt_preview', 'provider',
@@ -114,9 +109,7 @@ def _prepare_history_dataframe(interactions: List[Dict[str, Any]]) -> pd.DataFra
 
 
 def _fetch_all_interactions(base_url: str, page_size: int = 100) -> Dict[str, Any]:
-  """
-  Fetch all interaction pages for full-history export.
-  """
+  """Fetch all interaction pages for full-history export."""
   from frontend.api_client import APIClient
 
   client = APIClient(base_url=base_url)
@@ -138,8 +131,7 @@ def _fetch_all_interactions(base_url: str, page_size: int = 100) -> Dict[str, An
 
 
 def _build_model_display_mapping(model_display_options_df):
-  """
-  Build mapping of display_name -> set(raw model ids) for filtering.
+  """Build mapping of display_name -> set(raw model ids) for filtering.
 
   Multiple model ids can share the same human-readable label (e.g.,
   old vs normalized Anthropic IDs). This helper ensures the filter keeps

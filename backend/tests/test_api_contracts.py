@@ -1,5 +1,4 @@
-"""
-Contract tests for API response schemas.
+"""Contract tests for API response schemas.
 
 These tests validate that API responses match the expected data structures
 that the frontend depends on. They catch issues like:
@@ -64,8 +63,7 @@ class TestInteractionResponseContract:
 
     @patch('app.services.providers.openai_provider.OpenAIProvider.send_prompt')
     def test_send_prompt_response_schema_validation(self, mock_send_prompt, client):
-        """
-        Test that POST /api/v1/interactions/send response matches SendPromptResponse schema.
+        """Test that POST /api/v1/interactions/send response matches SendPromptResponse schema.
 
         Validates:
         - All required fields are present
@@ -96,7 +94,7 @@ class TestInteractionResponseContract:
         data = response.json()
 
         # Validate against Pydantic schema
-        SendPromptResponse(**data)
+        validated = SendPromptResponse(**data)
         assert validated.response_text == "Test response"
 
         # Critical: List fields must never be None, always list type
@@ -109,8 +107,7 @@ class TestInteractionResponseContract:
 
     @patch('app.services.providers.openai_provider.OpenAIProvider.send_prompt')
     def test_get_interaction_details_list_fields_never_none(self, mock_send_prompt, client):
-        """
-        Test that GET /api/v1/interactions/{id} never returns None for list fields.
+        """Test that GET /api/v1/interactions/{id} never returns None for list fields.
 
         This test would have caught the bug:
         TypeError: 'NoneType' object is not iterable (line 1376)
@@ -165,8 +162,7 @@ class TestInteractionResponseContract:
 
     @patch('app.services.providers.openai_provider.OpenAIProvider.send_prompt')
     def test_network_log_mode_all_sources_handling(self, mock_send_prompt, client):
-        """
-        Test data_source='network_log' mode where sources are directly on response.
+        """Test data_source='network_log' mode where sources are directly on response.
 
         In network_log mode:
         - all_sources should contain the sources (not in search_queries)
@@ -223,8 +219,7 @@ class TestInteractionResponseContract:
                 "Should have 1 source from network log"
 
     def test_get_recent_interactions_list_consistency(self, client):
-        """
-        Test that GET /api/v1/interactions/recent returns consistent list types.
+        """Test that GET /api/v1/interactions/recent returns consistent list types.
 
         Validates:
         - Response is always a list
@@ -251,8 +246,7 @@ class TestInteractionResponseContract:
 
     @patch('app.services.providers.openai_provider.OpenAIProvider.send_prompt')
     def test_nested_sources_in_search_queries_never_none(self, mock_send_prompt, client):
-        """
-        Test that sources within search_queries are never None.
+        """Test that sources within search_queries are never None.
 
         Frontend iterates: for src in query.get('sources', [])
         This must work even if sources is None in the database.
@@ -308,8 +302,7 @@ class TestInteractionResponseContract:
 
     @patch('app.services.providers.openai_provider.OpenAIProvider.send_prompt')
     def test_empty_response_data_handling(self, mock_send_prompt, client):
-        """
-        Test handling of completely empty response data (no queries, no citations).
+        """Test handling of completely empty response data (no queries, no citations).
 
         This is a realistic scenario where:
         - Model doesn't use web search
@@ -365,8 +358,7 @@ class TestResponseSchemaEdgeCases:
 
     @patch('app.services.providers.openai_provider.OpenAIProvider.send_prompt')
     def test_citation_without_rank_is_valid(self, mock_send_prompt, client):
-        """
-        Test that citations without rank (extra links) are handled correctly.
+        """Test that citations without rank (extra links) are handled correctly.
 
         Frontend logic:
         - citations_with_rank = [c for c in citations if c.get('rank')]
@@ -413,8 +405,7 @@ class TestResponseSchemaEdgeCases:
 
     @patch('app.services.providers.openai_provider.OpenAIProvider.send_prompt')
     def test_all_optional_fields_can_be_none(self, mock_send_prompt, client):
-        """
-        Test that all Optional fields can be None without breaking validation.
+        """Test that all Optional fields can be None without breaking validation.
 
         This ensures our schema correctly marks optional fields.
         """

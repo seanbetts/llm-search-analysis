@@ -1,5 +1,4 @@
-"""
-Network capture module for intercepting LLM provider network traffic.
+"""Network capture module for intercepting LLM provider network traffic.
 
 This module provides browser automation and network traffic interception
 capabilities to capture detailed search data that is not available through

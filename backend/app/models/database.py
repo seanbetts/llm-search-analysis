@@ -1,6 +1,4 @@
-"""
-Database models using SQLAlchemy.
-"""
+"""Database models using SQLAlchemy."""
 
 from datetime import datetime
 

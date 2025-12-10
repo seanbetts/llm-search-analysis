@@ -1,6 +1,4 @@
-"""
-Typed helpers for validating nested JSON blobs before persistence.
-"""
+"""Typed helpers for validating nested JSON blobs before persistence."""
 
 from __future__ import annotations
 
@@ -19,8 +17,7 @@ class RefId(BaseModel):
 
 
 class SourceMetadata(BaseModel):
-  """
-  Structured metadata persisted for sources.
+  """Structured metadata persisted for sources.
 
   Allows provider/network-log specific keys but enforces known primitives.
   """
@@ -43,8 +40,7 @@ class CitationMetadata(BaseModel):
 
 
 def dump_metadata(model_cls: type[BaseModel], payload: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-  """
-  Validate and dump metadata dictionaries.
+  """Validate and dump metadata dictionaries.
 
   Args:
     model_cls: Pydantic model class to use for validation.

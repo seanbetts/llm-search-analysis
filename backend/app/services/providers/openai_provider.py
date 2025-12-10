@@ -1,6 +1,4 @@
-"""
-OpenAI provider implementation using the Responses API with web_search tool.
-"""
+"""OpenAI provider implementation using the Responses API with web_search tool."""
 
 import time
 from typing import List
@@ -23,8 +21,7 @@ class OpenAIProvider(BaseProvider):
   ]
 
   def __init__(self, api_key: str):
-    """
-    Initialize OpenAI provider.
+    """Initialize OpenAI provider.
 
     Args:
       api_key: OpenAI API key
@@ -41,8 +38,7 @@ class OpenAIProvider(BaseProvider):
     return self.SUPPORTED_MODELS
 
   def send_prompt(self, prompt: str, model: str) -> ProviderResponse:
-    """
-    Send prompt to OpenAI with web_search enabled.
+    """Send prompt to OpenAI with web_search enabled.
 
     Args:
       prompt: User's prompt
@@ -89,8 +85,7 @@ class OpenAIProvider(BaseProvider):
       raise Exception(f"OpenAI API error: {str(e)}")
 
   def _parse_response(self, response, model: str, response_time_ms: int) -> ProviderResponse:
-    """
-    Parse OpenAI Responses API response into standardized format.
+    """Parse OpenAI Responses API response into standardized format.
 
     Args:
       response: Raw OpenAI API response

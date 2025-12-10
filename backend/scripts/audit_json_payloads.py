@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Audit and optionally fix JSON blobs stored in the database.
+"""Audit and optionally fix JSON blobs stored in the database.
 
 This script validates:
   1. Provider raw_response_json payloads (OpenAI, Google, Anthropic)

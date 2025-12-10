@@ -52,8 +52,7 @@ batch_service_instance = BatchService(SessionLocal)
 
 
 def get_db() -> Generator[Session, None, None]:
-  """
-  Database session dependency for FastAPI endpoints.
+  """Database session dependency for FastAPI endpoints.
 
   Yields a SQLAlchemy session and ensures proper cleanup.
 
@@ -70,8 +69,7 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def get_interaction_repository(db: Session = Depends(get_db)) -> InteractionRepository:
-  """
-  Get InteractionRepository instance with database session.
+  """Get InteractionRepository instance with database session.
 
   Args:
     db: Database session from get_db dependency
@@ -85,8 +83,7 @@ def get_interaction_repository(db: Session = Depends(get_db)) -> InteractionRepo
 def get_interaction_service(
   repository: InteractionRepository = Depends(get_interaction_repository)
 ) -> InteractionService:
-  """
-  Get InteractionService instance with repository.
+  """Get InteractionService instance with repository.
 
   Args:
     repository: InteractionRepository from get_interaction_repository dependency
@@ -100,8 +97,7 @@ def get_interaction_service(
 def get_provider_service(
   interaction_service: InteractionService = Depends(get_interaction_service)
 ) -> ProviderService:
-  """
-  Get ProviderService instance with interaction service.
+  """Get ProviderService instance with interaction service.
 
   Args:
     interaction_service: InteractionService from get_interaction_service dependency
@@ -115,8 +111,7 @@ def get_provider_service(
 def get_export_service(
   interaction_service: InteractionService = Depends(get_interaction_service)
 ) -> ExportService:
-  """
-  Get ExportService instance with interaction service.
+  """Get ExportService instance with interaction service.
 
   Args:
     interaction_service: InteractionService from get_interaction_service dependency

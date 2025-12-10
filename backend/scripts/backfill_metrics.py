@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Recompute stored response metrics (sources_found, sources_used_count, avg_rank).
+"""Recompute stored response metrics (sources_found, sources_used_count, avg_rank).
 
 This script is useful when historical rows predate the current logic or when
 manual data fixes leave metrics out of sync with actual sources/citations.

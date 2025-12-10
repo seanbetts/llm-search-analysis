@@ -6,8 +6,7 @@ from typing import List, Optional
 
 
 def get_model_display_name(model: str) -> str:
-    """
-    Get formatted display name for a model.
+    """Get formatted display name for a model.
 
     Maps known model IDs to friendly display names, and formats
     unknown model IDs by converting hyphens to spaces and capitalizing.
@@ -73,8 +72,7 @@ def compute_metrics(
     citations: List[SimpleNamespace],
     all_sources: Optional[List[SimpleNamespace]] = None
 ) -> dict:
-    """
-    Compute metrics from response data.
+    """Compute metrics from response data.
 
     This function is shared between API mode and network_log mode to ensure
     consistent metric calculation.

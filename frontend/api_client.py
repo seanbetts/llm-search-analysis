@@ -1,5 +1,4 @@
-"""
-API Client for LLM Search Analysis Backend.
+"""API Client for LLM Search Analysis Backend.
 
 This module provides a client library for interacting with the FastAPI backend.
 """
@@ -41,8 +40,7 @@ class APIServerError(APIClientError):
 
 
 class APIClient:
-  """
-  Client for interacting with the LLM Search Analysis FastAPI backend.
+  """Client for interacting with the LLM Search Analysis FastAPI backend.
 
   Features:
   - Connection pooling for efficient HTTP requests
@@ -69,8 +67,7 @@ class APIClient:
     pool_connections: int = 10,
     pool_maxsize: int = 20,
   ):
-    """
-    Initialize API client.
+    """Initialize API client.
 
     Args:
       base_url: Base URL of the FastAPI backend (default: http://localhost:8000)
@@ -122,8 +119,7 @@ class APIClient:
       self.client = self._build_client()
 
   def _handle_response(self, response: httpx.Response) -> Dict[str, Any]:
-    """
-    Handle HTTP response and raise appropriate exceptions.
+    """Handle HTTP response and raise appropriate exceptions.
 
     Args:
       response: httpx Response object
@@ -171,8 +167,7 @@ class APIClient:
     timeout: Optional[float] = None,
     **kwargs
   ) -> Dict[str, Any]:
-    """
-    Make HTTP request with retry logic.
+    """Make HTTP request with retry logic.
 
     Args:
       method: HTTP method (GET, POST, DELETE, etc.)
@@ -231,8 +226,7 @@ class APIClient:
     data_mode: str = "api",
     headless: bool = True
   ) -> Dict[str, Any]:
-    """
-    Send a prompt to an LLM provider and get the response.
+    """Send a prompt to an LLM provider and get the response.
 
     Args:
       prompt: The prompt text to send (1-10000 characters)
@@ -287,8 +281,7 @@ class APIClient:
     models: List[str],
     data_mode: str = "api"
   ) -> Dict[str, Any]:
-    """
-    Submit a batch of prompts/models for backend processing.
+    """Submit a batch of prompts/models for backend processing.
 
     Args:
       prompts: List of prompt strings
@@ -311,8 +304,7 @@ class APIClient:
     )
 
   def get_batch_status(self, batch_id: str) -> Dict[str, Any]:
-    """
-    Retrieve the latest status/results for a batch job.
+    """Retrieve the latest status/results for a batch job.
 
     Args:
       batch_id: Identifier returned from start_batch
@@ -327,8 +319,7 @@ class APIClient:
     )
 
   def cancel_batch(self, batch_id: str) -> Dict[str, Any]:
-    """
-    Request cancellation of a running batch job.
+    """Request cancellation of a running batch job.
 
     Args:
       batch_id: Identifier returned from start_batch
@@ -355,8 +346,7 @@ class APIClient:
     raw_response: Optional[Dict[str, Any]] = None,
     extra_links_count: int = 0,
   ) -> Dict[str, Any]:
-    """
-    Save network_log mode data captured by frontend.
+    """Save network_log mode data captured by frontend.
 
     This method is used when the frontend captures LLM interaction data via
     browser automation (network_log mode). The captured data is sent to the
@@ -425,8 +415,7 @@ class APIClient:
     date_from: Optional[str] = None,
     date_to: Optional[str] = None
   ) -> Dict[str, Any]:
-    """
-    Get recent interactions with pagination and optional filtering.
+    """Get recent interactions with pagination and optional filtering.
 
     Args:
       page: Page number (1-indexed, default: 1)
@@ -485,8 +474,7 @@ class APIClient:
     return self._request("GET", "/api/v1/interactions/recent", params=params)
 
   def get_interaction(self, interaction_id: int) -> Dict[str, Any]:
-    """
-    Get full details of a specific interaction.
+    """Get full details of a specific interaction.
 
     Args:
       interaction_id: The interaction ID
@@ -514,8 +502,7 @@ class APIClient:
     return self._request("GET", f"/api/v1/interactions/{interaction_id}")
 
   def delete_interaction(self, interaction_id: int) -> bool:
-    """
-    Delete an interaction and all associated data.
+    """Delete an interaction and all associated data.
 
     Args:
       interaction_id: The interaction ID to delete
@@ -541,8 +528,7 @@ class APIClient:
       raise APIServerError(f"Failed to delete interaction: {str(e)}")
 
   def get_providers(self) -> List[Dict[str, Any]]:
-    """
-    Get list of available LLM providers with their supported models.
+    """Get list of available LLM providers with their supported models.
 
     Returns:
       List of provider information, each containing:
@@ -564,8 +550,7 @@ class APIClient:
     return self._request("GET", "/api/v1/providers")
 
   def get_models(self) -> List[str]:
-    """
-    Get list of all available models across all providers.
+    """Get list of all available models across all providers.
 
     Returns:
       List of model identifiers
@@ -580,8 +565,7 @@ class APIClient:
     return self._request("GET", "/api/v1/providers/models")
 
   def export_interaction_markdown(self, interaction_id: int) -> str:
-    """
-    Export an interaction as formatted Markdown.
+    """Export an interaction as formatted Markdown.
 
     Args:
       interaction_id: The interaction ID to export
@@ -622,8 +606,7 @@ class APIClient:
       raise APIClientError(f"Unexpected error exporting interaction: {str(e)}")
 
   def health_check(self) -> Dict[str, Any]:
-    """
-    Check API health and database connectivity.
+    """Check API health and database connectivity.
 
     Returns:
       Health status containing:

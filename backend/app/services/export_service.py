@@ -11,8 +11,7 @@ class ExportService:
     """Service for exporting interaction data."""
 
     def __init__(self, interaction_service: InteractionService):
-        """
-        Initialize export service.
+        """Initialize export service.
 
         Args:
             interaction_service: InteractionService instance for fetching data
@@ -20,8 +19,7 @@ class ExportService:
         self.interaction_service = interaction_service
 
     def build_markdown(self, interaction_id: int) -> Optional[str]:
-        """
-        Build a formatted markdown export of an interaction.
+        r"""Build a formatted markdown export of an interaction.
 
         Args:
             interaction_id: The interaction ID to export
@@ -152,8 +150,7 @@ class ExportService:
         return "\n".join(lines).strip() + "\n"
 
     def _format_response_text(self, text: str, citations: list) -> str:
-        """
-        Format response text by converting reference-style citation links to inline links.
+        """Format response text by converting reference-style citation links to inline links.
 
         ChatGPT includes markdown reference links at the bottom like:
         [1]: URL "Title"

@@ -1,5 +1,4 @@
-"""
-Abstract base class for LLM provider implementations.
+"""Abstract base class for LLM provider implementations.
 
 Defines the interface that all provider implementations must follow.
 """
@@ -70,16 +69,14 @@ class ProviderResponse:
 
 
 class BaseProvider(ABC):
-  """
-  Abstract base class for LLM providers.
+  """Abstract base class for LLM providers.
 
   All provider implementations (OpenAI, Google, Anthropic) must inherit
   from this class and implement the required methods.
   """
 
   def __init__(self, api_key: str):
-    """
-    Initialize the provider with API credentials.
+    """Initialize the provider with API credentials.
 
     Args:
       api_key: API key for the provider
@@ -88,8 +85,7 @@ class BaseProvider(ABC):
 
   @abstractmethod
   def send_prompt(self, prompt: str, model: str) -> ProviderResponse:
-    """
-    Send a prompt to the LLM and get a response with search data.
+    """Send a prompt to the LLM and get a response with search data.
 
     Args:
       prompt: The user's prompt/query
@@ -105,8 +101,7 @@ class BaseProvider(ABC):
 
   @abstractmethod
   def get_supported_models(self) -> List[str]:
-    """
-    Get list of supported models for this provider.
+    """Get list of supported models for this provider.
 
     Returns:
       List of model identifiers (e.g., ["gpt-5.1", "gpt-4o"])
@@ -115,8 +110,7 @@ class BaseProvider(ABC):
 
   @abstractmethod
   def get_provider_name(self) -> str:
-    """
-    Get the name of this provider.
+    """Get the name of this provider.
 
     Returns:
       Provider name (e.g., "openai", "google", "anthropic")
@@ -124,8 +118,7 @@ class BaseProvider(ABC):
     pass
 
   def validate_model(self, model: str) -> bool:
-    """
-    Check if a model is supported by this provider.
+    """Check if a model is supported by this provider.
 
     Args:
       model: Model identifier to validate

@@ -1,6 +1,4 @@
-"""
-Google Gemini provider implementation with Search Grounding.
-"""
+"""Google Gemini provider implementation with Search Grounding."""
 
 import time
 from typing import List
@@ -25,8 +23,7 @@ class GoogleProvider(BaseProvider):
   ]
 
   def __init__(self, api_key: str):
-    """
-    Initialize Google provider.
+    """Initialize Google provider.
 
     Args:
       api_key: Google AI API key
@@ -39,8 +36,7 @@ class GoogleProvider(BaseProvider):
     return "google"
 
   def _resolve_redirect_url(self, redirect_url: str) -> str:
-    """
-    Resolve Google's grounding API redirect URL to get the actual destination.
+    """Resolve Google's grounding API redirect URL to get the actual destination.
 
     Args:
       redirect_url: Google's redirect URL
@@ -65,8 +61,7 @@ class GoogleProvider(BaseProvider):
     return self.SUPPORTED_MODELS
 
   def send_prompt(self, prompt: str, model: str) -> ProviderResponse:
-    """
-    Send prompt to Google Gemini with search grounding.
+    """Send prompt to Google Gemini with search grounding.
 
     Args:
       prompt: User's prompt
@@ -117,8 +112,7 @@ class GoogleProvider(BaseProvider):
       raise Exception(f"Google API error: {str(e)}")
 
   def _parse_response(self, response, model: str, response_time_ms: int) -> ProviderResponse:
-    """
-    Parse Google response into standardized format.
+    """Parse Google response into standardized format.
 
     Args:
       response: Raw Google API response

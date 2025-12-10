@@ -7,8 +7,7 @@ from urllib.parse import urlparse
 
 
 def extract_domain(url: str) -> Optional[str]:
-  """
-  Extract domain from URL.
+  """Extract domain from URL.
 
   Args:
     url: The URL to extract domain from
@@ -36,8 +35,7 @@ def extract_domain(url: str) -> Optional[str]:
 
 
 def normalize_model_name(model_name: str) -> str:
-  """
-  Normalize model name for consistent storage.
+  """Normalize model name for consistent storage.
 
   Converts dashes to dots for version numbers (e.g., gpt-5-1 → gpt-5.1)
 
@@ -88,8 +86,7 @@ def normalize_model_name(model_name: str) -> str:
 
 
 def calculate_average_rank(citations: list) -> Optional[float]:
-  """
-  Calculate average rank of citations.
+  """Calculate average rank of citations.
 
   Args:
     citations: List of citation objects with rank attribute
@@ -112,8 +109,7 @@ def calculate_average_rank(citations: list) -> Optional[float]:
 
 
 def get_model_display_name(model: str) -> str:
-  """
-  Get formatted display name for a model.
+  """Get formatted display name for a model.
 
   Maps known model IDs to friendly display names, and formats
   unknown model IDs by converting hyphens to spaces and capitalizing.
@@ -175,8 +171,7 @@ def get_model_display_name(model: str) -> str:
 
 
 def format_pub_date(pub_date: str) -> str:
-  """
-  Format ISO pub_date to a friendly string.
+  """Format ISO pub_date to a friendly string.
 
   Args:
     pub_date: ISO-formatted date string

@@ -1,5 +1,4 @@
-"""
-End-to-end tests for API persistence.
+"""End-to-end tests for API persistence.
 
 These tests verify that API calls actually save to the database.
 This catches issues that component tests miss because they test

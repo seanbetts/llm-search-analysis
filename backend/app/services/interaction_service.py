@@ -40,8 +40,7 @@ class InteractionService:
   _list_str_adapter = TypeAdapter(List[str])
 
   def __init__(self, repository: InteractionRepository):
-    """
-    Initialize service with repository.
+    """Initialize service with repository.
 
     Args:
       repository: InteractionRepository instance
@@ -62,8 +61,7 @@ class InteractionService:
     extra_links_count: int = 0,
     sources: List[dict] = None,
   ) -> int:
-    """
-    Save interaction with business logic applied.
+    """Save interaction with business logic applied.
 
     Applies:
     - Model name normalization
@@ -154,8 +152,7 @@ class InteractionService:
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None
   ) -> Tuple[List[InteractionSummary], int, Optional[QueryHistoryStats]]:
-    """
-    Get recent interactions with pagination and filtering.
+    """Get recent interactions with pagination and filtering.
 
     Classifies citations into:
     - Sources Used: Citations that came from search results
@@ -240,8 +237,7 @@ class InteractionService:
     return summaries, total_count, stats
 
   def get_interaction_details(self, interaction_id: int) -> Optional[SendPromptResponse]:
-    """
-    Get full interaction details with average rank calculation.
+    """Get full interaction details with average rank calculation.
 
     Args:
       interaction_id: The interaction (response) ID
@@ -375,8 +371,7 @@ class InteractionService:
     raw_response: Optional[dict],
     extra_links_count: int = 0,
   ) -> SendPromptResponse:
-    """
-    Save network_log mode interaction and return formatted response.
+    """Save network_log mode interaction and return formatted response.
 
     This is a convenience method for the /save-network-log endpoint that
     saves the interaction and returns a fully formatted SendPromptResponse.
@@ -415,8 +410,7 @@ class InteractionService:
     return self.get_interaction_details(response_id)
 
   def delete_interaction(self, interaction_id: int) -> bool:
-    """
-    Delete an interaction.
+    """Delete an interaction.
 
     Args:
       interaction_id: The interaction (response) ID to delete

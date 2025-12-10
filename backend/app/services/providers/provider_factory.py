@@ -1,6 +1,4 @@
-"""
-Provider factory for selecting the appropriate LLM provider based on model.
-"""
+"""Provider factory for selecting the appropriate LLM provider based on model."""
 
 from typing import Optional
 
@@ -8,9 +6,7 @@ from .base_provider import BaseProvider
 
 
 class ProviderFactory:
-  """
-  Factory class to instantiate the correct provider based on model name.
-  """
+  """Factory class to instantiate the correct provider based on model name."""
 
   # Model to provider mapping
   MODEL_PROVIDER_MAP = {
@@ -32,8 +28,7 @@ class ProviderFactory:
 
   @staticmethod
   def get_provider(model: str, api_keys: dict) -> BaseProvider:
-    """
-    Get the appropriate provider instance for the given model.
+    """Get the appropriate provider instance for the given model.
 
     Args:
       model: Model identifier (e.g., "gpt-5.1", "gemini-3.0")
@@ -75,8 +70,7 @@ class ProviderFactory:
 
   @staticmethod
   def get_all_supported_models() -> list[str]:
-    """
-    Get list of all supported models across all providers.
+    """Get list of all supported models across all providers.
 
     Returns:
       List of model identifiers
@@ -85,8 +79,7 @@ class ProviderFactory:
 
   @staticmethod
   def get_provider_for_model(model: str) -> Optional[str]:
-    """
-    Get the provider name for a given model.
+    """Get the provider name for a given model.
 
     Args:
       model: Model identifier
@@ -98,8 +91,7 @@ class ProviderFactory:
 
   @staticmethod
   def create_provider(provider_name: str, api_key: str) -> BaseProvider:
-    """
-    Create a provider instance by provider name.
+    """Create a provider instance by provider name.
 
     Args:
       provider_name: Name of provider ("openai", "google", or "anthropic")

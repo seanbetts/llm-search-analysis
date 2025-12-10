@@ -1,6 +1,4 @@
-"""
-Repository for database operations on interactions (prompts + responses).
-"""
+"""Repository for database operations on interactions (prompts + responses)."""
 
 import logging
 from datetime import datetime
@@ -35,8 +33,7 @@ class InteractionRepository:
   """Repository for managing interactions (prompts + responses)."""
 
   def __init__(self, db: Session):
-    """
-    Initialize repository with database session.
+    """Initialize repository with database session.
 
     Args:
       db: SQLAlchemy database session
@@ -60,8 +57,7 @@ class InteractionRepository:
     sources_used_count: int = 0,
     avg_rank: Optional[float] = None,
   ) -> int:
-    """
-    Save a complete interaction (prompt + response + search data).
+    """Save a complete interaction (prompt + response + search data).
 
     Args:
       prompt_text: The prompt text
@@ -233,8 +229,7 @@ class InteractionRepository:
       raise
 
   def get_by_id(self, response_id: int) -> Optional[Response]:
-    """
-    Get interaction by response ID with eager loading.
+    """Get interaction by response ID with eager loading.
 
     Uses joinedload to prevent N+1 query problem.
 
@@ -268,8 +263,7 @@ class InteractionRepository:
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None
   ) -> Tuple[List[Response], int]:
-    """
-    Get recent interactions with pagination and filtering.
+    """Get recent interactions with pagination and filtering.
 
     Args:
       page: Page number (1-indexed)
@@ -324,8 +318,7 @@ class InteractionRepository:
     return results, total_count
 
   def delete(self, response_id: int) -> bool:
-    """
-    Delete an interaction (response + prompt + related records).
+    """Delete an interaction (response + prompt + related records).
 
     Args:
       response_id: The response ID to delete
@@ -389,8 +382,7 @@ class InteractionRepository:
       raise
 
   def get_history_stats(self) -> dict:
-    """
-    Compute aggregate metrics for the entire query history dataset.
+    """Compute aggregate metrics for the entire query history dataset.
 
     Returns:
       Dict containing total analyses and averaged metrics.

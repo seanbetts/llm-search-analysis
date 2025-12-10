@@ -6,8 +6,7 @@ from dotenv import load_dotenv
 
 
 def pytest_configure(config):
-  """
-  Load environment variables from .env file before running tests.
+  """Load environment variables from .env file before running tests.
 
   This ensures E2E tests have access to API keys defined in the root .env file.
   The .env file is located in the project root, not the backend directory.

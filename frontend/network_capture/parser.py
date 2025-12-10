@@ -1,5 +1,4 @@
-"""
-Network log parsers for different providers.
+"""Network log parsers for different providers.
 
 Parses captured network responses into standardized ProviderResponse format.
 
@@ -33,8 +32,7 @@ class NetworkLogParser:
         response_time_ms: int,
         extracted_response_text: str = ""
     ) -> ProviderResponse:
-        """
-        Parse ChatGPT network log response from event stream format.
+        """Parse ChatGPT network log response from event stream format.
 
         Args:
             network_response: Raw network response dictionary with 'body' containing SSE data
@@ -64,9 +62,7 @@ class NetworkLogParser:
         try:
             body = network_response.get('body', '')
             if not body:
-                return NetworkLogParser._create_empty_response(
-                    response_text, model, response_time_ms
-                )
+                return NetworkLogParser._create_empty_response("", model, response_time_ms)
 
             # Temporary accumulators
             search_model_queries: List[str] = []
@@ -365,7 +361,9 @@ class NetworkLogParser:
             response_metadata["default_model_slug"] = default_model_slug
             response_metadata["classifier"] = classifier
             response_metadata["safe_urls"] = list(safe_url_set)
-            response_metadata["image_behavior"] = NetworkLogParser._extract_image_behavior(last_assistant_message) if last_assistant_message else None  # noqa: E501
+            response_metadata["image_behavior"] = (
+                NetworkLogParser._extract_image_behavior(last_assistant_message) if last_assistant_message else None
+            )
             response_metadata["extra_links_count"] = extra_links_count
 
             # Use discovered model slug if present
@@ -393,9 +391,10 @@ class NetworkLogParser:
         )
 
     @staticmethod
-    def _extract_markdown_citations(response_text: str, sources: List[Source]) -> Tuple[List[Citation], int]:
-        """
-        Extract citations from markdown reference links in ChatGPT response text.
+    def _extract_markdown_citations(
+      response_text: str, sources: List[Source]
+    ) -> Tuple[List[Citation], int]:
+        """Extract citations from markdown reference links in ChatGPT response text.
 
         ChatGPT uses markdown reference format: [N]: URL "Title"
 
@@ -567,8 +566,7 @@ class NetworkLogParser:
         model: str,
         response_time_ms: int
     ) -> ProviderResponse:
-        """
-        Parse Claude network log response.
+        """Parse Claude network log response.
 
         Args:
             network_response: Raw network response dictionary
@@ -601,8 +599,7 @@ class NetworkLogParser:
         model: str,
         response_time_ms: int
     ) -> ProviderResponse:
-        """
-        Parse Gemini network log response.
+        """Parse Gemini network log response.
 
         Args:
             network_response: Raw network response dictionary

@@ -25,11 +25,11 @@ class TestModelNameNormalization:
     assert normalized == model_name, \
       f"Model name corrupted: {model_name} → {normalized}"
 
-  def test_claude_with_date_suffix_preserved(self):
-    """
-    Ensure Claude models with date suffixes are not corrupted.
-    This was the original bug - date suffix was being mangled.
-    """
+    def test_claude_with_date_suffix_preserved(self):
+      """Ensure Claude models with date suffixes are not corrupted.
+
+      This was the original bug - date suffix was being mangled.
+      """
     model = "claude-sonnet-4-5-20250929"
     normalized = normalize_model_name(model)
 
@@ -63,11 +63,11 @@ class TestModelNameNormalization:
     assert isinstance(normalized, str)
     assert len(normalized) > 0
 
-  def test_normalization_does_not_corrupt_claude_formats(self):
-    """
-    Test that various Claude model formats don't get corrupted.
-    Even if new Claude models are added, they should preserve their format.
-    """
+    def test_normalization_does_not_corrupt_claude_formats(self):
+      """Test that various Claude model formats don't get corrupted.
+
+      Even if new Claude models are added, they should preserve their format.
+      """
     test_cases = [
       ("claude-opus-4-1-20250805", "claude-opus-4-1-20250805"),
       ("claude-sonnet-4-5-20250929", "claude-sonnet-4-5-20250929"),

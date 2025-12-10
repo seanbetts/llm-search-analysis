@@ -1,5 +1,4 @@
-"""
-Smoke tests to catch basic import errors.
+"""Smoke tests to catch basic import errors.
 
 These tests verify that all modules can be imported without errors.
 This catches issues like missing dependencies, circular imports, and
@@ -49,8 +48,7 @@ class TestImports:
         assert APIClientError is not None
 
     def test_no_backend_imports_in_frontend(self):
-        """
-        Test that frontend doesn't import from backend.
+        """Test that frontend doesn't import from backend.
 
         This enforces the architectural boundary:
         - Frontend should only import from: frontend/, src/

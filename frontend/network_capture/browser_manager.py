@@ -1,5 +1,4 @@
-"""
-Browser management utilities for network capture.
+"""Browser management utilities for network capture.
 
 Handles browser lifecycle, session management, and network interception setup.
 """
@@ -9,8 +8,7 @@ from typing import Callable, Optional
 
 
 class BrowserManager:
-    """
-    Manager for browser automation and network interception.
+    """Manager for browser automation and network interception.
 
     This class provides utilities for:
     - Browser lifecycle management
@@ -33,8 +31,7 @@ class BrowserManager:
         request_filter: Optional[Callable] = None,
         response_filter: Optional[Callable] = None
     ):
-        """
-        Set up network traffic interception on a page.
+        """Set up network traffic interception on a page.
 
         Args:
             page: Playwright page object
@@ -85,8 +82,7 @@ class BrowserManager:
         page.on('response', handle_response)
 
     def get_captured_responses(self, url_pattern: str = None):
-        """
-        Get captured network responses, optionally filtered by URL pattern.
+        """Get captured network responses, optionally filtered by URL pattern.
 
         Args:
             url_pattern: Optional substring to filter URLs
@@ -107,8 +103,7 @@ class BrowserManager:
         self.intercepted_responses = []
 
     def save_session_cookies(self, context, file_path: str):
-        """
-        Save browser session cookies to file.
+        """Save browser session cookies to file.
 
         Args:
             context: Playwright browser context
@@ -119,8 +114,7 @@ class BrowserManager:
             json.dump(cookies, f)
 
     def load_session_cookies(self, context, file_path: str):
-        """
-        Load browser session cookies from file.
+        """Load browser session cookies from file.
 
         Args:
             context: Playwright browser context

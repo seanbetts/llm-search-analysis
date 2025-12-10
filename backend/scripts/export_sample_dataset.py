@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-"""
-Export a representative CSV dataset of recent interactions.
+"""Export a representative CSV dataset of recent interactions.
 
 The sample is meant to highlight:
 - Raw inputs (prompt, provider, model, data source)

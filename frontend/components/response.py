@@ -132,7 +132,6 @@ def extract_images_from_response(text: str):
 
 def display_response(response, prompt=None):
   """Display the LLM response with search metadata."""
-
   # Display prompt if provided
   if prompt:
     st.markdown(f"### 🗣️ *\"{prompt}\"*")

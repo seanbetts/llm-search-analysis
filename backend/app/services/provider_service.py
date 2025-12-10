@@ -16,8 +16,7 @@ class ProviderService:
   """Service for managing LLM provider interactions."""
 
   def __init__(self, interaction_service: InteractionService):
-    """
-    Initialize service with interaction service.
+    """Initialize service with interaction service.
 
     Args:
       interaction_service: InteractionService instance for saving responses
@@ -25,8 +24,7 @@ class ProviderService:
     self.interaction_service = interaction_service
 
   def _get_api_keys(self) -> Dict[str, str]:
-    """
-    Get API keys from settings.
+    """Get API keys from settings.
 
     Returns:
       Dictionary of provider names to API keys
@@ -43,8 +41,7 @@ class ProviderService:
     model: str,
     save_to_db: bool = True
   ) -> SendPromptResponse:
-    """
-    Send prompt to LLM provider and get response.
+    """Send prompt to LLM provider and get response.
 
     Args:
       prompt: User's prompt
@@ -202,8 +199,7 @@ class ProviderService:
       )
 
   def get_available_providers(self) -> List[ProviderInfo]:
-    """
-    Get list of available providers.
+    """Get list of available providers.
 
     Returns:
       List of ProviderInfo objects
@@ -255,8 +251,7 @@ class ProviderService:
     return providers
 
   def get_available_models(self) -> List[str]:
-    """
-    Get list of all available models from configured providers.
+    """Get list of all available models from configured providers.
 
     Returns:
       List of model identifiers
@@ -271,8 +266,7 @@ class ProviderService:
     return models
 
   def get_provider_for_model(self, model: str) -> str:
-    """
-    Get the provider name for a given model.
+    """Get the provider name for a given model.
 
     Args:
       model: Model identifier

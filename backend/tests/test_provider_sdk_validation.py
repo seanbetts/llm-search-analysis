@@ -1,5 +1,4 @@
-"""
-Tests to validate that provider SDK clients have the expected attributes.
+"""Tests to validate that provider SDK clients have the expected attributes.
 
 These tests ensure that our provider implementations match the actual SDK APIs.
 This prevents issues where mocked tests pass but real implementations fail.

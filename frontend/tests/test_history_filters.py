@@ -11,8 +11,7 @@ from frontend.tabs.history import _build_model_display_mapping
 
 
 def test_model_filter_handles_multiple_model_ids_per_display_name():
-  """
-  Ensure model filter keeps all raw ids for a display name.
+  """Ensure model filter keeps all raw ids for a display name.
 
   Anthropic models can produce normalized IDs (e.g., claude-sonnet-4-5.2-0250929)
   as well as legacy IDs. The mapping used by the History tab should include both

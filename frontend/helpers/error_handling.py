@@ -1,5 +1,4 @@
-"""
-Unified error handling for API calls.
+"""Unified error handling for API calls.
 
 This module provides consistent error handling across the frontend,
 converting API client exceptions into user-friendly Streamlit messages.
@@ -27,8 +26,7 @@ def safe_api_call(
   spinner_text: str = "Processing...",
   **kwargs
 ) -> tuple[Any, Optional[str]]:
-  """
-  Safely execute an API call with consistent error handling.
+  """Safely execute an API call with consistent error handling.
 
   This wrapper function catches APIClient exceptions and displays
   appropriate Streamlit error messages. It provides a single place

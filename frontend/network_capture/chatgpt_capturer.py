@@ -1,5 +1,4 @@
-"""
-ChatGPT network traffic capturer implementation.
+"""ChatGPT network traffic capturer implementation.
 
 Uses browser automation to capture network logs from ChatGPT.
 """
@@ -84,8 +83,8 @@ class ChatGPTCapturer(BaseCapturer):
         return self.SUPPORTED_MODELS
 
     def start_browser(self, headless: bool = True) -> None:
-        """
-        Start browser instance with stealth mode to avoid detection.
+        """Start browser instance with stealth mode to avoid detection.
+
         Supports two modes:
         1. CDP Mode (Docker): Connect to Chrome running on host Mac via CDP
         2. Launch Mode (Local): Launch Chrome locally
@@ -209,7 +208,7 @@ class ChatGPTCapturer(BaseCapturer):
             )
 
             self.is_active = True
-            print(f"✓ Browser started for ChatGPT capture")
+            print("✓ Browser started for ChatGPT capture")
 
         except Exception as e:
             raise Exception(f"Failed to start browser: {str(e)}")
@@ -233,8 +232,7 @@ class ChatGPTCapturer(BaseCapturer):
             raise Exception(f"Failed to stop browser: {str(e)}")
 
     def authenticate(self, email: Optional[str] = None, password: Optional[str] = None) -> bool:
-        """
-        Handle ChatGPT authentication.
+        """Handle ChatGPT authentication.
 
         First checks if already logged in (from persistent session).
         If credentials provided and not logged in, will login. Otherwise uses anonymous mode.
@@ -328,8 +326,7 @@ class ChatGPTCapturer(BaseCapturer):
             print(f"⚠️  Failed to save session: {str(e)[:50]}")
 
     def _is_logged_in(self) -> bool:
-        """
-        Check if already logged in by looking for chat interface.
+        """Check if already logged in by looking for chat interface.
 
         Returns:
             True if logged in, False otherwise
@@ -390,8 +387,7 @@ class ChatGPTCapturer(BaseCapturer):
             return False
 
     def _handle_email_verification_code(self) -> bool:
-        """
-        Handle email verification code flow.
+        """Handle email verification code flow.
 
         OpenAI now sends a verification code via email during login.
         This method detects the verification page and gives the user time
@@ -566,8 +562,8 @@ Waiting up to 120 seconds for you to complete this...
             return False
 
     def _login_with_credentials(self, email: str, password: str) -> bool:
-        """
-        Login to ChatGPT with email and password.
+        """Login to ChatGPT with email and password.
+
         Assumes we're already on the ChatGPT page.
 
         Args:
@@ -643,7 +639,7 @@ Waiting up to 120 seconds for you to complete this...
                     if input_field.count() > 0:
                         input_field.wait_for(state='visible', timeout=5000)
                         input_field.fill(email)
-                        print(f"  ✓ Email entered")
+                        print("  ✓ Email entered")
                         email_entered = True
                         time.sleep(1)
                         break
@@ -673,7 +669,7 @@ Waiting up to 120 seconds for you to complete this...
 
                     # Skip Google buttons
                     if 'google' in button_text or 'microsoft' in button_text or 'apple' in button_text:
-                        print(f"    Skipping (OAuth button)")
+                        print("    Skipping (OAuth button)")
                         continue
 
                     # This should be the email Continue button
@@ -710,7 +706,7 @@ Waiting up to 120 seconds for you to complete this...
                         if input_field.count() > 0:
                             input_field.wait_for(state='visible', timeout=5000)
                             input_field.fill(password)
-                            print(f"  ✓ Password entered")
+                            print("  ✓ Password entered")
                             password_entered = True
                             time.sleep(1)
                             break
@@ -812,8 +808,7 @@ Waiting up to 120 seconds for you to complete this...
             raise Exception(f"Failed to login: {str(e)}")
 
     def send_prompt(self, prompt: str, model: str) -> ProviderResponse:
-        """
-        Send prompt to ChatGPT and capture network traffic.
+        """Send prompt to ChatGPT and capture network traffic.
 
         Args:
             prompt: User's prompt
@@ -842,7 +837,7 @@ Waiting up to 120 seconds for you to complete this...
         start_time = time.time()
 
         try:
-            self._log_status(f"📝 Submitting prompt to ChatGPT...")
+            self._log_status("📝 Submitting prompt to ChatGPT...")
             print(f"Prompt: {prompt[:100]}...")
 
             # Handle any modals/overlays that might be blocking the UI
@@ -1020,7 +1015,7 @@ Waiting up to 120 seconds for you to complete this...
                         # Final fallback to plain text
                         if text_content and len(text_content) > 10:
                             text_content = text_content.replace("ChatGPT said:", "").replace("ChatGPT:", "").strip()
-                            print(f"  ✓ Extracted response text (fallback)")
+                            print("  ✓ Extracted response text (fallback)")
                             return text_content or "", ""
                 except Exception:
                     continue
@@ -1033,8 +1028,7 @@ Waiting up to 120 seconds for you to complete this...
             return "", ""
 
     def _wait_for_response_complete(self, max_wait: int = 60):
-        """
-        Wait for ChatGPT to complete its response.
+        """Wait for ChatGPT to complete its response.
 
         Args:
             max_wait: Maximum seconds to wait (default 60)
@@ -1093,8 +1087,7 @@ Waiting up to 120 seconds for you to complete this...
             time.sleep(15)
 
     def _check_search_activated(self) -> bool:
-        """
-        Check if web search mode is activated in the UI.
+        """Check if web search mode is activated in the UI.
 
         Looks for the Search pill/badge button that appears when search is enabled.
         The button has aria-label="Search, click to remove" and class="__composer-pill".
@@ -1140,8 +1133,7 @@ Waiting up to 120 seconds for you to complete this...
             return False
 
     def _enable_search_toggle(self) -> bool:
-        """
-        Enable web search in ChatGPT UI via: Add button → More → Web search.
+        """Enable web search in ChatGPT UI via: Add button → More → Web search.
 
         This is a fallback method when /search command doesn't work.
 
@@ -1157,7 +1149,7 @@ Waiting up to 120 seconds for you to complete this...
                 print("    ⚠️  'Add' button not found")
                 return False
 
-            print(f"    Clicking 'Add files and more' button...")
+            print("    Clicking 'Add files and more' button...")
             add_button.click()
             time.sleep(1)
 
@@ -1171,7 +1163,7 @@ Waiting up to 120 seconds for you to complete this...
                 print("    ⚠️  'More' menu item not found")
                 return False
 
-            print(f"    Hovering over 'More'...")
+            print("    Hovering over 'More'...")
             more_menuitem.hover()
             time.sleep(1)
 
@@ -1184,7 +1176,7 @@ Waiting up to 120 seconds for you to complete this...
                 print("    ⚠️  'Web search' option not found")
                 return False
 
-            print(f"    Clicking 'Web search'...")
+            print("    Clicking 'Web search'...")
             web_search_menuitem.click()
             time.sleep(1)
             print("    ✓ Web search enabled")

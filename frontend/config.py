@@ -1,5 +1,4 @@
-"""
-Frontend configuration management.
+"""Frontend configuration management.
 
 Loads environment variables needed by the Streamlit frontend.
 """

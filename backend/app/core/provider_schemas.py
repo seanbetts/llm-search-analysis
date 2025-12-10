@@ -1,5 +1,4 @@
-"""
-Pydantic schemas for validating provider raw_response payloads.
+"""Pydantic schemas for validating provider raw_response payloads.
 
 Each provider (OpenAI, Google, Anthropic) emits a slightly different JSON
 shape for its responses. These models capture the structures we persist so
@@ -177,9 +176,7 @@ class GoogleResponse(_BaseModel):
 # ---------------------------------------------------------------------------
 
 def _sanitize_json_types(value: Any) -> Any:
-  """
-  Recursively convert unsupported JSON types (bytes, sets, tuples) into safe values.
-  """
+  """Recursively convert unsupported JSON types (bytes, sets, tuples) into safe values."""
   if isinstance(value, Mapping):
     return {key: _sanitize_json_types(val) for key, val in value.items()}
   if isinstance(value, (list, tuple, set)):
@@ -191,8 +188,7 @@ def _sanitize_json_types(value: Any) -> Any:
 
 
 def _ensure_dict(payload: Any) -> Dict[str, Any]:
-  """
-  Convert arbitrary SDK objects into dictionaries suitable for validation.
+  """Convert arbitrary SDK objects into dictionaries suitable for validation.
 
   Args:
     payload: The provider SDK object or dict.

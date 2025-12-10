@@ -19,15 +19,22 @@ from frontend.utils import format_pub_date
 
 
 class DummySpinner:
+  """Context manager stub to simulate spinner."""
+
   def __enter__(self):
+    """Enter context."""
     return None
 
   def __exit__(self, exc_type, exc, tb):
+    """Exit context."""
     return False
 
 
 class DummyStreamlit:
+  """Minimal Streamlit shim for tests."""
+
   def __init__(self):
+    """Initialize shim with empty call tracking."""
     self.spinner_calls = []
     self.success_messages = []
 

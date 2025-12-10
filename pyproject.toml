@@ -57,9 +57,11 @@ convention = "google"
 
 # Scripts can have simpler docstring requirements
 "scripts/**/*.py" = ["D100", "D103"]
+"backend/scripts/*.py" = ["D103"]
 
 # Alembic migrations are auto-generated
 "backend/alembic/versions/*.py" = ["D"]
+"backend/migrations/**/*.py" = ["D"]
 
 [tool.pytest.ini_options]
 testpaths = ["backend/tests", "frontend/tests", "tests"]

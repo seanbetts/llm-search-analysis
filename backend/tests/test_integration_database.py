@@ -1,19 +1,4 @@
-"""
-Integration tests with realistic database fixtures including edge cases.
-
-These tests use production-like data scenarios including:
-- NULL foreign key relationships
-- Orphaned records
-- Missing relationships
-- Empty collections
-- Mixed data from different sources
-
-These tests would have caught:
-- Eager loading crashes (Response.response_sources with NULL relationships)
-- N+1 query problems
-- NULL constraint violations
-- Cascading delete issues
-"""
+"""Integration tests with realistic database fixtures including edge cases."""
 
 from pathlib import Path
 
@@ -69,11 +54,10 @@ class TestRealisticDataScenarios:
     """Test with realistic, messy database fixtures."""
 
     def test_eager_loading_with_null_relationships(self, db_session, repository):
-        """
-        Test eager loading when relationships have NULL values.
+        """Test eager loading when relationships have NULL values.
 
-        This would have caught prior crashes when response-level sources
-        weren't eager loaded correctly alongside query-level sources.
+        This would have caught prior crashes when response-level sources weren't eager
+        loaded correctly alongside query-level sources.
         """
         # Create provider and session
         provider = Provider(name="openai", display_name="OpenAI", is_active=True)
@@ -138,8 +122,7 @@ class TestRealisticDataScenarios:
         assert len(result.search_queries[0].sources) == 1
 
     def test_get_recent_with_missing_relationships(self, db_session, repository):
-        """
-        Test get_recent with incomplete relationship chains.
+        """Test get_recent with incomplete relationship chains.
 
         Simulates data migration or corruption where relationships are broken.
         """
@@ -188,8 +171,7 @@ class TestRealisticDataScenarios:
         assert any(result.id == good_response.id for result in results)
 
     def test_search_query_with_no_sources(self, db_session, repository):
-        """
-        Test search queries that have no sources.
+        """Test search queries that have no sources.
 
         Can happen if search returned no results or sources weren't captured.
         """
@@ -235,8 +217,7 @@ class TestRealisticDataScenarios:
         assert len(result.search_queries[0].sources) == 0  # Empty, not NULL
 
     def test_response_with_no_citations(self, db_session, repository):
-        """
-        Test responses that have no citations/sources_used.
+        """Test responses that have no citations/sources_used.
 
         Common when model doesn't cite sources or generates answer without search.
         """
@@ -261,8 +242,7 @@ class TestRealisticDataScenarios:
         # Should not crash when accessing empty collections
 
     def test_mixed_api_and_network_log_data(self, db_session, repository):
-        """
-        Test database with mix of API and network_log mode data.
+        """Test database with mix of API and network_log mode data.
 
         API mode: sources in search_queries
         Network_log mode: sources directly on response
@@ -336,8 +316,7 @@ class TestRealisticDataScenarios:
         assert network_response.response_sources[0].response_id == network_response.id
 
     def test_concurrent_query_patterns(self, db_session, repository):
-        """
-        Test query patterns that might cause N+1 queries or loading issues.
+        """Test query patterns that might cause N+1 queries or loading issues.
 
         Validates that eager loading is configured correctly.
         """
@@ -380,8 +359,7 @@ class TestRealisticDataScenarios:
                 assert query.sources is not None  # Should be list, even if empty
 
     def test_data_migration_scenario(self, db_session, repository):
-        """
-        Test data that might exist after migration or import.
+        """Test data that might exist after migration or import.
 
         Includes:
         - Missing optional fields
@@ -450,8 +428,7 @@ class TestRealisticDataScenarios:
         assert result.search_queries[0].sources[0].title is None
 
     def test_delete_with_orphaned_relationships(self, db_session, repository):
-        """
-        Test deletion when some relationships are orphaned.
+        """Test deletion when some relationships are orphaned.
 
         Ensures cascading deletes work even with inconsistent data.
         """
@@ -493,9 +470,7 @@ class TestRealisticDataScenarios:
         assert db_session.query(ResponseSource).filter_by(url="https://orphaned.com").first() is None
 
     def test_delete_removes_session_and_provider(self, db_session, repository):
-        """
-        Deleting the only interaction should clean up session and provider.
-        """
+        """Deleting the only interaction should clean up session and provider."""
         response_id = repository.save(
             prompt_text="Cleanup prompt",
             provider_name="cleanup_provider",
@@ -513,9 +488,7 @@ class TestRealisticDataScenarios:
         assert db_session.query(Provider).count() == 0
 
     def test_delete_keeps_provider_with_other_sessions(self, db_session, repository):
-        """
-        Provider should stay if other sessions still exist.
-        """
+        """Provider should stay if other sessions still exist."""
         first_id = repository.save(
             prompt_text="Prompt 1",
             provider_name="shared_provider",

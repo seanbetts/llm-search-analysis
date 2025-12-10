@@ -14,8 +14,7 @@ def dataframe_to_csv_bytes(
   text_columns: Optional[Iterable[str]] = None,
   quoting: int = csv.QUOTE_ALL
 ) -> bytes:
-  """
-  Convert a DataFrame into UTF-8 encoded CSV bytes with optional text sanitization.
+  r"""Convert a DataFrame into UTF-8 encoded CSV bytes with optional text sanitization.
 
   Args:
     df: The DataFrame to export.

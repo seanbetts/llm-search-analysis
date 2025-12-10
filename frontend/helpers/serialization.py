@@ -5,8 +5,7 @@ from typing import Any, Dict, List, Union
 
 
 def namespace_to_dict(obj: Any) -> Union[Dict, List, Any]:
-  """
-  Recursively convert SimpleNamespace objects to dictionaries for JSON serialization.
+  """Recursively convert SimpleNamespace objects to dictionaries for JSON serialization.
 
   This is needed when passing data from frontend display objects (SimpleNamespace)
   to API endpoints that require JSON-serializable dictionaries.

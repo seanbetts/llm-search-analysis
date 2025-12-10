@@ -1,6 +1,4 @@
-"""
-Anthropic Claude provider implementation with web search.
-"""
+"""Anthropic Claude provider implementation with web search."""
 
 import logging
 import time
@@ -17,8 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class AnthropicProvider(BaseProvider):
-  """
-  Anthropic Claude provider implementation with web search tool.
+  """Anthropic Claude provider implementation with web search tool.
 
   Uses Claude's built-in web_search_20250305 tool powered by Brave Search.
   """
@@ -30,8 +27,7 @@ class AnthropicProvider(BaseProvider):
   ]
 
   def __init__(self, api_key: str):
-    """
-    Initialize Anthropic provider.
+    """Initialize Anthropic provider.
 
     Args:
       api_key: Anthropic API key
@@ -48,8 +44,7 @@ class AnthropicProvider(BaseProvider):
     return self.SUPPORTED_MODELS
 
   def send_prompt(self, prompt: str, model: str) -> ProviderResponse:
-    """
-    Send prompt to Anthropic Claude with web search enabled.
+    """Send prompt to Anthropic Claude with web search enabled.
 
     Args:
       prompt: User's prompt
@@ -99,8 +94,7 @@ class AnthropicProvider(BaseProvider):
       raise Exception(f"Anthropic API error: {str(e)}")
 
   def _parse_response(self, response, model: str, response_time_ms: int) -> ProviderResponse:
-    """
-    Parse Anthropic response into standardized format.
+    """Parse Anthropic response into standardized format.
 
     Args:
       response: Raw Anthropic API response
