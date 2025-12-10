@@ -54,6 +54,8 @@ echo -e "${BLUE}Step 2: Unit Tests${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
+export COVERAGE_RCFILE="${COVERAGE_RCFILE:-$BACKEND_ROOT/../.coveragerc}"
+
 if coverage run -m pytest tests/ -v -m "not sdk_validation" --ignore=tests/test_provider_sdk_validation.py; then
   echo ""
   echo -e "${GREEN}✅ Unit tests passed${NC}"
@@ -71,7 +73,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 coverage combine >/dev/null 2>&1 || true
-coverage report --omit="tests/*"
+coverage report
 if [[ "${GENERATE_HTML_COVERAGE:-0}" == "1" ]]; then
   coverage html
   echo "HTML coverage report available at htmlcov/index.html"

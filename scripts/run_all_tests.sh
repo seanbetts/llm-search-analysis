@@ -72,6 +72,7 @@ run_backend_tests() {
     PYTHONPATH="$REPO_ROOT/backend${PYTHONPATH:+:$PYTHONPATH}" \
     PYTEST_ADDOPTS="$BACKEND_PYTEST_ADDOPTS" \
     COVERAGE_FILE="$coverage_file" \
+    COVERAGE_RCFILE="$REPO_ROOT/.coveragerc" \
     ./scripts/run_tests.sh
   )
 }
@@ -90,6 +91,7 @@ run_frontend_tests() {
     PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}" \
     PYTEST_ADDOPTS="$FRONTEND_PYTEST_ADDOPTS" \
     COVERAGE_FILE="$coverage_file" \
+    COVERAGE_RCFILE="$REPO_ROOT/.coveragerc" \
     "$python_bin" -m coverage run -m pytest frontend/tests/ -v
   )
 }
@@ -111,7 +113,7 @@ combine_coverage_reports() {
     rm -f "$combined_file"
     COVERAGE_FILE="$combined_file" "$COVERAGE_PYTHON" -m coverage combine "${coverage_files[@]}"
     local coverage_report
-    coverage_report="$("$COVERAGE_PYTHON" -m coverage report --omit="tests/*")"
+    coverage_report=$(COVERAGE_RCFILE="$REPO_ROOT/.coveragerc" "$COVERAGE_PYTHON" -m coverage report)
     printf '%s\n' "$coverage_report"
     local coverage_pct
     coverage_pct=$(printf '%s\n' "$coverage_report" | awk '/TOTAL/ {print $NF}' | tail -n 1)

@@ -1,0 +1,25 @@
+[run]
+# Limit coverage measurement to our code only.
+source =
+    app
+    frontend
+
+# Exclude tests, virtualenvs, and third-party packages (site-packages/dist-packages).
+omit =
+    */tests/*
+    tests/*
+    */site-packages/*
+    */dist-packages/*
+    */.venv/*
+    */venv/*
+    */env/*
+
+[report]
+omit =
+    */tests/*
+    tests/*
+    */site-packages/*
+    */dist-packages/*
+    */.venv/*
+    */venv/*
+    */env/*
