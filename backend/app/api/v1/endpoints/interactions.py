@@ -300,7 +300,7 @@ async def save_network_log_data(
 async def get_recent_interactions(
   page: int = Query(default=1, ge=1, description="Page number (1-indexed)"),
   page_size: int = Query(
-    default=20,
+    default=10,
     ge=1,
     le=100,
     description="Items per page (max 100)"
@@ -345,7 +345,7 @@ async def get_recent_interactions(
   Raises:
     500: Internal server error
   """
-  interactions, total_count = interaction_service.get_recent_interactions(
+  interactions, total_count, stats = interaction_service.get_recent_interactions(
     page=page,
     page_size=page_size,
     data_source=data_source,
@@ -371,7 +371,8 @@ async def get_recent_interactions(
 
   return PaginatedInteractionList(
     items=interactions,
-    pagination=pagination
+    pagination=pagination,
+    stats=stats
   )
 
 

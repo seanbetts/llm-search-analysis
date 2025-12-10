@@ -254,6 +254,52 @@ class InteractionSummary(BaseModel):
   }
 
 
+class QueryHistoryStats(BaseModel):
+  """Aggregate metrics for the entire query history."""
+
+  analyses: int = Field(..., ge=0, description="Total number of recorded analyses")
+  avg_response_time_ms: Optional[float] = Field(
+    None,
+    ge=0,
+    description="Average response time across all analyses"
+  )
+  avg_searches: Optional[float] = Field(
+    None,
+    ge=0,
+    description="Average number of search queries per analysis"
+  )
+  avg_sources_found: Optional[float] = Field(
+    None,
+    ge=0,
+    description="Average number of sources found"
+  )
+  avg_sources_used: Optional[float] = Field(
+    None,
+    ge=0,
+    description="Average number of sources cited"
+  )
+  avg_rank: Optional[float] = Field(
+    None,
+    ge=0,
+    description="Average citation rank"
+  )
+
+  model_config = {
+    "json_schema_extra": {
+      "examples": [
+        {
+          "analyses": 120,
+          "avg_response_time_ms": 18500.5,
+          "avg_searches": 4.2,
+          "avg_sources_found": 12.7,
+          "avg_sources_used": 5.8,
+          "avg_rank": 3.1,
+        }
+      ]
+    }
+  }
+
+
 class PaginationMeta(BaseModel):
   """Pagination metadata for list responses."""
 
@@ -269,9 +315,9 @@ class PaginationMeta(BaseModel):
       "examples": [
         {
           "page": 1,
-          "page_size": 20,
+          "page_size": 10,
           "total_items": 150,
-          "total_pages": 8,
+          "total_pages": 15,
           "has_next": True,
           "has_prev": False
         }
@@ -288,6 +334,10 @@ class PaginatedInteractionList(BaseModel):
     description="List of interaction summaries for current page"
   )
   pagination: PaginationMeta = Field(..., description="Pagination metadata")
+  stats: Optional[QueryHistoryStats] = Field(
+    default=None,
+    description="Aggregate metrics for the entire history dataset"
+  )
 
   model_config = {
     "json_schema_extra": {
@@ -313,9 +363,9 @@ class PaginatedInteractionList(BaseModel):
           ],
           "pagination": {
             "page": 1,
-            "page_size": 20,
+            "page_size": 10,
             "total_items": 150,
-            "total_pages": 8,
+            "total_pages": 15,
             "has_next": True,
             "has_prev": False
           }

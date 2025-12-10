@@ -75,7 +75,7 @@ def tab_history():
   if 'history_page' not in st.session_state:
     st.session_state.history_page = 1
   if 'history_page_size' not in st.session_state:
-    st.session_state.history_page_size = 20
+    st.session_state.history_page_size = 10
 
   # Get recent interactions with pagination (cached)
   try:
@@ -122,15 +122,44 @@ def tab_history():
     # Truncate prompt for display
     df['prompt_preview'] = df['prompt'].str[:80] + df['prompt'].apply(lambda x: '...' if len(x) > 80 else '')
 
-    # Ensure extra_links column exists for older rows
+    # Ensure optional numeric columns exist for older rows
     if 'extra_links' not in df.columns:
       df['extra_links'] = 0
+    if 'response_time_ms' not in df.columns:
+      df['response_time_ms'] = None
 
     # Friendly label for analysis type
     df['analysis_type'] = df['data_source'].apply(lambda x: 'Network Logs' if x == 'network_log' else 'API')
 
-    # Format average rank for display
+    # Format metrics for display columns
     df['avg_rank_display'] = df['avg_rank'].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "N/A")
+    df['response_time_display'] = df['response_time_ms'].apply(
+      lambda x: f"{x / 1000:.1f}s" if pd.notna(x) else "N/A"
+    )
+    stats_data = result.get('stats') or {}
+    stats_cols = st.columns(6)
+    stats_cols[0].metric("Analyses", stats_data.get('analyses', 0))
+    avg_resp = stats_data.get('avg_response_time_ms')
+    stats_cols[1].metric(
+      "Avg. Response Time",
+      f"{avg_resp / 1000:.1f}s" if avg_resp is not None else "N/A"
+    )
+    stats_cols[2].metric(
+      "Avg. Searches",
+      f"{stats_data.get('avg_searches', 0):.1f}" if stats_data.get('avg_searches') is not None else "N/A"
+    )
+    stats_cols[3].metric(
+      "Avg. Sources Found",
+      f"{stats_data.get('avg_sources_found', 0):.1f}" if stats_data.get('avg_sources_found') is not None else "N/A"
+    )
+    stats_cols[4].metric(
+      "Avg. Sources Used",
+      f"{stats_data.get('avg_sources_used', 0):.1f}" if stats_data.get('avg_sources_used') is not None else "N/A"
+    )
+    stats_cols[5].metric(
+      "Avg. Rank",
+      f"{stats_data.get('avg_rank', 0):.1f}" if stats_data.get('avg_rank') is not None else "N/A"
+    )
 
     # Use backend-provided model_display_name (Phase 1.2)
     # Fallback to raw model name if display name not available
@@ -189,8 +218,8 @@ def tab_history():
     # Default sort (newest first); users can re-sort via table headers
     df = df.sort_values(by="timestamp", ascending=False, na_position="last")
 
-    display_df = df[['id', 'timestamp', 'analysis_type', 'prompt_preview', 'provider', 'model_display', 'searches', 'sources', 'citations', 'avg_rank_display', 'extra_links']]
-    display_df.columns = ['ID', 'Timestamp', 'Analysis Type', 'Prompt', 'Provider', 'Model', 'Searches', 'Sources Found', 'Sources Used', 'Avg. Rank', 'Extra Links']
+    display_df = df[['id', 'timestamp', 'analysis_type', 'prompt_preview', 'provider', 'model_display', 'response_time_display', 'searches', 'sources', 'citations', 'avg_rank_display', 'extra_links']]
+    display_df.columns = ['ID', 'Timestamp', 'Analysis Type', 'Prompt', 'Provider', 'Model', 'Response Time', 'Searches', 'Sources Found', 'Sources Used', 'Avg. Rank', 'Extra Links']
 
     # Configure column widths and alignment
     # Let Streamlit autosize columns; avoid fixed widths
@@ -201,6 +230,7 @@ def tab_history():
       "Prompt": st.column_config.TextColumn("Prompt"),
       "Provider": st.column_config.TextColumn("Provider"),
       "Model": st.column_config.TextColumn("Model"),
+      "Response Time": st.column_config.TextColumn("Response Time"),
       "Searches": st.column_config.NumberColumn("Searches"),
       "Sources Found": st.column_config.NumberColumn("Sources Found"),
       "Sources Used": st.column_config.NumberColumn("Sources Used"),

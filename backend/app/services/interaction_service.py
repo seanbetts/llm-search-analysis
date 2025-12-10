@@ -14,6 +14,7 @@ from app.core.utils import (
 from app.api.v1.schemas.responses import (
   SendPromptResponse,
   InteractionSummary,
+  QueryHistoryStats,
   SearchQuery as SearchQuerySchema,
   Source as SourceSchema,
   Citation as CitationSchema,
@@ -145,7 +146,7 @@ class InteractionService:
     model: Optional[str] = None,
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None
-  ) -> Tuple[List[InteractionSummary], int]:
+  ) -> Tuple[List[InteractionSummary], int, Optional[QueryHistoryStats]]:
     """
     Get recent interactions with pagination and filtering.
 
@@ -175,7 +176,7 @@ class InteractionService:
       date_to=date_to
     )
 
-    summaries = []
+    summaries: List[InteractionSummary] = []
     for response in responses:
       # Calculate counts
       search_query_count = len(response.search_queries)
@@ -221,7 +222,10 @@ class InteractionService:
       )
       summaries.append(summary)
 
-    return summaries, total_count
+    stats_payload = self.repository.get_history_stats()
+    stats = QueryHistoryStats(**stats_payload) if stats_payload else None
+
+    return summaries, total_count, stats
 
   def get_interaction_details(self, interaction_id: int) -> Optional[SendPromptResponse]:
     """

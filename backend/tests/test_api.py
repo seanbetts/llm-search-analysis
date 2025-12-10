@@ -295,6 +295,8 @@ class TestBatchEndpoints:
     assert isinstance(data, dict)
     assert data["items"] == []
     assert data["pagination"]["total_items"] == 0
+    assert "stats" in data
+    assert data["stats"]["analyses"] == 0
 
   @patch('app.services.providers.openai_provider.OpenAIProvider.send_prompt')
   def test_get_recent_interactions_with_data(self, mock_send_prompt, client):
@@ -326,6 +328,7 @@ class TestBatchEndpoints:
     data = response.json()
     assert isinstance(data, dict)
     assert len(data["items"]) == 1
+    assert data["stats"]["analyses"] >= 1
 
     interaction = data["items"][0]
     assert "interaction_id" in interaction
@@ -341,6 +344,7 @@ class TestBatchEndpoints:
     assert isinstance(data, dict)
     assert len(data["items"]) <= 10
     assert data["pagination"]["page_size"] == 10
+    assert "stats" in data
 
   def test_get_recent_interactions_with_data_source_filter(self, client):
     """Test GET /api/v1/interactions/recent filters by data source."""
@@ -351,6 +355,7 @@ class TestBatchEndpoints:
     # All returned interactions should have data_source="api"
     for interaction in data["items"]:
       assert interaction["data_source"] == "api"
+    assert "stats" in data
 
   def test_get_interaction_details_not_found(self, client):
     """Test GET /api/v1/interactions/{id} with non-existent ID."""

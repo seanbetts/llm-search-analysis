@@ -386,3 +386,54 @@ class InteractionRepository:
     except SQLAlchemyError:
       self.db.rollback()
       raise
+
+  def get_history_stats(self) -> dict:
+    """
+    Compute aggregate metrics for the entire query history dataset.
+
+    Returns:
+      Dict containing total analyses and averaged metrics.
+    """
+    total_analyses = self.db.query(func.count(Response.id)).scalar() or 0
+    if total_analyses == 0:
+      return {
+        "analyses": 0,
+        "avg_response_time_ms": None,
+        "avg_searches": None,
+        "avg_sources_found": None,
+        "avg_sources_used": None,
+        "avg_rank": None,
+      }
+
+    search_counts_subquery = (
+      self.db.query(
+        SearchQuery.response_id.label("response_id"),
+        func.count(SearchQuery.id).label("count")
+      )
+      .group_by(SearchQuery.response_id)
+      .subquery()
+    )
+
+    avg_searches = self.db.query(
+      func.avg(func.coalesce(search_counts_subquery.c.count, 0))
+    ).select_from(Response).outerjoin(
+      search_counts_subquery,
+      Response.id == search_counts_subquery.c.response_id
+    ).scalar()
+
+    avg_response_time = self.db.query(func.avg(Response.response_time_ms)).scalar()
+    avg_sources_found = self.db.query(func.avg(func.coalesce(Response.sources_found, 0))).scalar()
+    avg_sources_used = self.db.query(func.avg(func.coalesce(Response.sources_used_count, 0))).scalar()
+    avg_rank = self.db.query(func.avg(Response.avg_rank)).scalar()
+
+    def _as_float(value):
+      return float(value) if value is not None else None
+
+    return {
+      "analyses": int(total_analyses),
+      "avg_response_time_ms": _as_float(avg_response_time),
+      "avg_searches": _as_float(avg_searches),
+      "avg_sources_found": _as_float(avg_sources_found),
+      "avg_sources_used": _as_float(avg_sources_used),
+      "avg_rank": _as_float(avg_rank),
+    }

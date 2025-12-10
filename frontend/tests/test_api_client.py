@@ -231,6 +231,14 @@ class TestGetRecentInteractions:
         "total_pages": 1,
         "has_next": False,
         "has_prev": False
+      },
+      "stats": {
+        "analyses": 2,
+        "avg_response_time_ms": 1500.0,
+        "avg_searches": 3.0,
+        "avg_sources_found": 8.0,
+        "avg_sources_used": 4.0,
+        "avg_rank": 2.5,
       }
     }
 
@@ -263,6 +271,14 @@ class TestGetRecentInteractions:
         "total_pages": 1,
         "has_next": False,
         "has_prev": False
+      },
+      "stats": {
+        "analyses": 1,
+        "avg_response_time_ms": 1200.0,
+        "avg_searches": 2.0,
+        "avg_sources_found": 5.0,
+        "avg_sources_used": 2.0,
+        "avg_rank": 3.0,
       }
     }
 
@@ -297,11 +313,19 @@ class TestApiClientResilience:
             "items": [],
             "pagination": {
               "page": 1,
-              "page_size": 20,
+              "page_size": 10,
               "total_items": 0,
               "total_pages": 0,
               "has_next": False,
               "has_prev": False,
+            },
+            "stats": {
+              "analyses": 0,
+              "avg_response_time_ms": None,
+              "avg_searches": None,
+              "avg_sources_found": None,
+              "avg_sources_used": None,
+              "avg_rank": None,
             },
           },
           request=request

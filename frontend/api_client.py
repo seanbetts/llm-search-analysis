@@ -442,6 +442,7 @@ class APIClient:
           - total_pages: Total number of pages
           - has_next: Whether there is a next page
           - has_prev: Whether there is a previous page
+        - stats: Aggregate metrics for the entire history dataset
 
     Raises:
       APIServerError: If backend fails

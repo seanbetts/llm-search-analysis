@@ -14,7 +14,16 @@ class TestInteractionService:
   @pytest.fixture
   def mock_repository(self):
     """Create a mock repository."""
-    return Mock()
+    repo = Mock()
+    repo.get_history_stats.return_value = {
+      "analyses": 0,
+      "avg_response_time_ms": None,
+      "avg_searches": None,
+      "avg_sources_found": None,
+      "avg_sources_used": None,
+      "avg_rank": None,
+    }
+    return repo
 
   @pytest.fixture
   def service(self, mock_repository):
@@ -182,9 +191,17 @@ class TestInteractionService:
     ]
 
     mock_repository.get_recent.return_value = ([mock_response], 1)
+    mock_repository.get_history_stats.return_value = {
+      "analyses": 1,
+      "avg_response_time_ms": 1500.0,
+      "avg_searches": 2.0,
+      "avg_sources_found": 5.0,
+      "avg_sources_used": 4.0,
+      "avg_rank": 3.0,
+    }
 
     # Get recent interactions
-    summaries, total = service.get_recent_interactions(page_size=10)
+    summaries, total, stats = service.get_recent_interactions(page_size=10)
 
     # Verify counts
     assert total == 1
@@ -193,6 +210,7 @@ class TestInteractionService:
     assert summary.search_query_count == 2  # 2 queries
     assert summary.source_count == 5  # 3 + 2 = 5 sources
     assert summary.citation_count == 4  # 4 citations
+    assert stats and stats.analyses == 1
 
   def test_get_recent_interactions_calculates_average_rank(self, service, mock_repository):
     """Test that get_recent_interactions calculates average rank."""
@@ -219,7 +237,7 @@ class TestInteractionService:
 
     mock_repository.get_recent.return_value = ([mock_response], 1)
 
-    summaries, _ = service.get_recent_interactions()
+    summaries, _, _ = service.get_recent_interactions()
 
     assert summaries[0].average_rank == 3.0
 
@@ -248,7 +266,7 @@ class TestInteractionService:
 
     mock_repository.get_recent.return_value = ([mock_response], 1)
 
-    summaries, _ = service.get_recent_interactions()
+    summaries, _, _ = service.get_recent_interactions()
 
     # Should only average 2 and 4 -> 3.0
     assert summaries[0].average_rank == 3.0

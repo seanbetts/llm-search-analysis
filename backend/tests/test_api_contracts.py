@@ -239,6 +239,7 @@ class TestInteractionResponseContract:
         # Must be a paginated payload
         assert isinstance(data, dict), "Response must be a dict with items/pagination"
         assert "items" in data and "pagination" in data, "Paginated response must include items and pagination"
+        assert "stats" in data, "Paginated response must include stats metadata"
         assert isinstance(data["items"], list), "items must be a list"
 
         # Validate each item against schema
