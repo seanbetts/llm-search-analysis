@@ -127,6 +127,7 @@ class BatchService:
   """Service orchestrating backend-managed batch requests."""
 
   def __init__(self, session_factory: Callable[[], Session]):
+    """Initialize batch service with session factory and worker pool."""
     self._session_factory = session_factory
     self._jobs: Dict[str, _BatchJob] = {}
     self._jobs_lock = Lock()

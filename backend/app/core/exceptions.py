@@ -29,6 +29,7 @@ class APIException(Exception):
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
     details: Optional[Dict[str, Any]] = None,
   ):
+    """Initialize base API exception with common error fields."""
     self.message = message
     self.error_code = error_code
     self.status_code = status_code
@@ -60,6 +61,7 @@ class ValidationError(APIException):
   """
 
   def __init__(self, message: str = "Validation error", details: Optional[Dict[str, Any]] = None):
+    """Build validation error with optional detail payload."""
     super().__init__(
       message=message,
       error_code="VALIDATION_ERROR",
@@ -75,6 +77,7 @@ class ResourceNotFoundError(APIException):
   """
 
   def __init__(self, resource_type: str, resource_id: Any):
+    """Build not-found error including resource metadata."""
     super().__init__(
       message=f"{resource_type} with ID {resource_id} not found",
       error_code="RESOURCE_NOT_FOUND",
@@ -91,6 +94,7 @@ class InvalidRequestError(APIException):
   """
 
   def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+    """Build invalid-request error with optional detail payload."""
     super().__init__(
       message=message,
       error_code="INVALID_REQUEST",
@@ -106,6 +110,7 @@ class AuthenticationError(APIException):
   """
 
   def __init__(self, message: str = "Authentication required"):
+    """Build authentication error with a user-friendly message."""
     super().__init__(
       message=message,
       error_code="AUTHENTICATION_ERROR",
@@ -120,6 +125,7 @@ class AuthorizationError(APIException):
   """
 
   def __init__(self, message: str = "Insufficient permissions"):
+    """Build authorization error describing the missing permission."""
     super().__init__(
       message=message,
       error_code="AUTHORIZATION_ERROR",
@@ -134,6 +140,7 @@ class RateLimitError(APIException):
   """
 
   def __init__(self, message: str = "Rate limit exceeded", retry_after: Optional[int] = None):
+    """Build rate-limit error optionally including retry-after hint."""
     details = {"retry_after": retry_after} if retry_after else None
     super().__init__(
       message=message,
@@ -154,6 +161,7 @@ class InternalServerError(APIException):
   """
 
   def __init__(self, message: str = "Internal server error", details: Optional[Dict[str, Any]] = None):
+    """Build internal server error with optional details."""
     super().__init__(
       message=message,
       error_code="INTERNAL_SERVER_ERROR",
@@ -169,6 +177,7 @@ class DatabaseError(APIException):
   """
 
   def __init__(self, message: str = "Database error occurred", details: Optional[Dict[str, Any]] = None):
+    """Build database error with optional detail payload."""
     super().__init__(
       message=message,
       error_code="DATABASE_ERROR",
@@ -184,6 +193,7 @@ class ExternalServiceError(APIException):
   """
 
   def __init__(self, service_name: str, message: str, details: Optional[Dict[str, Any]] = None):
+    """Build external service error including service metadata."""
     super().__init__(
       message=f"{service_name} error: {message}",
       error_code="EXTERNAL_SERVICE_ERROR",
@@ -199,6 +209,7 @@ class ServiceUnavailableError(APIException):
   """
 
   def __init__(self, message: str = "Service temporarily unavailable"):
+    """Build service-unavailable error with optional message."""
     super().__init__(
       message=message,
       error_code="SERVICE_UNAVAILABLE",
@@ -213,6 +224,7 @@ class TimeoutError(APIException):
   """
 
   def __init__(self, operation: str, timeout_seconds: float):
+    """Build timeout error with operation context."""
     super().__init__(
       message=f"{operation} timed out after {timeout_seconds} seconds",
       error_code="TIMEOUT_ERROR",
@@ -232,6 +244,7 @@ class ProviderError(ExternalServiceError):
   """
 
   def __init__(self, provider: str, message: str, details: Optional[Dict[str, Any]] = None):
+    """Build provider error with provider name and optional details."""
     super().__init__(
       service_name=f"{provider} provider",
       message=message,
@@ -246,6 +259,7 @@ class ModelNotSupportedError(InvalidRequestError):
   """
 
   def __init__(self, model: str, available_models: Optional[list] = None):
+    """Build unsupported-model error including available models if provided."""
     details = {"model": model}
     if available_models:
       details["available_models"] = available_models
@@ -263,6 +277,7 @@ class APIKeyMissingError(InvalidRequestError):
   """
 
   def __init__(self, provider: str):
+    """Build API-key-missing error for a provider."""
     super().__init__(
       message=f"API key for {provider} is not configured",
       details={"provider": provider, "solution": "Add the API key to your .env file"},
@@ -276,6 +291,7 @@ class InteractionNotFoundError(ResourceNotFoundError):
   """
 
   def __init__(self, interaction_id: int):
+    """Build not-found error for an interaction."""
     super().__init__(resource_type="Interaction", resource_id=interaction_id)
 
 
@@ -286,6 +302,7 @@ class DataSourceValidationError(ValidationError):
   """
 
   def __init__(self, data_source: str):
+    """Build invalid-data-source error."""
     super().__init__(
       message=f"Invalid data source: {data_source}",
       details={
