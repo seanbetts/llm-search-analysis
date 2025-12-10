@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple
 
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, defer, joinedload
 
 from app.models.database import (
   InteractionModel,
@@ -283,6 +283,7 @@ class InteractionRepository:
       .join(Response.interaction)
       .join(InteractionModel.provider)
       .options(
+        defer(Response.raw_response_json),
         joinedload(Response.interaction)
         .joinedload(InteractionModel.provider),
         joinedload(Response.search_queries)
