@@ -1,14 +1,18 @@
 """History tab for viewing past interactions."""
 
+import base64
 import traceback
-import streamlit as st
-import pandas as pd
 from datetime import datetime
+from typing import Any, Dict, List
 from urllib.parse import urlparse
-from frontend.utils import format_pub_date
-from frontend.components.response import format_response_text, extract_images_from_response
+
+import pandas as pd
+import streamlit as st
+
+from frontend.components.response import extract_images_from_response, format_response_text
 from frontend.helpers.error_handling import safe_api_call
 from frontend.helpers.export_utils import dataframe_to_csv_bytes
+from frontend.utils import format_pub_date
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -50,6 +54,90 @@ def _fetch_interaction_markdown_cached(base_url: str, interaction_id: int):
   return client.export_interaction_markdown(interaction_id)
 
 
+def _prepare_history_dataframe(interactions: List[Dict[str, Any]]) -> pd.DataFrame:
+  """
+  Normalize interaction list into a DataFrame with derived fields for display/export.
+  """
+  if not interactions:
+    return pd.DataFrame(columns=[
+      'id', 'timestamp', 'analysis_type', 'prompt', 'prompt_preview', 'provider',
+      'model', 'model_display', 'searches', 'sources', 'citations', 'avg_rank',
+      'avg_rank_display', 'response_time_ms', 'response_time_display',
+      'extra_links', 'data_source'
+    ])
+
+  df = pd.DataFrame(interactions)
+  rename_map = {
+    'interaction_id': 'id',
+    'created_at': 'timestamp',
+    'search_query_count': 'searches',
+    'source_count': 'sources',
+    'citation_count': 'citations',
+    'average_rank': 'avg_rank',
+    'extra_links_count': 'extra_links'
+  }
+  df = df.rename(columns=rename_map)
+
+  if 'timestamp' in df.columns:
+    df['_ts_dt'] = pd.to_datetime(df['timestamp'])
+    df = df.sort_values(by='_ts_dt', ascending=False)
+    df['timestamp'] = df['_ts_dt'].dt.strftime('%Y-%m-%d %H:%M:%S')
+    df = df.drop(columns=['_ts_dt'])
+
+  if 'prompt' in df.columns:
+    df['prompt_preview'] = df['prompt'].apply(
+      lambda text: (text[:80] + ('...' if len(text) > 80 else '')) if isinstance(text, str) else ''
+    )
+  else:
+    df['prompt_preview'] = ''
+
+  if 'extra_links' not in df.columns:
+    df['extra_links'] = 0
+  if 'response_time_ms' not in df.columns:
+    df['response_time_ms'] = None
+
+  df['analysis_type'] = df['data_source'].apply(
+    lambda x: 'Network Logs' if x == 'network_log' else 'API'
+  )
+
+  df['avg_rank_display'] = df['avg_rank'].apply(
+    lambda x: f"{x:.1f}" if pd.notna(x) else "N/A"
+  )
+  df['response_time_display'] = df['response_time_ms'].apply(
+    lambda x: f"{x / 1000:.1f}s" if pd.notna(x) else "N/A"
+  )
+
+  df['model_display'] = df.apply(
+    lambda row: row.get('model_display_name') or row.get('model') if pd.notna(row.get('model')) else row.get('model'),
+    axis=1
+  )
+  return df
+
+
+def _fetch_all_interactions(base_url: str, page_size: int = 100) -> Dict[str, Any]:
+  """
+  Fetch all interaction pages for full-history export.
+  """
+  from frontend.api_client import APIClient
+
+  client = APIClient(base_url=base_url)
+  page = 1
+  items: List[Dict[str, Any]] = []
+  stats: Dict[str, Any] = {}
+
+  while True:
+    result = client.get_recent_interactions(page=page, page_size=page_size)
+    items.extend(result.get('items', []))
+    if not stats:
+      stats = result.get('stats') or {}
+    pagination = result.get('pagination') or {}
+    if not pagination.get('has_next'):
+      break
+    page += 1
+
+  return {'items': items, 'stats': stats}
+
+
 def _build_model_display_mapping(model_display_options_df):
   """
   Build mapping of display_name -> set(raw model ids) for filtering.
@@ -77,6 +165,7 @@ def tab_history():
     st.session_state.history_page = 1
   if 'history_page_size' not in st.session_state:
     st.session_state.history_page_size = 10
+  st.session_state.setdefault('history_full_export', None)
 
   # Get recent interactions with pagination (cached)
   try:
@@ -100,43 +189,7 @@ def tab_history():
     interactions = result['items']
     pagination = result['pagination']
 
-    # Convert to DataFrame
-    df = pd.DataFrame(interactions)
-
-    # Rename API response columns to match expected column names
-    df = df.rename(columns={
-      'interaction_id': 'id',
-      'created_at': 'timestamp',
-      'search_query_count': 'searches',
-      'source_count': 'sources',
-      'citation_count': 'citations',
-      'average_rank': 'avg_rank',
-      'extra_links_count': 'extra_links'
-    })
-
-    # Sort by timestamp desc, then format
-    df['_ts_dt'] = pd.to_datetime(df['timestamp'])
-    df = df.sort_values(by='_ts_dt', ascending=False)
-    df['timestamp'] = df['_ts_dt'].dt.strftime('%Y-%m-%d %H:%M:%S')
-    df = df.drop(columns=['_ts_dt'])
-
-    # Truncate prompt for display
-    df['prompt_preview'] = df['prompt'].str[:80] + df['prompt'].apply(lambda x: '...' if len(x) > 80 else '')
-
-    # Ensure optional numeric columns exist for older rows
-    if 'extra_links' not in df.columns:
-      df['extra_links'] = 0
-    if 'response_time_ms' not in df.columns:
-      df['response_time_ms'] = None
-
-    # Friendly label for analysis type
-    df['analysis_type'] = df['data_source'].apply(lambda x: 'Network Logs' if x == 'network_log' else 'API')
-
-    # Format metrics for display columns
-    df['avg_rank_display'] = df['avg_rank'].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "N/A")
-    df['response_time_display'] = df['response_time_ms'].apply(
-      lambda x: f"{x / 1000:.1f}s" if pd.notna(x) else "N/A"
-    )
+    df = _prepare_history_dataframe(interactions)
     stats_data = result.get('stats') or {}
     stats_cols = st.columns(6)
     stats_cols[0].metric("Analyses", stats_data.get('analyses', 0))
@@ -269,30 +322,56 @@ def tab_history():
         st.session_state.history_page += 1
         st.rerun()
 
-    # Build export dataframe with full prompts (no truncation)
     export_df = df[['id', 'timestamp', 'analysis_type', 'prompt', 'provider', 'model_display',
                     'response_time_display', 'searches', 'sources', 'citations',
                     'avg_rank_display', 'extra_links']].copy()
     export_df.columns = ['ID', 'Timestamp', 'Analysis Type', 'Prompt', 'Provider', 'Model',
                          'Response Time', 'Searches', 'Sources Found', 'Sources Used',
                          'Avg. Rank', 'Extra Links']
-    # Normalize line endings for prompts to preserve formatting in CSV viewers
-    export_df['Prompt'] = export_df['Prompt'].apply(
-      lambda x: x.replace('\r\n', '\n').replace('\r', '\n') if isinstance(x, str) else x
-    )
 
-    # Export button (aligned width with action buttons)
     csv_bytes = dataframe_to_csv_bytes(export_df, text_columns=['Prompt'])
-    export_col, _export_spacer = st.columns([1, 4])
-    with export_col:
-      st.download_button(
-        label="📥 Export History as CSV",
-        data=csv_bytes,
-        file_name=f"query_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-        mime="text/csv",
-        use_container_width=True,
-        key="history-export-csv",
-      )
+    export_wrap, _ = st.columns([1, 4])
+    with export_wrap:
+      exp_row_left, exp_row_right = st.columns(2, gap="small")
+      with exp_row_left:
+        st.download_button(
+          label="📥 Export Page as CSV",
+          data=csv_bytes,
+          file_name=f"query_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+          mime="text/csv",
+          use_container_width=True,
+          key="history-export-csv",
+        )
+      with exp_row_right:
+        if st.button("📦 Export Full History", use_container_width=True):
+          with st.spinner("Preparing full history export..."):
+            full_result, full_error = safe_api_call(
+              _fetch_all_interactions,
+              base_url,
+              show_spinner=False
+            )
+
+          if full_error:
+            st.error(full_error)
+          else:
+            full_items = (full_result or {}).get('items', [])
+            full_df = _prepare_history_dataframe(full_items)
+            if full_df.empty:
+              st.warning("No history available to export.")
+            else:
+              full_export_df = full_df[['id', 'timestamp', 'analysis_type', 'prompt', 'provider', 'model_display',
+                                        'response_time_display', 'searches', 'sources', 'citations',
+                                        'avg_rank_display', 'extra_links']].copy()
+              full_export_df.columns = export_df.columns
+              csv_full_bytes = dataframe_to_csv_bytes(full_export_df, text_columns=['Prompt'])
+              st.download_button(
+                label=f"📥 Download Full History ({len(full_export_df)} rows)",
+                data=csv_full_bytes,
+                file_name=f"query_history_full_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv",
+                use_container_width=True,
+                key=f"history-export-csv-full-{datetime.now().timestamp()}",
+              )
     st.divider()
 
     # View details
