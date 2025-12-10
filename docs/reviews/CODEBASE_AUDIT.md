@@ -6,9 +6,11 @@
 
 ## Objective
 
-Perform a one-off, full codebase audit and produce a structured markdown report of the system’s architecture, risks, quality gaps, and improvement recommendations.
+Perform a one-off, full codebase audit and produce a structured markdown report of the system's architecture, risks, quality gaps, and improvement recommendations.
 
-The agent must both analyse the repository and write the audit output into `docs/reviews/CODEBASE_AUDIT.md`. Create directories if they do not yet exist.
+The agent must both analyse the repository and write the audit output into a **separate results file**: `docs/reviews/CODEBASE_AUDIT_RESULTS.md`.
+
+**Important**: Do NOT overwrite this instructions file. The audit results should be saved to `CODEBASE_AUDIT_RESULTS.md` in the same directory. Create directories if they do not yet exist.
 
 ---
 
@@ -115,7 +117,7 @@ Optional section for endpoint tables, schema notes, diagrams, or other supportin
 6. [ ] **Tests & coverage** — Inventory coverage and identify missing validation paths.
 7. [ ] **Tooling & operational scan** — Analyse Dockerfiles, scripts, and config docs versus reality.
 8. [ ] **Generate markdown** — Write findings with the required structure.
-9. [ ] **Save output file** — Write the result to `docs/reviews/CODEBASE_AUDIT.md` and return this path as confirmation.
+9. [ ] **Save output file** — Write the result to `docs/reviews/CODEBASE_AUDIT_RESULTS.md` and return this path as confirmation.
 
 ---
 
@@ -124,4 +126,4 @@ Optional section for endpoint tables, schema notes, diagrams, or other supportin
 - Be concise, concrete, and reference real file paths where applicable.
 - Use markdown headings, bullet lists, tables, and code blocks where they improve clarity.
 - Do not output raw commentary in chat — write all audit content to the markdown file.
-- The final chat response should contain only: `docs/reviews/CODEBASE_AUDIT.md`
+- The final chat response should contain only: `docs/reviews/CODEBASE_AUDIT_RESULTS.md`
