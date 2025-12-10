@@ -25,7 +25,7 @@ Example:
 
 Database URL Normalization:
     The DATABASE_URL validator handles legacy path formats and ensures
-    compatibility between Docker environments (/backend/data) and local
+    compatibility between Docker environments (/app/data) and local
     development (backend/data relative paths).
 """
 
@@ -35,7 +35,7 @@ from pathlib import Path
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-DEFAULT_DB_URL = "sqlite:////backend/data/llm_search.db"
+DEFAULT_DB_URL = "sqlite:////app/data/llm_search.db"
 BACKEND_FALLBACK_PATH = Path(__file__).resolve().parent.parent / "data" / "llm_search.db"
 BACKEND_FALLBACK_URL = f"sqlite:///{BACKEND_FALLBACK_PATH.as_posix()}"
 
@@ -82,7 +82,7 @@ class Settings(BaseSettings):
   # Database settings
   DATABASE_URL: str = Field(
     default=DEFAULT_DB_URL,
-    description="SQLite database URL (stored in /backend/data/llm_search.db)"
+    description="SQLite database URL (stored in /app/data/llm_search.db)"
   )
 
   # API Keys for LLM providers
@@ -167,10 +167,10 @@ class Settings(BaseSettings):
       )
       return DEFAULT_DB_URL
 
-    backend_path = Path("/backend/data/llm_search.db")
-    if isinstance(value, str) and value == DEFAULT_DB_URL and not backend_path.exists():
+    app_path = Path("/app/data/llm_search.db")
+    if isinstance(value, str) and value == DEFAULT_DB_URL and not app_path.exists():
       logger.info(
-        "/backend/data/llm_search.db not found; falling back to %s",
+        "/app/data/llm_search.db not found; falling back to %s",
         BACKEND_FALLBACK_URL,
       )
       return BACKEND_FALLBACK_URL
