@@ -17,6 +17,32 @@ def _format_snippet(snippet):
   return str(snippet)
 
 
+def _render_tag_group(label, tags):
+  if not tags:
+    return ""
+  chips = " ".join(
+    f"<span style='display:inline-block;margin:0 4px 4px 0;padding:2px 6px;"
+    f"border-radius:6px;background-color:rgba(0,0,0,0.05);font-size:0.8rem;'>{tag}</span>"
+    for tag in tags
+  )
+  return f"<div style='margin-top:4px;'><strong>{label}:</strong> {chips}</div>"
+
+
+def _render_citation_tags(citation):
+  sections = []
+  sections.append(_render_tag_group("Function", getattr(citation, "function_tags", None)))
+  sections.append(_render_tag_group("Stance", getattr(citation, "stance_tags", None)))
+  sections.append(_render_tag_group("Provenance", getattr(citation, "provenance_tags", None)))
+  sections = [section for section in sections if section]
+  if not sections:
+    return ""
+  return (
+    "<div style='margin-top:6px;padding-top:4px;border-top:1px dashed rgba(0,0,0,0.1);'>"
+    + "".join(sections)
+    + "</div>"
+  )
+
+
 def sanitize_response_markdown(text: str) -> str:
   """Remove heavy dividers and downscale large headings so they don't exceed the section title.
 
@@ -332,12 +358,14 @@ def display_response(response, prompt=None):
         )
         pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"
         pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
+        tags_block = _render_citation_tags(citation)
         st.markdown(f"""
         <div class="citation-item">
             <strong>{i}. {display_title}{rank_display}</strong><br/>
             {domain_link}
             {snippet_block}
             {pub_date_block}
+            {tags_block}
         </div>
         """, unsafe_allow_html=True)
 
@@ -367,11 +395,13 @@ def display_response(response, prompt=None):
           f"<strong>Snippet:</strong> <em>{snippet_display}</em>"
           "</div>"
         )
+        tags_block = _render_citation_tags(citation)
 
         st.markdown(f"""
         <div class="citation-item">
             <strong>{i}. {display_title}</strong><br/>
             {domain_link}
             {snippet_block}
+            {tags_block}
         </div>
         """, unsafe_allow_html=True)
