@@ -32,6 +32,7 @@ from app.core.utils import (
   normalize_model_name,
 )
 from app.repositories.interaction_repository import InteractionRepository
+from app.services.citation_tagging_service import CitationTaggingService
 from app.services.providers.base_provider import Citation as CitationModel
 from app.services.response_formatter import format_response_with_citations
 
@@ -41,13 +42,19 @@ class InteractionService:
   _json_dict_adapter = TypeAdapter(Dict[str, Any])
   _list_str_adapter = TypeAdapter(List[str])
 
-  def __init__(self, repository: InteractionRepository):
+  def __init__(
+    self,
+    repository: InteractionRepository,
+    citation_tagger: Optional[CitationTaggingService] = None,
+  ):
     """Initialize service with repository.
 
     Args:
       repository: InteractionRepository instance
+      citation_tagger: Optional service for annotating citations
     """
     self.repository = repository
+    self.citation_tagger = citation_tagger or CitationTaggingService.from_settings()
 
   def save_interaction(
     self,
@@ -93,6 +100,12 @@ class InteractionService:
     normalized_citations = self._normalize_citations(citations)
     normalized_sources = self._normalize_sources(sources)
     normalized_raw_response = self._normalize_raw_response(raw_response)
+    if data_source in ("web", "network_log") and self.citation_tagger:
+      normalized_citations = self.citation_tagger.annotate_citations(
+        prompt=prompt,
+        response_text=response_text,
+        citations=normalized_citations,
+      )
 
     # Extract domains from search query sources
     for query in normalized_queries:

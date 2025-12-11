@@ -112,6 +112,22 @@ class Settings(BaseSettings):
     default="INFO",
     description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)"
   )
+  ENABLE_CITATION_TAGGING: bool = Field(
+    default=False,
+    description="Enable LLM-based citation tagging for web captures"
+  )
+  CITATION_TAGGER_PROVIDER: str = Field(
+    default="openai",
+    description="LLM provider used for citation tagging (openai or google)"
+  )
+  CITATION_TAGGER_MODEL: str = Field(
+    default="gpt-4o-mini",
+    description="LLM model identifier used for citation tagging"
+  )
+  CITATION_TAGGER_TEMPERATURE: float = Field(
+    default=0.0,
+    description="Sampling temperature for the citation tagger"
+  )
 
   # Batch processing settings
   BATCH_MAX_CONCURRENCY: int = Field(
