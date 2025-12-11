@@ -65,7 +65,7 @@ class TestFormatResponseText:
 [1]: https://example.com/article "Article Title"
 """
     result = format_response_text(text, [])
-    assert "[this article](https://example.com/article)" in result
+    assert "this article ([example.com](https://example.com/article))" in result
     assert "[1]:" not in result
 
   def test_removes_reference_definitions(self):
@@ -87,8 +87,8 @@ class TestFormatResponseText:
 [2]: https://example.org
 """
     result = format_response_text(text, [])
-    assert "[link1](https://example.com)" in result
-    assert "[link2](https://example.org)" in result
+    assert "link1 ([example.com](https://example.com))" in result
+    assert "link2 ([example.org](https://example.org))" in result
 
   def test_handles_missing_references(self):
     """Test that links without matching references are preserved."""
@@ -106,6 +106,20 @@ class TestFormatResponseText:
     text = "Line 1\n\n\n\nLine 2"
     result = format_response_text(text, [])
     assert "\n\n\n" not in result
+
+  def test_injects_citation_markers_when_metadata_present(self):
+    """Citations with segment metadata should add inline markers."""
+    text = "Valve is working on new hardware according to reports."
+    citations = [
+      SimpleNamespace(
+        rank=1,
+        url="https://example.com/source",
+        text_snippet="Valve is working on new hardware",
+        metadata={"segment_start_index": 0, "segment_end_index": 31}
+      )
+    ]
+    result = format_response_text(text, citations)
+    assert "Valve is working on new hardware ([example.com](https://example.com/source))" in result
 
 
 class TestExtractImagesFromResponse:

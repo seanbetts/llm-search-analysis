@@ -83,7 +83,7 @@ def format_response_text(text: str, citations: list) -> str:
     link_text = match.group(1)
     ref_num = match.group(2)
     if ref_num in references:
-      return f"[{link_text}]({references[ref_num]})"
+      return f"{link_text} ({_format_domain_link(references[ref_num])})"
     return match.group(0)  # Keep original if reference not found
 
   text = re.sub(r'\[([^\]]+)\]\[(\d+)\]', replace_reference_link, text)
@@ -93,10 +93,80 @@ def format_response_text(text: str, citations: list) -> str:
   removal_pattern = r'^\[(\d+)\]:\s+https?://\S+.*$'
   text = re.sub(removal_pattern, '', text, flags=re.MULTILINE)
 
-  # Step 4: Clean up any resulting multiple newlines
+  # Step 4: Inject citation markers for providers (e.g., Google) that supply segments
+  text = _apply_citation_links(text, citations)
+
+  # Step 5: Clean up any resulting multiple newlines
   text = re.sub(r'\n{3,}', '\n\n', text)
 
   return sanitize_response_markdown(text.strip())
+
+
+def _format_domain_link(url: str) -> str:
+  """Return Markdown hyperlink using the domain as label."""
+  try:
+    domain = urlparse(url).netloc
+  except Exception:
+    domain = ""
+  label = domain or url
+  return f"[{label}]({url})"
+
+
+def _apply_citation_links(text: str, citations: list) -> str:
+  """Insert inline domain links based on citation metadata/snippets."""
+  if not citations or not text:
+    return text
+
+  def _as_dict(obj):
+    if isinstance(obj, dict):
+      return obj
+    return getattr(obj, "__dict__", None)
+
+  ranked_citations = [c for c in citations if getattr(c, "rank", None) and getattr(c, "url", None)]
+
+  replacements = []
+  seen_ranges = set()
+  for citation in ranked_citations:
+    url = citation.url
+    metadata = getattr(citation, "metadata", None)
+    if metadata is None:
+      raw = _as_dict(citation)
+      if raw:
+        metadata = raw.get("metadata")
+    if not isinstance(metadata, dict):
+      continue
+    start = metadata.get("segment_start_index")
+    end = metadata.get("segment_end_index")
+    snippet = getattr(citation, "text_snippet", None) or getattr(citation, "snippet_used", None)
+    snippet_match = snippet.strip() if isinstance(snippet, str) else None
+
+    span = None
+    if snippet_match:
+      idx = text.find(snippet_match)
+      if idx != -1:
+        span = (idx, idx + len(snippet_match))
+    if span is None and isinstance(start, int) and isinstance(end, int) and 0 <= start < end <= len(text):
+      span = (start, end)
+    if span is None:
+      continue
+    span = (int(span[0]), int(span[1]))
+    if span in seen_ranges or span[0] == span[1]:
+      continue
+    seen_ranges.add(span)
+    replacements.append((span[0], span[1], url))
+
+  if not replacements:
+    return text
+
+  for start, end, url in sorted(replacements, key=lambda item: item[0], reverse=True):
+    segment = text[start:end]
+    if not segment.strip():
+      continue
+    domain_link = _format_domain_link(url)
+    linked = f"{segment} ({domain_link})"
+    text = text[:start] + linked + text[end:]
+
+  return text
 
 
 def extract_images_from_response(text: str):
@@ -234,8 +304,8 @@ def display_response(response, prompt=None):
             snippet = getattr(source, "snippet_text", None)
             pub_date = getattr(source, "pub_date", None)
             snippet_display = snippet if snippet else "N/A"
-            pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
             snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
+            pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
             pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
             domain_link = f'<a href="{url_display}" target="_blank">{source.domain or "Open source"}</a>'
             st.markdown(f"""
@@ -261,8 +331,8 @@ def display_response(response, prompt=None):
           snippet = getattr(source, "snippet_text", None)
           pub_date = getattr(source, "pub_date", None)
           snippet_display = snippet if snippet else "N/A"
-          pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
           snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
+          pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
           pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
           domain_link = f'<a href="{url_display}" target="_blank">{source.domain or "Open source"}</a>'
           st.markdown(f"""
@@ -311,11 +381,12 @@ def display_response(response, prompt=None):
         # Extract domain from URL for fallback
         domain = urlparse(citation.url).netloc if citation.url else 'Unknown domain'
         display_title = citation.title or domain or 'Unknown source'
-        snippet_used = getattr(citation, "snippet_used", None)
         source_fallback = url_to_source.get(citation.url)
-        snippet = snippet_used or (citation.metadata.get("snippet") if getattr(citation, "metadata", None) else None) or (getattr(source_fallback, "snippet_text", None))  # noqa: E501
-        pub_date_val = (citation.metadata.get("pub_date") if getattr(citation, "metadata", None) else None) or (getattr(source_fallback, "pub_date", None))  # noqa: E501
-        snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>"  # noqa: E501
+        metadata = getattr(citation, "metadata", None) or {}
+        snippet = metadata.get("snippet") or (getattr(source_fallback, "snippet_text", None))
+        pub_date_val = metadata.get("pub_date") or (getattr(source_fallback, "pub_date", None))
+        snippet_display = snippet if snippet else "N/A"
+        snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
         pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"
         pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
         st.markdown(f"""
@@ -345,7 +416,8 @@ def display_response(response, prompt=None):
         snippet = None
         if getattr(citation, "metadata", None):
           snippet = citation.metadata.get("snippet")
-        snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>" if snippet else ""  # noqa: E501
+        snippet_display = snippet if snippet else "N/A"
+        snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
 
         st.markdown(f"""
         <div class="citation-item">

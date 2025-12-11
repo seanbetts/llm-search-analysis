@@ -10,7 +10,7 @@ from google.genai.types import GenerateContentConfig, GoogleSearch, Tool
 
 from app.core.provider_schemas import validate_google_raw_response
 
-from .base_provider import BaseProvider, ProviderResponse, SearchQuery, Source
+from .base_provider import BaseProvider, Citation, ProviderResponse, SearchQuery, Source
 
 
 class GoogleProvider(BaseProvider):
@@ -144,9 +144,10 @@ class GoogleProvider(BaseProvider):
 
           # Then collect all sources
           all_sources = []
+          chunk_index_to_source = {}
           if hasattr(metadata, 'grounding_chunks') and metadata.grounding_chunks:
             rank = 1
-            for chunk in metadata.grounding_chunks:
+            for chunk_idx, chunk in enumerate(metadata.grounding_chunks):
               if hasattr(chunk, 'web') and chunk.web:
                 # Only include sources with valid URIs
                 if hasattr(chunk.web, 'uri') and chunk.web.uri:
@@ -160,6 +161,7 @@ class GoogleProvider(BaseProvider):
                   )
                   all_sources.append(source_obj)
                   sources.append(source_obj)
+                  chunk_index_to_source[chunk_idx] = source_obj
                   rank += 1
 
           # Link sources to queries
@@ -188,10 +190,34 @@ class GoogleProvider(BaseProvider):
               sources=all_sources
             ))
 
-          # Note: Google's grounding_supports includes ALL sources, not just citations
-          # We cannot reliably distinguish between sources that are merely fetched
-          # vs. those that are explicitly cited in the response text.
-          # Therefore, we leave citations empty for Google to maintain accuracy.
+          # Build citations using grounding_supports metadata when available
+          supports_attr = getattr(metadata, 'grounding_supports', None)
+          if isinstance(supports_attr, (list, tuple)):
+            for support in supports_attr:
+              chunk_indices = getattr(support, 'grounding_chunk_indices', None) or []
+              segment = getattr(support, 'segment', None)
+              segment_text = getattr(segment, 'text', None) if segment else None
+
+              for chunk_idx in chunk_indices:
+                source_obj = chunk_index_to_source.get(chunk_idx)
+                if not source_obj:
+                  continue
+
+                citations.append(Citation(
+                  url=source_obj.url,
+                  title=source_obj.title,
+                  rank=source_obj.rank,
+                  text_snippet=segment_text,
+                  snippet_used=segment_text,
+                  metadata={
+                    "grounding_chunk_index": chunk_idx,
+                    "segment_start_index": getattr(segment, "start_index", None),
+                    "segment_end_index": getattr(segment, "end_index", None),
+                    "confidence_scores": getattr(support, "confidence_scores", None),
+                  }
+                ))
+                # Only need one citation per support to represent the reference
+                break
 
     # Remove duplicate citations
     seen_urls = set()

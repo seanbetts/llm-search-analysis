@@ -92,7 +92,16 @@ class TestGoogleProvider:
     mock_web2.title = "AI Article 2"
     mock_chunk2.web = mock_web2
 
+    mock_support = Mock()
+    mock_support.grounding_chunk_indices = [0]
+    mock_segment = Mock()
+    mock_segment.text = "Segment referencing article 1"
+    mock_segment.start_index = 10
+    mock_segment.end_index = 42
+    mock_support.segment = mock_segment
+
     mock_metadata.grounding_chunks = [mock_chunk1, mock_chunk2]
+    mock_metadata.grounding_supports = [mock_support]
     mock_candidate.grounding_metadata = mock_metadata
 
     mock_response.candidates = [mock_candidate]
@@ -125,8 +134,11 @@ class TestGoogleProvider:
     assert result.sources[0].url == "https://example.com/article1"
     assert result.sources[0].title == "AI Article 1"
     assert result.sources[1].url == "https://example.com/article2"
-    # Google provider doesn't populate citations
-    assert len(result.citations) == 0
+    assert len(result.citations) == 1
+    assert result.citations[0].url == "https://example.com/article1"
+    assert result.citations[0].text_snippet == "Segment referencing article 1"
+    assert result.citations[0].metadata["segment_start_index"] == 10
+    assert result.citations[0].metadata["segment_end_index"] == 42
 
   def test_send_prompt_no_grounding(self, provider):
     """Test send_prompt handles response without grounding metadata."""
@@ -346,6 +358,60 @@ class TestGoogleProvider:
     assert len(result.search_queries[0].sources) == 3
     # Second query should have 2 sources (5 // 2)
     assert len(result.search_queries[1].sources) == 2
+
+  def test_parse_response_creates_citations_from_supports(self, provider):
+    """Grounding supports should be converted into citations."""
+    mock_response = Mock()
+    mock_response.text = "Response with citations"
+
+    mock_candidate = Mock()
+    mock_metadata = Mock()
+    mock_metadata.web_search_queries = ["query"]
+
+    chunk = Mock()
+    web = Mock()
+    web.uri = "https://example.com/source"
+    web.title = "Source Title"
+    chunk.web = web
+    mock_metadata.grounding_chunks = [chunk]
+
+    support = Mock()
+    support.grounding_chunk_indices = [0]
+    segment = Mock()
+    segment.text = "Snippet referencing the source."
+    segment.start_index = 5
+    segment.end_index = 25
+    support.segment = segment
+    mock_metadata.grounding_supports = [support]
+
+    mock_candidate.grounding_metadata = mock_metadata
+    mock_response.candidates = [mock_candidate]
+    mock_response.to_dict = Mock(return_value={
+      "text": mock_response.text,
+      "candidates": [{
+        "grounding_metadata": {
+          "web_search_queries": ["query"],
+          "grounding_chunks": [
+            {"web": {"uri": "https://example.com/source", "title": "Source Title"}}
+          ],
+          "grounding_supports": [{
+            "grounding_chunk_indices": [0],
+            "segment": {"text": "Snippet referencing the source."}
+          }]
+        }
+      }]
+    })
+
+    provider.client.models.generate_content = Mock(return_value=mock_response)
+
+    result = provider.send_prompt("Test", "gemini-2.5-flash")
+
+    assert len(result.citations) == 1
+    citation = result.citations[0]
+    assert citation.url == "https://example.com/source"
+    assert citation.text_snippet == "Snippet referencing the source."
+    assert citation.metadata["segment_start_index"] == 5
+    assert citation.metadata["segment_end_index"] == 25
 
   def test_send_prompt_includes_response_time(self, provider):
     """Test send_prompt calculates response time."""

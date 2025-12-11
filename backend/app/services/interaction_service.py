@@ -278,17 +278,19 @@ class InteractionService:
       )
 
     # Convert citations to schemas
-    citations = [
-      CitationSchema(
-        url=c.url,
-        title=c.title,
-        rank=c.rank,
-        snippet_used=c.snippet_used,
-        citation_confidence=c.citation_confidence,
-        metadata=c.metadata_json,
+    citations = []
+    for c in (response.sources_used or []):
+      citations.append(
+        CitationSchema(
+          url=c.url,
+          title=c.title,
+          rank=c.rank,
+          text_snippet=c.snippet_used,
+          snippet_used=c.snippet_used,
+          citation_confidence=c.citation_confidence,
+          metadata=c.metadata_json,
+        )
       )
-      for c in (response.sources_used or [])
-    ]
 
     # Populate all_sources for both API and network_log modes
     # This provides a consistent, pre-aggregated list for the frontend

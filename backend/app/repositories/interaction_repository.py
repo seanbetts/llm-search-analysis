@@ -215,7 +215,7 @@ class InteractionRepository:
           url=citation_data.get("url", ""),
           title=citation_data.get("title"),
           rank=citation_data.get("rank"),
-          snippet_used=citation_data.get("snippet_used"),
+          snippet_used=citation_data.get("snippet_used") or citation_data.get("text_snippet"),
           citation_confidence=citation_data.get("citation_confidence"),
           metadata_json=citation_data.get("metadata"),
         )
