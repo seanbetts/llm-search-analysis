@@ -142,7 +142,7 @@ class OpenAIProvider(BaseProvider):
           if output_item.status == "completed" and hasattr(output_item, 'content'):
             for content_item in output_item.content:
               if content_item.type == "output_text":
-                response_text += content_item.text
+                response_text += content_item.text or ""
 
                 # Extract citations from annotations
                 if hasattr(content_item, 'annotations') and content_item.annotations:

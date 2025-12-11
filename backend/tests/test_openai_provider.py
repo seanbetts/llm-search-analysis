@@ -108,6 +108,9 @@ class TestOpenAIProvider:
     mock_annotation.type = "url_citation"
     mock_annotation.url = "https://example.com/article1"
     mock_annotation.title = "AI Article 1"
+    mock_annotation.text = "AI has advanced significantly."
+    mock_annotation.start_index = 3
+    mock_annotation.end_index = 9
 
     mock_content.annotations = [mock_annotation]
     mock_message.content = [mock_content]
@@ -132,6 +135,8 @@ class TestOpenAIProvider:
     assert len(result.citations) == 1
     assert result.citations[0].url == "https://example.com/article1"
     assert result.citations[0].rank == 1  # Should match source rank
+    assert result.citations[0].start_index == 3
+    assert result.citations[0].end_index == 9
 
   def test_send_prompt_no_sources(self, provider):
     """Test send_prompt handles response without sources."""

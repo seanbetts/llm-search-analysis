@@ -337,6 +337,7 @@ class InteractionService:
     model = interaction.model_name if interaction else ""
     # Use display_name if available, otherwise fall back to name
     provider_obj = interaction.provider if interaction else None
+    provider_name = provider_obj.name if provider_obj else ""
     if provider_obj and provider_obj.display_name:
       provider_display = provider_obj.display_name
     elif provider_obj:
@@ -344,7 +345,10 @@ class InteractionService:
     else:
       provider_display = ""
     prompt_text = interaction.prompt_text if interaction else ""
-    formatted_response = self._format_response_text_with_citations(response.response_text, citations)
+    if (provider_name or "").lower() == "openai":
+      formatted_response = response.response_text or ""
+    else:
+      formatted_response = self._format_response_text_with_citations(response.response_text, citations)
     return SendPromptResponse(
       prompt=prompt_text,
       response_text=formatted_response,

@@ -190,10 +190,13 @@ class ProviderService:
         for c in provider_response.citations
       ]
 
-      formatted_text = format_response_with_citations(
-        provider_response.response_text,
-        provider_response.citations,
-      )
+      if provider_response.provider == "openai":
+        formatted_text = provider_response.response_text
+      else:
+        formatted_text = format_response_with_citations(
+          provider_response.response_text,
+          provider_response.citations,
+        )
 
       return SendPromptResponse(
         prompt=prompt,
