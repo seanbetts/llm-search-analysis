@@ -176,8 +176,24 @@ def tab_batch():
   st.session_state.setdefault('api_cancel_sent', False)
   st.session_state.setdefault('network_batch_state', None)
   st.session_state.setdefault('network_cancel_requested', False)
+  st.session_state.setdefault('network_show_browser', False)
   st.markdown("### 📦 Batch Analysis")
   st.caption("Run multiple prompts and analyze aggregate results")
+
+  mode = st.radio(
+    "Data collection mode",
+    ["API", "Web"],
+    horizontal=True,
+    key="batch_mode_radio"
+  )
+  is_network_mode = mode == "Web"
+  if is_network_mode:
+    st.checkbox(
+      "Show browser window during captures",
+      value=st.session_state.network_show_browser,
+      key="network_show_browser",
+      help="Uncheck to run headless for faster captures.",
+    )
 
   # Load all available models
   models = get_all_models()
@@ -187,7 +203,7 @@ def tab_batch():
     return
 
   # Filter models based on data collection mode
-  if st.session_state.data_collection_mode == 'network_log':
+  if is_network_mode:
     # Only OpenAI models supported for network capture
     model_labels = [label for label in models.keys() if models[label][0] == 'openai']
     if not model_labels:
@@ -259,11 +275,11 @@ def tab_batch():
 
   rendered_results = False
 
-  active_api_batch = st.session_state.active_api_batch if st.session_state.data_collection_mode == 'api' else None  # noqa: E501
-  network_batch_state = st.session_state.network_batch_state if st.session_state.data_collection_mode == 'network_log' else None  # noqa: E501
+  active_api_batch = st.session_state.active_api_batch if not is_network_mode else None  # noqa: E501
+  network_batch_state = st.session_state.network_batch_state if is_network_mode else None  # noqa: E501
 
   # Handle ongoing API batch polling (non-blocking to allow cancel button)
-  if active_api_batch and st.session_state.data_collection_mode == 'api':
+  if active_api_batch and not is_network_mode:
     batch_id = active_api_batch.get('batch_id')
     total_tasks = active_api_batch.get('total_tasks', 0)
 
@@ -325,7 +341,7 @@ def tab_batch():
         _safe_rerun()
 
   # Handle network capture batch execution one task per rerun to enable cancel
-  if network_batch_state and st.session_state.data_collection_mode == 'network_log':
+  if network_batch_state and is_network_mode:
     total_runs = network_batch_state.get('total_runs', 0)
     completed_runs = network_batch_state.get('completed_runs', 0)
     tasks = network_batch_state.get('tasks', [])
@@ -478,7 +494,7 @@ def tab_batch():
     st.session_state.batch_results = []
     st.session_state.batch_results_render_counter = 0
 
-    if st.session_state.data_collection_mode == 'api':
+    if not is_network_mode:
       model_ids = [model_name for (_, _, model_name) in selected_models]
       batch_payload, creation_error = safe_api_call(
         st.session_state.api_client.start_batch,

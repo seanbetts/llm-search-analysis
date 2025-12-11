@@ -8,9 +8,9 @@ def load_styles():
   st.markdown("""
 <style>
     .main-header {
-        font-size: 2.5rem;
-        font-weight: bold;
-        margin-bottom: 0.5rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
     }
     .sub-header {
         font-size: 1.2rem;

@@ -1,7 +1,8 @@
 """Tab modules for the Streamlit application."""
 
+from frontend.tabs.api import tab_api
 from frontend.tabs.batch import tab_batch
 from frontend.tabs.history import tab_history
-from frontend.tabs.interactive import tab_interactive
+from frontend.tabs.web import tab_web
 
-__all__ = ['tab_interactive', 'tab_batch', 'tab_history']
+__all__ = ['tab_api', 'tab_web', 'tab_batch', 'tab_history']

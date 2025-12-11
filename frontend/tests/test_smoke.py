@@ -23,8 +23,9 @@ class TestImports:
 
     def test_import_frontend_tabs(self):
         """Test that all frontend tab modules can be imported."""
-        from frontend.tabs import tab_batch, tab_history, tab_interactive
-        assert callable(tab_interactive)
+        from frontend.tabs import tab_api, tab_batch, tab_history, tab_web
+        assert callable(tab_api)
+        assert callable(tab_web)
         assert callable(tab_batch)
         assert callable(tab_history)
 
