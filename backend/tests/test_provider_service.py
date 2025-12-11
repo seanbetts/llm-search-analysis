@@ -187,9 +187,11 @@ class TestProviderService:
 
     # Verify response
     assert response.prompt == "Test prompt with sources"
+    assert response.response_text == "Test response with sources"
     assert len(response.search_queries) == 1
     assert response.search_queries[0].query == "test query"
     assert len(response.search_queries[0].sources) == 1
     assert response.search_queries[0].sources[0].url == "https://example.com"
     assert len(response.citations) == 1
     assert response.citations[0].url == "https://example.com"
+    assert response.citations[0].text_snippet is None

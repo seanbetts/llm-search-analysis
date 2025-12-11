@@ -605,16 +605,12 @@ def tab_history():
               domain = urlparse(url_display).netloc if url_display != 'No URL' else 'Unknown domain'
               display_title = citation.get('title') or domain or 'Unknown source'
 
-              # Get snippet and pub_date from citation metadata or source fallback
-              snippet = citation.get('snippet')
-              pub_date_val = citation.get('pub_date')
-
-              # Fallback to source data if available
-              if not snippet or not pub_date_val:
-                source_fallback = url_to_source.get(url_display)
-                if source_fallback:
-                  snippet = snippet or source_fallback.get('snippet_text') or source_fallback.get('snippet')
-                  pub_date_val = pub_date_val or source_fallback.get('pub_date')
+              source_fallback = url_to_source.get(url_display)
+              snippet = None
+              pub_date_val = None
+              if source_fallback:
+                snippet = source_fallback.get('snippet_text') or source_fallback.get('snippet')
+                pub_date_val = source_fallback.get('pub_date')
 
               snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet or 'N/A'}</em></div>"  # noqa: E501
               pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"

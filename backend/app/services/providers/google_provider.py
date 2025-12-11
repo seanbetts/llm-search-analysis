@@ -1,7 +1,7 @@
 """Google Gemini provider implementation with Search Grounding."""
 
 import time
-from typing import List
+from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 
 import requests
@@ -122,14 +122,10 @@ class GoogleProvider(BaseProvider):
     Returns:
       ProviderResponse object
     """
-    search_queries = []
-    sources = []
-    citations = []
-    response_text = ""
-
-    # Extract response text
-    if response.text:
-      response_text = response.text
+    search_queries: List[SearchQuery] = []
+    sources: List[Source] = []
+    citations: List[Citation] = []
+    response_text = response.text or ""
 
     # Extract grounding metadata if available
     if hasattr(response, 'candidates') and response.candidates:
@@ -203,12 +199,21 @@ class GoogleProvider(BaseProvider):
                 if not source_obj:
                   continue
 
+                start_index, end_index, snippet = self._extract_segment_span(
+                  response_text,
+                  segment_text,
+                  getattr(segment, "start_index", None),
+                  getattr(segment, "end_index", None),
+                )
+
                 citations.append(Citation(
                   url=source_obj.url,
                   title=source_obj.title,
                   rank=source_obj.rank,
-                  text_snippet=segment_text,
-                  snippet_used=segment_text,
+                  text_snippet=snippet,
+                  snippet_used=snippet,
+                  start_index=start_index,
+                  end_index=end_index,
                   metadata={
                     "grounding_chunk_index": chunk_idx,
                     "segment_start_index": getattr(segment, "start_index", None),
@@ -242,3 +247,75 @@ class GoogleProvider(BaseProvider):
       provider=self.get_provider_name(),
       response_time_ms=response_time_ms
     )
+
+  @staticmethod
+  def _extract_segment_span(
+    text: str,
+    segment_text: Optional[str],
+    start_index: Optional[int],
+    end_index: Optional[int],
+  ) -> Tuple[Optional[int], Optional[int], Optional[str]]:
+    """Normalize segment span indices and snippet text."""
+    text_length = len(text or "")
+    def _clamp_indices(start: int, end: int) -> Tuple[int, int]:
+      start = GoogleProvider._trim_span_start(text, start, end)
+      end = GoogleProvider._trim_span_end(text, start, end)
+      return start, end
+
+    if (
+      isinstance(start_index, int) and isinstance(end_index, int)
+      and 0 <= start_index < end_index <= text_length
+    ):
+      trimmed_start, trimmed_end = _clamp_indices(start_index, end_index)
+      if trimmed_start >= trimmed_end:
+        return None, None, GoogleProvider._clean_segment_text(segment_text)
+
+      segment = text[trimmed_start:trimmed_end]
+
+      # Avoid leaking into subsequent headings separated by a blank line
+      double_newline = segment.find("\n\n")
+      if double_newline != -1:
+        trimmed_end = trimmed_start + double_newline
+        trimmed_start, trimmed_end = _clamp_indices(trimmed_start, trimmed_end)
+        segment = text[trimmed_start:trimmed_end]
+
+      # If the span begins immediately after heading markers, skip the heading line
+      prefix = text[max(0, trimmed_start - 4):trimmed_start]
+      newline_offset = segment.find("\n")
+      if "#" in prefix and newline_offset != -1:
+        trimmed_start = trimmed_start + newline_offset + 1
+        trimmed_start, trimmed_end = _clamp_indices(trimmed_start, trimmed_end)
+        segment = text[trimmed_start:trimmed_end]
+
+      if trimmed_start >= trimmed_end:
+        return None, None, GoogleProvider._clean_segment_text(segment_text)
+
+      snippet = segment.strip() or GoogleProvider._clean_segment_text(segment_text)
+      return trimmed_start, trimmed_end, snippet
+
+    return None, None, GoogleProvider._clean_segment_text(segment_text)
+
+  @staticmethod
+  def _trim_span_start(text: str, start: int, end: int) -> int:
+    """Skip leading markdown/bullet characters."""
+    trim_chars = set(" \n\r\t*-•#")
+    while start < end and text[start] in trim_chars:
+      start += 1
+    return start
+
+  @staticmethod
+  def _trim_span_end(text: str, start: int, end: int) -> int:
+    """Trim trailing markdown/whitespace from span."""
+    trim_chars = set(" \n\r\t*#")
+    while end > start and text[end - 1] in trim_chars:
+      end -= 1
+    return end
+
+  @staticmethod
+  def _clean_segment_text(segment_text: Optional[str]) -> Optional[str]:
+    """Remove markdown bullet markers from segment text."""
+    if not segment_text:
+      return segment_text
+    cleaned = segment_text.strip()
+    cleaned = cleaned.lstrip("*-•# ").rstrip("*-•# ").strip()
+    return cleaned or segment_text

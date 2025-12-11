@@ -90,14 +90,16 @@ class ProviderService:
         "query_reformulations": query.query_reformulations,
       })
 
+    strip_snippets = provider_response.provider == "google"
+
     citations_dict = []
     for citation in provider_response.citations:
       citations_dict.append({
         "url": citation.url,
         "title": citation.title,
         "rank": citation.rank,
-        "text_snippet": citation.text_snippet,
-        "snippet_used": citation.snippet_used,
+        "text_snippet": None if strip_snippets else citation.text_snippet,
+        "snippet_used": None if strip_snippets else citation.snippet_used,
         "start_index": citation.start_index,
         "end_index": citation.end_index,
         "published_at": citation.published_at,
@@ -175,22 +177,25 @@ class ProviderService:
           )
         )
 
-      citations_schema = [
-        CitationSchema(
-          url=c.url,
-          title=c.title,
-          rank=c.rank,
-          text_snippet=c.text_snippet,
-          start_index=c.start_index,
-          end_index=c.end_index,
-          snippet_used=c.snippet_used,
-          citation_confidence=c.citation_confidence,
-          metadata=c.metadata,
+      citations_schema = []
+      for c in provider_response.citations:
+        citations_schema.append(
+          CitationSchema(
+            url=c.url,
+            title=c.title,
+            rank=c.rank,
+            text_snippet=None if strip_snippets else c.text_snippet,
+            start_index=c.start_index,
+            end_index=c.end_index,
+            snippet_used=None if strip_snippets else c.snippet_used,
+            citation_confidence=c.citation_confidence,
+            metadata=c.metadata,
+          )
         )
-        for c in provider_response.citations
-      ]
 
-      if provider_response.provider == "openai":
+      format_skip_providers = {"openai", "google"}
+
+      if provider_response.provider in format_skip_providers:
         formatted_text = provider_response.response_text
       else:
         formatted_text = format_response_with_citations(

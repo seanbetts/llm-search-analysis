@@ -345,7 +345,8 @@ class InteractionService:
     else:
       provider_display = ""
     prompt_text = interaction.prompt_text if interaction else ""
-    if (provider_name or "").lower() == "openai":
+    skip_format_providers = {"openai", "google"}
+    if (provider_name or "").lower() in skip_format_providers:
       formatted_response = response.response_text or ""
     else:
       formatted_response = self._format_response_text_with_citations(response.response_text, citations)

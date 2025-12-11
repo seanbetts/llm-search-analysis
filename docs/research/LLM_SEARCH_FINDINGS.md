@@ -41,7 +41,7 @@ This document captures everything we've learned from building a comparative anal
 - Limited to what API exposes
 - No internal ranking scores
 - No query reformulation visibility
-- No snippet text (except Gemini partial)
+- No snippet or published-date metadata (all APIs tested omit real excerpts; UI must display “N/A”)
 
 ### Network Capture Mode (Browser Automation)
 
@@ -51,7 +51,7 @@ This document captures everything we've learned from building a comparative anal
 **Advantages:**
 - Internal ranking scores visible
 - Query reformulations captured
-- Snippet text from results
+- Actual search-result snippets and published dates captured (e.g., Brave/ChatGPT network payloads)
 - Citation confidence scores
 - Deeper insight into model behavior
 

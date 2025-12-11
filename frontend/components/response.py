@@ -8,6 +8,15 @@ import streamlit as st
 from frontend.utils import format_pub_date
 
 
+def _format_snippet(snippet):
+  """Return readable snippet text or 'N/A' if not present."""
+  if not snippet:
+    return "N/A"
+  if isinstance(snippet, (dict, list)):
+    return "N/A"
+  return str(snippet)
+
+
 def sanitize_response_markdown(text: str) -> str:
   """Remove heavy dividers and downscale large headings so they don't exceed the section title.
 
@@ -234,7 +243,7 @@ def display_response(response, prompt=None):
             display_title = source.title or source.domain or 'Unknown source'
             snippet = getattr(source, "snippet_text", None)
             pub_date = getattr(source, "pub_date", None)
-            snippet_display = snippet if snippet else "N/A"
+            snippet_display = _format_snippet(snippet)
             snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
             pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
             pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
@@ -261,7 +270,7 @@ def display_response(response, prompt=None):
           display_title = source.title or source.domain or 'Unknown source'
           snippet = getattr(source, "snippet_text", None)
           pub_date = getattr(source, "pub_date", None)
-          snippet_display = snippet if snippet else "N/A"
+          snippet_display = _format_snippet(snippet)
           snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
           pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
           pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
@@ -314,14 +323,9 @@ def display_response(response, prompt=None):
         display_title = citation.title or domain or 'Unknown source'
         source_fallback = url_to_source.get(citation.url)
         metadata = getattr(citation, "metadata", None) or {}
-        snippet = (
-          metadata.get("snippet")
-          or getattr(citation, "text_snippet", None)
-          or getattr(citation, "snippet_used", None)
-          or getattr(source_fallback, "snippet_text", None)
-        )
-        pub_date_val = metadata.get("pub_date") or (getattr(source_fallback, "pub_date", None))
-        snippet_display = snippet if snippet else "N/A"
+        snippet = getattr(source_fallback, "snippet_text", None)
+        pub_date_val = getattr(source_fallback, "pub_date", None)
+        snippet_display = _format_snippet(snippet)
         snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
         pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"
         pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
@@ -354,7 +358,7 @@ def display_response(response, prompt=None):
           snippet = citation.metadata.get("snippet")
         if not snippet:
           snippet = getattr(citation, "text_snippet", None) or getattr(citation, "snippet_used", None)
-        snippet_display = snippet if snippet else "N/A"
+        snippet_display = _format_snippet(snippet)
         snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
 
         st.markdown(f"""

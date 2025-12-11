@@ -72,7 +72,8 @@ class TestGoogleProvider:
     """Test send_prompt successfully parses response with grounding metadata."""
     # Create mock response with grounding metadata
     mock_response = Mock()
-    mock_response.text = "The latest developments in AI include..."
+    snippet_value = "The latest cited sentence."
+    mock_response.text = f"{snippet_value} Additional context for testing."
 
     # Mock candidate with grounding metadata
     mock_candidate = Mock()
@@ -95,9 +96,9 @@ class TestGoogleProvider:
     mock_support = Mock()
     mock_support.grounding_chunk_indices = [0]
     mock_segment = Mock()
-    mock_segment.text = "Segment referencing article 1"
-    mock_segment.start_index = 10
-    mock_segment.end_index = 42
+    mock_segment.text = snippet_value
+    mock_segment.start_index = 0
+    mock_segment.end_index = len(snippet_value)
     mock_support.segment = mock_segment
 
     mock_metadata.grounding_chunks = [mock_chunk1, mock_chunk2]
@@ -126,7 +127,7 @@ class TestGoogleProvider:
     # Verify response
     assert result.provider == "google"
     assert result.model == "gemini-2.5-flash"
-    assert result.response_text == "The latest developments in AI include..."
+    assert result.response_text == f"{snippet_value} Additional context for testing."
     assert len(result.search_queries) == 2
     assert result.search_queries[0].query == "latest AI developments"
     assert result.search_queries[1].query == "AI breakthroughs"
@@ -136,9 +137,11 @@ class TestGoogleProvider:
     assert result.sources[1].url == "https://example.com/article2"
     assert len(result.citations) == 1
     assert result.citations[0].url == "https://example.com/article1"
-    assert result.citations[0].text_snippet == "Segment referencing article 1"
-    assert result.citations[0].metadata["segment_start_index"] == 10
-    assert result.citations[0].metadata["segment_end_index"] == 42
+    assert result.citations[0].text_snippet == "The latest cited sentence."
+    assert result.citations[0].start_index == 0
+    assert result.citations[0].end_index == len(snippet_value)
+    assert result.citations[0].metadata["segment_start_index"] == 0
+    assert result.citations[0].metadata["segment_end_index"] == len(snippet_value)
 
   def test_send_prompt_no_grounding(self, provider):
     """Test send_prompt handles response without grounding metadata."""
@@ -362,7 +365,9 @@ class TestGoogleProvider:
   def test_parse_response_creates_citations_from_supports(self, provider):
     """Grounding supports should be converted into citations."""
     mock_response = Mock()
-    mock_response.text = "Response with citations"
+    snippet_value = "Snippet referencing the source."
+    prefix = "Prefix "
+    mock_response.text = f"{prefix}{snippet_value} Suffix"
 
     mock_candidate = Mock()
     mock_metadata = Mock()
@@ -378,9 +383,9 @@ class TestGoogleProvider:
     support = Mock()
     support.grounding_chunk_indices = [0]
     segment = Mock()
-    segment.text = "Snippet referencing the source."
-    segment.start_index = 5
-    segment.end_index = 25
+    segment.text = snippet_value
+    segment.start_index = len(prefix)
+    segment.end_index = len(prefix) + len(snippet_value)
     support.segment = segment
     mock_metadata.grounding_supports = [support]
 
@@ -410,8 +415,34 @@ class TestGoogleProvider:
     citation = result.citations[0]
     assert citation.url == "https://example.com/source"
     assert citation.text_snippet == "Snippet referencing the source."
-    assert citation.metadata["segment_start_index"] == 5
-    assert citation.metadata["segment_end_index"] == 25
+    assert citation.start_index == len(prefix)
+    assert citation.end_index == len(prefix) + len(snippet_value)
+    assert citation.metadata["segment_start_index"] == len(prefix)
+    assert citation.metadata["segment_end_index"] == len(prefix) + len(snippet_value)
+
+  def test_extract_span_clamps_before_next_heading(self):
+    """Double newlines should prevent spans from absorbing the next heading."""
+    text = "Bullet detail ends here.\n\n## Next Section"
+    start, end, snippet = GoogleProvider._extract_segment_span(
+      text=text,
+      segment_text=None,
+      start_index=0,
+      end_index=len(text)
+    )
+    assert snippet == "Bullet detail ends here."
+    assert text[start:end] == "Bullet detail ends here."
+
+  def test_extract_span_skips_heading_lines(self):
+    """Spans starting inside a heading should begin at the next line of text."""
+    text = "### **Heading Title**\nParagraph content follows."
+    start, end, snippet = GoogleProvider._extract_segment_span(
+      text=text,
+      segment_text=None,
+      start_index=0,
+      end_index=len(text)
+    )
+    assert snippet == "Paragraph content follows."
+    assert text[start:end] == "Paragraph content follows."
 
   def test_send_prompt_includes_response_time(self, provider):
     """Test send_prompt calculates response time."""
