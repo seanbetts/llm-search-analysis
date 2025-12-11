@@ -73,6 +73,7 @@ def tab_interactive():
 
             # Status callback to update UI
             def update_status(msg: str):
+              """Relay intermediate capture status updates to the UI."""
               status_container.write(msg)
 
             # Initialize capturer with status callback

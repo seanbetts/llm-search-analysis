@@ -300,10 +300,12 @@ class TestApiClientResilience:
   def test_retries_on_remote_protocol_error(self, monkeypatch):
     """Ensure remote protocol errors reset client and retry."""
     class DummyHTTPClient:
+      """Simple stub to simulate request retries without real network calls."""
       def __init__(self):
         self.calls = 0
 
       def request(self, method, path, **kwargs):
+        """Increment call count and simulate a transient failure on first call."""
         self.calls += 1
         if self.calls == 1:
           raise httpx.RemoteProtocolError("Server disconnected")
@@ -333,6 +335,7 @@ class TestApiClientResilience:
         )
 
       def close(self):
+        """Stand-in close method required by APIClient interface."""
         pass
 
     dummy = DummyHTTPClient()

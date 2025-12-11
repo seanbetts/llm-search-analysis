@@ -79,6 +79,7 @@ def format_response_text(text: str, citations: list) -> str:
   # Step 2: Replace reference-style links with inline links
   # Pattern: [text][N] where N is a number
   def replace_reference_link(match):
+    """Convert reference-style markdown links to inline links."""
     link_text = match.group(1)
     ref_num = match.group(2)
     if ref_num in references:
@@ -113,6 +114,7 @@ def extract_images_from_response(text: str):
 
   # Markdown images ![alt](url)
   def md_repl(match):
+    """Collect markdown image URLs and strip them from text."""
     url = match.group(1)
     if url:
       images.append(url)
@@ -121,6 +123,7 @@ def extract_images_from_response(text: str):
 
   # HTML img tags
   def html_repl(match):
+    """Collect HTML image src values and strip the tags."""
     src = match.group(1)
     if src:
       images.append(src)

@@ -101,8 +101,11 @@ def _prepare_history_dataframe(interactions: List[Dict[str, Any]]) -> pd.DataFra
     lambda x: f"{x / 1000:.1f}s" if pd.notna(x) else "N/A"
   )
 
+  def _safe(value):
+    return value if pd.notna(value) else None
+
   df['model_display'] = df.apply(
-    lambda row: row.get('model_display_name') or row.get('model') if pd.notna(row.get('model')) else row.get('model'),
+    lambda row: _safe(row.get('model_display_name')) or _safe(row.get('model')),
     axis=1
   )
   return df

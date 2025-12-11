@@ -31,6 +31,7 @@ def summarize_batch_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
   failed = [r for r in results if 'error' in r]
 
   def safe_average(values: List[Optional[float]]) -> Optional[float]:
+    """Return average of provided values ignoring None entries."""
     valid = [v for v in values if v is not None]
     if not valid:
       return None

@@ -223,6 +223,7 @@ class NetworkLogParser:
             safe_url_set = set(safe_urls)
 
             def to_iso(ts: Any) -> str:
+                """Convert timestamp-like values into ISO-8601 strings."""
                 try:
                     if ts is None:
                         return None
@@ -246,6 +247,7 @@ class NetworkLogParser:
 
             # Collect additional entries directly from the SSE body to avoid missing groups
             def extract_entries_from_body(body_text: str) -> List[Dict[str, Any]]:
+                """Parse SSE body for extra search result groups."""
                 entries: List[Dict[str, Any]] = []
                 lines = body_text.split('\n')
                 for line in lines:
@@ -260,6 +262,7 @@ class NetworkLogParser:
 
                     # Helper to append any groups found
                     def add_groups(groups):
+                        """Append entries extracted from SSE payload groups."""
                         if isinstance(groups, list):
                             for g in groups:
                                 if isinstance(g, dict):

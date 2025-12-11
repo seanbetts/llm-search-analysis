@@ -76,12 +76,8 @@ def test_module_docstrings(python_files: List[Path]):
         )
 
 
-@pytest.mark.xfail(reason="Not all frontend classes have docstrings yet - gradual improvement")
 def test_class_docstrings(python_files: List[Path]):
-    """Test that frontend classes have docstrings.
-
-    Currently set to XFAIL to allow gradual improvement.
-    """
+    """Test that frontend classes have docstrings."""
     errors = []
     for file_path in python_files:
         try:
@@ -107,12 +103,8 @@ def test_class_docstrings(python_files: List[Path]):
         )
 
 
-@pytest.mark.xfail(reason="Not all frontend functions have docstrings yet - gradual improvement")
 def test_function_docstrings(python_files: List[Path]):
-    """Test that public frontend functions have docstrings.
-
-    Currently set to XFAIL to allow gradual improvement.
-    """
+    """Test that public frontend functions have docstrings."""
     errors = []
     for file_path in python_files:
         try:

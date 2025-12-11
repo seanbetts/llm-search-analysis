@@ -39,15 +39,18 @@ class DummyStreamlit:
     self.success_messages = []
 
   def spinner(self, text):
+    """Record spinner usage for assertion."""
     self.spinner_calls.append(text)
     return DummySpinner()
 
   def success(self, message):
+    """Record success messages for assertion."""
     self.success_messages.append(message)
 
 
 @pytest.fixture
 def stub_streamlit(monkeypatch):
+  """Provide DummyStreamlit instance and patch helpers to use it."""
   dummy = DummyStreamlit()
   monkeypatch.setattr("frontend.helpers.error_handling.st", dummy)
   return dummy
@@ -56,6 +59,7 @@ def stub_streamlit(monkeypatch):
 def test_safe_api_call_success(stub_streamlit):
   """safe_api_call returns result and emits success message when provided."""
   def do_work(x, y):
+    """Add two values to mimic a successful API call."""
     return x + y
 
   result, error = safe_api_call(do_work, 2, 3, success_message="Done!", spinner_text="Working...")
@@ -80,6 +84,7 @@ def test_safe_api_call_success(stub_streamlit):
 def test_safe_api_call_error_paths(exception, expected, stub_streamlit):
   """Each API client exception should map to a friendly error message."""
   def do_fail():
+    """Raise provided exception to trigger safe_api_call error path."""
     raise exception
 
   _, error = safe_api_call(do_fail, show_spinner=False)
