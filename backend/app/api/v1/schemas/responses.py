@@ -91,6 +91,9 @@ class Citation(BaseModel):
   title: Optional[str] = Field(None, description="Citation title")
   rank: Optional[int] = Field(None, ge=1, description="Rank from original search results")
   text_snippet: Optional[str] = Field(None, description="Text snippet from citation")
+  start_index: Optional[int] = Field(None, ge=0, description="Start offset of cited text")
+  end_index: Optional[int] = Field(None, ge=0, description="End offset of cited text")
+  published_at: Optional[str] = Field(None, description="Published date provided by provider")
 
   # Network log exclusive fields
   snippet_used: Optional[str] = Field(None, description="Exact snippet cited")

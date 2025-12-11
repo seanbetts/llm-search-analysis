@@ -83,7 +83,7 @@ def format_response_text(text: str, citations: list) -> str:
     link_text = match.group(1)
     ref_num = match.group(2)
     if ref_num in references:
-      return f"{link_text} ({_format_domain_link(references[ref_num])})"
+      return f"[{link_text}]({references[ref_num]})"
     return match.group(0)  # Keep original if reference not found
 
   text = re.sub(r'\[([^\]]+)\]\[(\d+)\]', replace_reference_link, text)
@@ -94,83 +94,10 @@ def format_response_text(text: str, citations: list) -> str:
   text = re.sub(removal_pattern, '', text, flags=re.MULTILINE)
 
   # Step 4: Inject citation markers for providers (e.g., Google) that supply segments
-  text = _apply_citation_links(text, citations)
-
   # Step 5: Clean up any resulting multiple newlines
   text = re.sub(r'\n{3,}', '\n\n', text)
 
   return sanitize_response_markdown(text.strip())
-
-
-def _format_domain_link(url: str) -> str:
-  """Return Markdown hyperlink using the domain as label."""
-  try:
-    domain = urlparse(url).netloc
-  except Exception:
-    domain = ""
-  label = domain or url
-  return f"[{label}]({url})"
-
-
-def _apply_citation_links(text: str, citations: list) -> str:
-  """Insert inline domain links based on citation metadata/snippets."""
-  if not citations or not text:
-    return text
-
-  def _as_dict(obj):
-    if isinstance(obj, dict):
-      return obj
-    return getattr(obj, "__dict__", None)
-
-  ranked_citations = [c for c in citations if getattr(c, "rank", None) and getattr(c, "url", None)]
-
-  replacements = []
-  seen_ranges = set()
-  for citation in ranked_citations:
-    url = citation.url
-    metadata = getattr(citation, "metadata", None)
-    if metadata is None:
-      raw = _as_dict(citation)
-      if raw:
-        metadata = raw.get("metadata")
-    if not isinstance(metadata, dict):
-      continue
-    start = metadata.get("segment_start_index")
-    end = metadata.get("segment_end_index")
-    snippet = (
-      metadata.get("snippet")
-      or getattr(citation, "text_snippet", None)
-      or getattr(citation, "snippet_used", None)
-    )
-    snippet_match = snippet.strip() if isinstance(snippet, str) else None
-
-    span = None
-    if snippet_match:
-      idx = text.find(snippet_match)
-      if idx != -1:
-        span = (idx, idx + len(snippet_match))
-    if span is None and isinstance(start, int) and isinstance(end, int) and 0 <= start < end <= len(text):
-      span = (start, end)
-    if span is None:
-      continue
-    span = (int(span[0]), int(span[1]))
-    if span in seen_ranges or span[0] == span[1]:
-      continue
-    seen_ranges.add(span)
-    replacements.append((span[0], span[1], url))
-
-  if not replacements:
-    return text
-
-  for start, end, url in sorted(replacements, key=lambda item: item[0], reverse=True):
-    segment = text[start:end]
-    if not segment.strip():
-      continue
-    domain_link = _format_domain_link(url)
-    linked = f"{segment} ({domain_link})"
-    text = text[:start] + linked + text[end:]
-
-  return text
 
 
 def extract_images_from_response(text: str):

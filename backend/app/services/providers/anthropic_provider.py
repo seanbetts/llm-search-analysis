@@ -129,10 +129,14 @@ class AnthropicProvider(BaseProvider):
 
     # Extract content blocks
     if hasattr(response, 'content') and response.content:
+      current_length = 0
       for content_block in response.content:
         # Extract text responses
         if content_block.type == "text":
-          response_text += content_block.text
+          block_text = content_block.text or ""
+          block_start = current_length
+          response_text += block_text
+          current_length += len(block_text)
 
           # Extract citations from text blocks
           if hasattr(content_block, 'citations') and content_block.citations:
@@ -148,17 +152,25 @@ class AnthropicProvider(BaseProvider):
                     break
 
                 title = citation.get('title') if isinstance(citation, dict) else getattr(citation, 'title', None)
-                snippet = None
                 if isinstance(citation, dict):
                   snippet = citation.get('cited_text') or citation.get('text')
                 else:
                   snippet = getattr(citation, 'cited_text', None) or getattr(citation, 'text', None)
+                start_index = None
+                end_index = None
+                if snippet:
+                  local_idx = block_text.find(snippet)
+                  if local_idx != -1:
+                    start_index = block_start + local_idx
+                    end_index = start_index + len(snippet)
                 citations.append(Citation(
                   url=url,
                   title=title,
                   rank=rank,
                   text_snippet=snippet,
                   snippet_used=snippet,
+                  start_index=start_index,
+                  end_index=end_index,
                 ))
 
         # Extract search queries from server_tool_use blocks

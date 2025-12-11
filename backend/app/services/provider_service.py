@@ -8,6 +8,7 @@ from app.config import settings
 from app.core.utils import get_model_display_name
 from app.services.interaction_service import InteractionService
 from app.services.providers import ProviderFactory, ProviderResponse
+from app.services.response_formatter import format_response_with_citations
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +98,9 @@ class ProviderService:
         "rank": citation.rank,
         "text_snippet": citation.text_snippet,
         "snippet_used": citation.snippet_used,
+        "start_index": citation.start_index,
+        "end_index": citation.end_index,
+        "published_at": citation.published_at,
         "citation_confidence": citation.citation_confidence,
         "metadata": citation.metadata,
       })
@@ -177,6 +181,8 @@ class ProviderService:
           title=c.title,
           rank=c.rank,
           text_snippet=c.text_snippet,
+          start_index=c.start_index,
+          end_index=c.end_index,
           snippet_used=c.snippet_used,
           citation_confidence=c.citation_confidence,
           metadata=c.metadata,
@@ -184,9 +190,14 @@ class ProviderService:
         for c in provider_response.citations
       ]
 
+      formatted_text = format_response_with_citations(
+        provider_response.response_text,
+        provider_response.citations,
+      )
+
       return SendPromptResponse(
         prompt=prompt,
-        response_text=provider_response.response_text,
+        response_text=formatted_text,
         search_queries=search_queries_schema,
         citations=citations_schema,
         provider=provider_response.provider,

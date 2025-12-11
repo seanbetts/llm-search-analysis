@@ -208,6 +208,14 @@ class InteractionRepository:
             citation_data.get("rank"),
           )
 
+        metadata = citation_data.get("metadata") or {}
+        if citation_data.get("start_index") is not None:
+          metadata.setdefault("start_index", citation_data.get("start_index"))
+        if citation_data.get("end_index") is not None:
+          metadata.setdefault("end_index", citation_data.get("end_index"))
+        if citation_data.get("published_at"):
+          metadata.setdefault("published_at", citation_data.get("published_at"))
+
         source_used = SourceUsed(
           response_id=response.id,
           query_source_id=matched_query_source,
@@ -217,7 +225,7 @@ class InteractionRepository:
           rank=citation_data.get("rank"),
           snippet_used=citation_data.get("snippet_used") or citation_data.get("text_snippet"),
           citation_confidence=citation_data.get("citation_confidence"),
-          metadata_json=citation_data.get("metadata"),
+          metadata_json=metadata,
         )
         self.db.add(source_used)
 

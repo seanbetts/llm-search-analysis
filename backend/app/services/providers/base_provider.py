@@ -46,7 +46,10 @@ class Citation:
   title: Optional[str] = None
   text_snippet: Optional[str] = None
   rank: Optional[int] = None  # Rank from original search results (1-indexed)
-  metadata: Optional[Dict] = None  # Additional citation metadata (e.g., citation_id)
+  start_index: Optional[int] = None  # Character offset where citation influence starts
+  end_index: Optional[int] = None    # Character offset where citation influence ends
+  published_at: Optional[str] = None
+  metadata: Optional[Dict[str, Any]] = None  # Additional citation metadata (e.g., citation_id)
   # Network log exclusive fields
   snippet_used: Optional[str] = None
   citation_confidence: Optional[float] = None

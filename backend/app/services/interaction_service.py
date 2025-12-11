@@ -32,6 +32,8 @@ from app.core.utils import (
   normalize_model_name,
 )
 from app.repositories.interaction_repository import InteractionRepository
+from app.services.providers.base_provider import Citation as CitationModel
+from app.services.response_formatter import format_response_with_citations
 
 
 class InteractionService:
@@ -280,15 +282,18 @@ class InteractionService:
     # Convert citations to schemas
     citations = []
     for c in (response.sources_used or []):
+      metadata = c.metadata_json or {}
       citations.append(
         CitationSchema(
           url=c.url,
           title=c.title,
           rank=c.rank,
           text_snippet=c.snippet_used,
+          start_index=metadata.get("start_index"),
+          end_index=metadata.get("end_index"),
           snippet_used=c.snippet_used,
           citation_confidence=c.citation_confidence,
-          metadata=c.metadata_json,
+          metadata=metadata,
         )
       )
 
@@ -339,9 +344,10 @@ class InteractionService:
     else:
       provider_display = ""
     prompt_text = interaction.prompt_text if interaction else ""
+    formatted_response = self._format_response_text_with_citations(response.response_text, citations)
     return SendPromptResponse(
       prompt=prompt_text,
-      response_text=response.response_text,
+      response_text=formatted_response,
       search_queries=search_queries,
       citations=citations,
       all_sources=all_sources,
@@ -482,6 +488,23 @@ class InteractionService:
       normalized_citation["metadata"] = dump_metadata(CitationMetadata, normalized_citation.get("metadata"))
       normalized.append(normalized_citation)
     return normalized
+
+  def _format_response_text_with_citations(self, text: str, citations: List[CitationSchema]) -> str:
+    """Apply inline formatting using normalized citation metadata."""
+    citation_models: List[CitationModel] = []
+    for citation in citations or []:
+      citation_models.append(
+        CitationModel(
+          url=citation.url,
+          title=citation.title,
+          text_snippet=citation.text_snippet,
+          rank=citation.rank,
+          start_index=citation.start_index,
+          end_index=citation.end_index,
+          metadata=citation.metadata or {},
+        )
+      )
+    return format_response_with_citations(text or "", citation_models)
 
   def _ensure_optional_dict(self, value: Any, label: str) -> Optional[Dict[str, Any]]:
     if value is None:

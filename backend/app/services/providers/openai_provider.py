@@ -117,11 +117,16 @@ class OpenAIProvider(BaseProvider):
                 for rank, source in enumerate(action.sources, 1):
                   # Only include sources that have a valid URL
                   if hasattr(source, 'url') and source.url:
+                    snippet = getattr(source, 'snippet', None)
+                    published_at = getattr(source, 'published_at', None)
                     source_obj = Source(
                       url=source.url,
                       title=source.title if hasattr(source, 'title') else None,
                       domain=urlparse(source.url).netloc,
-                      rank=rank
+                      rank=rank,
+                      pub_date=published_at,
+                      snippet_text=snippet,
+                      metadata={"published_at": published_at} if published_at else None,
                     )
                     query_sources.append(source_obj)
                     sources.append(source_obj)
@@ -159,7 +164,11 @@ class OpenAIProvider(BaseProvider):
                         citations.append(Citation(
                           url=annotation.url,
                           title=annotation.title if hasattr(annotation, 'title') else None,
-                          rank=rank
+                          rank=rank,
+                          text_snippet=getattr(annotation, 'text', None),
+                          snippet_used=getattr(annotation, 'text', None),
+                          start_index=getattr(annotation, 'start_index', None),
+                          end_index=getattr(annotation, 'end_index', None),
                         ))
 
     # Remove duplicate citations
