@@ -166,3 +166,34 @@ The output is a structured dataset linking text spans to citations and their rhe
 - Identifying claims lacking evidence or reliant on speculative sources.
 
 This tagging framework forms the foundation for evaluating the interpretability, trustworthiness and reasoning structure of model-generated content.
+
+## 7. Implementation Plan
+
+To integrate this framework into the current stack we focus on web captures (network logs). API-only interactions don’t expose citation spans, so tagging remains disabled there.
+
+### Backend schema + models
+
+- Extend `SourceUsed` with `function_tags`, `stance_tags`, and `provenance_tags` JSON columns (default empty lists). Write an Alembic migration so existing data stays readable.
+- Update the core `Citation` dataclass and FastAPI responses to include the three tag arrays. Providers can initially emit empty lists.
+- When saving web captures, persist tags directly on each `SourceUsed` row (in addition to current metadata like start/end indices and snippets).
+
+### Service + ingestion workflow
+
+- Implement a tagging module that runs for `data_source == "web"` responses. It receives `(claim_span, citation metadata)` pairs and returns the three tag lists.
+- Use an LLM (guided prompt + JSON schema) to classify each citation. The prompt should include the response text, citation span, and tag definitions to ensure structured output.
+- Add an offline script to iterate through historical web captures and backfill tags using the same LLM-powered module. This keeps legacy data comparable to future runs.
+- Before wiring the tagger into ingestion, sample existing web captures and run the LLM classification script across them. Review outputs, adjust prompts/tag definitions, and track accuracy metrics so we know the tags are trustworthy.
+
+### API + frontend exposure
+
+- Surface tags via the `/interactions` APIs so history/interactive tabs can display them. Update the frontend builders and components to render the new fields (e.g., chips beneath each citation).
+- Because tags are stored on the backend, downstream analytics (history charts, exports) can filter or aggregate by rhetorical function without extra work.
+
+### Summary
+
+1. Schema update + migration (add JSON columns on `sources_used`).
+2. Provider/service contract updates to carry tag arrays.
+3. LLM-driven tagging pipeline (web-only) plus a retrofit script and evaluation run on existing records.
+4. API/client changes so tags appear in the UI and data exports.
+
+This staged approach delivers immediate visibility for web analyses while keeping the door open to expand tagging quality over time.
