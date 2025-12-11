@@ -4,7 +4,7 @@ Defines the interface that all provider implementations must follow.
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 
@@ -53,6 +53,9 @@ class Citation:
   # Network log exclusive fields
   snippet_used: Optional[str] = None
   citation_confidence: Optional[float] = None
+  function_tags: List[str] = field(default_factory=list)
+  stance_tags: List[str] = field(default_factory=list)
+  provenance_tags: List[str] = field(default_factory=list)
 
 
 @dataclass

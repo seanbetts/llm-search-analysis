@@ -174,6 +174,9 @@ class SourceUsed(Base):
   snippet_used = Column(Text)
   citation_confidence = Column(Float)
   metadata_json = Column(JSON)
+  function_tags = Column(JSON, default=list, nullable=False)
+  stance_tags = Column(JSON, default=list, nullable=False)
+  provenance_tags = Column(JSON, default=list, nullable=False)
 
   __table_args__ = (
     Index("ix_sources_used_response_id", "response_id"),

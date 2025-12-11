@@ -294,6 +294,9 @@ class InteractionService:
           snippet_used=c.snippet_used,
           citation_confidence=c.citation_confidence,
           metadata=metadata,
+          function_tags=c.function_tags or [],
+          stance_tags=c.stance_tags or [],
+          provenance_tags=c.provenance_tags or [],
         )
       )
 

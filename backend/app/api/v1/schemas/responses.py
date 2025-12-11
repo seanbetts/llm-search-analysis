@@ -41,6 +41,11 @@ def _empty_citation_list() -> List[Citation]:
   return []
 
 
+def _empty_tag_list() -> List[str]:
+  """Return a new list for tag fields."""
+  return []
+
+
 class Source(BaseModel):
   """Source/URL fetched during search."""
 
@@ -123,6 +128,18 @@ class Citation(BaseModel):
   metadata: Optional[Dict[str, Any]] = Field(
     None,
     description="Additional citation metadata"
+  )
+  function_tags: List[str] = Field(
+    default_factory=_empty_tag_list,
+    description="Functional roles applied to this citation"
+  )
+  stance_tags: List[str] = Field(
+    default_factory=_empty_tag_list,
+    description="Stance annotations describing how the citation relates to the claim"
+  )
+  provenance_tags: List[str] = Field(
+    default_factory=_empty_tag_list,
+    description="Provenance annotations derived from citation metadata"
   )
 
   model_config = {

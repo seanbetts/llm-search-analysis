@@ -183,6 +183,7 @@ To integrate this framework into the current stack we focus on web captures (net
 - Use an LLM (guided prompt + JSON schema) to classify each citation. The prompt should include the response text, citation span, and tag definitions to ensure structured output.
 - Add an offline script to iterate through historical web captures and backfill tags using the same LLM-powered module. This keeps legacy data comparable to future runs.
 - Before wiring the tagger into ingestion, sample existing web captures and run the LLM classification script across them. Review outputs, adjust prompts/tag definitions, and track accuracy metrics so we know the tags are trustworthy.
+- Run a benchmarking pass with several OpenAI and Google API models: feed representative prompts/citations through each provider, capture latency/cost, and evaluate tagging quality. Use those results to choose the default tagger model (or maintain per-provider prompts if necessary).
 
 ### API + frontend exposure
 

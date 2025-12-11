@@ -226,6 +226,9 @@ class InteractionRepository:
           snippet_used=citation_data.get("snippet_used") or citation_data.get("text_snippet"),
           citation_confidence=citation_data.get("citation_confidence"),
           metadata_json=metadata,
+          function_tags=citation_data.get("function_tags") or [],
+          stance_tags=citation_data.get("stance_tags") or [],
+          provenance_tags=citation_data.get("provenance_tags") or [],
         )
         self.db.add(source_used)
 

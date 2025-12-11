@@ -105,6 +105,9 @@ class ProviderService:
         "published_at": citation.published_at,
         "citation_confidence": citation.citation_confidence,
         "metadata": citation.metadata,
+        "function_tags": citation.function_tags,
+        "stance_tags": citation.stance_tags,
+        "provenance_tags": citation.provenance_tags,
       })
 
     # Convert top-level sources (for network_log mode)
@@ -190,6 +193,9 @@ class ProviderService:
             snippet_used=None if strip_snippets else c.snippet_used,
             citation_confidence=c.citation_confidence,
             metadata=c.metadata,
+            function_tags=c.function_tags,
+            stance_tags=c.stance_tags,
+            provenance_tags=c.provenance_tags,
           )
         )
 
