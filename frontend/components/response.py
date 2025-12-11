@@ -137,7 +137,11 @@ def _apply_citation_links(text: str, citations: list) -> str:
       continue
     start = metadata.get("segment_start_index")
     end = metadata.get("segment_end_index")
-    snippet = getattr(citation, "text_snippet", None) or getattr(citation, "snippet_used", None)
+    snippet = (
+      metadata.get("snippet")
+      or getattr(citation, "text_snippet", None)
+      or getattr(citation, "snippet_used", None)
+    )
     snippet_match = snippet.strip() if isinstance(snippet, str) else None
 
     span = None
@@ -383,7 +387,12 @@ def display_response(response, prompt=None):
         display_title = citation.title or domain or 'Unknown source'
         source_fallback = url_to_source.get(citation.url)
         metadata = getattr(citation, "metadata", None) or {}
-        snippet = metadata.get("snippet") or (getattr(source_fallback, "snippet_text", None))
+        snippet = (
+          metadata.get("snippet")
+          or getattr(citation, "text_snippet", None)
+          or getattr(citation, "snippet_used", None)
+          or getattr(source_fallback, "snippet_text", None)
+        )
         pub_date_val = metadata.get("pub_date") or (getattr(source_fallback, "pub_date", None))
         snippet_display = snippet if snippet else "N/A"
         snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
@@ -416,6 +425,8 @@ def display_response(response, prompt=None):
         snippet = None
         if getattr(citation, "metadata", None):
           snippet = citation.metadata.get("snippet")
+        if not snippet:
+          snippet = getattr(citation, "text_snippet", None) or getattr(citation, "snippet_used", None)
         snippet_display = snippet if snippet else "N/A"
         snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
 

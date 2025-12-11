@@ -148,10 +148,17 @@ class AnthropicProvider(BaseProvider):
                     break
 
                 title = citation.get('title') if isinstance(citation, dict) else getattr(citation, 'title', None)
+                snippet = None
+                if isinstance(citation, dict):
+                  snippet = citation.get('cited_text') or citation.get('text')
+                else:
+                  snippet = getattr(citation, 'cited_text', None) or getattr(citation, 'text', None)
                 citations.append(Citation(
                   url=url,
                   title=title,
-                  rank=rank
+                  rank=rank,
+                  text_snippet=snippet,
+                  snippet_used=snippet,
                 ))
 
         # Extract search queries from server_tool_use blocks

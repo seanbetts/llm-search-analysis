@@ -181,7 +181,8 @@ class TestAnthropicProvider:
 
     mock_citation = {
       'url': 'https://example.com/article1',
-      'title': 'AI Article 1'
+      'title': 'AI Article 1',
+      'cited_text': 'AI has advanced significantly.'
     }
     mock_text_block.citations = [mock_citation]
 
@@ -205,6 +206,7 @@ class TestAnthropicProvider:
     assert len(result.citations) == 1
     assert result.citations[0].url == "https://example.com/article1"
     assert result.citations[0].rank == 1  # Should match source rank
+    assert result.citations[0].text_snippet == 'AI has advanced significantly.'
 
   def test_send_prompt_no_web_search(self, provider):
     """Test send_prompt handles response without web search."""
