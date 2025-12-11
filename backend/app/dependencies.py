@@ -35,6 +35,7 @@ from app.repositories.interaction_repository import InteractionRepository
 from app.services.batch_service import BatchService
 from app.services.export_service import ExportService
 from app.services.interaction_service import InteractionService
+from app.services.network_capture.live_capture import LiveCaptureManager
 from app.services.provider_service import ProviderService
 
 # Create database engine
@@ -49,6 +50,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Singleton batch service (needs session factory for background jobs)
 batch_service_instance = BatchService(SessionLocal)
+live_capture_manager = LiveCaptureManager()
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -125,3 +127,8 @@ def get_export_service(
 def get_batch_service() -> BatchService:
   """Provide the singleton BatchService instance."""
   return batch_service_instance
+
+
+def get_live_capture_manager() -> LiveCaptureManager:
+  """Provide singleton LiveCaptureManager."""
+  return live_capture_manager

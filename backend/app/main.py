@@ -33,7 +33,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.api.v1.endpoints import interactions, providers
+from app.api.v1.endpoints import interactions, live_capture, providers
 from app.config import settings
 from app.core.exceptions import APIException, DatabaseError
 from app.core.middleware import LoggingMiddleware, get_correlation_id
@@ -85,6 +85,7 @@ app.add_middleware(LoggingMiddleware)
 
 # Include API routers
 app.include_router(interactions.router, prefix="/api/v1")
+app.include_router(live_capture.router, prefix="/api/v1")
 app.include_router(providers.router, prefix="/api/v1")
 
 

@@ -415,3 +415,27 @@ class SaveNetworkLogRequest(BaseModel):
       ]
     }
   }
+
+
+class LiveCaptureStartRequest(BaseModel):
+  """Request body for launching a live ChatGPT capture from backend."""
+
+  prompt: str = Field(
+    ...,
+    min_length=1,
+    max_length=10000,
+    description="Prompt text to send to ChatGPT with browsing enabled",
+  )
+  headless: Optional[bool] = Field(
+    default=None,
+    description="Override default browser headless mode",
+  )
+
+  model_config = {
+    "json_schema_extra": {
+      "example": {
+        "prompt": "Summarize the latest research on clean energy breakthroughs.",
+        "headless": False,
+      }
+    }
+  }

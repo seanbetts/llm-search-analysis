@@ -206,6 +206,53 @@ class SendPromptResponse(BaseModel):
   }
 
 
+class LiveCaptureEvent(BaseModel):
+  """Event emitted by backend-managed live capture."""
+
+  capture_id: str = Field(..., description="Capture identifier")
+  timestamp: str = Field(..., description="ISO timestamp when event emitted")
+  phase: str = Field(..., description="Event phase (browser_status, search_query, etc.)")
+  data: Dict[str, Any] = Field(default_factory=dict, description="Phase-specific payload")
+
+
+class LiveCaptureMetadata(BaseModel):
+  """Metadata stored for a live capture run."""
+
+  capture_id: str = Field(..., description="Capture identifier")
+  prompt: str = Field(..., description="Prompt submitted for capture")
+  model: str = Field(..., description="Model identifier used")
+  provider: str = Field(..., description="Provider executing the capture")
+  status: str = Field(..., description="Status (starting, running, completed, failed)")
+  headless: bool = Field(..., description="Browser headless flag")
+  started_at: str = Field(..., description="Capture start timestamp")
+  finished_at: Optional[str] = Field(None, description="Completion timestamp")
+  event_count: int = Field(..., ge=0, description="Total events persisted")
+  duration_ms: Optional[int] = Field(None, description="Provider response duration")
+  error: Optional[str] = Field(None, description="Failure reason if any")
+
+
+class LiveCaptureRecord(BaseModel):
+  """Full payload persisted for a capture."""
+
+  metadata: LiveCaptureMetadata
+  events: List[LiveCaptureEvent] = Field(default_factory=list)
+
+
+class LiveCaptureStartResponse(BaseModel):
+  """Response returned after starting a live capture."""
+
+  capture_id: str = Field(..., description="Capture identifier")
+  status: str = Field(..., description="Initial status")
+  headless: bool = Field(..., description="Headless flag for browser session")
+  started_at: str = Field(..., description="Capture start timestamp")
+
+
+class LiveCaptureListResponse(BaseModel):
+  """Collection of live capture metadata entries."""
+
+  captures: List[LiveCaptureMetadata] = Field(default_factory=list, description="Recent captures")
+
+
 class InteractionSummary(BaseModel):
   """Summary of an interaction for list views."""
 

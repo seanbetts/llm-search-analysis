@@ -150,6 +150,19 @@ class RateLimitError(APIException):
     )
 
 
+class ConflictError(APIException):
+  """Request conflicts with current resource state (409)."""
+
+  def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+    """Build conflict error when operation cannot proceed."""
+    super().__init__(
+      message=message,
+      error_code="RESOURCE_CONFLICT",
+      status_code=status.HTTP_409_CONFLICT,
+      details=details,
+    )
+
+
 # ============================================================================
 # Server Errors (5xx) - System errors
 # ============================================================================

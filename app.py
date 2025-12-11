@@ -6,7 +6,7 @@ import streamlit as st
 
 from frontend.api_client import APIClient
 from frontend.styles import load_styles
-from frontend.tabs import tab_batch, tab_history, tab_interactive
+from frontend.tabs import tab_batch, tab_history, tab_interactive, tab_live
 
 # Page config
 st.set_page_config(
@@ -158,15 +158,23 @@ def main():
     sidebar_info()
 
     # Main tabs
-    tab1, tab2, tab3 = st.tabs(["🎯 Interactive", "📦 Batch Analysis", "📜 History"])
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "🎯 Interactive",
+        "🛰️ Live Network",
+        "📦 Batch Analysis",
+        "📜 History",
+    ])
 
     with tab1:
         tab_interactive()
 
     with tab2:
-        tab_batch()
+        tab_live()
 
     with tab3:
+        tab_batch()
+
+    with tab4:
         tab_history()
 
 if __name__ == "__main__":

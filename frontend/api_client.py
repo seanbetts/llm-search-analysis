@@ -3,8 +3,9 @@
 This module provides a client library for interacting with the FastAPI backend.
 """
 
+import json
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 import httpx
 
@@ -604,6 +605,86 @@ class APIClient:
       raise APIConnectionError(f"Failed to connect to API: {str(e)}")
     except Exception as e:
       raise APIClientError(f"Unexpected error exporting interaction: {str(e)}")
+
+  def start_live_capture(self, prompt: str, headless: Optional[bool] = None) -> Dict[str, Any]:
+    """Start backend-managed live ChatGPT capture."""
+    payload: Dict[str, Any] = {"prompt": prompt}
+    if headless is not None:
+      payload["headless"] = headless
+    return self._request(
+      "POST",
+      "/api/v1/live_capture/start",
+      json=payload,
+      timeout=self.timeout_send_prompt,
+    )
+
+  def list_live_captures(self, limit: int = 20) -> Dict[str, Any]:
+    """List recent live capture metadata entries."""
+    return self._request(
+      "GET",
+      "/api/v1/live_capture/recent",
+      params={"limit": limit},
+    )
+
+  def get_live_capture(self, capture_id: str) -> Dict[str, Any]:
+    """Fetch persisted live capture record."""
+    return self._request("GET", f"/api/v1/live_capture/{capture_id}")
+
+  def download_live_log(self, capture_id: str) -> str:
+    """Return capture record as formatted JSON string for download."""
+    record = self.get_live_capture(capture_id)
+    return json.dumps(record, indent=2)
+
+  def stream_live_capture(
+    self,
+    capture_id: str,
+    timeout: Optional[float] = None,
+  ) -> Iterator[Dict[str, Any]]:
+    """Stream live capture events via SSE."""
+    stream_timeout = timeout or self.timeout_send_prompt
+    try:
+      with self.client.stream(
+        "GET",
+        f"/api/v1/live_capture/{capture_id}/stream",
+        headers={"Accept": "text/event-stream"},
+        timeout=stream_timeout,
+      ) as response:
+        response.raise_for_status()
+        buffer: List[str] = []
+        for chunk in response.iter_lines():
+          if chunk is None:
+            continue
+          line = chunk.strip()
+          if not line:
+            if buffer:
+              data = "".join(buffer).strip()
+              buffer.clear()
+              if not data:
+                continue
+              try:
+                yield json.loads(data)
+              except json.JSONDecodeError:
+                continue
+            continue
+
+          if line.startswith("data:"):
+            buffer.append(line[5:].strip())
+        if buffer:
+          data = "".join(buffer).strip()
+          if data:
+            try:
+              yield json.loads(data)
+            except json.JSONDecodeError:
+              pass
+    except httpx.HTTPStatusError as exc:
+      status_code = exc.response.status_code
+      if status_code == 404:
+        raise APINotFoundError(f"Live capture {capture_id} not found")
+      raise APIClientError(f"SSE stream failed ({status_code}): {exc.response.text}")
+    except httpx.TimeoutException as exc:
+      raise APITimeoutError(f"Streaming timed out: {str(exc)}")
+    except httpx.ConnectError as exc:
+      raise APIConnectionError(f"Failed to connect to SSE stream: {str(exc)}")
 
   def health_check(self) -> Dict[str, Any]:
     """Check API health and database connectivity.
