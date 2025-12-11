@@ -84,7 +84,7 @@ def test_fetch_all_interactions_iterates_through_pages(monkeypatch):
       self.base_url = base_url
       self.calls = 0
 
-    def get_recent_interactions(self, page, page_size):
+    def get_recent_interactions(self, page, page_size, data_source=None):
       """Return the next response payload."""
       assert page == self.calls + 1
       self.calls += 1

@@ -14,27 +14,6 @@ from frontend.helpers.export_utils import dataframe_to_csv_bytes
 from frontend.utils import format_pub_date
 
 
-@st.cache_data(ttl=60, show_spinner=False)
-def _fetch_recent_interactions_cached(
-  base_url: str,
-  page: int,
-  page_size: int,
-  data_source: Optional[str] = None,
-):
-  """Cached wrapper for fetching recent interactions.
-
-  Cache TTL: 60 seconds to balance freshness with performance.
-  Cache is keyed on base_url, page, page_size, and data_source filters.
-  """
-  from frontend.api_client import APIClient
-  client = APIClient(base_url=base_url)
-  return client.get_recent_interactions(
-    page=page,
-    page_size=page_size,
-    data_source=data_source
-  )
-
-
 @st.cache_data(ttl=300, show_spinner=False)
 def _fetch_interaction_details_cached(base_url: str, interaction_id: int):
   """Cached wrapper for fetching interaction details.
@@ -120,8 +99,13 @@ def _prepare_history_dataframe(interactions: List[Dict[str, Any]]) -> pd.DataFra
   return df
 
 
-def _fetch_all_interactions(base_url: str, page_size: int = 100) -> Dict[str, Any]:
-  """Fetch all interaction pages for full-history export."""
+@st.cache_data(ttl=60, show_spinner=False)
+def _fetch_all_interactions(
+  base_url: str,
+  page_size: int = 100,
+  data_source: Optional[str] = None,
+) -> Dict[str, Any]:
+  """Fetch all interaction pages for full-history filtering."""
   from frontend.api_client import APIClient
 
   client = APIClient(base_url=base_url)
@@ -130,7 +114,11 @@ def _fetch_all_interactions(base_url: str, page_size: int = 100) -> Dict[str, An
   stats: Dict[str, Any] = {}
 
   while True:
-    result = client.get_recent_interactions(page=page, page_size=page_size)
+    result = client.get_recent_interactions(
+      page=page,
+      page_size=page_size,
+      data_source=data_source
+    )
     items.extend(result.get('items', []))
     if not stats:
       stats = result.get('stats') or {}
@@ -169,39 +157,34 @@ def tab_history():
   if 'history_page_size' not in st.session_state:
     st.session_state.history_page_size = 10
   st.session_state.setdefault('history_full_export', None)
+  st.session_state.setdefault('history_search_query', "")
+  st.session_state.setdefault('history_provider_filter', None)
+  st.session_state.setdefault('history_model_filter', None)
+  st.session_state.setdefault('history_filter_signature', None)
   analysis_filter_options = ["API", "Web"]
   st.session_state.setdefault('history_analysis_filter', analysis_filter_options.copy())
-  st.session_state.setdefault('history_last_filter', tuple(analysis_filter_options))
+  st.session_state.setdefault('history_last_filter', tuple(sorted(analysis_filter_options)))
 
-  st.multiselect(
-    "Analysis type",
-    options=analysis_filter_options,
-    default=st.session_state.history_analysis_filter,
-    key="history_analysis_filter",
-    help="Filtering here ensures pagination reflects only the selected analysis types."
-  )
   selected_analysis_filter = st.session_state.history_analysis_filter or analysis_filter_options.copy()
   if not st.session_state.history_analysis_filter:
     st.session_state.history_analysis_filter = analysis_filter_options.copy()
-    selected_analysis_filter = st.session_state.history_analysis_filter
-
-  data_source_filter = None
-  if len(selected_analysis_filter) == 1:
-    data_source_filter = 'api' if selected_analysis_filter[0] == 'API' else 'web'
+    selected_analysis_filter = analysis_filter_options.copy()
 
   normalized_filter = tuple(sorted(selected_analysis_filter))
   if normalized_filter != st.session_state.history_last_filter:
     st.session_state.history_page = 1
     st.session_state.history_last_filter = normalized_filter
 
-  # Get recent interactions with pagination (cached)
+  data_source_filter = None
+  if len(selected_analysis_filter) == 1:
+    data_source_filter = 'api' if selected_analysis_filter[0] == 'API' else 'web'
+
+  # Get all interactions for current analysis (cached)
   try:
     base_url = st.session_state.api_client.base_url
     result, error = safe_api_call(
-      _fetch_recent_interactions_cached,
+      _fetch_all_interactions,
       base_url,
-      st.session_state.history_page,
-      st.session_state.history_page_size,
       data_source_filter,
       spinner_text="Loading interaction history..."
     )
@@ -209,13 +192,11 @@ def tab_history():
       st.error(f"Error loading history: {error}")
       return
 
-    if not result or not result.get('items'):
-      st.info("No interactions recorded yet. Start by submitting prompts in the Interactive tab!")
-      return
+    interactions = result.get('items', [])
 
-    # Extract items and pagination metadata
-    interactions = result['items']
-    pagination = result['pagination']
+    if not interactions:
+      st.info("No interactions recorded yet. Start by submitting prompts in the Web or API tabs!")
+      return
 
     df = _prepare_history_dataframe(interactions)
     stats_data = result.get('stats') or {}
@@ -250,38 +231,78 @@ def tab_history():
       axis=1
     )
 
-    # Filters and sorting layout
-    col_search, col_provider, col_model = st.columns([1.2, 1, 1])
+    # Build filter options prior to rendering
+    provider_options = sorted(df['provider'].dropna().unique().tolist())
+    if st.session_state.history_provider_filter is None:
+      st.session_state.history_provider_filter = provider_options.copy()
+    else:
+      st.session_state.history_provider_filter = [
+        p for p in st.session_state.history_provider_filter if p in provider_options
+      ] or provider_options.copy()
+
+    model_display_options_df = df[['model', 'model_display']].drop_duplicates()
+    model_display_mapping = _build_model_display_mapping(model_display_options_df)
+    model_display_labels = list(model_display_mapping.keys())
+    if st.session_state.history_model_filter is None:
+      st.session_state.history_model_filter = model_display_labels.copy()
+    else:
+      st.session_state.history_model_filter = [
+        m for m in st.session_state.history_model_filter if m in model_display_labels
+      ] or model_display_labels.copy()
+
+    # Filters layout
+    col_search, col_analysis, col_provider, col_model = st.columns([1.2, 1, 1, 1])
 
     with col_search:
-      search_query = st.text_input("🔍 Search prompts", placeholder="Enter keywords to filter...")
+      st.text_input(
+        "🔍 Search prompts",
+        placeholder="Enter keywords to filter...",
+        key="history_search_query"
+      )
+
+    with col_analysis:
+      st.multiselect(
+        "Analysis type",
+        options=analysis_filter_options,
+        key="history_analysis_filter"
+      )
+      analysis_selection = st.session_state.history_analysis_filter or analysis_filter_options
 
     with col_provider:
-      provider_options = sorted(df['provider'].dropna().unique().tolist())
       selected_providers = st.multiselect(
         "Provider",
         options=provider_options,
-        default=provider_options,
-      ) if provider_options else []
+        key="history_provider_filter"
+      )
+      selected_providers = selected_providers or provider_options
 
     with col_model:
-      # Get unique display names (Phase 1.2: now from backend)
-      model_display_options_df = df[['model', 'model_display']].drop_duplicates()
-      model_display_options = _build_model_display_mapping(model_display_options_df)
-      model_display_labels = list(model_display_options.keys())
       selected_model_displays = st.multiselect(
         "Model",
         options=model_display_labels,
-        default=model_display_labels,
-      ) if model_display_labels else []
-      # Convert selected display names back to raw model IDs for filtering
+        key="history_model_filter"
+      )
+      selected_model_displays = selected_model_displays or model_display_labels
       selected_models = set()
       for display in selected_model_displays:
-        selected_models.update(model_display_options.get(display, set()))
+        selected_models.update(model_display_mapping.get(display, set()))
+
+    current_signature = (
+      tuple(sorted(analysis_selection or analysis_filter_options)),
+      st.session_state.history_search_query.strip().lower(),
+      tuple(sorted(selected_providers)),
+      tuple(sorted(selected_models)),
+    )
+    if current_signature != st.session_state.history_filter_signature:
+      st.session_state.history_page = 1
+      st.session_state.history_filter_signature = current_signature
 
     # Apply filters
+    search_query = st.session_state.history_search_query.strip()
     if search_query:
       df = df[df['prompt'].str.contains(search_query, case=False, na=False)]
+    if analysis_selection:
+      df = df[df['analysis_type'].isin(analysis_selection)]
     if selected_providers:
       df = df[df['provider'].isin(selected_providers)]
     if selected_models:
@@ -290,7 +311,28 @@ def tab_history():
     # Default sort (newest first); users can re-sort via table headers
     df = df.sort_values(by="timestamp", ascending=False, na_position="last")
 
-    display_df = df[
+    total_filtered = len(df)
+    page_size = st.session_state.history_page_size
+    total_pages = max(1, (total_filtered + page_size - 1) // page_size)
+    if st.session_state.history_page > total_pages:
+      st.session_state.history_page = total_pages
+      st.rerun()
+    start_idx = (st.session_state.history_page - 1) * page_size
+    end_idx = start_idx + page_size
+    page_df = df.iloc[start_idx:end_idx]
+    pagination = {
+      'page': st.session_state.history_page,
+      'page_size': page_size,
+      'total_items': total_filtered,
+      'total_pages': total_pages,
+      'has_next': st.session_state.history_page < total_pages,
+      'has_prev': st.session_state.history_page > 1,
+    }
+
+    if total_filtered == 0:
+      st.warning("No interactions match your filters.")
+
+    display_df = page_df[
       [
         'id', 'timestamp', 'analysis_type', 'prompt_preview', 'provider',
         'model_display', 'response_time_display', 'searches', 'sources',
