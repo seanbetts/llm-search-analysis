@@ -2,7 +2,7 @@
 
 import traceback
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 import pandas as pd
@@ -15,15 +15,24 @@ from frontend.utils import format_pub_date
 
 
 @st.cache_data(ttl=60, show_spinner=False)
-def _fetch_recent_interactions_cached(base_url: str, page: int, page_size: int):
+def _fetch_recent_interactions_cached(
+  base_url: str,
+  page: int,
+  page_size: int,
+  data_source: Optional[str] = None,
+):
   """Cached wrapper for fetching recent interactions.
 
   Cache TTL: 60 seconds to balance freshness with performance.
-  Cache is keyed on base_url, page, and page_size.
+  Cache is keyed on base_url, page, page_size, and data_source filters.
   """
   from frontend.api_client import APIClient
   client = APIClient(base_url=base_url)
-  return client.get_recent_interactions(page=page, page_size=page_size)
+  return client.get_recent_interactions(
+    page=page,
+    page_size=page_size,
+    data_source=data_source
+  )
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -160,6 +169,30 @@ def tab_history():
   if 'history_page_size' not in st.session_state:
     st.session_state.history_page_size = 10
   st.session_state.setdefault('history_full_export', None)
+  analysis_filter_options = ["API", "Web"]
+  st.session_state.setdefault('history_analysis_filter', analysis_filter_options.copy())
+  st.session_state.setdefault('history_last_filter', tuple(analysis_filter_options))
+
+  st.multiselect(
+    "Analysis type",
+    options=analysis_filter_options,
+    default=st.session_state.history_analysis_filter,
+    key="history_analysis_filter",
+    help="Filtering here ensures pagination reflects only the selected analysis types."
+  )
+  selected_analysis_filter = st.session_state.history_analysis_filter or analysis_filter_options.copy()
+  if not st.session_state.history_analysis_filter:
+    st.session_state.history_analysis_filter = analysis_filter_options.copy()
+    selected_analysis_filter = st.session_state.history_analysis_filter
+
+  data_source_filter = None
+  if len(selected_analysis_filter) == 1:
+    data_source_filter = 'api' if selected_analysis_filter[0] == 'API' else 'web'
+
+  normalized_filter = tuple(sorted(selected_analysis_filter))
+  if normalized_filter != st.session_state.history_last_filter:
+    st.session_state.history_page = 1
+    st.session_state.history_last_filter = normalized_filter
 
   # Get recent interactions with pagination (cached)
   try:
@@ -169,6 +202,7 @@ def tab_history():
       base_url,
       st.session_state.history_page,
       st.session_state.history_page_size,
+      data_source_filter,
       spinner_text="Loading interaction history..."
     )
     if error:
@@ -217,18 +251,10 @@ def tab_history():
     )
 
     # Filters and sorting layout
-    col_search, col_analysis, col_provider, col_model = st.columns([1.2, 1, 1, 1])
+    col_search, col_provider, col_model = st.columns([1.2, 1, 1])
 
     with col_search:
       search_query = st.text_input("🔍 Search prompts", placeholder="Enter keywords to filter...")
-
-    with col_analysis:
-      analysis_options = sorted(df['analysis_type'].dropna().unique().tolist())
-      selected_analysis = st.multiselect(
-        "Analysis type",
-        options=analysis_options,
-        default=analysis_options,
-      ) if analysis_options else []
 
     with col_provider:
       provider_options = sorted(df['provider'].dropna().unique().tolist())
@@ -256,8 +282,6 @@ def tab_history():
     # Apply filters
     if search_query:
       df = df[df['prompt'].str.contains(search_query, case=False, na=False)]
-    if selected_analysis:
-      df = df[df['analysis_type'].isin(selected_analysis)]
     if selected_providers:
       df = df[df['provider'].isin(selected_providers)]
     if selected_models:
