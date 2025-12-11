@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from google.genai import Client as GoogleClient
@@ -44,6 +45,24 @@ PROVENANCE_TAGS = [
   "review",
   "other",
 ]
+
+PROMPT_TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "prompts" / "citation_tagging_prompt.md"
+PROMPT_TEMPLATE = PROMPT_TEMPLATE_PATH.read_text(encoding="utf-8")
+STRUCTURED_RESPONSE_SCHEMA = {
+  "type": "object",
+  "additionalProperties": False,
+  "properties": {
+    "function_tags": {
+      "type": "array",
+      "items": {"type": "string", "enum": FUNCTION_TAGS},
+    },
+    "stance_tags": {
+      "type": "array",
+      "items": {"type": "string", "enum": STANCE_TAGS},
+    },
+  },
+  "required": ["function_tags", "stance_tags"],
+}
 
 
 @dataclass
@@ -96,7 +115,13 @@ class OpenAILLMTagger(BaseLLMTagger):
     completion = self.client.responses.create(  # type: ignore[arg-type]
       model=self.model,
       temperature=self.temperature,
-      response_format={"type": "json_object"},
+      response_format={
+        "type": "json_schema",
+        "json_schema": {
+          "name": "CitationTagLabels",
+          "schema": STRUCTURED_RESPONSE_SCHEMA,
+        },
+      },
       input=[
         {
           "role": "system",
@@ -125,6 +150,7 @@ class GoogleLLMTagger(BaseLLMTagger):
     config = GenerateContentConfig(
       temperature=self.temperature,
       response_mime_type="application/json",
+      response_schema=STRUCTURED_RESPONSE_SCHEMA,
     )
     response = self.client.models.generate_content(
       model=self.model,
@@ -271,7 +297,7 @@ class CitationTaggingService:
 
     function_tags = _filter(raw.get("function_tags"), FUNCTION_TAGS)
     stance_tags = _filter(raw.get("stance_tags"), STANCE_TAGS)
-    provenance_tags = _filter(raw.get("provenance_tags"), PROVENANCE_TAGS) or self._default_provenance(citation)
+    provenance_tags = self._default_provenance(citation)
 
     return CitationTaggingResult(
       function_tags=function_tags,
@@ -315,35 +341,22 @@ def _safe_load_json(value: str) -> Optional[Dict[str, Any]]:
 
 def _build_prompt_text(payload: Dict[str, Any]) -> str:
   citation = payload["citation"]
-  instructions = [
-    "You label how citations support model answers.",
-    "Return valid JSON with keys function_tags, stance_tags, provenance_tags.",
-    "Always choose from the allowed vocabularies:",
-    f"Function tags: {', '.join(FUNCTION_TAGS)}",
-    f"Stance tags: {', '.join(STANCE_TAGS)}",
-    f"Provenance tags: {', '.join(PROVENANCE_TAGS)}",
-    "Do not invent new tag names and omit duplicates.",
-  ]
-  summary = "\n".join(instructions)
-  return f"""{summary}
-
-Prompt: {payload['prompt']}
-Model Response: {payload['response_text']}
-Claim Span: {payload['claim_span']}
-Citation:
-  URL: {citation.get('url')}
-  Title: {citation.get('title')}
-  Domain: {citation.get('domain')}
-  Rank: {citation.get('rank')}
-  Snippet: {citation.get('snippet')}
-  Ref Type: {citation.get('ref_type')}
-  Published: {citation.get('published_at')}
-
-Respond with JSON only."""
+  return PROMPT_TEMPLATE.format(
+    prompt=payload["prompt"],
+    response_text=payload["response_text"],
+    claim_span=payload["claim_span"],
+    citation_url=citation.get("url", ""),
+    citation_title=citation.get("title", ""),
+    citation_domain=citation.get("domain", ""),
+    citation_rank=citation.get("rank", ""),
+    citation_snippet=citation.get("snippet", ""),
+    citation_ref_type=citation.get("ref_type", ""),
+    citation_published_at=citation.get("published_at", ""),
+  )
 
 
 _SYSTEM_PROMPT = (
   "You are a meticulous analyst who classifies how citations support a model's answer. "
-  "Use the function/stance/provenance tag vocabularies to describe each citation. "
-  "Always return strict JSON and never include commentary."
+  "Use the defined function/stance vocabularies to describe each citation. "
+  "Always return structured JSON that matches the provided schema."
 )
