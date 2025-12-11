@@ -185,6 +185,7 @@ def tab_history():
     result, error = safe_api_call(
       _fetch_all_interactions,
       base_url,
+      100,
       data_source_filter,
       spinner_text="Loading interaction history..."
     )
