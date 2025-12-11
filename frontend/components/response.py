@@ -322,11 +322,14 @@ def display_response(response, prompt=None):
         domain = urlparse(citation.url).netloc if citation.url else 'Unknown domain'
         display_title = citation.title or domain or 'Unknown source'
         source_fallback = url_to_source.get(citation.url)
-        metadata = getattr(citation, "metadata", None) or {}
         snippet = getattr(source_fallback, "snippet_text", None)
         pub_date_val = getattr(source_fallback, "pub_date", None)
         snippet_display = _format_snippet(snippet)
-        snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
+        snippet_block = (
+          "<div style='margin-top:4px; font-size:0.95rem;'>"
+          f"<strong>Snippet:</strong> <em>{snippet_display}</em>"
+          "</div>"
+        )
         pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"
         pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
         st.markdown(f"""
@@ -359,7 +362,11 @@ def display_response(response, prompt=None):
         if not snippet:
           snippet = getattr(citation, "text_snippet", None) or getattr(citation, "snippet_used", None)
         snippet_display = _format_snippet(snippet)
-        snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"
+        snippet_block = (
+          "<div style='margin-top:4px; font-size:0.95rem;'>"
+          f"<strong>Snippet:</strong> <em>{snippet_display}</em>"
+          "</div>"
+        )
 
         st.markdown(f"""
         <div class="citation-item">

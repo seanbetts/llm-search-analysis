@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from typing import Iterable, List, Optional, Tuple
-
 from urllib.parse import urlparse
 
 from app.services.providers.base_provider import Citation
