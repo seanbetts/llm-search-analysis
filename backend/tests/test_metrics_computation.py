@@ -295,8 +295,8 @@ class TestMetricsComputation:
     mock_repository.save.assert_called_once()
 
   def test_metrics_with_network_log_mode(self, service, mock_repository):
-    """Test metrics computation for network_log data source."""
-    # In network_log mode, sources are at top level, not per-query
+    """Test metrics computation for web capture data source."""
+    # In web capture mode, sources are at top level, not per-query
     sources = [
       {"url": "https://example.com/1", "title": "Source 1"},
       {"url": "https://example.com/2", "title": "Source 2"},
@@ -318,7 +318,7 @@ class TestMetricsComputation:
       search_queries=[],  # Network log doesn't have query breakdown
       citations=citations,
       raw_response={},
-      data_source="network_log",
+      data_source="web",
       sources=sources  # Top-level sources
     )
 

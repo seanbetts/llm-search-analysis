@@ -32,7 +32,7 @@ def test_parse_chatgpt_log_extracts_queries_sources_and_citations():
   assert len(response.citations) == 1
   assert response.citations[0].url == "https://example.com/article"
   assert response.extra_links_count == 0
-  assert response.data_source == "network_log"
+  assert response.data_source == "web"
 
 
 def test_parse_chatgpt_log_handles_missing_body():

@@ -49,13 +49,13 @@ class SendPromptRequest(BaseModel):
 
   data_mode: str = Field(
     default="api",
-    description="Data collection mode: 'api' or 'network_log'",
-    examples=["api", "network_log"]
+    description="Data collection mode: 'api' or 'web'",
+    examples=["api", "web"]
   )
 
   headless: bool = Field(
     default=True,
-    description="Run browser in headless mode (for network_log mode only)"
+    description="Run browser in headless mode (for web capture mode only)"
   )
 
   @field_validator("prompt")
@@ -97,13 +97,13 @@ class SendPromptRequest(BaseModel):
   @classmethod
   def validate_data_mode(cls, v: str) -> str:
     """Validate data collection mode."""
-    valid_modes = ["api", "network_log"]
+    valid_modes = ["api", "web", "network_log"]
     v_lower = v.lower()
     if v_lower not in valid_modes:
       raise ValueError(
         f"Invalid data_mode '{v}'. Must be one of: {', '.join(valid_modes)}"
       )
-    return v_lower
+    return "web" if v_lower == "network_log" else v_lower
 
   @model_validator(mode='after')
   def validate_provider_model_match(self) -> 'SendPromptRequest':
@@ -164,13 +164,13 @@ class BatchRequest(BaseModel):
 
   data_mode: str = Field(
     default="api",
-    description="Data collection mode: 'api' or 'network_log'",
+    description="Data collection mode: 'api' or 'web'",
     examples=["api"]
   )
 
   headless: bool = Field(
     default=True,
-    description="Run browser in headless mode (for network_log mode only)"
+    description="Run browser in headless mode (for web capture mode only)"
   )
 
   @field_validator("prompts")
@@ -204,13 +204,13 @@ class BatchRequest(BaseModel):
   @classmethod
   def validate_data_mode(cls, v: str) -> str:
     """Validate data collection mode."""
-    valid_modes = ["api", "network_log"]
+    valid_modes = ["api", "web", "network_log"]
     v_lower = v.lower()
     if v_lower not in valid_modes:
       raise ValueError(
         f"Invalid data_mode '{v}'. Must be one of: {', '.join(valid_modes)}"
       )
-    return v_lower
+    return "web" if v_lower == "network_log" else v_lower
 
   model_config = {
     "json_schema_extra": {

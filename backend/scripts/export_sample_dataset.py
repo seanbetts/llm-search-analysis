@@ -119,8 +119,8 @@ def has_network_metadata(response: Response) -> bool:
 def determine_analysis_notes(response: Response, sources_used_pct: Optional[float]) -> str:
   """Create a short narrative on how the row could be analyzed."""
   notes: List[str] = []
-  if response.data_source == "network_log":
-    notes.append("Network capture: compare browser telemetry vs API output")
+  if response.data_source in ("web", "network_log"):
+    notes.append("Web capture: compare browser telemetry vs API output")
   if (response.response_time_ms or 0) >= 20000:
     notes.append("Slow response time worth reviewing")
   if response.avg_rank and response.avg_rank >= 8:
@@ -142,7 +142,7 @@ def build_row(response: Response) -> dict:
 
   search_query_count = len(response.search_queries or [])
   citation_count = len(response.sources_used or [])
-  if response.data_source == "network_log":
+  if response.data_source in ("web", "network_log"):
     source_count = len(response.response_sources or [])
   else:
     source_count = sum(len(q.sources or []) for q in response.search_queries or [])

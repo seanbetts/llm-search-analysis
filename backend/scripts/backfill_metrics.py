@@ -21,7 +21,7 @@ from app.models.database import Response, SearchQuery
 
 def compute_metrics(response: Response) -> Tuple[int, int, float | None]:
   """Calculate sources_found, sources_used_count, and avg_rank for a response."""
-  if response.data_source == "network_log":
+  if response.data_source in ("web", "network_log"):
     sources_found = len(response.response_sources or [])
   else:
     sources_found = sum(len(q.sources or []) for q in (response.search_queries or []))

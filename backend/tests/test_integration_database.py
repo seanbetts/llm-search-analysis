@@ -242,10 +242,10 @@ class TestRealisticDataScenarios:
         # Should not crash when accessing empty collections
 
     def test_mixed_api_and_network_log_data(self, db_session, repository):
-        """Test database with mix of API and network_log mode data.
+        """Test database with mix of API and web capture data.
 
         API mode: sources in search_queries
-        Network_log mode: sources directly on response
+        Web mode: sources directly on response
         """
         # Save API mode interaction
         api_id = repository.save(
@@ -278,17 +278,17 @@ class TestRealisticDataScenarios:
             data_source="api",
         )
 
-        # Save network_log mode interaction
+        # Save web capture interaction
         network_id = repository.save(
             prompt_text="Network prompt",
             provider_name="openai",
             model_name="gpt-4o",
             response_text="Network response",
             response_time_ms=1000,
-            search_queries=[],  # No queries in network_log
+            search_queries=[],  # No queries in web capture
             sources_used=[],
             raw_response={},
-            data_source="network_log",
+            data_source="web",
             sources=[  # Top-level sources
                 {
                     "url": "https://network-source.com",
@@ -309,9 +309,9 @@ class TestRealisticDataScenarios:
         assert len(api_response.search_queries) == 1
         assert len(api_response.search_queries[0].sources) == 1
 
-        # Verify network_log mode response
+        # Verify web capture response
         network_response = repository.get_by_id(network_id)
-        assert network_response.data_source == "network_log"
+        assert network_response.data_source == "web"
         assert len(network_response.response_sources) == 1
         assert network_response.response_sources[0].response_id == network_response.id
 

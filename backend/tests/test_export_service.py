@@ -92,7 +92,7 @@ def _network_log_response():
     model="chatgpt-free",
     model_display_name="ChatGPT (Free)",
     response_time_ms=2000,
-    data_source="network_log",
+    data_source="web",
     sources_found=1,
     sources_used=0,
     avg_rank=None,
@@ -129,6 +129,6 @@ def test_build_markdown_handles_network_log_sources(export_service, mock_interac
 
   markdown = export_service.build_markdown(456)
 
-  assert "Analysis: Network Logs" in markdown
+  assert "Analysis: Web" in markdown
   assert "## Sources Found (1)" in markdown
   assert "Network Source" in markdown

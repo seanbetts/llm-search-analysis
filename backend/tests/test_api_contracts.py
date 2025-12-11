@@ -162,9 +162,9 @@ class TestInteractionResponseContract:
 
     @patch('app.services.providers.openai_provider.OpenAIProvider.send_prompt')
     def test_network_log_mode_all_sources_handling(self, mock_send_prompt, client):
-        """Test data_source='network_log' mode where sources are directly on response.
+        """Test data_source='web' mode where sources are directly on response.
 
-        In network_log mode:
+        In web capture mode:
         - all_sources should contain the sources (not in search_queries)
         - Frontend expects to iterate: for src in details.get('all_sources') or []
         - Sources are saved with response_id (not search_query_id)
@@ -176,13 +176,13 @@ class TestInteractionResponseContract:
         """
         from app.services.providers.openai_provider import ProviderResponse, Source
 
-        # Create interaction with network_log mode
+        # Create interaction with web capture mode
         mock_send_prompt.return_value = ProviderResponse(
             provider="openai",
             model="gpt-5.1",
             response_text="Test",
             search_queries=[],
-            sources=[  # Sources at top level for network_log
+            sources=[  # Sources at top level for web capture
                 Source(
                     url="https://example.com",
                     title="Example",
@@ -192,7 +192,7 @@ class TestInteractionResponseContract:
             ],
             citations=[],
             response_time_ms=1000,
-            data_source="network_log",  # Network log mode
+            data_source="web",  # Web mode
             raw_response={}
         )
 
@@ -207,8 +207,8 @@ class TestInteractionResponseContract:
         assert response.status_code == 200
         data = response.json()
 
-        # For network_log mode, all_sources should be present
-        assert "all_sources" in data, "all_sources must be present for network_log mode"
+        # For web mode, all_sources should be present
+        assert "all_sources" in data, "all_sources must be present for web mode"
 
         # CRITICAL: Must be iterable, not None
         # Frontend does: all_sources = details.get('all_sources') or []
@@ -216,7 +216,7 @@ class TestInteractionResponseContract:
             assert isinstance(data["all_sources"], list), \
                 "all_sources must be list, not None (frontend iterates)"
             assert len(data["all_sources"]) == 1, \
-                "Should have 1 source from network log"
+                "Should have 1 source from web capture"
 
     def test_get_recent_interactions_list_consistency(self, client):
         """Test that GET /api/v1/interactions/recent returns consistent list types.

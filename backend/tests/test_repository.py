@@ -188,7 +188,7 @@ class TestInteractionRepository:
       search_queries=[],
       sources_used=[],
       raw_response={},
-      data_source="network_log"
+      data_source="web"
     )
 
     # Get API interactions only
@@ -197,11 +197,11 @@ class TestInteractionRepository:
     assert len(api_results) == 1
     assert api_results[0].data_source == "api"
 
-    # Get network_log interactions only
-    network_results, network_total = repository.get_recent(data_source="network_log")
+    # Get web interactions only
+    network_results, network_total = repository.get_recent(data_source="web")
     assert network_total == 1
     assert len(network_results) == 1
-    assert network_results[0].data_source == "network_log"
+    assert network_results[0].data_source == "web"
 
   def test_get_recent_with_limit(self, repository):
     """Test get_recent respects limit parameter."""
@@ -346,13 +346,13 @@ class TestInteractionRepository:
       search_queries=search_queries,
       sources_used=sources_used,
       raw_response={},
-      data_source="network_log",
+      data_source="web",
       extra_links_count=2
     )
 
     # Verify all fields saved
     response = repository.get_by_id(response_id)
-    assert response.data_source == "network_log"
+    assert response.data_source == "web"
     assert response.extra_links_count == 2
 
     search_query = response.search_queries[0]

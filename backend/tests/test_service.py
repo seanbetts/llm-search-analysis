@@ -276,13 +276,13 @@ class TestInteractionService:
     """Test filtering by data source."""
     mock_repository.get_recent.return_value = ([], 0)
 
-    service.get_recent_interactions(page=2, page_size=50, data_source="network_log")
+    service.get_recent_interactions(page=2, page_size=50, data_source="web")
 
     # Verify filter was passed to repository
     mock_repository.get_recent.assert_called_once_with(
       page=2,
       page_size=50,
-      data_source="network_log",
+      data_source="web",
       provider=None,
       model=None,
       date_from=None,

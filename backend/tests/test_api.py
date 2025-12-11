@@ -561,11 +561,11 @@ class TestBatchEndpoints:
     assert response.status_code == 201
     data = response.json()
     assert data["interaction_id"] is not None
-    assert data["data_source"] == "network_log"
+    assert data["data_source"] == "web"
     assert data["prompt"] == payload["prompt"]
     assert len(data["all_sources"]) == 1
 
-    recent = client.get("/api/v1/interactions/recent?data_source=network_log")
+    recent = client.get("/api/v1/interactions/recent?data_source=web")
     assert recent.status_code == 200
     recent_data = recent.json()
     assert any(item["prompt"] == payload["prompt"] for item in recent_data["items"])

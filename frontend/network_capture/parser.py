@@ -390,7 +390,7 @@ class NetworkLogParser:
             response_time_ms=response_time_ms,
             metadata=response_metadata,
             extra_links_count=extra_links_count,
-            data_source='network_log'
+            data_source='web'
         )
 
     @staticmethod
@@ -560,7 +560,7 @@ class NetworkLogParser:
             model=model,
             provider='openai',
             response_time_ms=response_time_ms,
-            data_source='network_log'
+            data_source='web'
         )
 
     @staticmethod

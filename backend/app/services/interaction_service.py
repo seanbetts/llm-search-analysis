@@ -81,7 +81,7 @@ class InteractionService:
       raw_response: Raw API response (validated JSON)
       data_source: Data collection mode
       extra_links_count: Number of extra links
-      sources: List of source dicts linked directly to response (for network_log mode)
+      sources: List of source dicts linked directly to response (for web capture mode)
 
     Returns:
       The response ID
@@ -105,15 +105,15 @@ class InteractionService:
       if "url" in citation and not citation.get("domain"):
         citation["domain"] = extract_domain(citation["url"])
 
-    # Extract domains from top-level sources (network_log mode)
+    # Extract domains from top-level sources (web capture mode)
     if normalized_sources:
       for source in normalized_sources:
         if "url" in source and not source.get("domain"):
           source["domain"] = extract_domain(source["url"])
 
     # Compute metrics
-    # sources_found: Total sources from search queries or top-level sources (network_log)
-    if data_source == "network_log" and normalized_sources:
+    # sources_found: Total sources from search queries or top-level sources (web mode)
+    if data_source in ("web", "network_log") and normalized_sources:
       sources_found = len(normalized_sources)
     else:
       sources_found = sum(len(q.get("sources", [])) for q in normalized_queries)
@@ -163,7 +163,7 @@ class InteractionService:
     Args:
       page: Page number (1-indexed)
       page_size: Number of items per page (max 100)
-      data_source: Filter by data source ("api", "network_log")
+      data_source: Filter by data source ("api", "web"). Legacy "network_log" values are also supported.
       provider: Filter by provider name (e.g., "openai")
       model: Filter by model name (e.g., "gpt-4o")
       date_from: Filter by created_at >= date_from
@@ -186,9 +186,9 @@ class InteractionService:
     for response in responses:
       # Calculate counts
       search_query_count = len(response.search_queries)
-      # For network_log: sources are linked directly to response
+      # For web captures: sources are linked directly to response
       # For api: sources are linked to search queries
-      if response.data_source == 'network_log':
+      if response.data_source in ('web', 'network_log'):
         source_count = len(response.response_sources) if response.response_sources else 0
       else:
         source_count = sum(len(q.sources) for q in response.search_queries)
@@ -297,10 +297,10 @@ class InteractionService:
         )
       )
 
-    # Populate all_sources for both API and network_log modes
+    # Populate all_sources for both API and web capture data
     # This provides a consistent, pre-aggregated list for the frontend
     all_sources = []
-    if response.data_source == 'network_log' and response.response_sources:
+    if response.data_source in ('web', 'network_log') and response.response_sources:
       # Network_log: sources are directly on response
       all_sources = [
         SourceSchema(
@@ -384,7 +384,7 @@ class InteractionService:
     raw_response: Optional[dict],
     extra_links_count: int = 0,
   ) -> SendPromptResponse:
-    """Save network_log mode interaction and return formatted response.
+    """Save web capture interaction and return formatted response.
 
     This is a convenience method for the /save-network-log endpoint that
     saves the interaction and returns a fully formatted SendPromptResponse.
@@ -395,7 +395,7 @@ class InteractionService:
       prompt: The prompt text
       response_text: The response text
       search_queries: List of search query dicts
-      sources: List of source dicts (for network_log mode)
+      sources: List of source dicts (for web capture mode)
       citations: List of citation dicts
       response_time_ms: Response time in milliseconds
       raw_response: Raw response data
@@ -414,7 +414,7 @@ class InteractionService:
       search_queries=search_queries,
       citations=citations,
       raw_response=raw_response or {},
-      data_source="network_log",
+      data_source="web",
       extra_links_count=extra_links_count,
       sources=sources,
     )

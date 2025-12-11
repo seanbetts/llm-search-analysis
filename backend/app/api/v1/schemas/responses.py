@@ -139,7 +139,7 @@ class SendPromptResponse(BaseModel):
     default_factory=list,
     description=(
       "All sources aggregated from all search queries (API mode) or directly "
-      "from response (network_log mode). Always populated for consistent "
+      "from response (web capture mode). Always populated for consistent "
       "frontend handling."
     )
   )
@@ -152,7 +152,7 @@ class SendPromptResponse(BaseModel):
     description="Formatted display name for the model"
   )
   response_time_ms: Optional[int] = Field(None, ge=0, description="Response time in milliseconds")
-  data_source: str = Field(default="api", description="Data collection mode (api/network_log)")
+  data_source: str = Field(default="api", description="Data collection mode (api/web)")
 
   # Computed metrics
   sources_found: int = Field(

@@ -40,7 +40,7 @@ def test_prepare_history_dataframe_derives_expected_fields():
   df = history._prepare_history_dataframe(interactions)
   assert list(df["id"]) == [2, 1]  # sorted by timestamp desc
   assert df.loc[df["id"] == 2, "analysis_type"].item() == "API"
-  assert df.loc[df["id"] == 1, "analysis_type"].item() == "Network Logs"
+  assert df.loc[df["id"] == 1, "analysis_type"].item() == "Web"
   assert df.loc[df["id"] == 2, "prompt_preview"].item().startswith("Tell me something")
   assert df.loc[df["id"] == 1, "prompt_preview"].item() == "Short prompt"
   assert df.loc[df["id"] == 2, "avg_rank_display"].item() == "3.2"

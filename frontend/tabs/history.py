@@ -91,7 +91,7 @@ def _prepare_history_dataframe(interactions: List[Dict[str, Any]]) -> pd.DataFra
     df['response_time_ms'] = None
 
   df['analysis_type'] = df['data_source'].apply(
-    lambda x: 'Network Logs' if x == 'network_log' else 'API'
+    lambda x: 'Web' if x in ('web', 'network_log') else 'API'
   )
 
   df['avg_rank_display'] = df['avg_rank'].apply(
@@ -448,7 +448,7 @@ def tab_history():
         # Calculate metrics
         num_searches = len(details.get('search_queries', []))
         # For network logs, sources are in all_sources; for API, they're in query.sources
-        if details.get('data_source') == 'network_log':
+        if details.get('data_source') in ('web', 'network_log'):
           num_sources = len(details.get('all_sources') or [])
         else:
           num_sources = sum(len(query.get('sources', [])) for query in details.get('search_queries', []))

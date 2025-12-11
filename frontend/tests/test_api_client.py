@@ -481,7 +481,7 @@ class TestSaveNetworkLog:
     """Posting network log data should return saved interaction info."""
     mock_api.post("/api/v1/interactions/save-network-log").mock(return_value=httpx.Response(
       201,
-      json={"interaction_id": 42, "data_source": "network_log"}
+      json={"interaction_id": 42, "data_source": "web"}
     ))
 
     payload = {
@@ -498,7 +498,7 @@ class TestSaveNetworkLog:
     }
     result = client.save_network_log(**payload)
     assert result["interaction_id"] == 42
-    assert result["data_source"] == "network_log"
+    assert result["data_source"] == "web"
 
   def test_save_network_log_validation_error(self, client, mock_api):
     """Validation errors should raise APIValidationError."""

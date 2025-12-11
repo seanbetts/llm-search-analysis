@@ -101,7 +101,7 @@ def _build_api_response() -> SendPromptResponse:
 
 
 def _build_network_log_response() -> SendPromptResponse:
-  """Representative network_log SendPromptResponse instance."""
+  """Representative web capture SendPromptResponse instance."""
   return SendPromptResponse(
     prompt="Summarize the latest Anthropic research releases.",
     response_text="Claude models focused on safety research...",
@@ -109,7 +109,7 @@ def _build_network_log_response() -> SendPromptResponse:
     model="claude-sonnet-4-5-20250929",
     model_display_name="Claude Sonnet 4.5",
     response_time_ms=2100,
-    data_source="network_log",
+    data_source="web",
     search_queries=[
       {
         "query": "anthropic research 2024",

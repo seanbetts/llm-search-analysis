@@ -231,8 +231,8 @@ async def send_prompt(
   "/save-network-log",
   response_model=SendPromptResponse,
   status_code=status.HTTP_201_CREATED,
-  summary="Save network_log mode data",
-  description="Save interaction data captured via network_log mode (browser automation). "
+  summary="Save web capture data",
+  description="Save interaction data captured via the web capture mode (formerly called network log mode). "
   "This endpoint accepts pre-captured data and saves it to the database.",
   responses={
     400: {
@@ -267,10 +267,10 @@ async def save_network_log_data(
   request: SaveNetworkLogRequest,
   interaction_service: InteractionService = Depends(get_interaction_service),
 ):
-  """Save network_log mode data captured by frontend.
+  """Save web capture data captured by frontend.
 
   This endpoint is used when the frontend captures LLM interaction data via
-  browser automation (network_log mode). The frontend sends the captured data
+  browser automation (formerly referred to as network log mode). The frontend sends the captured data
   to this endpoint for database persistence.
 
   Args:
@@ -285,7 +285,7 @@ async def save_network_log_data(
     500: Internal server error
   """
   try:
-    # Save the network_log data to database
+    # Save the web capture data to database
     response = interaction_service.save_network_log_interaction(
       provider=request.provider,
       model=request.model,
@@ -325,7 +325,7 @@ async def get_recent_interactions(
   ),
   data_source: Optional[str] = Query(
     default=None,
-    description="Filter by data source (api or network_log)"
+    description="Filter by data source (api or web). Legacy 'network_log' values are also accepted."
   ),
   provider: Optional[str] = Query(
     default=None,
@@ -363,10 +363,18 @@ async def get_recent_interactions(
   Raises:
     500: Internal server error
   """
+  normalized_source = None
+  if data_source:
+    lower = data_source.lower()
+    if lower not in ("api", "web", "network_log"):
+      from app.core.exceptions import InvalidRequestError
+      raise InvalidRequestError("data_source must be one of: api, web")
+    normalized_source = "web" if lower == "network_log" else lower
+
   interactions, total_count, stats = interaction_service.get_recent_interactions(
     page=page,
     page_size=page_size,
-    data_source=data_source,
+    data_source=normalized_source,
     provider=provider,
     model=model,
     date_from=date_from,

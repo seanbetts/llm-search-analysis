@@ -58,7 +58,7 @@ class ExportService:
         response_time_s = f"{response_time_ms / 1000:.1f}s" if response_time_ms else "N/A"
         extra_links = details.get('extra_links_count', 0)
         data_source = details.get('data_source', 'api')
-        analysis_type = 'Network Logs' if data_source == 'network_log' else 'API'
+        analysis_type = 'Web' if data_source in ('web', 'network_log') else 'API'
 
         # Use model_display_name if available, fallback to model
         model_display = details.get('model_display_name') or details.get('model', 'Unknown')

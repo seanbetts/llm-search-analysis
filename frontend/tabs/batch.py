@@ -408,7 +408,7 @@ def tab_batch():
             all_sources=all_sources,
             citations=citations,
             response_time_ms=provider_response.response_time_ms,
-            data_source='network_log',
+            data_source='web',
             sources_found=metrics['sources_found'],
             sources_used=metrics['sources_used'],
             avg_rank=metrics['avg_rank'],

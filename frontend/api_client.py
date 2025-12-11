@@ -232,8 +232,8 @@ class APIClient:
       prompt: The prompt text to send (1-10000 characters)
       provider: Provider name (openai, google, anthropic, chatgpt)
       model: Model identifier (e.g., "gpt-5.1", "gemini-2.5-flash")
-      data_mode: Data collection mode - "api" or "network_log" (default: "api")
-      headless: Run browser in headless mode for network_log mode (default: True)
+      data_mode: Data collection mode - "api" or "web" (default: "api")
+      headless: Run browser in headless mode for web capture mode (default: True)
 
     Returns:
       Dictionary containing:
@@ -346,10 +346,10 @@ class APIClient:
     raw_response: Optional[Dict[str, Any]] = None,
     extra_links_count: int = 0,
   ) -> Dict[str, Any]:
-    """Save network_log mode data captured by frontend.
+    """Save web capture data collected by the frontend.
 
     This method is used when the frontend captures LLM interaction data via
-    browser automation (network_log mode). The captured data is sent to the
+    browser automation (formerly called network_log mode). The captured data is sent to the
     backend for database persistence.
 
     Args:
@@ -358,7 +358,7 @@ class APIClient:
       prompt: The prompt text
       response_text: The response text from the LLM
       search_queries: List of search query dictionaries
-      sources: List of source dictionaries (for network_log mode)
+      sources: List of source dictionaries (for web capture mode)
       citations: List of citation dictionaries
       response_time_ms: Response time in milliseconds
       raw_response: Optional raw response data
@@ -420,7 +420,7 @@ class APIClient:
     Args:
       page: Page number (1-indexed, default: 1)
       page_size: Number of items per page (1-100, default: 20)
-      data_source: Optional filter by data source ("api" or "network_log")
+      data_source: Optional filter by data source ("api" or "web")
       provider: Optional filter by provider name (e.g., "openai")
       model: Optional filter by model name (e.g., "gpt-5.1")
       date_from: Optional filter by created_at >= date_from (ISO 8601 format)
@@ -434,7 +434,7 @@ class APIClient:
           - provider: Provider used
           - model: Model used
           - response_time_ms: Response time
-          - data_source: Data source (api/network_log)
+          - data_source: Data source (api/web)
           - created_at: Timestamp
           - search_query_count: Number of search queries
           - source_count: Number of sources

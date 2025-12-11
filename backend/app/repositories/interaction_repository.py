@@ -25,7 +25,7 @@ PROVIDER_DISPLAY_NAMES = {
   'openai': 'OpenAI',
   'google': 'Google',
   'anthropic': 'Anthropic',
-  'chatgpt_network': 'ChatGPT (Network Log)',
+  'chatgpt_network': 'ChatGPT (Web)',
 }
 
 
@@ -68,9 +68,9 @@ class InteractionRepository:
       search_queries: List of search query dicts with sources
       sources_used: List of citation dicts
       raw_response: Raw API response as dict
-      data_source: Data collection mode ("api" or "network_log")
+      data_source: Data collection mode ("api" or "web")
       extra_links_count: Number of extra links not from search
-      sources: List of source dicts linked directly to response (for network_log mode)
+      sources: List of source dicts linked directly to response (for web capture mode)
       sources_found: Total number of sources from search
       sources_used_count: Number of citations with rank (from search results)
       avg_rank: Average rank of citations
@@ -175,7 +175,7 @@ class InteractionRepository:
           self.db.flush()
           register_source(query_source_lookup, source.url or "", source.rank, source.id)
 
-      # Create top-level sources (for network_log mode)
+      # Create top-level sources (for web capture mode)
       if sources:
         for source_data in sources:
           source = ResponseSource(
@@ -276,7 +276,7 @@ class InteractionRepository:
     Args:
       page: Page number (1-indexed)
       page_size: Number of items per page (max 100)
-      data_source: Filter by data source ("api", "network_log"), or None for all
+      data_source: Filter by data source ("api", "web"), or None for all. Legacy \"network_log\" values are accepted.
       provider: Filter by provider name (e.g., "openai"), or None for all
       model: Filter by model name (e.g., "gpt-4o"), or None for all
       date_from: Filter by created_at >= date_from, or None for no lower bound

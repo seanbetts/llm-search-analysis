@@ -307,7 +307,7 @@ class DataSourceValidationError(ValidationError):
       message=f"Invalid data source: {data_source}",
       details={
         "data_source": data_source,
-        "valid_values": ["api", "network_log"],
+        "valid_values": ["api", "web"],
       },
     )
 
