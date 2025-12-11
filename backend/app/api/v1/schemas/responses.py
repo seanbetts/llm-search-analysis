@@ -18,10 +18,27 @@ The schemas ensure:
 - Automatic OpenAPI/Swagger documentation
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
+
+
+def _empty_source_list() -> List[Source]:
+  """Return a new list for source fields."""
+  return []
+
+
+def _empty_search_query_list() -> List[SearchQuery]:
+  """Return a new list for search query fields."""
+  return []
+
+
+def _empty_citation_list() -> List[Citation]:
+  """Return a new list for citation fields."""
+  return []
 
 
 class Source(BaseModel):
@@ -57,7 +74,7 @@ class SearchQuery(BaseModel):
   """Search query made during response generation."""
 
   query: str = Field(..., description="The search query text")
-  sources: List[Source] = Field(default_factory=list, description="Sources found for this query")
+  sources: List[Source] = Field(default_factory=_empty_source_list, description="Sources found for this query")
   timestamp: Optional[str] = Field(None, description="When the query was made")
   order_index: int = Field(default=0, ge=0, description="Order in the query sequence")
 
@@ -128,15 +145,15 @@ class SendPromptResponse(BaseModel):
   prompt: str = Field(..., description="The original prompt text")
   response_text: str = Field(..., description="The LLM's response text")
   search_queries: List[SearchQuery] = Field(
-    default_factory=list,
+    default_factory=_empty_search_query_list,
     description="Search queries made during generation"
   )
   citations: List[Citation] = Field(
-    default_factory=list,
+    default_factory=_empty_citation_list,
     description="Citations used in the response"
   )
   all_sources: Optional[List[Source]] = Field(
-    default_factory=list,
+    default_factory=_empty_source_list,
     description=(
       "All sources aggregated from all search queries (API mode) or directly "
       "from response (web capture mode). Always populated for consistent "

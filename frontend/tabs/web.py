@@ -6,8 +6,8 @@ from frontend.components.response import display_response
 from frontend.config import Config
 from frontend.helpers.error_handling import safe_api_call
 from frontend.helpers.interactive import build_web_response
-from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 from frontend.helpers.serialization import namespace_to_dict
+from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 
 RESPONSE_KEY = "web_response"
 ERROR_KEY = "web_error"
@@ -44,6 +44,7 @@ def tab_web():
             status_container = st.empty()
 
             def update_status(message: str):
+              """Write browser status updates to the status container."""
               status_container.write(message)
 
             capturer = ChatGPTCapturer(status_callback=update_status)

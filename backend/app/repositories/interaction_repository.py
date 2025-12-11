@@ -271,7 +271,7 @@ class InteractionRepository:
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None
   ) -> Tuple[List[Response], int]:
-    """Get recent interactions with pagination and filtering.
+    r"""Get recent interactions with pagination and filtering.
 
     Args:
       page: Page number (1-indexed)

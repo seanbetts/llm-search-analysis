@@ -1,7 +1,5 @@
 """API-based interactive tab."""
 
-from types import SimpleNamespace
-
 import streamlit as st
 
 from frontend.components.models import get_all_models

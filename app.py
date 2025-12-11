@@ -39,51 +39,50 @@ def initialize_session_state():
 
 
 def sidebar_info():
-    """Sidebar information."""
+  """Sidebar information."""
+  st.sidebar.markdown('<div class="main-header">🔍 LLM Search Analysis</div>', unsafe_allow_html=True)
+  st.sidebar.divider()
 
-    st.sidebar.markdown('<div class="main-header">🔍 LLM Search Analysis</div>', unsafe_allow_html=True)
-    st.sidebar.divider()
+  with st.sidebar.expander("ℹ️ About", expanded=False):
+    st.markdown("""
+    This tool analyzes how different LLM providers:
+    - Formulate search queries
+    - Fetch web sources
+    - Cite information in responses
 
-    with st.sidebar.expander("ℹ️ About", expanded=False):
-        st.markdown("""
-        This tool analyzes how different LLM providers:
-        - Formulate search queries
-        - Fetch web sources
-        - Cite information in responses
+    **Providers:**
+    - OpenAI (Responses API)
+    - Google Gemini (Search Grounding)
+    - Anthropic Claude (Web Search Tool)
+    """)
 
-        **Providers:**
-        - OpenAI (Responses API)
-        - Google Gemini (Search Grounding)
-        - Anthropic Claude (Web Search Tool)
-        """)
+  with st.sidebar.expander("📊 Understanding Metrics", expanded=False):
+    st.markdown("""
+    **Key Metrics Explained:**
 
-    with st.sidebar.expander("📊 Understanding Metrics", expanded=False):
-        st.markdown("""
-        **Key Metrics Explained:**
+    **Sources Found**
+    - Total sources retrieved from web search
+    - Represents the model's search results
 
-        **Sources Found**
-        - Total sources retrieved from web search
-        - Represents the model's search results
+    **Sources Used**
+    - Citations from search results (have rank numbers)
+    - Only sources actually from the web search
+    - Used to calculate Average Rank
 
-        **Sources Used**
-        - Citations from search results (have rank numbers)
-        - Only sources actually from the web search
-        - Used to calculate Average Rank
+    **Extra Links**
+    - Citations NOT from search results
+    - URLs mentioned from the model's training data
+    - Counted separately from Sources Used
 
-        **Extra Links**
-        - Citations NOT from search results
-        - URLs mentioned from the model's training data
-        - Counted separately from Sources Used
+    **Average Rank**
+    - Mean position of cited sources in search results
+    - Lower = model prefers higher-ranked sources
 
-        **Average Rank**
-        - Mean position of cited sources in search results
-        - Lower = model prefers higher-ranked sources
-
-        **Important:**
-        The model can cite URLs from two places:
-        1. Web search results → counted as "Sources Used"
-        2. Training knowledge → counted as "Extra Links"
-        """)
+    **Important:**
+    The model can cite URLs from two places:
+    1. Web search results → counted as "Sources Used"
+    2. Training knowledge → counted as "Extra Links"
+    """)
 
 
 def main():
