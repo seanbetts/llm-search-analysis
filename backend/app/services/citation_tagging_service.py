@@ -198,8 +198,14 @@ class GoogleLLMTagger(BaseLLMTagger):
     )
     usage = getattr(response, "usage_metadata", None)
     if usage:
-      usage_dict = getattr(usage, "model_dump", None)
-      self.last_usage = usage_dict() if callable(usage_dict) else getattr(usage, "__dict__", usage)
+      prompt_tokens = getattr(usage, "prompt_token_count", None)
+      candidate_tokens = getattr(usage, "candidates_token_count", None)
+      total_tokens = getattr(usage, "total_token_count", None)
+      self.last_usage = {
+        "input_tokens": prompt_tokens,
+        "output_tokens": candidate_tokens,
+        "total_tokens": total_tokens,
+      }
     else:
       self.last_usage = None
     text_output = getattr(response, "text", None) or getattr(response, "output_text", None)
