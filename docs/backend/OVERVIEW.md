@@ -259,7 +259,7 @@ sources_used (
   url TEXT NOT NULL,
   title TEXT,
   rank INTEGER,
-  snippet_used TEXT,
+  snippet_cited TEXT,
   citation_confidence REAL,
   metadata_json JSON,
   CHECK (

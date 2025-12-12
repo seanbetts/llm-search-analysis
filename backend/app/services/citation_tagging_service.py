@@ -249,8 +249,7 @@ class CitationTaggingService:
   ) -> Optional[Dict[str, Any]]:
     """Extract contextual payload for the LLM prompt."""
     claim_span = _extract_claim_span(response_text or "", citation)
-    snippet = citation.get("snippet_used") or citation.get("text_snippet") or ""
-    if not claim_span and not snippet:
+    if not claim_span:
       return None
 
     metadata = citation.get("metadata") or {}
@@ -264,7 +263,12 @@ class CitationTaggingService:
         "url": citation.get("url"),
         "title": citation.get("title"),
         "rank": citation.get("rank"),
-        "snippet": snippet,
+        "snippet": (
+          citation.get("snippet_cited")
+          or citation.get("snippet_used")
+          or citation.get("text_snippet")
+          or ""
+        ),
         "domain": citation.get("domain"),
         "ref_type": ref_info.get("ref_type"),
         "published_at": metadata.get("published_at"),
@@ -314,12 +318,13 @@ class CitationTaggingService:
 
 
 def _extract_claim_span(response_text: str, citation: Dict[str, Any]) -> str:
+  """Return the precise claim span using start/end indices if available."""
   start = citation.get("start_index")
   end = citation.get("end_index")
   if isinstance(start, int) and isinstance(end, int):
     if 0 <= start < end <= len(response_text):
       return response_text[start:end]
-  return citation.get("text_snippet") or citation.get("snippet_used") or ""
+  return ""
 
 
 def _safe_load_json(value: str) -> Optional[Dict[str, Any]]:

@@ -211,7 +211,7 @@ class GoogleProvider(BaseProvider):
                   title=source_obj.title,
                   rank=source_obj.rank,
                   text_snippet=snippet,
-                  snippet_used=snippet,
+                  snippet_cited=snippet,
                   start_index=start_index,
                   end_index=end_index,
                   metadata={

@@ -19,7 +19,14 @@ The schemas enforce:
 import re
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+  AliasChoices,
+  BaseModel,
+  ConfigDict,
+  Field,
+  field_validator,
+  model_validator,
+)
 
 from app.core.json_schemas import CitationMetadata, SourceMetadata, dump_metadata
 
@@ -259,7 +266,11 @@ class NetworkLogCitation(BaseModel):
   url: str = Field(..., description="Citation URL")
   title: Optional[str] = Field(None, description="Citation title")
   rank: Optional[int] = Field(None, ge=1, description="Rank from search results")
-  snippet_used: Optional[str] = Field(None, description="Snippet text used in the response")
+  snippet_cited: Optional[str] = Field(
+    None,
+    description="Snippet text cited in the model response",
+    validation_alias=AliasChoices("snippet_cited", "snippet_used"),
+  )
   metadata: Optional[Dict[str, Any]] = Field(
     None,
     description="Additional metadata about the citation"

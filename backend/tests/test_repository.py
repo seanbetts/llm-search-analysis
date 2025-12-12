@@ -331,7 +331,7 @@ class TestInteractionRepository:
       {
         "url": "https://example.com",
         "rank": 1,
-        "snippet_used": "AI is a field...",
+        "snippet_cited": "AI is a field...",
         "citation_confidence": 0.95,
         "metadata": {"citation_id": "1"}
       }
@@ -365,6 +365,6 @@ class TestInteractionRepository:
     assert source.metadata_json == {"extra": "data"}
 
     citation = response.sources_used[0]
-    assert citation.snippet_used == "AI is a field..."
+    assert citation.snippet_cited == "AI is a field..."
     assert citation.citation_confidence == 0.95
     assert citation.metadata_json == {"citation_id": "1"}

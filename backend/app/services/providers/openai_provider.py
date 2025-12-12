@@ -166,7 +166,7 @@ class OpenAIProvider(BaseProvider):
                           title=annotation.title if hasattr(annotation, 'title') else None,
                           rank=rank,
                           text_snippet=getattr(annotation, 'text', None),
-                          snippet_used=getattr(annotation, 'text', None),
+                          snippet_cited=getattr(annotation, 'text', None),
                           start_index=getattr(annotation, 'start_index', None),
                           end_index=getattr(annotation, 'end_index', None),
                         ))

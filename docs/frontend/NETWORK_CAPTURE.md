@@ -102,7 +102,7 @@ Beyond what APIs provide, network logs can capture:
 - `metadata`: Full metadata model saw (titles, descriptions, etc.)
 
 ### Citations
-- `snippet_used`: Exact snippet used in response
+- `snippet_cited`: Exact snippet used in response
 - `citation_confidence`: Model's confidence in citation
 
 ## Implementation Status

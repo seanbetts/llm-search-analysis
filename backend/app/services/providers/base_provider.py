@@ -51,7 +51,7 @@ class Citation:
   published_at: Optional[str] = None
   metadata: Optional[Dict[str, Any]] = None  # Additional citation metadata (e.g., citation_id)
   # Network log exclusive fields
-  snippet_used: Optional[str] = None
+  snippet_cited: Optional[str] = None
   citation_confidence: Optional[float] = None
   function_tags: List[str] = field(default_factory=list)
   stance_tags: List[str] = field(default_factory=list)

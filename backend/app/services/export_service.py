@@ -143,7 +143,7 @@ class ExportService:
                 domain = urlparse(url).netloc if url else ''
                 rank = citation.get('rank')
                 rank_display = f" (Rank {rank})" if rank else ""
-                snippet = citation.get('snippet_used') or citation.get('text_snippet') or 'N/A'
+                snippet = citation.get('snippet_cited') or citation.get('text_snippet') or 'N/A'
                 lines.append(f"{c_idx}. [{title}]({url}) ({domain}){rank_display}")
                 lines.append(f"   - Snippet: {snippet}")
 

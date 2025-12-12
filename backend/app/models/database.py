@@ -171,7 +171,7 @@ class SourceUsed(Base):
   rank = Column(Integer)
 
   # Network log exclusive fields
-  snippet_used = Column(Text)
+  snippet_cited = Column(Text)
   citation_confidence = Column(Float)
   metadata_json = Column(JSON)
   function_tags = Column(JSON, default=list, nullable=False)

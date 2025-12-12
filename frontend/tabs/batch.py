@@ -386,7 +386,7 @@ def tab_batch():
 
           citations = [SimpleNamespace(
             url=c.url, title=c.title, rank=c.rank,
-            snippet_used=c.snippet_used,
+            snippet_cited=c.snippet_cited,
             citation_confidence=c.citation_confidence,
             metadata=c.metadata
           ) for c in provider_response.citations]

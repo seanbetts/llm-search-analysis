@@ -570,7 +570,7 @@ interface Citation {
   url: string;
   title: string | null;
   rank: number | null;
-  snippet_used?: string | null;
+  snippet_cited?: string | null;
   citation_confidence?: number | null;
   metadata?: Record<string, any> | null;
 }

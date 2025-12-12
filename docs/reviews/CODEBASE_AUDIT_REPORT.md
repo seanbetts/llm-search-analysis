@@ -281,7 +281,7 @@ The schema centers on `InteractionModel` (replacing legacy sessions/prompts) wit
 - **search_queries** (id, response_id FK, search_query, order_index, internal_ranking_scores JSON, query_reformulations JSON)
 - **query_sources** (id, search_query_id FK, url, title, domain, rank, snippet_text, metadata_json)
 - **response_sources** (id, response_id FK, url, title, domain, rank, snippet_text, metadata_json) — for network_log mode
-- **sources_used** (id, response_id FK, query_source_id FK nullable, response_source_id FK nullable, url, title, rank, snippet_used, citation_confidence, metadata_json)
+- **sources_used** (id, response_id FK, query_source_id FK nullable, response_source_id FK nullable, url, title, rank, snippet_cited, citation_confidence, metadata_json)
   - CHECK constraint: only one of query_source_id or response_source_id can be set
 
 **Migration Gaps / Drift:**

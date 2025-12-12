@@ -118,7 +118,7 @@ class Citation(BaseModel):
   published_at: Optional[str] = Field(None, description="Published date provided by provider")
 
   # Network log exclusive fields
-  snippet_used: Optional[str] = Field(None, description="Exact snippet cited")
+  snippet_cited: Optional[str] = Field(None, description="Exact snippet cited")
   citation_confidence: Optional[float] = Field(
     None,
     ge=0.0,

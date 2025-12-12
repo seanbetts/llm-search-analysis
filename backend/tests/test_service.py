@@ -334,7 +334,7 @@ class TestInteractionService:
     mock_citation.url = "https://example.com"
     mock_citation.title = "Example"
     mock_citation.rank = 1
-    mock_citation.snippet_used = None
+    mock_citation.snippet_cited = None
     mock_citation.citation_confidence = None
     mock_citation.metadata_json = None
     mock_response.sources_used = [mock_citation]

@@ -388,7 +388,11 @@ def display_response(response, prompt=None):
         if getattr(citation, "metadata", None):
           snippet = citation.metadata.get("snippet")
         if not snippet:
-          snippet = getattr(citation, "text_snippet", None) or getattr(citation, "snippet_used", None)
+          snippet = (
+            getattr(citation, "text_snippet", None)
+            or getattr(citation, "snippet_cited", None)
+            or getattr(citation, "snippet_used", None)
+          )
         snippet_display = _format_snippet(snippet)
         snippet_block = (
           "<div style='margin-top:4px; font-size:0.95rem;'>"

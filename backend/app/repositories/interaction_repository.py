@@ -216,6 +216,12 @@ class InteractionRepository:
         if citation_data.get("published_at"):
           metadata.setdefault("published_at", citation_data.get("published_at"))
 
+        snippet_value = (
+          citation_data.get("snippet_cited")
+          or citation_data.get("snippet_used")
+          or citation_data.get("text_snippet")
+        )
+
         source_used = SourceUsed(
           response_id=response.id,
           query_source_id=matched_query_source,
@@ -223,7 +229,7 @@ class InteractionRepository:
           url=citation_data.get("url", ""),
           title=citation_data.get("title"),
           rank=citation_data.get("rank"),
-          snippet_used=citation_data.get("snippet_used") or citation_data.get("text_snippet"),
+          snippet_cited=snippet_value,
           citation_confidence=citation_data.get("citation_confidence"),
           metadata_json=metadata,
           function_tags=citation_data.get("function_tags") or [],

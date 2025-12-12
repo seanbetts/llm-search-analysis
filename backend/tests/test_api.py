@@ -549,7 +549,7 @@ class TestBatchEndpoints:
           "url": "https://example.com/article",
           "title": "Example Article",
           "rank": 1,
-          "snippet_used": "Example snippet"
+          "snippet_cited": "Example snippet"
         }
       ],
       "response_time_ms": 1200,

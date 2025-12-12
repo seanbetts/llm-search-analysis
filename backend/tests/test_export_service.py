@@ -50,7 +50,7 @@ def _api_response():
         url="https://example.com",
         title="Example Source",
         rank=1,
-        snippet_used="Snippet text",
+        snippet_cited="Snippet text",
       )
     ],
     provider="OpenAI",

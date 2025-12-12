@@ -8,16 +8,22 @@ import copy
 import csv
 import json
 import logging
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, joinedload, sessionmaker
+REPO_ROOT = Path(__file__).resolve().parent.parent
+BACKEND_PATH = REPO_ROOT / "backend"
+if str(BACKEND_PATH) not in sys.path:
+  sys.path.insert(0, str(BACKEND_PATH))
 
-from app.config import settings
-from app.models.database import Response
-from app.services.citation_tagging_service import (
+from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy.orm import Session, joinedload, sessionmaker  # noqa: E402
+
+from app.config import settings  # noqa: E402
+from app.models.database import Response  # noqa: E402
+from app.services.citation_tagging_service import (  # noqa: E402
   CitationTaggingConfig,
   CitationTaggingService,
 )
@@ -78,8 +84,8 @@ def _build_citation_dicts(response: Response) -> List[dict]:
       "url": citation.url,
       "title": citation.title,
       "rank": citation.rank,
-      "text_snippet": citation.snippet_used,
-      "snippet_used": citation.snippet_used,
+      "text_snippet": citation.snippet_cited,
+      "snippet_cited": citation.snippet_cited,
       "start_index": (citation.metadata_json or {}).get("start_index"),
       "end_index": (citation.metadata_json or {}).get("end_index"),
       "metadata": citation.metadata_json or {},
@@ -110,8 +116,9 @@ def _summarize_rows(rows: List[dict], path: Path) -> None:
   logger.info("Wrote %s benchmark rows to %s", len(rows), path)
   per_model = {}
   for row in rows:
-    per_model.setdefault(row["model"], 0)
-    per_model[row["model"]] += 1
+    key = row.get("benchmark_model") or row.get("model")
+    per_model.setdefault(key, 0)
+    per_model[key] += 1
   for model, count in per_model.items():
     logger.info("  %s rows for model %s", count, model)
 
