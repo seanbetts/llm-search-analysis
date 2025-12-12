@@ -64,8 +64,12 @@ STRUCTURED_RESPONSE_SCHEMA = {
       "type": "array",
       "items": {"type": "string", "enum": STANCE_TAGS},
     },
+    "provenance_tags": {
+      "type": "array",
+      "items": {"type": "string", "enum": PROVENANCE_TAGS},
+    },
   },
-  "required": ["function_tags", "stance_tags"],
+  "required": ["function_tags", "stance_tags", "provenance_tags"],
 }
 
 
@@ -340,7 +344,9 @@ class CitationTaggingService:
 
     function_tags = _filter(raw.get("function_tags"), FUNCTION_TAGS)
     stance_tags = _filter(raw.get("stance_tags"), STANCE_TAGS)
-    provenance_tags = self._default_provenance(citation)
+    provenance_tags = _filter(raw.get("provenance_tags"), PROVENANCE_TAGS)
+    if not provenance_tags:
+      provenance_tags = self._default_provenance(citation)
 
     return CitationTaggingResult(
       function_tags=function_tags,
