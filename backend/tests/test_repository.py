@@ -394,3 +394,44 @@ class TestInteractionRepository:
     stored = repository.get_by_id(response_id)
     assert stored is not None
     assert stored.sources_used[0].snippet_cited == snippet
+
+  def test_save_interaction_uses_raw_text_for_indices(self, repository):
+    """Raw payload text should backfill snippets when trimmed response lacks span."""
+    raw_text = "Summary. Detailed citation sentence."
+    trimmed_text = "Summary."
+    snippet = "Detailed citation sentence."
+    start = raw_text.index(snippet)
+    end = start + len(snippet)
+
+    raw_payload = {
+      "output": [
+        {
+          "type": "message",
+          "content": [
+            {"type": "output_text", "text": raw_text}
+          ],
+        }
+      ]
+    }
+
+    response_id = repository.save(
+      prompt_text="Summarize",
+      provider_name="openai",
+      model_name="gpt-5.1",
+      response_text=trimmed_text,
+      response_time_ms=200,
+      search_queries=[],
+      sources_used=[
+        {
+          "url": "https://example.com/detail",
+          "rank": 1,
+          "start_index": start,
+          "end_index": end,
+        }
+      ],
+      raw_response=raw_payload,
+    )
+
+    stored = repository.get_by_id(response_id)
+    assert stored is not None
+    assert stored.sources_used[0].snippet_cited == snippet

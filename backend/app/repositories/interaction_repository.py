@@ -1,8 +1,9 @@
 """Repository for database operations on interactions (prompts + responses)."""
 
+import json
 import logging
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
@@ -131,6 +132,8 @@ class InteractionRepository:
       self.db.add(interaction)
       self.db.flush()
 
+      raw_response_text = self._extract_full_text(raw_response)
+
       # Create response
       response = Response(
         interaction_id=interaction.id,
@@ -199,7 +202,7 @@ class InteractionRepository:
           return trimmed or None
         return None
 
-      def _snippet_from_indices(meta: dict) -> Optional[str]:
+      def _slice_from_text(text: Optional[str], meta: dict) -> Optional[str]:
         start = meta.get("start_index")
         end = meta.get("end_index")
         if start is None and meta.get("segment_start_index") is not None:
@@ -211,11 +214,21 @@ class InteractionRepository:
         if (
           isinstance(start, int)
           and isinstance(end, int)
-          and isinstance(response_text, str)
-          and 0 <= start < end <= len(response_text)
+          and isinstance(text, str)
+          and 0 <= start < end <= len(text)
         ):
-          snippet = response_text[start:end].strip()
+          snippet = text[start:end].strip()
           return snippet or None
+        return None
+
+      def _snippet_from_indices(meta: dict) -> Optional[str]:
+        texts = [response_text]
+        if raw_response_text and raw_response_text != response_text:
+          texts.append(raw_response_text)
+        for candidate in texts:
+          snippet = _slice_from_text(candidate, meta)
+          if snippet:
+            return snippet
         return None
 
       # Create sources used (citations)
@@ -479,3 +492,57 @@ class InteractionRepository:
       "avg_sources_used": _as_float(avg_sources_used),
       "avg_rank": _as_float(avg_rank),
     }
+
+  def _extract_full_text(self, raw_response: Any) -> Optional[str]:
+    """Attempt to reconstruct full response text from provider payload."""
+    payload = raw_response
+    if payload is None:
+      return None
+    if isinstance(payload, (bytes, bytearray)):
+      payload = payload.decode("utf-8", errors="ignore")
+    if isinstance(payload, str):
+      try:
+        payload = json.loads(payload)
+      except json.JSONDecodeError:
+        return payload
+
+    if not isinstance(payload, dict):
+      return None
+
+    output = payload.get("output")
+    if isinstance(output, list):
+      chunks: List[str] = []
+      for item in output:
+        if not isinstance(item, dict):
+          continue
+        if item.get("type") == "message":
+          for content in item.get("content") or []:
+            text = content.get("text")
+            if text:
+              chunks.append(text)
+      if chunks:
+        return "".join(chunks)
+
+    candidates = payload.get("candidates")
+    if isinstance(candidates, list):
+      chunks = []
+      for candidate in candidates:
+        for content in candidate.get("content") or []:
+          for part in content.get("parts") or []:
+            text = part.get("text")
+            if text:
+              chunks.append(text)
+      if chunks:
+        return "".join(chunks)
+
+    content_list = payload.get("content")
+    if isinstance(content_list, list):
+      chunks = []
+      for block in content_list:
+        text = block.get("text")
+        if text:
+          chunks.append(text)
+      if chunks:
+        return "".join(chunks)
+
+    return None
