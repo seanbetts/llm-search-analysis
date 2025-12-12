@@ -108,6 +108,11 @@ def _build_citation_dicts(response: Response) -> List[dict]:
 def _parse_model_args(raw_models: Optional[List[str]]) -> List[ModelSpec]:
   if not raw_models:
     return DEFAULT_MODEL_SPECS
+
+  defaults_lookup = {
+    (spec.provider.lower(), spec.model): spec.price_per_million
+    for spec in DEFAULT_MODEL_SPECS
+  }
   specs: List[ModelSpec] = []
   for entry in raw_models:
     # Format: provider:model[:price]
@@ -117,6 +122,8 @@ def _parse_model_args(raw_models: Optional[List[str]]) -> List[ModelSpec]:
       continue
     provider, model = parts[0], parts[1]
     price = float(parts[2]) if len(parts) > 2 else None
+    if price is None:
+      price = defaults_lookup.get((provider.lower(), model))
     specs.append(ModelSpec(provider=provider, model=model, price_per_million=price))
   return specs or DEFAULT_MODEL_SPECS
 
