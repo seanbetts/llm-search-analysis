@@ -137,24 +137,41 @@ def _coerce_int(value: Any) -> Optional[int]:
     return None
 
 
-def _load_response_ids_from_csv(path: Path) -> List[int]:
+def _load_payloads_from_json(path: Path, limit: int, offset: int) -> List[dict]:
   if not path.exists():
-    logger.warning("Response list CSV %s not found", path)
+    logger.warning("Response dataset %s not found", path)
     return []
-  ids: List[int] = []
-  with path.open("r", encoding="utf-8") as handle:
-    reader = csv.DictReader(handle)
-    for row in reader:
-      rid = row.get("response_id")
-      try:
-        rid_int = int(rid) if rid is not None else None
-      except ValueError:
-        rid_int = None
-      if rid_int is not None:
-        ids.append(rid_int)
-  if not ids:
-    logger.warning("Response list CSV %s did not contain any valid response_id rows", path)
-  return ids
+  try:
+    raw = json.loads(path.read_text(encoding="utf-8"))
+  except json.JSONDecodeError:
+    logger.exception("Failed to parse JSON dataset from %s", path)
+    return []
+  if not isinstance(raw, list):
+    logger.warning("Response dataset %s must be a list of entries", path)
+    return []
+  payloads = []
+  for entry in raw:
+    if not isinstance(entry, dict):
+      continue
+    citations = entry.get("citations") or []
+    if not citations:
+      continue
+    payloads.append({
+      "response_id": entry.get("response_id"),
+      "prompt": entry.get("prompt") or "",
+      "response_text": entry.get("response_text") or "",
+      "citations": citations,
+      "created_at": entry.get("created_at") or "",
+      "provider": entry.get("provider") or "",
+      "model": entry.get("model") or "",
+    })
+  if offset:
+    payloads = payloads[offset:]
+  if limit:
+    payloads = payloads[:limit]
+  if not payloads:
+    logger.warning("No usable payloads found in %s after applying filters.", path)
+  return payloads
 
 
 def _summarize_rows(rows: List[dict], path: Path) -> None:
@@ -191,9 +208,9 @@ def main() -> None:
     help="Limit benchmarking to one or more specific response IDs. Repeat flag to add more.",
   )
   parser.add_argument(
-    "--response-list",
+    "--response-data",
     type=Path,
-    help="CSV file containing response_id column to define the benchmark set.",
+    help="JSON file with precomputed prompt/response/citations payloads.",
   )
   parser.add_argument("--openai-api-key", default=settings.OPENAI_API_KEY, help="Override OpenAI API key")
   parser.add_argument("--google-api-key", default=settings.GOOGLE_API_KEY, help="Override Google API key")
@@ -206,54 +223,51 @@ def main() -> None:
   parser.add_argument("--json-output", type=Path, help="Optional path to write JSON results")
   args = parser.parse_args()
 
-  response_ids: Optional[List[int]] = args.response_ids
-  if args.response_list:
-    csv_ids = _load_response_ids_from_csv(args.response_list)
-    if csv_ids:
-      response_ids = csv_ids
-      logger.info("Loaded %s response IDs from %s", len(csv_ids), args.response_list)
-    else:
-      logger.warning("No valid response IDs found in %s; continuing with CLI IDs.", args.response_list)
-
   model_specs = _parse_model_args(args.models)
-  session = _create_session()
-  responses = _load_responses(session, args.limit, args.offset, response_ids=response_ids)
-  extra_log = ""
-  if response_ids:
-    preview = response_ids[:5]
-    extra_log = f" response_ids={preview}{'...' if len(response_ids) > 5 else ''}"
-  logger.info("Loaded %s responses for benchmarking%s", len(responses), extra_log)
-  if not responses:
-    logger.warning("No responses matched the provided filters.")
-    return
+  base_payloads: List[dict] = []
+  if args.response_data:
+    base_payloads = _load_payloads_from_json(args.response_data, args.limit, args.offset)
+    logger.info("Loaded %s precomputed payloads from %s", len(base_payloads), args.response_data)
+  else:
+    response_ids = args.response_ids
+    session = _create_session()
+    responses = _load_responses(session, args.limit, args.offset, response_ids=response_ids)
+    extra_log = ""
+    if response_ids:
+      preview = response_ids[:5]
+      extra_log = f" response_ids={preview}{'...' if len(response_ids) > 5 else ''}"
+    logger.info("Loaded %s responses for benchmarking%s", len(responses), extra_log)
+    if not responses:
+      logger.warning("No responses matched the provided filters.")
+      return
 
-  base_payloads = []
-  for response in responses:
-    prompt_text = response.interaction.prompt_text if response.interaction else ""
-    response_text = response.response_text or ""
-    citations = _build_citation_dicts(response)
-    if not citations:
-      continue
-    base_payloads.append({
-      "response_id": response.id,
-      "prompt": prompt_text,
-      "response_text": response_text,
-      "citations": citations,
-      "created_at": response.created_at.isoformat() if response.created_at else "",
-      "provider": (
-        response.interaction.provider.name
-        if response.interaction and response.interaction.provider
-        else ""
-      ),
-      "model": response.interaction.model_name if response.interaction else "",
-    })
+    for response in responses:
+      prompt_text = response.interaction.prompt_text if response.interaction else ""
+      response_text = response.response_text or ""
+      citations = _build_citation_dicts(response)
+      if not citations:
+        continue
+      base_payloads.append({
+        "response_id": response.id,
+        "prompt": prompt_text,
+        "response_text": response_text,
+        "citations": citations,
+        "created_at": response.created_at.isoformat() if response.created_at else "",
+        "provider": (
+          response.interaction.provider.name
+          if response.interaction and response.interaction.provider
+          else ""
+        ),
+        "model": response.interaction.model_name if response.interaction else "",
+      })
 
-  if not base_payloads:
-    logger.warning(
-      "No citations with snippet_cited values were found for the selected responses. "
-      "Ensure snippets exist or adjust your filters (e.g., --data-source all or --response-id ...)."
-    )
-    return
+    if not base_payloads:
+      logger.warning(
+        "No citations with snippet_cited values were found for the selected responses. "
+        "Ensure snippets exist or adjust your filters (e.g., --response-id ...)."
+      )
+      return
+
 
   all_rows = []
   json_results = []
