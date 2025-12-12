@@ -93,6 +93,9 @@ class CitationTaggingResult:
 class BaseLLMTagger:
   """Abstract base class for provider-specific taggers."""
 
+  def __init__(self) -> None:
+    self.last_usage: Optional[Dict[str, Any]] = None
+
   def generate(self, prompt: str) -> Optional[Dict[str, Any]]:
     """Return raw JSON dict for the provided prompt."""
     raise NotImplementedError
@@ -100,6 +103,9 @@ class BaseLLMTagger:
 
 class NullLLMTagger(BaseLLMTagger):
   """Fallback implementation that always returns empty tags."""
+
+  def __init__(self) -> None:
+    super().__init__()
 
   def generate(self, prompt: str) -> Optional[Dict[str, Any]]:
     """Return empty tag arrays."""
@@ -120,6 +126,7 @@ class OpenAILLMTagger(BaseLLMTagger):
       extra = "forbid"
 
   def __init__(self, api_key: str, model: str, temperature: float):
+    super().__init__()
     self.client = OpenAI(api_key=api_key)
     self.model = model
     self.temperature = temperature
@@ -141,6 +148,12 @@ class OpenAILLMTagger(BaseLLMTagger):
       ],
       text_format=self._CitationTagsModel,
     )
+    usage = getattr(completion, "usage", None)
+    if usage:
+      usage_dict = getattr(usage, "model_dump", None)
+      self.last_usage = usage_dict() if callable(usage_dict) else getattr(usage, "__dict__", usage)
+    else:
+      self.last_usage = None
     parsed = getattr(completion, "output_parsed", None)
     return parsed.model_dump() if parsed else None
 
@@ -149,6 +162,7 @@ class GoogleLLMTagger(BaseLLMTagger):
   """LLM tagger that uses Google Gemini via the google-genai SDK."""
 
   def __init__(self, api_key: str, model: str, temperature: float):
+    super().__init__()
     self.client = GoogleClient(api_key=api_key)
     self.model = model
     self.temperature = temperature
@@ -165,6 +179,12 @@ class GoogleLLMTagger(BaseLLMTagger):
       contents=prompt,
       config=config,
     )
+    usage = getattr(response, "usage_metadata", None)
+    if usage:
+      usage_dict = getattr(usage, "model_dump", None)
+      self.last_usage = usage_dict() if callable(usage_dict) else getattr(usage, "__dict__", usage)
+    else:
+      self.last_usage = None
     text_output = getattr(response, "text", None) or getattr(response, "output_text", None)
     if isinstance(text_output, list):
       text_output = text_output[0]
@@ -177,6 +197,7 @@ class CitationTaggingService:
   def __init__(self, config: CitationTaggingConfig):
     self.config = config
     self._tagger = self._build_tagger(config)
+    self._last_usage_records: List[Dict[str, Any]] = []
 
   @classmethod
   def from_settings(cls) -> "CitationTaggingService":
@@ -198,6 +219,7 @@ class CitationTaggingService:
     citations: List[dict],
   ) -> List[dict]:
     """Apply tags to each citation dictionary in-place."""
+    self._last_usage_records = []
     if not citations:
       return citations
 
@@ -226,8 +248,17 @@ class CitationTaggingService:
       citation["function_tags"] = cleaned.function_tags
       citation["stance_tags"] = cleaned.stance_tags
       citation["provenance_tags"] = cleaned.provenance_tags
+      usage_record = getattr(self._tagger, "last_usage", None)
+      if isinstance(usage_record, dict):
+        self._last_usage_records.append(usage_record)
+      else:
+        self._last_usage_records.append({})
 
     return citations
+
+  def get_last_usage_records(self) -> List[Dict[str, Any]]:
+    """Return usage metadata collected during the previous annotate call."""
+    return list(self._last_usage_records)
 
   def _build_tagger(self, config: CitationTaggingConfig) -> BaseLLMTagger:
     if not config.enabled:

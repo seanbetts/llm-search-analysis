@@ -11,7 +11,7 @@ import logging
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BACKEND_PATH = REPO_ROOT / "backend"
@@ -128,6 +128,15 @@ def _parse_model_args(raw_models: Optional[List[str]]) -> List[ModelSpec]:
   return specs or DEFAULT_MODEL_SPECS
 
 
+def _coerce_int(value: Any) -> Optional[int]:
+  try:
+    if value is None:
+      return None
+    return int(value)
+  except (TypeError, ValueError):
+    return None
+
+
 def _summarize_rows(rows: List[dict], path: Path) -> None:
   logger.info("Wrote %s benchmark rows to %s", len(rows), path)
   per_model = {}
@@ -234,7 +243,17 @@ def main() -> None:
     for payload in base_payloads:
       citations = copy.deepcopy(payload["citations"])
       tagger.annotate_citations(payload["prompt"], payload["response_text"], citations)
-      for citation in citations:
+      usage_records = tagger.get_last_usage_records()
+      for idx, citation in enumerate(citations):
+        usage = usage_records[idx] if idx < len(usage_records) else {}
+        input_tokens = _coerce_int((usage or {}).get("input_tokens") or (usage or {}).get("prompt_tokens"))
+        output_tokens = _coerce_int((usage or {}).get("output_tokens") or (usage or {}).get("completion_tokens"))
+        total_tokens = _coerce_int((usage or {}).get("total_tokens"))
+        if total_tokens is None and (input_tokens is not None or output_tokens is not None):
+          total_tokens = (input_tokens or 0) + (output_tokens or 0)
+        est_cost = ""
+        if spec.price_per_million and total_tokens is not None:
+          est_cost = (spec.price_per_million * total_tokens) / 1_000_000
         if citation.get("function_tags") or citation.get("stance_tags") or citation.get("provenance_tags"):
           total_tagged_assignments += len(citation.get("function_tags") or []) + len(citation.get("stance_tags") or []) + len(citation.get("provenance_tags") or [])
         row = {
@@ -251,6 +270,10 @@ def main() -> None:
           "function_tags": ";".join(citation.get("function_tags") or []),
           "stance_tags": ";".join(citation.get("stance_tags") or []),
           "provenance_tags": ";".join(citation.get("provenance_tags") or []),
+          "input_tokens": input_tokens if input_tokens is not None else "",
+          "output_tokens": output_tokens if output_tokens is not None else "",
+          "total_tokens": total_tokens if total_tokens is not None else "",
+          "estimated_cost": est_cost,
         }
         all_rows.append(row)
         json_results.append({
