@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Literal, Optional
 from google.genai import Client as GoogleClient
 from google.genai.types import GenerateContentConfig
 from openai import OpenAI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from app.config import settings
 
@@ -144,12 +144,11 @@ class OpenAILLMTagger(BaseLLMTagger):
   class _CitationTagsModel(BaseModel):
     """Structured schema for OpenAI responses."""
 
+    model_config = ConfigDict(extra="forbid", json_schema_extra={"additionalProperties": False})
+
     function_tags: List[FunctionTagLiteral] = Field(default_factory=list)
     stance_tags: List[StanceTagLiteral] = Field(default_factory=list)
     provenance_tags: List[ProvenanceTagLiteral] = Field(default_factory=list)
-
-    class Config:
-      extra = "forbid"
 
   def __init__(self, api_key: str, model: str, temperature: float):
     super().__init__()
@@ -161,7 +160,6 @@ class OpenAILLMTagger(BaseLLMTagger):
     """Call the OpenAI Responses API and parse JSON output."""
     completion = self.client.responses.parse(  # type: ignore[arg-type]
       model=self.model,
-      temperature=self.temperature,
       input=[
         {
           "role": "system",
@@ -243,8 +241,7 @@ class OpenAIInfluenceSummarizer(BaseLLMSummarizer):
   class _SummaryModel(BaseModel):
     summary: str = Field(default="")
 
-    class Config:
-      extra = "forbid"
+    model_config = ConfigDict(extra="forbid", json_schema_extra={"additionalProperties": False})
 
   def __init__(self, api_key: str, model: str, temperature: float):
     self.client = OpenAI(api_key=api_key)
@@ -254,7 +251,6 @@ class OpenAIInfluenceSummarizer(BaseLLMSummarizer):
   def summarize(self, prompt: str) -> str:
     completion = self.client.responses.parse(  # type: ignore[arg-type]
       model=self.model,
-      temperature=self.temperature,
       input=[
         {"role": "system", "content": "You produce concise single-sentence summaries."},
         {"role": "user", "content": prompt},
