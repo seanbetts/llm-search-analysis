@@ -257,6 +257,8 @@ class GoogleProvider(BaseProvider):
   ) -> Tuple[Optional[int], Optional[int], Optional[str]]:
     """Normalize segment span indices and snippet text."""
     text_length = len(text or "")
+    cleaned_segment = GoogleProvider._clean_segment_text(segment_text)
+
     def _clamp_indices(start: int, end: int) -> Tuple[int, int]:
       start = GoogleProvider._trim_span_start(text, start, end)
       end = GoogleProvider._trim_span_end(text, start, end)
@@ -293,7 +295,12 @@ class GoogleProvider(BaseProvider):
       snippet = segment.strip() or GoogleProvider._clean_segment_text(segment_text)
       return trimmed_start, trimmed_end, snippet
 
-    return None, None, GoogleProvider._clean_segment_text(segment_text)
+    if cleaned_segment:
+      alt_idx = text.find(cleaned_segment)
+      if alt_idx != -1:
+        return alt_idx, alt_idx + len(cleaned_segment), cleaned_segment
+
+    return None, None, cleaned_segment
 
   @staticmethod
   def _trim_span_start(text: str, start: int, end: int) -> int:

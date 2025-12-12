@@ -444,6 +444,18 @@ class TestGoogleProvider:
     assert snippet == "Paragraph content follows."
     assert text[start:end] == "Paragraph content follows."
 
+  def test_extract_span_falls_back_to_segment_text(self):
+    """When indices fail, segment text should still produce a snippet."""
+    text = "Intro paragraph. Bullet info.\nAnother sentence."
+    start, end, snippet = GoogleProvider._extract_segment_span(
+      text=text,
+      segment_text="Bullet info.",
+      start_index=100,  # invalid indices
+      end_index=105,
+    )
+    assert snippet == "Bullet info."
+    assert text[start:end] == "Bullet info."
+
   def test_send_prompt_includes_response_time(self, provider):
     """Test send_prompt calculates response time."""
     mock_response = Mock()
