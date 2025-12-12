@@ -452,7 +452,6 @@ class NetworkLogParser:
                     title=src.title or title,
                     rank=src.rank,
                     text_snippet=snippet,
-                    snippet_cited=snippet,
                     metadata={
                         "citation_number": int(ref_num),
                         "query_index": None,  # Network logs don't provide query association
@@ -489,7 +488,6 @@ class NetworkLogParser:
                     title=src.title or link_text,
                     rank=src.rank,
                     text_snippet=snippet,
-                    snippet_cited=snippet,
                     metadata={
                         "citation_number": None,
                         "query_index": None,

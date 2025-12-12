@@ -202,6 +202,12 @@ class InteractionRepository:
       def _snippet_from_indices(meta: dict) -> Optional[str]:
         start = meta.get("start_index")
         end = meta.get("end_index")
+        if start is None and meta.get("segment_start_index") is not None:
+          start = meta.get("segment_start_index")
+        if end is None and meta.get("segment_end_index") is not None:
+          end = meta.get("segment_end_index")
+        if start is None and isinstance(end, int) and end >= 0:
+          start = 0
         if (
           isinstance(start, int)
           and isinstance(end, int)
@@ -241,11 +247,11 @@ class InteractionRepository:
           or citation_data.get("text_snippet")
         )
 
-        if not snippet_value:
-          snippet_value = _snippet_from_indices(metadata)
-
-        if not snippet_value:
-          snippet_value = _clean_snippet(metadata.get("snippet"))
+        if response.data_source not in ("web", "network_log"):
+          if not snippet_value:
+            snippet_value = _snippet_from_indices(metadata)
+        else:
+          snippet_value = None
 
         source_used = SourceUsed(
           response_id=response.id,

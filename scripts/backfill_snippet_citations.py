@@ -16,7 +16,7 @@ BACKEND_PATH = REPO_ROOT / "backend"
 if str(BACKEND_PATH) not in sys.path:
   sys.path.insert(0, str(BACKEND_PATH))
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, or_
 from sqlalchemy.orm import Session, joinedload, sessionmaker
 
 from app.config import settings
@@ -44,6 +44,12 @@ def _trim_snippet(value: Optional[str]) -> Optional[str]:
 def _slice_from_indices(text: str, metadata: Dict[str, int]) -> Optional[str]:
   start = metadata.get("start_index")
   end = metadata.get("end_index")
+  if start is None and metadata.get("segment_start_index") is not None:
+    start = metadata.get("segment_start_index")
+  if end is None and metadata.get("segment_end_index") is not None:
+    end = metadata.get("segment_end_index")
+  if start is None and isinstance(end, int) and end >= 0:
+    start = 0
   if isinstance(start, int) and isinstance(end, int) and isinstance(text, str):
     if 0 <= start < end <= len(text):
       snippet = text[start:end].strip()
@@ -110,8 +116,11 @@ def backfill_snippets(dry_run: bool = False) -> None:
         .joinedload(InteractionModel.provider)
       )
       .filter(
-        (SourceUsed.snippet_cited.is_(None))
-        | (SourceUsed.metadata_json.is_(None))
+        or_(
+          SourceUsed.snippet_cited.is_(None),
+          SourceUsed.metadata_json.is_(None),
+          Response.data_source.in_(["web", "network_log"]),
+        )
       )
       .all()
     )
@@ -123,33 +132,37 @@ def backfill_snippets(dry_run: bool = False) -> None:
       provider = (source.response.interaction.provider.name or "").lower()
       response_text = source.response.response_text or ""
       metadata = dict(source.metadata_json or {})
-      snippet = _trim_snippet(source.snippet_cited)
+      existing_snippet = _trim_snippet(source.snippet_cited)
+      snippet = existing_snippet
+      data_source = (source.response.data_source or "").lower()
 
-      if not snippet:
-        snippet = _slice_from_indices(response_text, metadata)
+      if data_source in ("web", "network_log"):
+        snippet = None
+        metadata.pop("start_index", None)
+        metadata.pop("end_index", None)
+      else:
+        if not snippet:
+          snippet = _slice_from_indices(response_text, metadata)
 
-      if not snippet and metadata.get("snippet"):
-        snippet = _trim_snippet(metadata.get("snippet"))
+        if not snippet and provider == "anthropic":
+          if source.response.id not in lookup_cache:
+            raw = _load_raw_payload(source.response)
+            lookup_cache[source.response.id] = _parse_anthropic_citations(raw or {})
+          lookup = lookup_cache[source.response.id]
+          candidates = lookup.get(source.url) or []
+          if candidates:
+            snippet = candidates.pop(0)
 
-      if not snippet and provider == "anthropic":
-        if source.response.id not in lookup_cache:
-          raw = _load_raw_payload(source.response)
-          lookup_cache[source.response.id] = _parse_anthropic_citations(raw or {})
-        lookup = lookup_cache[source.response.id]
-        candidates = lookup.get(source.url) or []
-        if candidates:
-          snippet = candidates.pop(0)
-
-      if snippet and (metadata.get("start_index") is None or metadata.get("end_index") is None):
-        span = _find_span(response_text, snippet)
-        if span:
-          metadata["start_index"], metadata["end_index"] = span
+        if snippet and (metadata.get("start_index") is None or metadata.get("end_index") is None):
+          span = _find_span(response_text, snippet)
+          if span:
+            metadata["start_index"], metadata["end_index"] = span
 
       changed = False
-      if snippet and source.snippet_cited != snippet:
+      if snippet != existing_snippet:
         source.snippet_cited = snippet
         changed = True
-      if metadata and metadata != (source.metadata_json or {}):
+      if metadata != (source.metadata_json or {}):
         source.metadata_json = metadata
         changed = True
       if changed:

@@ -365,7 +365,7 @@ class TestInteractionRepository:
     assert source.metadata_json == {"extra": "data"}
 
     citation = response.sources_used[0]
-    assert citation.snippet_cited == "AI is a field..."
+    assert citation.snippet_cited is None
     assert citation.citation_confidence == 0.95
     assert citation.metadata_json == {"citation_id": "1"}
 
