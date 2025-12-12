@@ -134,12 +134,15 @@ We use three tagging categories:
 
 | Tag | Description |
 | --- | --- |
-| `news` | News or media outlet. |
-| `reference` | Encyclopaedia or reference documentation. |
-| `community` | User-generated forums or Q&A sites. |
-| `official` | First-party or institutional source. |
-| `review` | Review, opinion or editorial source. |
-| `other` | Any other provenance type. |
+| `official` | First-party or institutional sources (company sites, product docs, government, regulators, standards bodies). |
+| `news` | Journalism and reporting (newspapers, tech press, trade publications). |
+| `reference` | Neutral encyclopaedic/reference content (Wikipedia, encyclopaedias, dictionaries, manuals). |
+| `review` | Evaluative or opinionated assessments (product reviews, editorial roundups, critique pieces). |
+| `community` | User-generated discussion or Q&A (Reddit, Stack Overflow, forums, GitHub issues). |
+| `academic` | Scholarly or research outputs (journals, conference proceedings, arXiv/preprints, institutional labs). |
+| `documentation` | Technical/procedural documentation that isn’t strictly marketing (API docs, developer guides, RFCs, SDK references). |
+| `blog` | Individual or company-authored posts that aren’t formal news/documentation (engineering blogs, Medium, thought leadership). |
+| `legal_or_policy` | Formal legal, regulatory, or policy text (legislation, rulings, terms of service, privacy policies). |
 
 ## 5. Example
 

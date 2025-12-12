@@ -23,6 +23,17 @@ Stance tags (pick at most one unless the citation clearly plays multiple roles):
 - **nuances_or_qualifies**: partially supports but adds caveats.
 - **neutral_context**: provides context without taking a stance.
 
+Provenance tags (choose any that apply):
+- **official**: first-party or institutional sources (company sites, product docs, government, regulators, standards bodies).
+- **news**: journalism/reporting outlets (newspapers, tech press, trade publications).
+- **reference**: neutral encyclopaedic/reference resources (Wikipedia, encyclopaedias, manuals).
+- **review**: evaluative or opinionated assessments (product reviews, editorial roundups, critiques).
+- **community**: user-generated discussion/Q&A (Reddit, Stack Overflow, forums, GitHub issues).
+- **academic**: scholarly or research outputs (journals, conference papers, preprints, institutional labs).
+- **documentation**: technical/procedural documentation that is not pure marketing (API docs, developer guides, RFCs).
+- **blog**: individual or company-authored blog posts (engineering blogs, Medium, thought leadership).
+- **legal_or_policy**: formal legal, regulatory, or policy text (legislation, court rulings, terms, privacy policies).
+
 ### Context
 - **Prompt**: {prompt}
 - **Model Response (full)**:

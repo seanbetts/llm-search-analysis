@@ -6,11 +6,12 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from google.genai import Client as GoogleClient
 from google.genai.types import GenerateContentConfig
 from openai import OpenAI
+from pydantic import BaseModel, Field
 
 from app.config import settings
 
@@ -38,12 +39,15 @@ STANCE_TAGS = [
   "neutral_context",
 ]
 PROVENANCE_TAGS = [
+  "official",
   "news",
   "reference",
-  "community",
-  "official",
   "review",
-  "other",
+  "community",
+  "academic",
+  "documentation",
+  "blog",
+  "legal_or_policy",
 ]
 
 PROMPT_TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "prompts" / "citation_tagging_prompt.md"
@@ -105,6 +109,16 @@ class NullLLMTagger(BaseLLMTagger):
 class OpenAILLMTagger(BaseLLMTagger):
   """LLM tagger that uses the OpenAI Responses API."""
 
+  class _CitationTagsModel(BaseModel):
+    """Structured schema for OpenAI responses."""
+
+    function_tags: List[FunctionTagLiteral] = Field(default_factory=list)
+    stance_tags: List[StanceTagLiteral] = Field(default_factory=list)
+    provenance_tags: List[ProvenanceTagLiteral] = Field(default_factory=list)
+
+    class Config:
+      extra = "forbid"
+
   def __init__(self, api_key: str, model: str, temperature: float):
     self.client = OpenAI(api_key=api_key)
     self.model = model
@@ -112,29 +126,23 @@ class OpenAILLMTagger(BaseLLMTagger):
 
   def generate(self, prompt: str) -> Optional[Dict[str, Any]]:
     """Call the OpenAI Responses API and parse JSON output."""
-    completion = self.client.responses.create(  # type: ignore[arg-type]
+    completion = self.client.responses.parse(  # type: ignore[arg-type]
       model=self.model,
       temperature=self.temperature,
-      response_format={
-        "type": "json_schema",
-        "json_schema": {
-          "name": "CitationTagLabels",
-          "schema": STRUCTURED_RESPONSE_SCHEMA,
-        },
-      },
       input=[
         {
           "role": "system",
-          "content": [{"type": "text", "text": _SYSTEM_PROMPT}],
+          "content": _SYSTEM_PROMPT,
         },
         {
           "role": "user",
-          "content": [{"type": "text", "text": prompt}],
+          "content": prompt,
         },
       ],
+      text_format=self._CitationTagsModel,
     )
-    text_output = completion.output_text[0] if completion.output_text else ""
-    return _safe_load_json(text_output)
+    parsed = getattr(completion, "output_parsed", None)
+    return parsed.model_dump() if parsed else None
 
 
 class GoogleLLMTagger(BaseLLMTagger):
@@ -365,3 +373,30 @@ _SYSTEM_PROMPT = (
   "Use the defined function/stance vocabularies to describe each citation. "
   "Always return structured JSON that matches the provided schema."
 )
+FunctionTagLiteral = Literal[
+  "evidence",
+  "elaboration",
+  "background",
+  "justification",
+  "cause_or_reason",
+  "condition",
+  "contrast",
+  "concession",
+  "evaluation",
+  "solution_or_answer",
+  "enablement",
+  "limitation_or_risk",
+  "speculation_or_rumour",
+]
+StanceTagLiteral = Literal["supports", "refutes", "nuances_or_qualifies", "neutral_context"]
+ProvenanceTagLiteral = Literal[
+  "official",
+  "news",
+  "reference",
+  "review",
+  "community",
+  "academic",
+  "documentation",
+  "blog",
+  "legal_or_policy",
+]
