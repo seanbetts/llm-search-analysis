@@ -137,6 +137,26 @@ def _coerce_int(value: Any) -> Optional[int]:
     return None
 
 
+def _load_response_ids_from_csv(path: Path) -> List[int]:
+  if not path.exists():
+    logger.warning("Response list CSV %s not found", path)
+    return []
+  ids: List[int] = []
+  with path.open("r", encoding="utf-8") as handle:
+    reader = csv.DictReader(handle)
+    for row in reader:
+      rid = row.get("response_id")
+      try:
+        rid_int = int(rid) if rid is not None else None
+      except ValueError:
+        rid_int = None
+      if rid_int is not None:
+        ids.append(rid_int)
+  if not ids:
+    logger.warning("Response list CSV %s did not contain any valid response_id rows", path)
+  return ids
+
+
 def _summarize_rows(rows: List[dict], path: Path) -> None:
   logger.info("Wrote %s benchmark rows to %s", len(rows), path)
   per_model = {}
@@ -170,6 +190,11 @@ def main() -> None:
     dest="response_ids",
     help="Limit benchmarking to one or more specific response IDs. Repeat flag to add more.",
   )
+  parser.add_argument(
+    "--response-list",
+    type=Path,
+    help="CSV file containing response_id column to define the benchmark set.",
+  )
   parser.add_argument("--openai-api-key", default=settings.OPENAI_API_KEY, help="Override OpenAI API key")
   parser.add_argument("--google-api-key", default=settings.GOOGLE_API_KEY, help="Override Google API key")
   parser.add_argument(
@@ -181,10 +206,22 @@ def main() -> None:
   parser.add_argument("--json-output", type=Path, help="Optional path to write JSON results")
   args = parser.parse_args()
 
+  response_ids: Optional[List[int]] = args.response_ids
+  if args.response_list:
+    csv_ids = _load_response_ids_from_csv(args.response_list)
+    if csv_ids:
+      response_ids = csv_ids
+      logger.info("Loaded %s response IDs from %s", len(csv_ids), args.response_list)
+    else:
+      logger.warning("No valid response IDs found in %s; continuing with CLI IDs.", args.response_list)
+
   model_specs = _parse_model_args(args.models)
   session = _create_session()
-  responses = _load_responses(session, args.limit, args.offset, response_ids=args.response_ids)
-  extra_log = f" response_ids={args.response_ids}" if args.response_ids else ""
+  responses = _load_responses(session, args.limit, args.offset, response_ids=response_ids)
+  extra_log = ""
+  if response_ids:
+    preview = response_ids[:5]
+    extra_log = f" response_ids={preview}{'...' if len(response_ids) > 5 else ''}"
   logger.info("Loaded %s responses for benchmarking%s", len(responses), extra_log)
   if not responses:
     logger.warning("No responses matched the provided filters.")

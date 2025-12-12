@@ -1,0 +1,21 @@
+response_id,provider,model,data_source,created_at,prompt
+275,anthropic,claude-sonnet-4-5-20250929,api,2025-12-11T13:15:30.780730,Find me the latest details on the Steam Frame
+274,google,gemini-3-pro-preview,api,2025-12-11T13:15:01.160868,Find me the latest details on the Steam Frame
+273,openai,gpt-5.1,api,2025-12-11T13:14:20.015762,Find me the latest details on the Steam Frame
+272,anthropic,claude-sonnet-4-5-20250929,api,2025-12-11T13:06:43.619986,Find me the latest details on the Steam Frame
+271,google,gemini-3-pro-preview,api,2025-12-11T13:05:52.491570,Find me the latest details on the Steam Frame
+270,openai,gpt-5.1,api,2025-12-11T12:58:45.689689,Find me the latest details on the Steam Frame
+269,anthropic,claude-sonnet-4-5-20250929,api,2025-12-11T12:46:31.398835,Find me the latest details on the Steam Frame
+268,google,gemini-3-pro-preview,api,2025-12-11T12:44:54.394362,Find me the latest details on the Steam Frame
+267,google,gemini-3-pro-preview,api,2025-12-11T12:29:39.764973,Find me the latest details on the Steam Frame
+266,google,gemini-3-pro-preview,api,2025-12-11T12:26:28.795098,Find me the latest details on the Steam Frame
+265,google,gemini-3-pro-preview,api,2025-12-11T12:19:02.087449,Find me the latest details on the Steam Frame
+264,google,gemini-3-pro-preview,api,2025-12-11T11:43:36.327317,Find me the latest details on the Steam Frame
+263,google,gemini-3-pro-preview,api,2025-12-11T11:35:11.433735,Find me the latest details on the Steam Frame
+262,openai,gpt-5.1,api,2025-12-11T11:33:18.409026,Find me the latest details on the Steam Frame
+261,openai,gpt-5.1,api,2025-12-11T11:13:47.951505,Find me the latest details on the Steam Frame
+260,openai,gpt-5.1,api,2025-12-11T10:44:43.340324,Find me the latest details on the Steam Frame
+259,anthropic,claude-sonnet-4-5-20250929,api,2025-12-11T10:36:21.210643,Find me the latest details on the Steam Frame
+258,google,gemini-3-pro-preview,api,2025-12-11T10:35:12.821798,Find me the latest details on the Steam Frame
+257,openai,gpt-5.1,api,2025-12-11T10:33:13.410136,Find me the latest details on the Steam Frame
+256,anthropic,claude-sonnet-4-5-20250929,api,2025-12-11T10:07:56.805668,Find me the latest details on the Steam Frame
