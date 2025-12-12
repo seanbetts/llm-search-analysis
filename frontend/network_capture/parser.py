@@ -11,7 +11,7 @@ NETWORK_LOG_FINDINGS.md for full analysis.
 import json
 import re
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 # Import data models from backend
 from backend.app.services.providers.base_provider import (
@@ -431,6 +431,12 @@ class NetworkLogParser:
 
         # 1) Reference-style definitions: [N]: URL "Title"
         ref_def_pattern = r'^\[(\d+)\]:\s*(https?://[^\s"]+)(?:\s+"([^"]*)")?\s*$'
+        def _normalize_snippet(snippet: Optional[str]) -> Optional[str]:
+            if snippet is None:
+                return None
+            normalized = snippet.strip()
+            return normalized or None
+
         for match in re.finditer(ref_def_pattern, response_text, flags=re.MULTILINE):
             ref_num, url, title = match.group(1), match.group(2), match.group(3) or ""
             norm = clean_url(url)
@@ -440,10 +446,13 @@ class NetworkLogParser:
 
             if norm in source_map:
                 src = source_map[norm]
+                snippet = _normalize_snippet(getattr(src, "snippet_text", None))
                 citations.append(Citation(
                     url=src.url,
                     title=src.title or title,
                     rank=src.rank,
+                    text_snippet=snippet,
+                    snippet_cited=snippet,
                     metadata={
                         "citation_number": int(ref_num),
                         "query_index": None,  # Network logs don't provide query association
@@ -474,10 +483,13 @@ class NetworkLogParser:
 
             if norm in source_map:
                 src = source_map[norm]
+                snippet = _normalize_snippet(getattr(src, "snippet_text", None))
                 citations.append(Citation(
                     url=src.url,
                     title=src.title or link_text,
                     rank=src.rank,
+                    text_snippet=snippet,
+                    snippet_cited=snippet,
                     metadata={
                         "citation_number": None,
                         "query_index": None,

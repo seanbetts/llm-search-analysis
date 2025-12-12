@@ -368,3 +368,29 @@ class TestInteractionRepository:
     assert citation.snippet_cited == "AI is a field..."
     assert citation.citation_confidence == 0.95
     assert citation.metadata_json == {"citation_id": "1"}
+
+  def test_save_interaction_derives_snippet_from_indices(self, repository):
+    """Snippets should be derived from response_text when indices exist."""
+    snippet = "Derived snippet"
+    response_body = f"Intro text. {snippet} follows with more text."
+    response_id = repository.save(
+      prompt_text="Explain something",
+      provider_name="openai",
+      model_name="gpt-5.1",
+      response_text=response_body,
+      response_time_ms=500,
+      search_queries=[],
+      sources_used=[
+        {
+          "url": "https://example.com/derived",
+          "rank": 1,
+          "start_index": response_body.index(snippet),
+          "end_index": response_body.index(snippet) + len(snippet),
+        }
+      ],
+      raw_response={},
+    )
+
+    stored = repository.get_by_id(response_id)
+    assert stored is not None
+    assert stored.sources_used[0].snippet_cited == snippet

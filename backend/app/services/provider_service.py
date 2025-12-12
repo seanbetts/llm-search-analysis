@@ -90,16 +90,14 @@ class ProviderService:
         "query_reformulations": query.query_reformulations,
       })
 
-    strip_snippets = provider_response.provider == "google"
-
     citations_dict = []
     for citation in provider_response.citations:
       citations_dict.append({
         "url": citation.url,
         "title": citation.title,
         "rank": citation.rank,
-        "text_snippet": None if strip_snippets else citation.text_snippet,
-        "snippet_cited": None if strip_snippets else citation.snippet_cited,
+        "text_snippet": citation.text_snippet,
+        "snippet_cited": citation.snippet_cited,
         "start_index": citation.start_index,
         "end_index": citation.end_index,
         "published_at": citation.published_at,
@@ -187,10 +185,10 @@ class ProviderService:
             url=c.url,
             title=c.title,
             rank=c.rank,
-            text_snippet=None if strip_snippets else c.text_snippet,
+            text_snippet=c.text_snippet,
             start_index=c.start_index,
             end_index=c.end_index,
-            snippet_cited=None if strip_snippets else c.snippet_cited,
+            snippet_cited=c.snippet_cited,
             citation_confidence=c.citation_confidence,
             metadata=c.metadata,
             function_tags=c.function_tags,

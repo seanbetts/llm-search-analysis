@@ -193,6 +193,25 @@ class InteractionRepository:
           self.db.flush()
           register_source(response_source_lookup, source.url or "", source.rank, source.id)
 
+      def _clean_snippet(value: Optional[str]) -> Optional[str]:
+        if isinstance(value, str):
+          trimmed = value.strip()
+          return trimmed or None
+        return None
+
+      def _snippet_from_indices(meta: dict) -> Optional[str]:
+        start = meta.get("start_index")
+        end = meta.get("end_index")
+        if (
+          isinstance(start, int)
+          and isinstance(end, int)
+          and isinstance(response_text, str)
+          and 0 <= start < end <= len(response_text)
+        ):
+          snippet = response_text[start:end].strip()
+          return snippet or None
+        return None
+
       # Create sources used (citations)
       for citation_data in sources_used:
         matched_query_source = match_source(
@@ -216,11 +235,17 @@ class InteractionRepository:
         if citation_data.get("published_at"):
           metadata.setdefault("published_at", citation_data.get("published_at"))
 
-        snippet_value = (
+        snippet_value = _clean_snippet(
           citation_data.get("snippet_cited")
           or citation_data.get("snippet_used")
           or citation_data.get("text_snippet")
         )
+
+        if not snippet_value:
+          snippet_value = _snippet_from_indices(metadata)
+
+        if not snippet_value:
+          snippet_value = _clean_snippet(metadata.get("snippet"))
 
         source_used = SourceUsed(
           response_id=response.id,
