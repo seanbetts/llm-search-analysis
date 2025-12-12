@@ -26,6 +26,7 @@ from app.models.database import Response  # noqa: E402
 from app.services.citation_tagging_service import (  # noqa: E402
   CitationTaggingConfig,
   CitationTaggingService,
+  CitationInfluenceService,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -289,11 +290,13 @@ def main() -> None:
       google_api_key=args.google_api_key,
     )
     tagger = CitationTaggingService(cfg)
+    influence = CitationInfluenceService(cfg)
     logger.info("Benchmarking %s (%s)...", spec.model, spec.provider)
 
     for payload in base_payloads:
       citations = copy.deepcopy(payload["citations"])
       tagger.annotate_citations(payload["prompt"], payload["response_text"], citations)
+      influence.annotate_influence(payload["prompt"], payload["response_text"], citations)
       usage_records = tagger.get_last_usage_records()
       for idx, citation in enumerate(citations):
         usage = usage_records[idx] if idx < len(usage_records) else {}
@@ -325,6 +328,7 @@ def main() -> None:
           "output_tokens": output_tokens if output_tokens is not None else "",
           "total_tokens": total_tokens if total_tokens is not None else "",
           "estimated_cost": est_cost,
+          "influence_summary": citation.get("influence_summary") or "",
         }
         all_rows.append(row)
         json_results.append({
@@ -332,6 +336,7 @@ def main() -> None:
           "function_tags": citation.get("function_tags"),
           "stance_tags": citation.get("stance_tags"),
           "provenance_tags": citation.get("provenance_tags"),
+          "influence_summary": citation.get("influence_summary"),
         })
 
   if not all_rows:

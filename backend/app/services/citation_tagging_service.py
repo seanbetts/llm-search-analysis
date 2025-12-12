@@ -52,6 +52,8 @@ PROVENANCE_TAGS = [
 
 PROMPT_TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "prompts" / "citation_tagging_prompt.md"
 PROMPT_TEMPLATE = PROMPT_TEMPLATE_PATH.read_text(encoding="utf-8")
+INFLUENCE_PROMPT_TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "prompts" / "citation_influence_prompt.md"
+INFLUENCE_PROMPT_TEMPLATE = INFLUENCE_PROMPT_TEMPLATE_PATH.read_text(encoding="utf-8")
 STRUCTURED_RESPONSE_SCHEMA = {
   "type": "object",
   "additionalProperties": False,
@@ -84,6 +86,13 @@ def _strip_additional_properties(value: Any) -> Any:
   return value
 
 GOOGLE_RESPONSE_SCHEMA = _strip_additional_properties(STRUCTURED_RESPONSE_SCHEMA)
+INFLUENCE_RESPONSE_SCHEMA = {
+  "type": "object",
+  "properties": {
+    "summary": {"type": "string"},
+  },
+  "required": ["summary"],
+}
 
 
 @dataclass
@@ -214,6 +223,81 @@ class GoogleLLMTagger(BaseLLMTagger):
     return _safe_load_json(text_output or "")
 
 
+class BaseLLMSummarizer:
+  """Abstract base for influence summarizers."""
+
+  def summarize(self, prompt: str) -> str:
+    raise NotImplementedError
+
+
+class NullLLMSummarizer(BaseLLMSummarizer):
+  """Fallback summarizer that returns empty summaries."""
+
+  def summarize(self, prompt: str) -> str:
+    return ""
+
+
+class OpenAIInfluenceSummarizer(BaseLLMSummarizer):
+  """OpenAI-backed influence summarizer."""
+
+  class _SummaryModel(BaseModel):
+    summary: str = Field(default="")
+
+    class Config:
+      extra = "forbid"
+
+  def __init__(self, api_key: str, model: str, temperature: float):
+    self.client = OpenAI(api_key=api_key)
+    self.model = model
+    self.temperature = temperature
+
+  def summarize(self, prompt: str) -> str:
+    completion = self.client.responses.parse(  # type: ignore[arg-type]
+      model=self.model,
+      temperature=self.temperature,
+      input=[
+        {"role": "system", "content": "You produce concise single-sentence summaries."},
+        {"role": "user", "content": prompt},
+      ],
+      text_format=self._SummaryModel,
+    )
+    parsed = getattr(completion, "output_parsed", None)
+    if parsed and parsed.summary:
+      return parsed.summary.strip()
+    text = completion.output_text[0] if completion.output_text else ""
+    return text.strip()
+
+
+class GoogleInfluenceSummarizer(BaseLLMSummarizer):
+  """Google-backed influence summarizer."""
+
+  def __init__(self, api_key: str, model: str, temperature: float):
+    self.client = GoogleClient(api_key=api_key)
+    self.model = model
+    self.temperature = temperature
+
+  def summarize(self, prompt: str) -> str:
+    config = GenerateContentConfig(
+      temperature=self.temperature,
+      response_mime_type="application/json",
+      response_schema=INFLUENCE_RESPONSE_SCHEMA,
+    )
+    response = self.client.models.generate_content(
+      model=self.model,
+      contents=prompt,
+      config=config,
+    )
+    text_output = getattr(response, "text", None) or getattr(response, "output_text", None)
+    if isinstance(text_output, list):
+      text_output = text_output[0]
+    data = _safe_load_json(text_output or "")
+    if isinstance(data, dict):
+      summary = data.get("summary")
+      if isinstance(summary, str):
+        return summary.strip()
+    return (text_output or "").strip()
+
+
 class CitationTaggingService:
   """High-level service that orchestrates citation tagging."""
 
@@ -278,6 +362,7 @@ class CitationTaggingService:
         self._last_usage_records.append({})
 
     return citations
+
 
   def get_last_usage_records(self) -> List[Dict[str, Any]]:
     """Return usage metadata collected during the previous annotate call."""
@@ -388,6 +473,16 @@ def _extract_claim_span(response_text: str, citation: Dict[str, Any]) -> str:
   if isinstance(start, int) and isinstance(end, int):
     if 0 <= start < end <= len(response_text):
       return response_text[start:end]
+  snippet = (
+    (citation.get("snippet_cited") or "")
+    or (citation.get("snippet_used") or "")
+    or (citation.get("text_snippet") or "")
+  ).strip()
+  if snippet:
+    idx = (response_text or "").find(snippet)
+    if idx != -1:
+      return response_text[idx : idx + len(snippet)]
+    return snippet
   return ""
 
 
@@ -422,6 +517,106 @@ def _build_prompt_text(payload: Dict[str, Any]) -> str:
     citation_ref_type=citation.get("ref_type", ""),
     citation_published_at=citation.get("published_at", ""),
   )
+
+
+def _build_influence_prompt(payload: Dict[str, Any]) -> str:
+  citation = payload["citation"]
+  return INFLUENCE_PROMPT_TEMPLATE.format(
+    prompt=payload["prompt"],
+    response_text=payload["response_text"],
+    claim_span=payload["claim_span"],
+    citation_url=citation.get("url", ""),
+    citation_title=citation.get("title", ""),
+    citation_domain=citation.get("domain", ""),
+    citation_rank=citation.get("rank", ""),
+    citation_snippet=citation.get("snippet", ""),
+    citation_ref_type=citation.get("ref_type", ""),
+    citation_published_at=citation.get("published_at", ""),
+    function_tags=payload.get("function_tags", ""),
+    stance_tags=payload.get("stance_tags", ""),
+    provenance_tags=payload.get("provenance_tags", ""),
+  )
+
+
+class CitationInfluenceService:
+  """Generates short influence summaries for citations."""
+
+  def __init__(self, config: CitationTaggingConfig):
+    self.config = config
+    self._summarizer = self._build_summarizer(config)
+
+  def _build_summarizer(self, config: CitationTaggingConfig) -> BaseLLMSummarizer:
+    if not config.enabled:
+      return NullLLMSummarizer()
+    provider = (config.provider or "").lower()
+    if provider == "openai":
+      if not config.openai_api_key:
+        return NullLLMSummarizer()
+      return OpenAIInfluenceSummarizer(config.openai_api_key, config.model, config.temperature)
+    if provider == "google":
+      if not config.google_api_key:
+        return NullLLMSummarizer()
+      return GoogleInfluenceSummarizer(config.google_api_key, config.model, config.temperature)
+    return NullLLMSummarizer()
+
+  def annotate_influence(
+    self,
+    prompt: str,
+    response_text: str,
+    citations: List[dict],
+  ) -> List[dict]:
+    if not citations:
+      return citations
+    for citation in citations:
+      payload = self._build_payload(prompt, response_text, citation)
+      if not payload:
+        citation["influence_summary"] = ""
+        continue
+      prompt_str = _build_influence_prompt(payload)
+      try:
+        summary = self._summarizer.summarize(prompt_str)
+      except Exception:
+        logger.exception("Influence summarization failed; defaulting to empty summary")
+        summary = ""
+      citation["influence_summary"] = summary
+    return citations
+
+  def _build_payload(
+    self,
+    prompt: str,
+    response_text: str,
+    citation: Dict[str, Any],
+  ) -> Optional[Dict[str, Any]]:
+    claim_span = _extract_claim_span(response_text or "", citation)
+    if not claim_span:
+      return None
+    metadata = citation.get("metadata") or {}
+    ref_info = metadata.get("ref_id") or {}
+    function_tags = citation.get("function_tags") or []
+    stance_tags = citation.get("stance_tags") or []
+    provenance_tags = citation.get("provenance_tags") or []
+    return {
+      "prompt": prompt or "",
+      "response_text": response_text or "",
+      "claim_span": claim_span,
+      "citation": {
+        "url": citation.get("url"),
+        "title": citation.get("title"),
+        "rank": citation.get("rank"),
+        "snippet": (
+          citation.get("snippet_cited")
+          or citation.get("snippet_used")
+          or citation.get("text_snippet")
+          or ""
+        ),
+        "domain": citation.get("domain"),
+        "ref_type": ref_info.get("ref_type"),
+        "published_at": metadata.get("published_at"),
+      },
+      "function_tags": ", ".join(function_tags),
+      "stance_tags": ", ".join(stance_tags),
+      "provenance_tags": ", ".join(provenance_tags),
+    }
 
 
 _SYSTEM_PROMPT = (
