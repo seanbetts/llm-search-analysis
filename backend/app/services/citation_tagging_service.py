@@ -72,6 +72,19 @@ STRUCTURED_RESPONSE_SCHEMA = {
   "required": ["function_tags", "stance_tags", "provenance_tags"],
 }
 
+def _strip_additional_properties(value: Any) -> Any:
+  if isinstance(value, dict):
+    return {
+      key: _strip_additional_properties(subvalue)
+      for key, subvalue in value.items()
+      if key != "additionalProperties"
+    }
+  if isinstance(value, list):
+    return [_strip_additional_properties(item) for item in value]
+  return value
+
+GOOGLE_RESPONSE_SCHEMA = _strip_additional_properties(STRUCTURED_RESPONSE_SCHEMA)
+
 
 @dataclass
 class CitationTaggingConfig:
@@ -176,7 +189,7 @@ class GoogleLLMTagger(BaseLLMTagger):
     config = GenerateContentConfig(
       temperature=self.temperature,
       response_mime_type="application/json",
-      response_schema=STRUCTURED_RESPONSE_SCHEMA,
+      response_schema=GOOGLE_RESPONSE_SCHEMA,
     )
     response = self.client.models.generate_content(
       model=self.model,
