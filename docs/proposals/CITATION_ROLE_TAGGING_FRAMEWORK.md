@@ -198,6 +198,27 @@ To integrate this framework into the current stack we focus on web captures (net
 1. Schema update + migration (add JSON columns on `sources_used`).
 2. Provider/service contract updates to carry tag arrays.
 3. LLM-driven tagging pipeline (web-only) plus a retrofit script and evaluation run on existing records.
+
+## 8. Benchmarking & Model Selection
+
+To pick a production tagger we benchmarked six models (OpenAI GPT‑5.1 / GPT‑5-mini / GPT‑5-nano and Gemini 2.5 Pro / Flash / Flash-Lite) against a fixed dataset of 20 API responses (129 citations). Each run produced:
+- Tag quality metrics (coverage of function, stance, provenance tags).
+- Influence summaries (single sentence explaining how the source shaped the claim).
+- Token usage and estimated cost per citation.
+
+**Findings**
+- GPT‑5.1 and Gemini 2.5 Pro delivered the richest tagging (≈1.9 function tags per citation) but cost ~$0.0026–$0.0033 per citation.
+- Gemini 2.5 Flash matched tag accuracy while cutting cost to ~$0.00074 per citation.
+- Gemini 2.5 Flash-Lite was ultra-cheap (~$0.0002) but occasionally misclassified direct evidence as “background.”
+- GPT‑5-mini tagged every citation with solid accuracy (avg 1.58 function tags, consistent provenance) and produced clear influence summaries, at ~$0.00061 per citation.
+- GPT‑5-nano was the cheapest (~$0.00016) but often dropped provenance tags and produced simplistic function tags.
+
+**Decision**
+- Adopt **GPT‑5-mini** as the default citation tagger. It is ~17.5% cheaper than Gemini 2.5 Flash while maintaining consistent quality across tags and summaries.
+- Reserve GPT‑5.1 or Gemini 2.5 Pro for premium audits where maximum tagging richness is required.
+- Keep Gemini 2.5 Flash(-Lite) as backup options if we need cost-sensitive alternatives or non-OpenAI providers.
+
+The benchmarking artefacts (CSV/JSON per model) are stored in `data/bench_<model>.{csv,json}` and can be rerun via `scripts/run_citation_tagging_benchmark.py --response-data data/citation_benchmark_responses.json`.
 4. API/client changes so tags appear in the UI and data exports.
 
 This staged approach delivers immediate visibility for web analyses while keeping the door open to expand tagging quality over time.
