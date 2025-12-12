@@ -60,16 +60,22 @@ def _create_session() -> Session:
   return SessionLocal()
 
 
-def _load_responses(session: Session, limit: int, offset: int) -> List[Response]:
+def _load_responses(
+  session: Session,
+  limit: int,
+  offset: int,
+  response_ids: Optional[List[int]] = None,
+) -> List[Response]:
   query = (
     session.query(Response)
-    .filter(Response.data_source == "web")
     .options(
       joinedload(Response.sources_used),
       joinedload(Response.interaction),
     )
     .order_by(Response.created_at.desc())
   )
+  if response_ids:
+    query = query.filter(Response.id.in_(response_ids))
   if offset:
     query = query.offset(offset)
   if limit:
@@ -80,12 +86,15 @@ def _load_responses(session: Session, limit: int, offset: int) -> List[Response]
 def _build_citation_dicts(response: Response) -> List[dict]:
   citations = []
   for citation in response.sources_used or []:
+    snippet = (citation.snippet_cited or "").strip() if citation.snippet_cited else ""
+    if not snippet:
+      continue
     citations.append({
       "url": citation.url,
       "title": citation.title,
       "rank": citation.rank,
-      "text_snippet": citation.snippet_cited,
-      "snippet_cited": citation.snippet_cited,
+      "text_snippet": snippet,
+      "snippet_cited": snippet,
       "start_index": (citation.metadata_json or {}).get("start_index"),
       "end_index": (citation.metadata_json or {}).get("end_index"),
       "metadata": citation.metadata_json or {},
@@ -138,6 +147,13 @@ def main() -> None:
   )
   parser.add_argument("--limit", type=int, default=0, help="Number of responses to tag (0 = all)")
   parser.add_argument("--offset", type=int, default=0, help="Offset into recent web captures")
+  parser.add_argument(
+    "--response-id",
+    action="append",
+    type=int,
+    dest="response_ids",
+    help="Limit benchmarking to one or more specific response IDs. Repeat flag to add more.",
+  )
   parser.add_argument("--openai-api-key", default=settings.OPENAI_API_KEY, help="Override OpenAI API key")
   parser.add_argument("--google-api-key", default=settings.GOOGLE_API_KEY, help="Override Google API key")
   parser.add_argument(
@@ -151,31 +167,44 @@ def main() -> None:
 
   model_specs = _parse_model_args(args.models)
   session = _create_session()
-  responses = _load_responses(session, args.limit, args.offset)
-  logger.info("Loaded %s web responses for benchmarking", len(responses))
+  responses = _load_responses(session, args.limit, args.offset, response_ids=args.response_ids)
+  extra_log = f" response_ids={args.response_ids}" if args.response_ids else ""
+  logger.info("Loaded %s responses for benchmarking%s", len(responses), extra_log)
+  if not responses:
+    logger.warning("No responses matched the provided filters.")
+    return
 
   base_payloads = []
   for response in responses:
     prompt_text = response.interaction.prompt_text if response.interaction else ""
     response_text = response.response_text or ""
-    base_payloads.append(
-      {
-        "response_id": response.id,
-        "prompt": prompt_text,
-        "response_text": response_text,
-        "citations": _build_citation_dicts(response),
-        "created_at": response.created_at.isoformat() if response.created_at else "",
-        "provider": (
-          response.interaction.provider.name
-          if response.interaction and response.interaction.provider
-          else ""
-        ),
-        "model": response.interaction.model_name if response.interaction else "",
-      }
+    citations = _build_citation_dicts(response)
+    if not citations:
+      continue
+    base_payloads.append({
+      "response_id": response.id,
+      "prompt": prompt_text,
+      "response_text": response_text,
+      "citations": citations,
+      "created_at": response.created_at.isoformat() if response.created_at else "",
+      "provider": (
+        response.interaction.provider.name
+        if response.interaction and response.interaction.provider
+        else ""
+      ),
+      "model": response.interaction.model_name if response.interaction else "",
+    })
+
+  if not base_payloads:
+    logger.warning(
+      "No citations with snippet_cited values were found for the selected responses. "
+      "Ensure snippets exist or adjust your filters (e.g., --data-source all or --response-id ...)."
     )
+    return
 
   all_rows = []
   json_results = []
+  total_tagged_assignments = 0
   for spec in model_specs:
     if spec.provider.lower() == "openai" and not args.openai_api_key:
       logger.warning("Skipping %s because OPENAI_API_KEY is not set", spec.model)
@@ -199,6 +228,8 @@ def main() -> None:
       citations = copy.deepcopy(payload["citations"])
       tagger.annotate_citations(payload["prompt"], payload["response_text"], citations)
       for citation in citations:
+        if citation.get("function_tags") or citation.get("stance_tags") or citation.get("provenance_tags"):
+          total_tagged_assignments += len(citation.get("function_tags") or []) + len(citation.get("stance_tags") or []) + len(citation.get("provenance_tags") or [])
         row = {
           "benchmark_provider": spec.provider,
           "benchmark_model": spec.model,
@@ -223,7 +254,14 @@ def main() -> None:
         })
 
   if not all_rows:
-    logger.warning("No benchmark rows generated (missing API keys or models?).")
+    logger.warning("No benchmark rows generated (missing API keys, models, or taggable citations?).")
+    return
+
+  if total_tagged_assignments == 0:
+    logger.warning(
+      "Citations were processed but no tags were produced; skipping CSV/JSON output. "
+      "Check LLM API responses or adjust configuration."
+    )
     return
 
   args.csv_output.parent.mkdir(parents=True, exist_ok=True)
