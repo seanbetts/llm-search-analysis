@@ -226,8 +226,17 @@ def backfill_web_citation_snippets(dry_run: bool = False) -> None:
           new_snippet = snippets[0]
 
           if source.snippet_cited != new_snippet:
+            logger.debug(
+              "Response %s: Updating snippet for citation [%s], source %s",
+              response.id, citation_num, source.id
+            )
             source.snippet_cited = new_snippet
             changed = True
+        else:
+          logger.debug(
+            "Response %s: No snippets found for citation [%s]",
+            response.id, citation_num
+          )
 
         if changed:
           updated_sources += 1

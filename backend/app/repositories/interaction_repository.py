@@ -2,6 +2,8 @@
 
 import json
 import logging
+import re
+from collections import defaultdict
 from datetime import datetime
 from typing import Any, List, Optional, Tuple
 
@@ -20,6 +22,100 @@ from app.models.database import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _normalize_url(url: str) -> str:
+  """Normalize URL for matching by removing query params and trailing slash."""
+  if not isinstance(url, str):
+    return ""
+  base_url = url.split('?')[0]
+  base_url = base_url.rstrip('/')
+  return base_url
+
+
+def _parse_footnote_definitions(text: str) -> dict:
+  """
+  Parse footnote definitions from response text.
+  Format: [N]: URL "Title"
+  Returns: dict mapping citation_number -> {url, title}
+  """
+  footnote_pattern = r'\[(\d+)\]:\s+(https?://[^\s]+)(?:\s+"([^"]+)")?'
+  footnotes = {}
+  for match in re.finditer(footnote_pattern, text):
+    citation_num = int(match.group(1))
+    url = match.group(2)
+    title = match.group(3) if match.group(3) else None
+    footnotes[citation_num] = {'url': url, 'title': title}
+  return footnotes
+
+
+def _extract_snippet_before_citation(text: str, citation_match) -> Optional[str]:
+  """Extract the text snippet before a citation marker."""
+  position = citation_match.start()
+
+  # Get text before citation (up to 300 chars back)
+  start = max(0, position - 300)
+  context = text[start:position]
+
+  # Find boundaries (paragraphs, bullets, sentences)
+  boundaries = []
+
+  if '\n\n' in context:
+    boundaries.append(('para', context.rfind('\n\n')))
+  if '\n* ' in context:
+    boundaries.append(('bullet', context.rfind('\n* ')))
+  if '\n🔹 ' in context:
+    boundaries.append(('bullet', context.rfind('\n🔹 ')))
+  if '\n✅ ' in context:
+    boundaries.append(('bullet', context.rfind('\n✅ ')))
+  if '\n❌ ' in context:
+    boundaries.append(('bullet', context.rfind('\n❌ ')))
+  if '\n⚠️ ' in context:
+    boundaries.append(('bullet', context.rfind('\n⚠️ ')))
+
+  sentence_boundary = context.rfind('. ')
+  if sentence_boundary != -1 and sentence_boundary < len(context) - 20:
+    boundaries.append(('sentence', sentence_boundary))
+
+  if boundaries:
+    boundaries.sort(key=lambda x: x[1])
+    boundary_type, boundary_pos = boundaries[-1]
+    context = context[boundary_pos:]
+
+  # Clean up
+  context = context.strip()
+  context = re.sub(r'^[*•🔹✅❌⚠️\n\s-]+', '', context)
+  context = re.sub(r'\*\*', '', context)
+  context = re.sub(r'\*', '', context)
+  context = re.sub(r':\s*$', '', context).strip()
+  context = re.sub(r'^\.\s*', '', context).strip()
+
+  return context if len(context) > 10 else None
+
+
+def _extract_snippets_from_citations(text: str) -> dict:
+  """
+  Extract all snippets for each citation number from inline citations.
+  Returns: Dict mapping citation_number -> list of snippet texts
+  """
+  # Find footnote start to avoid matching them
+  footnote_start = text.find('\n[1]: https://')
+  inline_text = text[:footnote_start] if footnote_start != -1 else text
+
+  # Find all inline citations with pattern ([Source Name][N])
+  all_citations = list(re.finditer(r'\(\[([^\]]+)\]\[(\d+)\]\)', inline_text))
+
+  snippets_by_number = defaultdict(list)
+
+  for match in all_citations:
+    citation_num = int(match.group(2))
+    snippet = _extract_snippet_before_citation(text, match)
+
+    if snippet:
+      snippets_by_number[citation_num].append(snippet)
+
+  return dict(snippets_by_number)
+
 
 # Provider display name mapping
 PROVIDER_DISPLAY_NAMES = {
@@ -231,6 +327,21 @@ class InteractionRepository:
             return snippet
         return None
 
+      # Parse footnotes once for web/network_log responses
+      footnote_mapping = {}
+      snippet_mapping = {}
+
+      if response.data_source in ("web", "network_log") and response_text:
+        footnotes = _parse_footnote_definitions(response_text)
+        if footnotes:
+          snippets_by_number = _extract_snippets_from_citations(response_text)
+
+          # Build URL -> citation_number mapping
+          for citation_num, footnote_data in footnotes.items():
+            url_norm = _normalize_url(footnote_data['url'])
+            footnote_mapping[url_norm] = citation_num
+            snippet_mapping[citation_num] = snippets_by_number.get(citation_num, [])
+
       # Create sources used (citations)
       for citation_data in sources_used:
         matched_query_source = match_source(
@@ -254,17 +365,28 @@ class InteractionRepository:
         if citation_data.get("published_at"):
           metadata.setdefault("published_at", citation_data.get("published_at"))
 
-        snippet_value = _clean_snippet(
-          citation_data.get("snippet_cited")
-          or citation_data.get("snippet_used")
-          or citation_data.get("text_snippet")
-        )
+        # For web/network_log, always extract from footnotes (don't use provided snippets)
+        if response.data_source in ("web", "network_log"):
+          snippet_value = None
+          if footnote_mapping:
+            url_norm = _normalize_url(citation_data.get("url", ""))
 
-        if response.data_source not in ("web", "network_log"):
+            if url_norm in footnote_mapping:
+              citation_num = footnote_mapping[url_norm]
+              metadata["citation_number"] = citation_num
+
+              snippets = snippet_mapping.get(citation_num, [])
+              if snippets:
+                snippet_value = snippets[0]
+        else:
+          # For API mode: use provided snippet or extract from indices
+          snippet_value = _clean_snippet(
+            citation_data.get("snippet_cited")
+            or citation_data.get("snippet_used")
+            or citation_data.get("text_snippet")
+          )
           if not snippet_value:
             snippet_value = _snippet_from_indices(metadata)
-        else:
-          snippet_value = None
 
         source_used = SourceUsed(
           response_id=response.id,
