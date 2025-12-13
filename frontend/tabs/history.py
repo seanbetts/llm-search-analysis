@@ -265,6 +265,7 @@ def tab_history():
       st.multiselect(
         "Analysis type",
         options=analysis_filter_options,
+        default=st.session_state.history_analysis_filter,
         key="history_analysis_filter"
       )
       analysis_selection = st.session_state.history_analysis_filter or analysis_filter_options
@@ -273,6 +274,7 @@ def tab_history():
       selected_providers = st.multiselect(
         "Provider",
         options=provider_options,
+        default=st.session_state.history_provider_filter,
         key="history_provider_filter"
       )
       selected_providers = selected_providers or provider_options
@@ -281,6 +283,7 @@ def tab_history():
       selected_model_displays = st.multiselect(
         "Model",
         options=model_display_labels,
+        default=st.session_state.history_model_filter,
         key="history_model_filter"
       )
       selected_model_displays = selected_model_displays or model_display_labels
