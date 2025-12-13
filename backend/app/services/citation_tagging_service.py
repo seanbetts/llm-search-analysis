@@ -225,6 +225,7 @@ class BaseLLMSummarizer:
   """Abstract base for influence summarizers."""
 
   def summarize(self, prompt: str) -> str:
+    """Return a concise influence summary for the provided prompt."""
     raise NotImplementedError
 
 
@@ -232,6 +233,7 @@ class NullLLMSummarizer(BaseLLMSummarizer):
   """Fallback summarizer that returns empty summaries."""
 
   def summarize(self, prompt: str) -> str:
+    """Always return an empty summary when summarization is disabled."""
     return ""
 
 
@@ -239,6 +241,8 @@ class OpenAIInfluenceSummarizer(BaseLLMSummarizer):
   """OpenAI-backed influence summarizer."""
 
   class _SummaryModel(BaseModel):
+    """Structured schema for influence summary responses."""
+
     summary: str = Field(default="")
 
     model_config = ConfigDict(extra="forbid", json_schema_extra={"additionalProperties": False})
@@ -249,6 +253,7 @@ class OpenAIInfluenceSummarizer(BaseLLMSummarizer):
     self.temperature = temperature
 
   def summarize(self, prompt: str) -> str:
+    """Call the OpenAI Responses API and return the parsed summary string."""
     completion = self.client.responses.parse(  # type: ignore[arg-type]
       model=self.model,
       input=[
@@ -273,6 +278,7 @@ class GoogleInfluenceSummarizer(BaseLLMSummarizer):
     self.temperature = temperature
 
   def summarize(self, prompt: str) -> str:
+    """Call Google Gemini and return a structured influence summary."""
     config = GenerateContentConfig(
       temperature=self.temperature,
       response_mime_type="application/json",
@@ -561,6 +567,7 @@ class CitationInfluenceService:
     response_text: str,
     citations: List[dict],
   ) -> List[dict]:
+    """Populate each citation with a concise influence summary."""
     if not citations:
       return citations
     for citation in citations:

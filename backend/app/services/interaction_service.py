@@ -296,6 +296,7 @@ class InteractionService:
     citations = []
     for c in (response.sources_used or []):
       metadata = c.metadata_json or {}
+      influence_summary = c.influence_summary if isinstance(c.influence_summary, str) else None
       citations.append(
         CitationSchema(
           url=c.url,
@@ -310,6 +311,7 @@ class InteractionService:
           function_tags=c.function_tags or [],
           stance_tags=c.stance_tags or [],
           provenance_tags=c.provenance_tags or [],
+          influence_summary=influence_summary,
         )
       )
 

@@ -177,6 +177,7 @@ class SourceUsed(Base):
   function_tags = Column(JSON, default=list, nullable=False)
   stance_tags = Column(JSON, default=list, nullable=False)
   provenance_tags = Column(JSON, default=list, nullable=False)
+  influence_summary = Column(Text)
 
   __table_args__ = (
     Index("ix_sources_used_response_id", "response_id"),

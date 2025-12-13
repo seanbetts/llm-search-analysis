@@ -121,7 +121,7 @@ class Settings(BaseSettings):
     description="LLM provider used for citation tagging (openai or google)"
   )
   CITATION_TAGGER_MODEL: str = Field(
-    default="gpt-4o-mini",
+    default="gpt-5-mini",
     description="LLM model identifier used for citation tagging"
   )
   CITATION_TAGGER_TEMPERATURE: float = Field(

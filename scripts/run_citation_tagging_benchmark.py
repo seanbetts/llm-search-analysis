@@ -9,6 +9,7 @@ import csv
 import json
 import logging
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Optional
@@ -222,12 +223,21 @@ def main() -> None:
     help="CSV path for consolidated results",
   )
   parser.add_argument("--json-output", type=Path, help="Optional path to write JSON results")
+  parser.add_argument(
+    "--no-context",
+    action="store_true",
+    help="Exclude prompt and response text when building benchmarking payloads.",
+  )
   args = parser.parse_args()
 
   model_specs = _parse_model_args(args.models)
   base_payloads: List[dict] = []
   if args.response_data:
     base_payloads = _load_payloads_from_json(args.response_data, args.limit, args.offset)
+    if args.no_context:
+      for payload in base_payloads:
+        payload["prompt"] = ""
+        payload["response_text"] = ""
     logger.info("Loaded %s precomputed payloads from %s", len(base_payloads), args.response_data)
   else:
     response_ids = args.response_ids
@@ -245,6 +255,9 @@ def main() -> None:
     for response in responses:
       prompt_text = response.interaction.prompt_text if response.interaction else ""
       response_text = response.response_text or ""
+      if args.no_context:
+        prompt_text = ""
+        response_text = ""
       citations = _build_citation_dicts(response)
       if not citations:
         continue
@@ -295,8 +308,13 @@ def main() -> None:
 
     for payload in base_payloads:
       citations = copy.deepcopy(payload["citations"])
+      start_tag = time.perf_counter()
       tagger.annotate_citations(payload["prompt"], payload["response_text"], citations)
+      tag_elapsed = time.perf_counter() - start_tag
+      start_influence = time.perf_counter()
       influence.annotate_influence(payload["prompt"], payload["response_text"], citations)
+      influence_elapsed = time.perf_counter() - start_influence
+      total_elapsed = tag_elapsed + influence_elapsed
       usage_records = tagger.get_last_usage_records()
       for idx, citation in enumerate(citations):
         usage = usage_records[idx] if idx < len(usage_records) else {}
@@ -329,6 +347,7 @@ def main() -> None:
           "total_tokens": total_tokens if total_tokens is not None else "",
           "estimated_cost": est_cost,
           "influence_summary": citation.get("influence_summary") or "",
+          "response_time_s": f"{total_elapsed:.3f}",
         }
         all_rows.append(row)
         json_results.append({

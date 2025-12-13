@@ -56,6 +56,7 @@ class Citation:
   function_tags: List[str] = field(default_factory=list)
   stance_tags: List[str] = field(default_factory=list)
   provenance_tags: List[str] = field(default_factory=list)
+  influence_summary: Optional[str] = None
 
 
 @dataclass

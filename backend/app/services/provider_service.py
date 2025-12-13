@@ -106,6 +106,7 @@ class ProviderService:
         "function_tags": citation.function_tags,
         "stance_tags": citation.stance_tags,
         "provenance_tags": citation.provenance_tags,
+        "influence_summary": citation.influence_summary,
       })
 
     # Convert top-level sources (for network_log mode)
@@ -194,6 +195,7 @@ class ProviderService:
             function_tags=c.function_tags,
             stance_tags=c.stance_tags,
             provenance_tags=c.provenance_tags,
+            influence_summary=c.influence_summary,
           )
         )
 

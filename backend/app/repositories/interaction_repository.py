@@ -279,6 +279,7 @@ class InteractionRepository:
           function_tags=citation_data.get("function_tags") or [],
           stance_tags=citation_data.get("stance_tags") or [],
           provenance_tags=citation_data.get("provenance_tags") or [],
+          influence_summary=citation_data.get("influence_summary"),
         )
         self.db.add(source_used)
 

@@ -141,6 +141,10 @@ class Citation(BaseModel):
     default_factory=_empty_tag_list,
     description="Provenance annotations derived from citation metadata"
   )
+  influence_summary: Optional[str] = Field(
+    None,
+    description="Short summary describing how the source influenced the claim"
+  )
 
   model_config = {
     "json_schema_extra": {
