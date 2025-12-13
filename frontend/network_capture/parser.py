@@ -222,11 +222,21 @@ class NetworkLogParser:
             # Build sources independently (associate with response, not individual queries)
             safe_url_set = set(safe_urls)
 
+            def strip_html_tags(text: str) -> str:
+                """Remove HTML tags from text."""
+                if not isinstance(text, str):
+                    return text
+                # Remove HTML tags using regex
+                return re.sub(r'<[^>]+>', '', text).strip()
+
             def to_iso(ts: Any) -> str:
                 """Convert timestamp-like values into ISO-8601 strings."""
                 try:
                     if ts is None:
                         return None
+                    # Strip HTML tags if ts is a string
+                    if isinstance(ts, str):
+                        ts = strip_html_tags(ts)
                     ts_float = float(ts)
                     return datetime.fromtimestamp(ts_float, tz=timezone.utc).isoformat()
                 except Exception:
@@ -320,8 +330,8 @@ class NetworkLogParser:
                         continue
                     seen_urls.add(clean)
 
-                    title = entry.get('title', '')
-                    snippet = entry.get('snippet', '')
+                    title = strip_html_tags(entry.get('title', ''))
+                    snippet = strip_html_tags(entry.get('snippet', ''))
                     pub_date_iso = to_iso(entry.get('pub_date'))
                     ref_id = entry.get('ref_id', {})
 
