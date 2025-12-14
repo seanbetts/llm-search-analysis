@@ -72,3 +72,7 @@ Instructions for coding agents (and humans) working in this repository.
 ## Handoff / Next Step
 
 - After finishing a piece of work, always end with a clear **next action** for the user (e.g., “run X”, “review Y”, “I can also do Z if you want”).
+
+## Pre-Change Plan
+
+- Before implementing any code or doc changes, briefly tell the user what you plan to do (a short checklist is fine), then proceed.
