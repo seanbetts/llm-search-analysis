@@ -447,8 +447,14 @@ class NetworkLogParser:
             normalized = snippet.strip()
             return normalized or None
 
+        def strip_html(text: str) -> str:
+            """Remove HTML tags from text."""
+            if not isinstance(text, str):
+                return text
+            return re.sub(r'<[^>]+>', '', text).strip()
+
         for match in re.finditer(ref_def_pattern, response_text, flags=re.MULTILINE):
-            ref_num, url, title = match.group(1), match.group(2), match.group(3) or ""
+            ref_num, url, title = match.group(1), match.group(2), strip_html(match.group(3) or "")
             norm = clean_url(url)
             if norm in seen_norm_urls:
                 continue
@@ -484,7 +490,7 @@ class NetworkLogParser:
         # 2) Inline markdown links: [text](URL) -- ignore image markdown ![...](...)
         inline_pattern = r'(?<!!)\[([^\]]+)\]\((https?://[^\s)]+)\)'
         for match in re.finditer(inline_pattern, response_text):
-            link_text, url = match.group(1), match.group(2)
+            link_text, url = strip_html(match.group(1)), match.group(2)
             norm = clean_url(url)
             if norm in seen_norm_urls:
                 continue
