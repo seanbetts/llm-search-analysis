@@ -266,11 +266,17 @@ class NetworkLogCitation(BaseModel):
   url: str = Field(..., description="Citation URL")
   title: Optional[str] = Field(None, description="Citation title")
   rank: Optional[int] = Field(None, ge=1, description="Rank from search results")
+  text_snippet: Optional[str] = Field(None, description="Text snippet from the citation")
   snippet_cited: Optional[str] = Field(
     None,
     description="Snippet text cited in the model response",
     validation_alias=AliasChoices("snippet_cited", "snippet_used"),
   )
+  citation_confidence: Optional[float] = Field(None, description="Confidence score for this citation")
+  function_tags: Optional[List[str]] = Field(default_factory=list, description="Function tags for the citation")
+  stance_tags: Optional[List[str]] = Field(default_factory=list, description="Stance tags for the citation")
+  provenance_tags: Optional[List[str]] = Field(default_factory=list, description="Provenance tags for the citation")
+  influence_summary: Optional[str] = Field(None, description="Summary of citation's influence on response")
   metadata: Optional[Dict[str, Any]] = Field(
     None,
     description="Additional metadata about the citation"
