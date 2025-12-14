@@ -12,6 +12,7 @@ class ProviderFactory:
   MODEL_PROVIDER_MAP = {
     # OpenAI models
     "gpt-5.1": "openai",
+    "gpt-5.2": "openai",
     "gpt-5-mini": "openai",
     "gpt-5-nano": "openai",
 

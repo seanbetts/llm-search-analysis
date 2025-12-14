@@ -273,9 +273,9 @@ class NetworkLogCitation(BaseModel):
     validation_alias=AliasChoices("snippet_cited", "snippet_used"),
   )
   citation_confidence: Optional[float] = Field(None, description="Confidence score for this citation")
-  function_tags: Optional[List[str]] = Field(default_factory=list, description="Function tags for the citation")
-  stance_tags: Optional[List[str]] = Field(default_factory=list, description="Stance tags for the citation")
-  provenance_tags: Optional[List[str]] = Field(default_factory=list, description="Provenance tags for the citation")
+  function_tags: List[str] = Field(default_factory=list, description="Function tags for the citation")
+  stance_tags: List[str] = Field(default_factory=list, description="Stance tags for the citation")
+  provenance_tags: List[str] = Field(default_factory=list, description="Provenance tags for the citation")
   influence_summary: Optional[str] = Field(None, description="Summary of citation's influence on response")
   metadata: Optional[Dict[str, Any]] = Field(
     None,
