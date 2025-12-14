@@ -230,13 +230,22 @@ class NetworkLogParser:
                 return re.sub(r'<[^>]+>', '', text).strip()
 
             def to_iso(ts: Any) -> str:
-                """Convert timestamp-like values into ISO-8601 strings."""
+                """Convert timestamp-like values into ISO-8601 strings or return cleaned string."""
                 try:
                     if ts is None:
                         return None
                     # Strip HTML tags if ts is a string
                     if isinstance(ts, str):
-                        ts = strip_html_tags(ts)
+                        cleaned = strip_html_tags(ts)
+                        # Try to convert to timestamp
+                        try:
+                            ts_float = float(cleaned)
+                            return datetime.fromtimestamp(ts_float, tz=timezone.utc).isoformat()
+                        except (ValueError, TypeError):
+                            # If conversion fails, return the cleaned string as-is
+                            # (ChatGPT sometimes returns pre-formatted dates)
+                            return cleaned if cleaned else None
+                    # For non-string values, try direct conversion
                     ts_float = float(ts)
                     return datetime.fromtimestamp(ts_float, tz=timezone.utc).isoformat()
                 except Exception:
