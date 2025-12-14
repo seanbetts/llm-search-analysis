@@ -1,5 +1,9 @@
 """Tests for logic helpers in the history tab."""
 
+from __future__ import annotations
+
+from types import SimpleNamespace
+
 from frontend import api_client
 from frontend.tabs import history
 
@@ -97,3 +101,132 @@ def test_fetch_all_interactions_iterates_through_pages(monkeypatch):
   assert aggregated["items"] == [{"interaction_id": 1}, {"interaction_id": 2}]
   assert aggregated["stats"] == {"analyses": 2}
   assert dummy.calls == 2
+
+
+def test_tab_history_does_not_pass_widget_defaults_when_using_session_state(monkeypatch):
+  """Avoid Streamlit warnings by not passing `default=` when `key` is bound to session_state."""
+
+  class _SessionState(dict):
+    def __getattr__(self, item):
+      return self.get(item)
+
+    def __setattr__(self, key, value):
+      self[key] = value
+
+  class _Column:
+    def __enter__(self):
+      return self
+
+    def __exit__(self, exc_type, exc, tb):
+      return False
+
+    def metric(self, *_args, **_kwargs):
+      return None
+
+  class _StreamlitStub:
+    def __init__(self):
+      self.session_state = _SessionState({
+        "api_client": SimpleNamespace(base_url="http://fake"),
+        "history_page": 1,
+        "history_page_size": 10,
+        "history_full_export": None,
+        "history_search_query": "",
+        "history_provider_filter": None,
+        "history_model_filter": None,
+        "history_filter_signature": None,
+        "history_analysis_filter": ["API", "Web"],
+        "history_last_filter": ("API", "Web"),
+      })
+
+    def markdown(self, *_args, **_kwargs):
+      return None
+
+    def info(self, *_args, **_kwargs):
+      return None
+
+    def warning(self, *_args, **_kwargs):
+      return None
+
+    def error(self, *_args, **_kwargs):
+      return None
+
+    def caption(self, *_args, **_kwargs):
+      return None
+
+    def divider(self, *_args, **_kwargs):
+      return None
+
+    def columns(self, spec, **_kwargs):
+      ncols = len(spec) if isinstance(spec, (list, tuple)) else int(spec)
+      return [_Column() for _ in range(ncols)]
+
+    def text_input(self, *_args, **kwargs):
+      # Ensure key is present; Streamlit handles binding automatically.
+      key = kwargs.get("key")
+      if key and hasattr(self.session_state, key) is False:
+        setattr(self.session_state, key, "")
+      return getattr(self.session_state, key, "")
+
+    def multiselect(self, *_args, **kwargs):
+      assert "default" not in kwargs
+      key = kwargs.get("key")
+      if key is None:
+        return []
+      return getattr(self.session_state, key, [])
+
+    def dataframe(self, *_args, **_kwargs):
+      return None
+
+    def selectbox(self, *_args, **_kwargs):
+      return 0
+
+    def download_button(self, *_args, **_kwargs):
+      return None
+
+    def button(self, *_args, **_kwargs):
+      return False
+
+    def rerun(self):
+      raise RuntimeError("rerun should not be triggered in this test")
+
+    def cache_data(self, *args, **kwargs):  # pragma: no cover
+      # Not used directly here (decorator already applied), but keep parity.
+      def decorator(fn):
+        return fn
+
+      return decorator
+
+  st_stub = _StreamlitStub()
+
+  monkeypatch.setattr(history, "st", st_stub)
+
+  def fake_safe_api_call(func, *args, **kwargs):
+    if func is history._fetch_all_interactions:
+      return (
+        {
+          "items": [
+            {
+              "interaction_id": 1,
+              "created_at": "2024-01-01T00:00:00Z",
+              "prompt": "Hello",
+              "provider": "openai",
+              "model": "gpt-5.1",
+              "model_display_name": "GPT-5.1",
+              "search_query_count": 0,
+              "source_count": 0,
+              "citation_count": 0,
+              "average_rank": None,
+              "response_time_ms": None,
+              "extra_links_count": 0,
+              "data_source": "api",
+            }
+          ],
+          "stats": {"analyses": 1},
+        },
+        None,
+      )
+    raise AssertionError(f"Unexpected safe_api_call target: {func}")
+
+  monkeypatch.setattr(history, "safe_api_call", fake_safe_api_call)
+
+  history.tab_history()
