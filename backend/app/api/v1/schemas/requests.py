@@ -295,6 +295,10 @@ class NetworkLogSearchQuery(BaseModel):
   model_config = ConfigDict(extra="forbid")
 
   query: str = Field(..., description="Search query text")
+  timestamp: Optional[str] = Field(
+    default=None,
+    description="Timestamp for the query event (if available)",
+  )
   order_index: Optional[int] = Field(
     default=0,
     ge=0,
