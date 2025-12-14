@@ -41,6 +41,8 @@ def get_model_display_name(model: str) -> str:
         # OpenAI
         'gpt-5.1': 'GPT-5.1',
         'gpt-5-1': 'GPT-5.1',
+        'gpt-5.2': 'GPT-5.2',
+        'gpt-5-2': 'GPT-5.2',
         'gpt-5-mini': 'GPT-5 Mini',
         'gpt-5-nano': 'GPT-5 Nano',
         # Google

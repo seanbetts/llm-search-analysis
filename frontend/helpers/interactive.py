@@ -66,8 +66,13 @@ def build_web_response(provider_response) -> SimpleNamespace:
     url=c.url,
     title=c.title,
     rank=c.rank,
+    text_snippet=c.text_snippet,
     snippet_cited=c.snippet_cited,
     citation_confidence=c.citation_confidence,
+    function_tags=c.function_tags,
+    stance_tags=c.stance_tags,
+    provenance_tags=c.provenance_tags,
+    influence_summary=c.influence_summary,
     metadata=c.metadata,
   ) for c in provider_response.citations]
 
