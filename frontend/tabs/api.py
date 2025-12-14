@@ -25,6 +25,16 @@ def tab_api():
     st.error("No API keys configured. Please set up your .env file with at least one provider API key.")
     return
 
+  # GPT-5.2 supersedes GPT-5.1 for new API analyses; keep GPT-5.1 in history but hide it here.
+  models = {
+    label: (provider, model_id)
+    for label, (provider, model_id) in models.items()
+    if not (provider == "openai" and model_id == "gpt-5.1")
+  }
+  if not models:
+    st.error("No supported models available for API testing.")
+    return
+
   model_labels = list(models.keys())
   selected_label = st.selectbox(
     "Select Model",
