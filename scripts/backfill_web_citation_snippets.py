@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Backfill snippet_cited for web analyses by parsing response_text footnotes."""
 
+# ruff: noqa: E402
+
 from __future__ import annotations
 
 import argparse
@@ -9,7 +11,7 @@ import re
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BACKEND_PATH = REPO_ROOT / "backend"
@@ -20,7 +22,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, joinedload, sessionmaker
 
 from app.config import settings
-from app.models.database import InteractionModel, Provider, Response, SourceUsed
+from app.models.database import InteractionModel, Provider, Response
 
 logger = logging.getLogger("web_citation_backfill")
 
@@ -46,13 +48,12 @@ def _normalize_url(url: str) -> str:
 
 
 def _parse_footnote_definitions(text: str) -> Dict[int, Dict[str, str]]:
-  """
-  Parse footnote definitions from response text.
+  """Parse footnote definitions from response text.
 
-  Format: [N]: URL "Title"
+  Format: `[N]: URL "Title"`.
 
   Returns:
-    Dict mapping citation_number -> {url, title}
+    Dict mapping citation_number -> {url, title}.
   """
   footnote_pattern = r'\[(\d+)\]:\s+(https?://[^\s]+)(?:\s+"([^"]+)")?'
 
@@ -120,11 +121,10 @@ def _extract_snippet_before_citation(text: str, citation_match: re.Match) -> Opt
 
 
 def _extract_snippets_from_citations(text: str) -> Dict[int, List[str]]:
-  """
-  Extract all snippets for each citation number from inline citations.
+  """Extract all snippets for each citation number from inline citations.
 
   Returns:
-    Dict mapping citation_number -> list of snippet texts
+    Dict mapping citation_number -> list of snippet texts.
   """
   # Find where footnotes start to avoid matching them
   footnote_start = text.find('\n[1]: https://')

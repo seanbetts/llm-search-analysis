@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Backfill missing citation snippets and metadata."""
 
+# ruff: noqa: E402
+
 from __future__ import annotations
 
 import argparse
