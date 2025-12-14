@@ -47,3 +47,22 @@ def test_parse_chatgpt_log_handles_missing_body():
   assert response.response_text == ""
   assert response.sources == []
   assert response.search_queries == []
+
+
+def test_parse_chatgpt_response_text_fallback_extracts_footnote_citations():
+  """Fallback should recover citations/sources from markdown footnotes."""
+  response = NetworkLogParser.parse_chatgpt_response_text_fallback(
+    extracted_response_text=(
+      "Answer text.\n\n"
+      '[1]: https://example.com/a "Example A"\n'
+      '[2]: https://example.com/b "Example B"\n'
+    ),
+    model="chatgpt-free",
+    response_time_ms=500,
+  )
+  assert response.data_source == "web"
+  assert response.search_queries == []
+  assert len(response.citations) == 2
+  assert response.citations[0].url == "https://example.com/a"
+  assert response.citations[0].title == "Example A"
+  assert len(response.sources) == 2

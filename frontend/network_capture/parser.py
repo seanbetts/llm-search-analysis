@@ -26,6 +26,54 @@ class NetworkLogParser:
     """Parser for network log responses from various providers."""
 
     @staticmethod
+    def parse_chatgpt_response_text_fallback(
+        extracted_response_text: str,
+        model: str,
+        response_time_ms: int,
+    ) -> ProviderResponse:
+        """Fallback parser that extracts citations from response markdown only.
+
+        When the ChatGPT streaming/event payload isn't captured reliably, we can still
+        recover citations from the copied markdown footnotes:
+
+          [1]: https://example.com "Title"
+
+        This does not provide search queries or full search results, but it allows
+        the app to persist and display Sources Used/Extra Links for the interaction.
+        """
+        if not extracted_response_text:
+            return NetworkLogParser._create_empty_response("", model, response_time_ms)
+
+        footnote_pattern = r'^\[(\d+)\]:\s+(https?://\S+)(?:\s+"([^"]+)")?\s*$'
+        seen_urls: set[str] = set()
+        citations: List[Citation] = []
+        sources: List[Source] = []
+
+        from urllib.parse import urlparse
+
+        for match in re.finditer(footnote_pattern, extracted_response_text, flags=re.MULTILINE):
+            url = match.group(2)
+            if not url or url in seen_urls:
+                continue
+            seen_urls.add(url)
+            title = match.group(3) if match.group(3) else None
+            domain = urlparse(url).netloc or None
+            citations.append(Citation(url=url, title=title, rank=None))
+            sources.append(Source(url=url, title=title, domain=domain, rank=None))
+
+        return ProviderResponse(
+            response_text=extracted_response_text,
+            search_queries=[],
+            sources=sources,
+            citations=citations,
+            raw_response={"fallback": "response_text_only"},
+            model=model,
+            provider="openai",
+            response_time_ms=response_time_ms,
+            data_source="web",
+        )
+
+    @staticmethod
     def parse_chatgpt_log(
         network_response: Dict[str, Any],
         model: str,
