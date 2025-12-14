@@ -38,6 +38,13 @@ Instructions for coding agents (and humans) working in this repository.
 - **E2E tests are opt-in** and may hit real providers. Only run when explicitly requested:
   - `RUN_E2E=1 pytest backend/tests/test_e2e_persistence.py -v`
 
+### Testing Scope (Avoid Overkill)
+
+- Prefer the **smallest test run** that gives confidence:
+  - First run tests closest to the change (single file/test module, or a focused directory).
+  - Run the full suite (`./scripts/run_all_tests.sh` or `pytest`) when changes affect shared contracts, schemas, providers, services/repos, or multiple call sites.
+- For **truly trivial changes** (comments/docstrings/formatting only), a full `pytest` run is usually unnecessary; run lint/format checks instead.
+
 ### Provider/Schema Contract Hygiene
 
 - Provider payload shapes are treated as contracts. If SDK behavior changes:
