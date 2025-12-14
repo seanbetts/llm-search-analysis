@@ -1,5 +1,6 @@
 """Response formatting and display utilities."""
 
+import html
 import re
 from urllib.parse import urlparse
 
@@ -9,12 +10,13 @@ from frontend.utils import format_pub_date
 
 
 def _format_snippet(snippet):
-  """Return readable snippet text or 'N/A' if not present."""
+  """Return HTML-safe snippet text or 'N/A' if not present."""
   if not snippet:
     return "N/A"
   if isinstance(snippet, (dict, list)):
     return "N/A"
-  return str(snippet)
+  escaped = html.escape(str(snippet))
+  return escaped.replace("\n", "<br/>")
 
 
 def _render_tag_group(label, tags):

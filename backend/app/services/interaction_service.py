@@ -355,7 +355,7 @@ class InteractionService:
     # Convert citations to schemas
     citations = []
     for c in (response.sources_used or []):
-      metadata = c.metadata_json or {}
+      citation_metadata = c.metadata_json or {}
       influence_summary = c.influence_summary if isinstance(c.influence_summary, str) else None
       citations.append(
         CitationSchema(
@@ -363,12 +363,12 @@ class InteractionService:
           title=c.title,
           rank=c.rank,
           text_snippet=c.snippet_cited,
-          start_index=metadata.get("start_index"),
-          end_index=metadata.get("end_index"),
-          published_at=metadata.get("published_at"),
+          start_index=citation_metadata.get("start_index"),
+          end_index=citation_metadata.get("end_index"),
+          published_at=citation_metadata.get("published_at"),
           snippet_cited=c.snippet_cited,
           citation_confidence=c.citation_confidence,
-          metadata=metadata,
+          metadata=citation_metadata,
           function_tags=c.function_tags or [],
           stance_tags=c.stance_tags or [],
           provenance_tags=c.provenance_tags or [],
@@ -431,6 +431,26 @@ class InteractionService:
       formatted_response = response.response_text or ""
     else:
       formatted_response = self._format_response_text_with_citations(response.response_text or "", citations)
+    response_metadata: Dict[str, Any] = {}
+    if response.avg_rank is not None:
+      response_metadata["average_rank"] = response.avg_rank
+    if response.data_source in ("web", "network_log"):
+      citations_total = len(response.sources_used or [])
+      citations_annotated = 0
+      for citation in response.sources_used or []:
+        has_tags = any([
+          bool(citation.function_tags),
+          bool(citation.stance_tags),
+          bool(citation.provenance_tags),
+        ])
+        has_influence = isinstance(citation.influence_summary, str) and bool(citation.influence_summary.strip())
+        if has_tags or has_influence:
+          citations_annotated += 1
+      response_metadata["citation_annotations"] = {
+        "total_citations": citations_total,
+        "annotated_citations": citations_annotated,
+      }
+
     return SendPromptResponse(
       prompt=prompt_text,
       response_text=formatted_response,
@@ -449,7 +469,7 @@ class InteractionService:
       interaction_id=response.id,
       created_at=response.created_at,
       raw_response=response.raw_response_json,
-      metadata={"average_rank": response.avg_rank} if response.avg_rank else None,
+      metadata=response_metadata or None,
     )
 
   def save_network_log_interaction(

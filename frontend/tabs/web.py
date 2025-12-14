@@ -87,6 +87,14 @@ def tab_web():
             if save_error:
               status.update(label="Web analysis complete (save failed)", state="error")
             else:
+              annotations = None
+              if isinstance(saved_payload, dict):
+                annotations = (saved_payload.get("metadata") or {}).get("citation_annotations")
+              if isinstance(annotations, dict):
+                annotated = annotations.get("annotated_citations")
+                total = annotations.get("total_citations")
+                if annotated is not None and total is not None:
+                  status_container.write(f"✅ Citation annotations saved: {annotated}/{total} citations annotated.")
               status.update(label="Web analysis complete", state="complete")
 
         if save_error:
