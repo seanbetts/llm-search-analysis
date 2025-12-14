@@ -111,8 +111,8 @@ def calculate_average_rank(citations: list) -> Optional[float]:
 def get_model_display_name(model: str) -> str:
   """Get formatted display name for a model.
 
-  Maps known model IDs to friendly display names, and formats
-  unknown model IDs by converting hyphens to spaces and capitalizing.
+  Uses the centralized model registry from ProviderFactory as the source of truth.
+  Falls back to formatting for unknown/web-capture models.
 
   Args:
     model: The model identifier
@@ -121,46 +121,33 @@ def get_model_display_name(model: str) -> str:
     Formatted display name
 
   Examples:
-    >>> get_model_display_name("gpt-5-1")
+    >>> get_model_display_name("gpt-5.1")
     'GPT-5.1'
     >>> get_model_display_name("claude-sonnet-4-5-20250929")
     'Claude Sonnet 4.5'
-    >>> get_model_display_name("unknown-model-20250101")
-    'Unknown Model'
+    >>> get_model_display_name("chatgpt-free")
+    'ChatGPT (Free)'
   """
   if not model:
     return ''
 
-  # Model display names mapping
-  model_names = {
-    # Anthropic (multiple format variants for robustness)
-    'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
-    'claude-sonnet-4-5.2-0250929': 'Claude Sonnet 4.5',  # Alternative format with .2
-    'claude-sonnet-4.5-20250929': 'Claude Sonnet 4.5',   # With period separator
-    'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
-    'claude-haiku-4.5-20251001': 'Claude Haiku 4.5',
-    'claude-opus-4-1-20250805': 'Claude Opus 4.1',
-    'claude-opus-4.1-20250805': 'Claude Opus 4.1',
-    # OpenAI
-    'gpt-5.1': 'GPT-5.1',
-    'gpt-5-1': 'GPT-5.1',
-    'gpt-5.2': 'GPT-5.2',
-    'gpt-5-2': 'GPT-5.2',
-    'gpt-5-mini': 'GPT-5 Mini',
-    'gpt-5-nano': 'GPT-5 Nano',
-    # Google
-    'gemini-3-pro-preview': 'Gemini 3 Pro (Preview)',
-    'gemini-2.5-flash': 'Gemini 2.5 Flash',
-    'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite',
-    # Network capture
+  # Try to get from centralized registry first
+  try:
+    from app.services.providers.provider_factory import ProviderFactory
+    display_name = ProviderFactory.get_display_name(model)
+    if display_name:
+      return display_name
+  except ImportError:
+    pass
+
+  # Special cases for web capture / network log models not in registry
+  web_capture_models = {
     'ChatGPT (Free)': 'ChatGPT (Free)',
     'chatgpt-free': 'ChatGPT (Free)',
     'ChatGPT': 'ChatGPT (Free)',
   }
-
-  # Return mapped name if available
-  if model in model_names:
-    return model_names[model]
+  if model in web_capture_models:
+    return web_capture_models[model]
 
   # Fallback: Format unknown model IDs nicely
   # Remove date suffixes (e.g., -20250929 or -0250929)

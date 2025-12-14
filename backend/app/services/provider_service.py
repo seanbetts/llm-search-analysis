@@ -228,6 +228,9 @@ class ProviderService:
   def get_available_providers(self) -> List[ProviderInfo]:
     """Get list of available providers.
 
+    Uses the centralized model registry from ProviderFactory to ensure
+    consistency across the application. No more hardcoded model lists!
+
     Returns:
       List of ProviderInfo objects
     """
@@ -236,44 +239,26 @@ class ProviderService:
     # Check which API keys are configured
     api_keys = self._get_api_keys()
 
-    # OpenAI
-    if api_keys.get("openai"):
-      providers.append(ProviderInfo(
-        name="openai",
-        display_name="OpenAI",
-        is_active=True,
-        supported_models=[
-          "gpt-5.1",
-          "gpt-5-mini",
-          "gpt-5-nano",
-        ]
-      ))
+    # Provider display names
+    provider_display_names = {
+      "openai": "OpenAI",
+      "google": "Google",
+      "anthropic": "Anthropic",
+    }
 
-    # Google
-    if api_keys.get("google"):
-      providers.append(ProviderInfo(
-        name="google",
-        display_name="Google",
-        is_active=True,
-        supported_models=[
-          "gemini-3-pro-preview",
-          "gemini-2.5-flash",
-          "gemini-2.5-flash-lite",
-        ]
-      ))
+    # Build providers from centralized registry
+    for provider_name in ["openai", "google", "anthropic"]:
+      if api_keys.get(provider_name):
+        # Get all models for this provider from registry
+        models = ProviderFactory.get_models_for_provider(provider_name)
+        model_ids = [model.model_id for model in models]
 
-    # Anthropic
-    if api_keys.get("anthropic"):
-      providers.append(ProviderInfo(
-        name="anthropic",
-        display_name="Anthropic",
-        is_active=True,
-        supported_models=[
-          "claude-sonnet-4-5-20250929",
-          "claude-haiku-4-5-20251001",
-          "claude-opus-4-1-20250805",
-        ]
-      ))
+        providers.append(ProviderInfo(
+          name=provider_name,
+          display_name=provider_display_names[provider_name],
+          is_active=True,
+          supported_models=model_ids
+        ))
 
     return providers
 
