@@ -377,7 +377,8 @@ def tab_batch():
             query=q.query,
             sources=[SimpleNamespace(
               url=s.url, title=s.title, domain=s.domain, rank=s.rank,
-              pub_date=s.pub_date, snippet_text=s.snippet_text,
+              pub_date=s.pub_date,
+              search_description=getattr(s, "search_description", None) or getattr(s, "snippet_text", None),
               internal_score=s.internal_score, metadata=s.metadata
             ) for s in q.sources],
             timestamp=q.timestamp,
@@ -393,7 +394,8 @@ def tab_batch():
 
           all_sources = [SimpleNamespace(
             url=s.url, title=s.title, domain=s.domain, rank=s.rank,
-            pub_date=s.pub_date, snippet_text=s.snippet_text,
+            pub_date=s.pub_date,
+            search_description=getattr(s, "search_description", None) or getattr(s, "snippet_text", None),
             internal_score=s.internal_score, metadata=s.metadata
           ) for s in provider_response.sources]
 

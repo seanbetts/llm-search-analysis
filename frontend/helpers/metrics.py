@@ -12,6 +12,34 @@ from types import SimpleNamespace
 from typing import List, Optional
 
 
+def is_known_model_id(model: str) -> bool:
+    """Return True when we have an explicit display mapping for the given model id."""
+    if not model:
+        return False
+    known = {
+        # Anthropic
+        'claude-sonnet-4-5-20250929',
+        'claude-haiku-4-5-20251001',
+        'claude-opus-4-1-20250805',
+        # OpenAI (include dashed variants used by some clients)
+        'gpt-5-1',
+        'gpt-5.1',
+        'gpt-5-2',
+        'gpt-5.2',
+        'gpt-5-mini',
+        'gpt-5-nano',
+        # Google
+        'gemini-3-pro-preview',
+        'gemini-2.5-flash',
+        'gemini-2.5-flash-lite',
+        # Network capture
+        'ChatGPT (Free)',
+        'chatgpt-free',
+        'ChatGPT',
+    }
+    return model in known
+
+
 def get_model_display_name(model: str) -> str:
     """Get formatted display name for a model.
 
@@ -43,7 +71,9 @@ def get_model_display_name(model: str) -> str:
         'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
         'claude-opus-4-1-20250805': 'Claude Opus 4.1',
         # OpenAI
+        'gpt-5-1': 'GPT-5.1',
         'gpt-5.1': 'GPT-5.1',
+        'gpt-5-2': 'GPT-5.2',
         'gpt-5.2': 'GPT-5.2',
         'gpt-5-mini': 'GPT-5 Mini',
         'gpt-5-nano': 'GPT-5 Nano',

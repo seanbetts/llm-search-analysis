@@ -97,7 +97,8 @@ Beyond what APIs provide, network logs can capture:
 - `query_reformulations`: How queries evolved during search
 
 ### Sources
-- `snippet_text`: Actual text extracted by model
+- `search_description`: Search result description/snippet text for the source
+  - Compatibility: API accepts legacy `snippet_text` and returns it as a deprecated alias.
 - `internal_score`: Relevance score assigned by model
 - `metadata`: Full metadata model saw (titles, descriptions, etc.)
 

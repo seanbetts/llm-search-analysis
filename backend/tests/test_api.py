@@ -528,7 +528,7 @@ class TestBatchEndpoints:
               "title": "Example Article",
               "domain": "example.com",
               "rank": 1,
-              "snippet_text": "Example snippet",
+              "search_description": "Example snippet",
               "pub_date": "2024-01-01"
             }
           ]
@@ -540,7 +540,7 @@ class TestBatchEndpoints:
           "title": "Example Article",
           "domain": "example.com",
           "rank": 1,
-          "snippet_text": "Example snippet",
+          "search_description": "Example snippet",
           "pub_date": "2024-01-01"
         }
       ],
@@ -608,7 +608,7 @@ class TestBatchEndpoints:
           "title": "Export Source",
           "domain": "example.com",
           "rank": 1,
-          "snippet_text": "Snippet"
+          "search_description": "Snippet"
         }
       ],
       "citations": [],

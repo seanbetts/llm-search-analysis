@@ -279,8 +279,8 @@ The schema centers on `InteractionModel` (replacing legacy sessions/prompts) wit
   - Indexes: created_at, provider_id, data_source
 - **responses** (id, interaction_id FK CASCADE, response_text, response_time_ms, raw_response_json, data_source, extra_links_count, sources_found, sources_used_count, avg_rank)
 - **search_queries** (id, response_id FK, search_query, order_index, internal_ranking_scores JSON, query_reformulations JSON)
-- **query_sources** (id, search_query_id FK, url, title, domain, rank, snippet_text, metadata_json)
-- **response_sources** (id, response_id FK, url, title, domain, rank, snippet_text, metadata_json) — for network_log mode
+- **query_sources** (id, search_query_id FK, url, title, domain, rank, metadata_json)
+- **response_sources** (id, response_id FK, url, title, domain, rank, search_description, metadata_json) — for network_log mode
 - **sources_used** (id, response_id FK, query_source_id FK nullable, response_source_id FK nullable, url, title, rank, snippet_cited, citation_confidence, metadata_json)
   - CHECK constraint: only one of query_source_id or response_source_id can be set
 

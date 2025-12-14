@@ -274,7 +274,7 @@ class InteractionService:
           domain=s.domain,
           rank=s.rank,
           pub_date=s.pub_date,
-          snippet_text=s.snippet_text,
+          search_description=None,
           internal_score=s.internal_score,
           metadata=s.metadata_json,
         )
@@ -327,7 +327,7 @@ class InteractionService:
           domain=s.domain,
           rank=s.rank,
           pub_date=s.pub_date,
-          snippet_text=s.snippet_text,
+          search_description=s.search_description,
           internal_score=s.internal_score,
           metadata=s.metadata_json,
         )
@@ -344,7 +344,7 @@ class InteractionService:
               domain=s.domain,
               rank=s.rank,
               pub_date=s.pub_date,
-              snippet_text=s.snippet_text,
+              search_description=None,
               internal_score=s.internal_score,
               metadata=s.metadata_json,
             )

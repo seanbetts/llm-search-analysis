@@ -266,7 +266,6 @@ class InteractionRepository:
             domain=source_data.get("domain"),
             rank=source_data.get("rank"),
             pub_date=source_data.get("pub_date"),
-            snippet_text=source_data.get("snippet_text"),
             internal_score=source_data.get("internal_score"),
             metadata_json=source_data.get("metadata"),
           )
@@ -284,7 +283,10 @@ class InteractionRepository:
             domain=source_data.get("domain"),
             rank=source_data.get("rank"),
             pub_date=source_data.get("pub_date"),
-            snippet_text=source_data.get("snippet_text"),
+            search_description=(
+              source_data.get("search_description")
+              or source_data.get("snippet_text")
+            ),
             internal_score=source_data.get("internal_score"),
             metadata_json=source_data.get("metadata"),
           )
@@ -379,14 +381,8 @@ class InteractionRepository:
               if snippets:
                 snippet_value = snippets[0]
         else:
-          # For API mode: use provided snippet or extract from indices
-          snippet_value = _clean_snippet(
-            citation_data.get("snippet_cited")
-            or citation_data.get("snippet_used")
-            or citation_data.get("text_snippet")
-          )
-          if not snippet_value:
-            snippet_value = _snippet_from_indices(metadata)
+          # For API mode: do not persist snippet_cited (indices can be provider-specific and may not align).
+          snippet_value = None
 
         source_used = SourceUsed(
           response_id=response.id,

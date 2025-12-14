@@ -319,7 +319,6 @@ class TestInteractionRepository:
             "url": "https://example.com",
             "title": "AI Research",
             "rank": 1,
-            "snippet_text": "AI is a field...",
             "internal_score": 0.92,
             "metadata": {"extra": "data"}
           }
@@ -360,7 +359,7 @@ class TestInteractionRepository:
     assert search_query.query_reformulations == ["AI", "artificial intelligence"]
 
     source = search_query.sources[0]
-    assert source.snippet_text == "AI is a field..."
+    assert not hasattr(source, "snippet_text")
     assert source.internal_score == 0.92
     assert source.metadata_json == {"extra": "data"}
 

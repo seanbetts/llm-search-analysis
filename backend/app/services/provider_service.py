@@ -76,7 +76,6 @@ class ProviderService:
           "domain": source.domain,
           "rank": source.rank,
           "pub_date": source.pub_date,
-          "snippet_text": source.snippet_text,
           "internal_score": source.internal_score,
           "metadata": source.metadata,
         })
@@ -119,7 +118,7 @@ class ProviderService:
           "domain": source.domain,
           "rank": source.rank,
           "pub_date": source.pub_date,
-          "snippet_text": source.snippet_text,
+          "search_description": source.search_description,
           "internal_score": source.internal_score,
           "metadata": source.metadata,
         })
@@ -161,7 +160,7 @@ class ProviderService:
             domain=s.domain,
             rank=s.rank,
             pub_date=s.pub_date,
-            snippet_text=s.snippet_text,
+            search_description=s.search_description,
             internal_score=s.internal_score,
             metadata=s.metadata,
           )

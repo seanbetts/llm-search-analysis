@@ -410,7 +410,6 @@ class TestRealisticDataScenarios:
             domain=None,  # Missing
             rank=None,  # Missing
             pub_date=None,  # Missing
-            snippet_text=None,
             internal_score=None,
             metadata_json=None,
         )

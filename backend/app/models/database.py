@@ -125,7 +125,6 @@ class QuerySource(Base):
   domain = Column(String(255))
   rank = Column(Integer)
   pub_date = Column(String(50))
-  snippet_text = Column(Text)
   internal_score = Column(Float)
   metadata_json = Column(JSON)
 
@@ -147,7 +146,7 @@ class ResponseSource(Base):
   domain = Column(String(255))
   rank = Column(Integer)
   pub_date = Column(String(50))
-  snippet_text = Column(Text)
+  search_description = Column(Text)
   internal_score = Column(Float)
   metadata_json = Column(JSON)
 

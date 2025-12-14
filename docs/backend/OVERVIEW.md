@@ -233,7 +233,6 @@ query_sources (
   domain TEXT,
   rank INTEGER,
   pub_date TEXT,
-  snippet_text TEXT,
   internal_score REAL,
   metadata_json JSON
 )
@@ -246,7 +245,7 @@ response_sources (
   domain TEXT,
   rank INTEGER,
   pub_date TEXT,
-  snippet_text TEXT,
+  search_description TEXT,
   internal_score REAL,
   metadata_json JSON
 )

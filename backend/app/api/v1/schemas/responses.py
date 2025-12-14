@@ -23,7 +23,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 def _empty_source_list() -> List[Source]:
@@ -56,9 +56,25 @@ class Source(BaseModel):
   pub_date: Optional[str] = Field(None, description="ISO-formatted publication date")
 
   # Network log exclusive fields
-  snippet_text: Optional[str] = Field(None, description="Snippet extracted by model")
+  search_description: Optional[str] = Field(
+    None,
+    description="Search result description/snippet text for the source",
+  )
+  snippet_text: Optional[str] = Field(
+    None,
+    description="Deprecated alias for search_description",
+  )
   internal_score: Optional[float] = Field(None, description="Internal relevance score")
   metadata: Optional[Dict[str, Any]] = Field(None, description="Full metadata from logs")
+
+  @model_validator(mode="after")
+  def _sync_description_alias(self) -> "Source":
+    """Keep `snippet_text` and `search_description` in sync for compatibility."""
+    if self.search_description is None and self.snippet_text is not None:
+      self.search_description = self.snippet_text
+    if self.snippet_text is None and self.search_description is not None:
+      self.snippet_text = self.search_description
+    return self
 
   model_config = {
     "json_schema_extra": {

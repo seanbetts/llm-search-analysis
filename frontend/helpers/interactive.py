@@ -50,7 +50,7 @@ def build_web_response(provider_response) -> SimpleNamespace:
       domain=s.domain,
       rank=s.rank,
       pub_date=s.pub_date,
-      snippet_text=s.snippet_text,
+      search_description=getattr(s, "search_description", None) or getattr(s, "snippet_text", None),
       internal_score=s.internal_score,
       metadata=s.metadata,
     ) for s in query.sources]
@@ -82,7 +82,7 @@ def build_web_response(provider_response) -> SimpleNamespace:
     domain=s.domain,
     rank=s.rank,
     pub_date=s.pub_date,
-    snippet_text=s.snippet_text,
+    search_description=getattr(s, "search_description", None) or getattr(s, "snippet_text", None),
     internal_score=s.internal_score,
     metadata=s.metadata,
   ) for s in provider_response.sources]

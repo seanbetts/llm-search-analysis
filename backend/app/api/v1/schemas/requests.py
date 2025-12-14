@@ -247,7 +247,11 @@ class NetworkLogSource(BaseModel):
   domain: Optional[str] = Field(None, description="Domain name")
   rank: Optional[int] = Field(None, ge=1, description="Position in search results (1-indexed)")
   pub_date: Optional[str] = Field(None, description="ISO timestamp if available")
-  snippet_text: Optional[str] = Field(None, description="Snippet associated with the source")
+  search_description: Optional[str] = Field(
+    None,
+    description="Search result description/snippet text for the source",
+    validation_alias=AliasChoices("search_description", "snippet_text"),
+  )
   internal_score: Optional[float] = Field(None, description="Internal ranking score")
   metadata: Optional[Dict[str, Any]] = Field(None, description="Provider metadata for this source")
 

@@ -5,7 +5,7 @@ import streamlit as st
 from frontend.components.response import display_response
 from frontend.config import Config
 from frontend.helpers.error_handling import safe_api_call
-from frontend.helpers.interactive import build_web_response
+from frontend.helpers.interactive import build_api_response, build_web_response
 from frontend.helpers.serialization import namespace_to_dict
 from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 
@@ -64,7 +64,7 @@ def tab_web():
 
         response_ns = build_web_response(provider_response)
 
-        _, save_error = safe_api_call(
+        saved_payload, save_error = safe_api_call(
           st.session_state.api_client.save_network_log,
           provider=response_ns.provider,
           model=response_ns.model,
@@ -81,6 +81,8 @@ def tab_web():
 
         if save_error:
           st.warning(f"Response captured but failed to save: {save_error}")
+        elif saved_payload:
+          response_ns = build_api_response(saved_payload)
 
         st.session_state[RESPONSE_KEY] = response_ns
         st.session_state[PROMPT_KEY] = trimmed_prompt

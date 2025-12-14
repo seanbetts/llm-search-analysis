@@ -316,7 +316,7 @@ class TestInteractionService:
     mock_source.domain = "example.com"
     mock_source.rank = 1
     mock_source.pub_date = None
-    mock_source.snippet_text = None
+    mock_source.search_description = None
     mock_source.internal_score = None
     mock_source.metadata_json = None
 

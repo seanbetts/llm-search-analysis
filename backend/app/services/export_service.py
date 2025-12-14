@@ -104,7 +104,7 @@ class ExportService:
                         title = src.get('title') or src.get('domain') or 'Unknown source'
                         url = src.get('url') or ''
                         domain = src.get('domain') or ''
-                        snippet = src.get('snippet_text') or 'N/A'
+                        snippet = src.get('search_description') or src.get('snippet_text') or 'N/A'
                         if snippet == 'N/A' and src.get('title'):
                             snippet = src.get('title')
                         pub_date = src.get('pub_date')
@@ -123,7 +123,7 @@ class ExportService:
                         title = src.get('title') or src.get('domain') or 'Unknown source'
                         url = src.get('url') or ''
                         domain = src.get('domain') or ''
-                        snippet = src.get('snippet_text') or 'N/A'
+                        snippet = src.get('search_description') or src.get('snippet_text') or 'N/A'
                         if snippet == 'N/A' and src.get('title'):
                             snippet = src.get('title')
                         pub_date = src.get('pub_date')

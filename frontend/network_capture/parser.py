@@ -356,7 +356,7 @@ class NetworkLogParser:
                         domain=entry.get('attribution', domain),
                         rank=rank_counter,
                         pub_date=pub_date_iso,
-                        snippet_text=snippet,
+                        search_description=snippet,
                         internal_score=None,
                         metadata=metadata
                     )
@@ -471,7 +471,9 @@ class NetworkLogParser:
 
             if norm in source_map:
                 src = source_map[norm]
-                snippet = _normalize_snippet(getattr(src, "snippet_text", None))
+                snippet = _normalize_snippet(
+                    getattr(src, "search_description", None) or getattr(src, "snippet_text", None)
+                )
                 citations.append(Citation(
                     url=src.url,
                     title=src.title or title,
@@ -480,7 +482,7 @@ class NetworkLogParser:
                     metadata={
                         "citation_number": int(ref_num),
                         "query_index": None,  # Network logs don't provide query association
-                        "snippet": src.snippet_text,
+                        "snippet": getattr(src, "search_description", None) or getattr(src, "snippet_text", None),
                         "pub_date": src.pub_date
                     }
                 ))
@@ -507,7 +509,9 @@ class NetworkLogParser:
 
             if norm in source_map:
                 src = source_map[norm]
-                snippet = _normalize_snippet(getattr(src, "snippet_text", None))
+                snippet = _normalize_snippet(
+                    getattr(src, "search_description", None) or getattr(src, "snippet_text", None)
+                )
                 citations.append(Citation(
                     url=src.url,
                     title=src.title or link_text,
@@ -516,7 +520,7 @@ class NetworkLogParser:
                     metadata={
                         "citation_number": None,
                         "query_index": None,
-                        "snippet": src.snippet_text,
+                        "snippet": getattr(src, "search_description", None) or getattr(src, "snippet_text", None),
                         "pub_date": src.pub_date
                     }
                 ))

@@ -39,7 +39,7 @@ def _api_response():
             title="Example Source",
             domain="example.com",
             rank=1,
-            snippet_text="Snippet text",
+            search_description="Snippet text",
             pub_date="2024-01-01",
           )
         ],
@@ -85,7 +85,7 @@ def _network_log_response():
         title="Network Source",
         domain="example.org",
         rank=None,
-        snippet_text="Captured snippet",
+        search_description="Captured snippet",
       )
     ],
     provider="OpenAI",

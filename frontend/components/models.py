@@ -5,7 +5,7 @@ consistency with the centralized model registry.
 """
 
 import streamlit as st
-from frontend.helpers.metrics import get_model_display_name
+from frontend.helpers.metrics import get_model_display_name, is_known_model_id
 
 
 def get_all_models():
@@ -35,8 +35,8 @@ def get_all_models():
       if provider['is_active']:
         provider_name = provider['name']
         for model_id in provider['supported_models']:
-          # Get formatted model name from centralized helper
-          display_name = get_model_display_name(model_id)
+          # Keep unknown/custom model ids verbatim so users can identify them.
+          display_name = get_model_display_name(model_id) if is_known_model_id(model_id) else model_id
           # Create label: "🟢 OpenAI - GPT-5.1"
           label = f"{provider_labels[provider_name]} - {display_name}"
           models[label] = (provider_name, model_id)

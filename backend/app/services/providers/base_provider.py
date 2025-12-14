@@ -34,7 +34,7 @@ class Source:
   rank: Optional[int] = None  # Position in search results (1-indexed)
   pub_date: Optional[str] = None  # ISO-formatted publication date if available
   # Network log exclusive fields
-  snippet_text: Optional[str] = None
+  search_description: Optional[str] = None
   internal_score: Optional[float] = None
   metadata: Optional[Dict] = None
 

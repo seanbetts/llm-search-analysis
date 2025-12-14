@@ -1,7 +1,7 @@
 """Response formatting and display utilities."""
 
 import re
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import streamlit as st
 
@@ -15,6 +15,17 @@ def _format_snippet(snippet):
   if isinstance(snippet, (dict, list)):
     return "N/A"
   return str(snippet)
+
+
+def _normalize_url_for_match(url: str) -> str:
+  """Normalize URLs for matching across sources/citations (strip tracking params)."""
+  if not isinstance(url, str) or not url.strip():
+    return ""
+  parsed = urlparse(url.strip())
+  qs = parse_qs(parsed.query)
+  qs = {k: v for k, v in qs.items() if not k.lower().startswith("utm_") and k.lower() not in {"source"}}
+  new_query = urlencode(qs, doseq=True)
+  return urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", new_query, ""))
 
 
 def _render_tag_group(label, tags):
@@ -253,6 +264,18 @@ def display_response(response, prompt=None):
     st.divider()
 
   # Display sources - different handling for API vs Network Log
+  citation_snippet_cited_by_url = {}
+  for citation in getattr(response, "citations", []) or []:
+    url = getattr(citation, "url", None)
+    if not url:
+      continue
+    snippet_cited = (
+      getattr(citation, "snippet_cited", None)
+      or getattr(citation, "snippet_used", None)
+      or None
+    )
+    citation_snippet_cited_by_url[_normalize_url_for_match(url)] = snippet_cited
+
   if getattr(response, 'data_source', 'api') == 'api':
     # API: Sources are associated with queries
     queries_with_sources = [q for q in response.search_queries if q.sources]
@@ -267,10 +290,24 @@ def display_response(response, prompt=None):
             url_display = source.url or 'No URL'
             # Use domain as title fallback when title is missing
             display_title = source.title or source.domain or 'Unknown source'
-            snippet = getattr(source, "snippet_text", None)
+            snippet = (
+              getattr(source, "search_description", None)
+              or getattr(source, "snippet_text", None)
+            )
+            snippet_cited = citation_snippet_cited_by_url.get(_normalize_url_for_match(url_display))
             pub_date = getattr(source, "pub_date", None)
             snippet_display = _format_snippet(snippet)
-            snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
+            description_block = (
+              "<div style='margin-top:4px; font-size:0.95rem;'>"
+              f"<strong>Description:</strong> <em>{snippet_display}</em>"
+              "</div>"
+            )
+            snippet_cited_display = _format_snippet(snippet_cited)
+            snippet_cited_block = (
+              "<div style='margin-top:4px; font-size:0.95rem;'>"
+              f"<strong>Snippet Cited:</strong> <em>{snippet_cited_display}</em>"
+              "</div>"
+            )
             pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
             pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
             domain_link = f'<a href="{url_display}" target="_blank">{source.domain or "Open source"}</a>'
@@ -278,7 +315,8 @@ def display_response(response, prompt=None):
             <div class="source-item">
                 <strong>{j}. {display_title}</strong><br/>
                 <small>{domain_link}</small>
-                {snippet_block}
+                {description_block}
+                {snippet_cited_block}
                 {pub_date_block}
             </div>
             """, unsafe_allow_html=True)
@@ -294,10 +332,24 @@ def display_response(response, prompt=None):
           url_display = source.url or 'No URL'
           # Use domain as title fallback when title is missing
           display_title = source.title or source.domain or 'Unknown source'
-          snippet = getattr(source, "snippet_text", None)
+          snippet = (
+            getattr(source, "search_description", None)
+            or getattr(source, "snippet_text", None)
+          )
+          snippet_cited = citation_snippet_cited_by_url.get(_normalize_url_for_match(url_display))
           pub_date = getattr(source, "pub_date", None)
           snippet_display = _format_snippet(snippet)
-          snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
+          description_block = (
+            "<div style='margin-top:4px; font-size:0.95rem;'>"
+            f"<strong>Description:</strong> <em>{snippet_display}</em>"
+            "</div>"
+          )
+          snippet_cited_display = _format_snippet(snippet_cited)
+          snippet_cited_block = (
+            "<div style='margin-top:4px; font-size:0.95rem;'>"
+            f"<strong>Snippet Cited:</strong> <em>{snippet_cited_display}</em>"
+            "</div>"
+          )
           pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
           pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
           domain_link = f'<a href="{url_display}" target="_blank">{source.domain or "Open source"}</a>'
@@ -305,7 +357,8 @@ def display_response(response, prompt=None):
           <div class="source-item">
               <strong>{j}. {display_title}</strong><br/>
               <small>{domain_link}</small>
-              {snippet_block}
+              {description_block}
+              {snippet_cited_block}
               {pub_date_block}
           </div>
           """, unsafe_allow_html=True)
@@ -348,12 +401,26 @@ def display_response(response, prompt=None):
         domain = urlparse(citation.url).netloc if citation.url else 'Unknown domain'
         display_title = citation.title or domain or 'Unknown source'
         source_fallback = url_to_source.get(citation.url)
-        snippet = getattr(source_fallback, "snippet_text", None)
+        snippet = (
+          getattr(source_fallback, "search_description", None)
+          or getattr(source_fallback, "snippet_text", None)
+        )
+        snippet_cited = (
+          getattr(citation, "snippet_cited", None)
+          or getattr(citation, "snippet_used", None)
+          or None
+        )
         pub_date_val = getattr(source_fallback, "pub_date", None)
         snippet_display = _format_snippet(snippet)
-        snippet_block = (
+        description_block = (
           "<div style='margin-top:4px; font-size:0.95rem;'>"
-          f"<strong>Snippet:</strong> <em>{snippet_display}</em>"
+          f"<strong>Description:</strong> <em>{snippet_display}</em>"
+          "</div>"
+        )
+        snippet_cited_display = _format_snippet(snippet_cited)
+        snippet_cited_block = (
+          "<div style='margin-top:4px; font-size:0.95rem;'>"
+          f"<strong>Snippet Cited:</strong> <em>{snippet_cited_display}</em>"
           "</div>"
         )
         pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"
@@ -363,11 +430,16 @@ def display_response(response, prompt=None):
         <div class="citation-item">
             <strong>{i}. {display_title}{rank_display}</strong><br/>
             {domain_link}
-            {snippet_block}
+            {description_block}
+            {snippet_cited_block}
             {pub_date_block}
             {tags_block}
         </div>
         """, unsafe_allow_html=True)
+
+  # Show snippet-cited for all citations (including extra links) in the sources list.
+  # Extra links are rendered below and remain labeled as snippets because they do not
+  # necessarily correspond to a source "description" payload.
 
   # Extra links (citations not from search results)
   extra_links = [c for c in response.citations if not c.rank]
@@ -396,7 +468,18 @@ def display_response(response, prompt=None):
         snippet_display = _format_snippet(snippet)
         snippet_block = (
           "<div style='margin-top:4px; font-size:0.95rem;'>"
-          f"<strong>Snippet:</strong> <em>{snippet_display}</em>"
+          f"<strong>Description:</strong> <em>{snippet_display}</em>"
+          "</div>"
+        )
+        snippet_cited = (
+          getattr(citation, "snippet_cited", None)
+          or getattr(citation, "snippet_used", None)
+          or None
+        )
+        snippet_cited_display = _format_snippet(snippet_cited)
+        snippet_cited_block = (
+          "<div style='margin-top:4px; font-size:0.95rem;'>"
+          f"<strong>Snippet Cited:</strong> <em>{snippet_cited_display}</em>"
           "</div>"
         )
         tags_block = _render_citation_tags(citation)
@@ -406,6 +489,7 @@ def display_response(response, prompt=None):
             <strong>{i}. {display_title}</strong><br/>
             {domain_link}
             {snippet_block}
+            {snippet_cited_block}
             {tags_block}
         </div>
         """, unsafe_allow_html=True)
