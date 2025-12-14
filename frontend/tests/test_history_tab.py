@@ -107,24 +107,36 @@ def test_tab_history_does_not_pass_widget_defaults_when_using_session_state(monk
   """Avoid Streamlit warnings by not passing `default=` when `key` is bound to session_state."""
 
   class _SessionState(dict):
+    """Session state mapping that supports attribute access."""
+
     def __getattr__(self, item):
+      """Return an item from the mapping."""
       return self.get(item)
 
     def __setattr__(self, key, value):
+      """Set an item on the mapping."""
       self[key] = value
 
   class _Column:
+    """Context manager stub returned by `st.columns()`."""
+
     def __enter__(self):
+      """Enter the column context."""
       return self
 
     def __exit__(self, exc_type, exc, tb):
+      """Exit the column context."""
       return False
 
     def metric(self, *_args, **_kwargs):
+      """Stub for `st.metric()`."""
       return None
 
   class _StreamlitStub:
+    """Streamlit stub that asserts widgets avoid `default=` when bound to session state."""
+
     def __init__(self):
+      """Initialise stubbed Streamlit session state."""
       self.session_state = _SessionState({
         "api_client": SimpleNamespace(base_url="http://fake"),
         "history_page": 1,
@@ -139,28 +151,36 @@ def test_tab_history_does_not_pass_widget_defaults_when_using_session_state(monk
       })
 
     def markdown(self, *_args, **_kwargs):
+      """Stub for `st.markdown()`."""
       return None
 
     def info(self, *_args, **_kwargs):
+      """Stub for `st.info()`."""
       return None
 
     def warning(self, *_args, **_kwargs):
+      """Stub for `st.warning()`."""
       return None
 
     def error(self, *_args, **_kwargs):
+      """Stub for `st.error()`."""
       return None
 
     def caption(self, *_args, **_kwargs):
+      """Stub for `st.caption()`."""
       return None
 
     def divider(self, *_args, **_kwargs):
+      """Stub for `st.divider()`."""
       return None
 
     def columns(self, spec, **_kwargs):
+      """Return a list of column stubs."""
       ncols = len(spec) if isinstance(spec, (list, tuple)) else int(spec)
       return [_Column() for _ in range(ncols)]
 
     def text_input(self, *_args, **kwargs):
+      """Return the current session state value for a text input."""
       # Ensure key is present; Streamlit handles binding automatically.
       key = kwargs.get("key")
       if key and hasattr(self.session_state, key) is False:
@@ -168,6 +188,7 @@ def test_tab_history_does_not_pass_widget_defaults_when_using_session_state(monk
       return getattr(self.session_state, key, "")
 
     def multiselect(self, *_args, **kwargs):
+      """Return the current session state selection for a multiselect."""
       assert "default" not in kwargs
       key = kwargs.get("key")
       if key is None:
@@ -175,23 +196,30 @@ def test_tab_history_does_not_pass_widget_defaults_when_using_session_state(monk
       return getattr(self.session_state, key, [])
 
     def dataframe(self, *_args, **_kwargs):
+      """Stub for `st.dataframe()`."""
       return None
 
     def selectbox(self, *_args, **_kwargs):
+      """Stub for `st.selectbox()`."""
       return 0
 
     def download_button(self, *_args, **_kwargs):
+      """Stub for `st.download_button()`."""
       return None
 
     def button(self, *_args, **_kwargs):
+      """Stub for `st.button()`."""
       return False
 
     def rerun(self):
+      """Fail fast if code attempts to rerun during the test."""
       raise RuntimeError("rerun should not be triggered in this test")
 
     def cache_data(self, *args, **kwargs):  # pragma: no cover
+      """Stub decorator for `st.cache_data()`."""
       # Not used directly here (decorator already applied), but keep parity.
       def decorator(fn):
+        """Return the original function unchanged."""
         return fn
 
       return decorator
@@ -201,6 +229,7 @@ def test_tab_history_does_not_pass_widget_defaults_when_using_session_state(monk
   monkeypatch.setattr(history, "st", st_stub)
 
   def fake_safe_api_call(func, *args, **kwargs):
+    """Return deterministic responses for History tab calls."""
     if func is history._fetch_all_interactions:
       return (
         {

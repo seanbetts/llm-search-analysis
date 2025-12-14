@@ -1,7 +1,7 @@
 """Response formatting and display utilities."""
 
 import re
-from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+from urllib.parse import urlparse
 
 import streamlit as st
 
@@ -15,17 +15,6 @@ def _format_snippet(snippet):
   if isinstance(snippet, (dict, list)):
     return "N/A"
   return str(snippet)
-
-
-def _normalize_url_for_match(url: str) -> str:
-  """Normalize URLs for matching across sources/citations (strip tracking params)."""
-  if not isinstance(url, str) or not url.strip():
-    return ""
-  parsed = urlparse(url.strip())
-  qs = parse_qs(parsed.query)
-  qs = {k: v for k, v in qs.items() if not k.lower().startswith("utm_") and k.lower() not in {"source"}}
-  new_query = urlencode(qs, doseq=True)
-  return urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", new_query, ""))
 
 
 def _render_tag_group(label, tags):
@@ -264,18 +253,6 @@ def display_response(response, prompt=None):
     st.divider()
 
   # Display sources - different handling for API vs Network Log
-  citation_snippet_cited_by_url = {}
-  for citation in getattr(response, "citations", []) or []:
-    url = getattr(citation, "url", None)
-    if not url:
-      continue
-    snippet_cited = (
-      getattr(citation, "snippet_cited", None)
-      or getattr(citation, "snippet_used", None)
-      or None
-    )
-    citation_snippet_cited_by_url[_normalize_url_for_match(url)] = snippet_cited
-
   if getattr(response, 'data_source', 'api') == 'api':
     # API: Sources are associated with queries
     queries_with_sources = [q for q in response.search_queries if q.sources]
@@ -294,18 +271,11 @@ def display_response(response, prompt=None):
               getattr(source, "search_description", None)
               or getattr(source, "snippet_text", None)
             )
-            snippet_cited = citation_snippet_cited_by_url.get(_normalize_url_for_match(url_display))
             pub_date = getattr(source, "pub_date", None)
             snippet_display = _format_snippet(snippet)
             description_block = (
               "<div style='margin-top:4px; font-size:0.95rem;'>"
               f"<strong>Description:</strong> <em>{snippet_display}</em>"
-              "</div>"
-            )
-            snippet_cited_display = _format_snippet(snippet_cited)
-            snippet_cited_block = (
-              "<div style='margin-top:4px; font-size:0.95rem;'>"
-              f"<strong>Snippet Cited:</strong> <em>{snippet_cited_display}</em>"
               "</div>"
             )
             pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
@@ -316,7 +286,6 @@ def display_response(response, prompt=None):
                 <strong>{j}. {display_title}</strong><br/>
                 <small>{domain_link}</small>
                 {description_block}
-                {snippet_cited_block}
                 {pub_date_block}
             </div>
             """, unsafe_allow_html=True)
@@ -336,18 +305,11 @@ def display_response(response, prompt=None):
             getattr(source, "search_description", None)
             or getattr(source, "snippet_text", None)
           )
-          snippet_cited = citation_snippet_cited_by_url.get(_normalize_url_for_match(url_display))
           pub_date = getattr(source, "pub_date", None)
           snippet_display = _format_snippet(snippet)
           description_block = (
             "<div style='margin-top:4px; font-size:0.95rem;'>"
             f"<strong>Description:</strong> <em>{snippet_display}</em>"
-            "</div>"
-          )
-          snippet_cited_display = _format_snippet(snippet_cited)
-          snippet_cited_block = (
-            "<div style='margin-top:4px; font-size:0.95rem;'>"
-            f"<strong>Snippet Cited:</strong> <em>{snippet_cited_display}</em>"
             "</div>"
           )
           pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
@@ -358,7 +320,6 @@ def display_response(response, prompt=None):
               <strong>{j}. {display_title}</strong><br/>
               <small>{domain_link}</small>
               {description_block}
-              {snippet_cited_block}
               {pub_date_block}
           </div>
           """, unsafe_allow_html=True)
