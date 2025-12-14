@@ -68,3 +68,7 @@ Instructions for coding agents (and humans) working in this repository.
 - Tests pass (`./scripts/run_all_tests.sh`), unless explicitly skipped with justification.
 - Docs updated if behavior/commands changed (and links use correct casing).
 - Changes are committed with a clear message; push if requested or expected by workflow.
+
+## Handoff / Next Step
+
+- After finishing a piece of work, always end with a clear **next action** for the user (e.g., “run X”, “review Y”, “I can also do Z if you want”).
