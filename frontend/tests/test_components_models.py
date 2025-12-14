@@ -9,6 +9,7 @@ class StreamlitStateStub:
   """Minimal stub to mimic the pieces of streamlit used in the module."""
 
   def __init__(self, api_client):
+    """Initialize stub with an `api_client` in session_state."""
     self.session_state = SimpleNamespace(api_client=api_client)
     self._errors = []
 
@@ -21,6 +22,7 @@ class DummyApiClient:
   """Simple API client shim returning a fixed provider payload."""
 
   def __init__(self, providers):
+    """Initialize with a list of provider dictionaries."""
     self._providers = providers
 
   def get_providers(self):

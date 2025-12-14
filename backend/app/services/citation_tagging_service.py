@@ -120,6 +120,7 @@ class BaseLLMTagger:
   """Abstract base class for provider-specific taggers."""
 
   def __init__(self) -> None:
+    """Initialize tagger state."""
     self.last_usage: Optional[Dict[str, Any]] = None
 
   def generate(self, prompt: str) -> Optional[Dict[str, Any]]:
@@ -131,6 +132,7 @@ class NullLLMTagger(BaseLLMTagger):
   """Fallback implementation that always returns empty tags."""
 
   def __init__(self) -> None:
+    """Initialize null tagger."""
     super().__init__()
 
   def generate(self, prompt: str) -> Optional[Dict[str, Any]]:
@@ -151,6 +153,13 @@ class OpenAILLMTagger(BaseLLMTagger):
     provenance_tags: List[ProvenanceTagLiteral] = Field(default_factory=list)
 
   def __init__(self, api_key: str, model: str, temperature: float):
+    """Initialize an OpenAI tagger.
+
+    Args:
+      api_key: OpenAI API key.
+      model: Model identifier.
+      temperature: Sampling temperature.
+    """
     super().__init__()
     self.client = OpenAI(api_key=api_key)
     self.model = model
@@ -186,6 +195,13 @@ class GoogleLLMTagger(BaseLLMTagger):
   """LLM tagger that uses Google Gemini via the google-genai SDK."""
 
   def __init__(self, api_key: str, model: str, temperature: float):
+    """Initialize a Google tagger.
+
+    Args:
+      api_key: Google API key.
+      model: Model identifier.
+      temperature: Sampling temperature.
+    """
     super().__init__()
     self.client = GoogleClient(api_key=api_key)
     self.model = model
@@ -248,6 +264,13 @@ class OpenAIInfluenceSummarizer(BaseLLMSummarizer):
     model_config = ConfigDict(extra="forbid", json_schema_extra={"additionalProperties": False})
 
   def __init__(self, api_key: str, model: str, temperature: float):
+    """Initialize an OpenAI influence summarizer.
+
+    Args:
+      api_key: OpenAI API key.
+      model: Model identifier.
+      temperature: Sampling temperature.
+    """
     self.client = OpenAI(api_key=api_key)
     self.model = model
     self.temperature = temperature
@@ -273,6 +296,13 @@ class GoogleInfluenceSummarizer(BaseLLMSummarizer):
   """Google-backed influence summarizer."""
 
   def __init__(self, api_key: str, model: str, temperature: float):
+    """Initialize a Google influence summarizer.
+
+    Args:
+      api_key: Google API key.
+      model: Model identifier.
+      temperature: Sampling temperature.
+    """
     self.client = GoogleClient(api_key=api_key)
     self.model = model
     self.temperature = temperature
@@ -304,6 +334,7 @@ class CitationTaggingService:
   """High-level service that orchestrates citation tagging."""
 
   def __init__(self, config: CitationTaggingConfig):
+    """Initialize the tagging service with runtime configuration."""
     self.config = config
     self._tagger = self._build_tagger(config)
     self._last_usage_records: List[Dict[str, Any]] = []
@@ -544,6 +575,7 @@ class CitationInfluenceService:
   """Generates short influence summaries for citations."""
 
   def __init__(self, config: CitationTaggingConfig):
+    """Initialize the influence service with runtime configuration."""
     self.config = config
     self._summarizer = self._build_summarizer(config)
 
