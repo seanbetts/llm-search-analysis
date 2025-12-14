@@ -34,10 +34,10 @@ def _normalize_url(url: str) -> str:
 
 
 def _parse_footnote_definitions(text: str) -> dict:
-  """
-  Parse footnote definitions from response text.
-  Format: [N]: URL "Title"
-  Returns: dict mapping citation_number -> {url, title}
+  """Parse footnote definitions from response text.
+
+  Format: `[N]: URL "Title"`.
+  Returns: dict mapping citation_number -> {url, title}.
   """
   footnote_pattern = r'\[(\d+)\]:\s+(https?://[^\s]+)(?:\s+"([^"]+)")?'
   footnotes = {}
@@ -94,9 +94,9 @@ def _extract_snippet_before_citation(text: str, citation_match) -> Optional[str]
 
 
 def _extract_snippets_from_citations(text: str) -> dict:
-  """
-  Extract all snippets for each citation number from inline citations.
-  Returns: Dict mapping citation_number -> list of snippet texts
+  """Extract all snippets for each citation number from inline citations.
+
+  Returns: dict mapping citation_number -> list of snippet texts.
   """
   # Find footnote start to avoid matching them
   footnote_start = text.find('\n[1]: https://')
@@ -149,7 +149,7 @@ class InteractionRepository:
     raw_response: dict,
     data_source: str = "api",
     extra_links_count: int = 0,
-    sources: List[dict] = None,
+    sources: Optional[List[dict]] = None,
     sources_found: int = 0,
     sources_used_count: int = 0,
     avg_rank: Optional[float] = None,
@@ -197,7 +197,7 @@ class InteractionRepository:
         if not url:
           return None
         normalized_url = url.strip()
-        keys = []
+        keys: list[tuple[str, Optional[int]]] = []
         if rank is not None:
           keys.append((normalized_url, rank))
         keys.append((normalized_url, None))
@@ -276,7 +276,7 @@ class InteractionRepository:
       # Create top-level sources (for web capture mode)
       if sources:
         for source_data in sources:
-          source = ResponseSource(
+          response_source = ResponseSource(
             response_id=response.id,
             url=source_data.get("url", ""),
             title=source_data.get("title"),
@@ -290,9 +290,14 @@ class InteractionRepository:
             internal_score=source_data.get("internal_score"),
             metadata_json=source_data.get("metadata"),
           )
-          self.db.add(source)
+          self.db.add(response_source)
           self.db.flush()
-          register_source(response_source_lookup, source.url or "", source.rank, source.id)
+          register_source(
+            response_source_lookup,
+            response_source.url or "",
+            response_source.rank,
+            response_source.id,
+          )
 
       def _clean_snippet(value: Optional[str]) -> Optional[str]:
         if isinstance(value, str):
@@ -646,8 +651,21 @@ class InteractionRepository:
     if isinstance(candidates, list):
       chunks = []
       for candidate in candidates:
-        for content in candidate.get("content") or []:
-          for part in content.get("parts") or []:
+        if not isinstance(candidate, dict):
+          continue
+        content_obj = candidate.get("content")
+        if isinstance(content_obj, str):
+          if content_obj:
+            chunks.append(content_obj)
+          continue
+        contents = content_obj if isinstance(content_obj, list) else [content_obj]
+        for content in contents:
+          if not isinstance(content, dict):
+            continue
+          parts = content.get("parts") or []
+          for part in parts:
+            if not isinstance(part, dict):
+              continue
             text = part.get("text")
             if text:
               chunks.append(text)
@@ -658,6 +676,8 @@ class InteractionRepository:
     if isinstance(content_list, list):
       chunks = []
       for block in content_list:
+        if not isinstance(block, dict):
+          continue
         text = block.get("text")
         if text:
           chunks.append(text)

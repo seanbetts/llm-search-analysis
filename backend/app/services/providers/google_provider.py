@@ -4,9 +4,9 @@ import time
 from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 
-import requests
-from google.genai import Client
-from google.genai.types import GenerateContentConfig, GoogleSearch, Tool
+import requests  # type: ignore[import-untyped]
+from google.genai import Client  # type: ignore[import-untyped]
+from google.genai.types import GenerateContentConfig, GoogleSearch, Tool  # type: ignore[import-untyped]
 
 from app.core.provider_schemas import validate_google_raw_response
 
@@ -195,8 +195,8 @@ class GoogleProvider(BaseProvider):
               segment_text = getattr(segment, 'text', None) if segment else None
 
               for chunk_idx in chunk_indices:
-                source_obj = chunk_index_to_source.get(chunk_idx)
-                if not source_obj:
+                chunk_source = chunk_index_to_source.get(chunk_idx)
+                if chunk_source is None:
                   continue
 
                 start_index, end_index, snippet = self._extract_segment_span(
@@ -207,9 +207,9 @@ class GoogleProvider(BaseProvider):
                 )
 
                 citations.append(Citation(
-                  url=source_obj.url,
-                  title=source_obj.title,
-                  rank=source_obj.rank,
+                  url=chunk_source.url,
+                  title=chunk_source.title,
+                  rank=chunk_source.rank,
                   text_snippet=snippet,
                   snippet_cited=snippet,
                   start_index=start_index,

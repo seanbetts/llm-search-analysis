@@ -38,7 +38,7 @@ class APIException(Exception):
 
   def to_dict(self) -> Dict[str, Any]:
     """Convert exception to dictionary for JSON response."""
-    response = {
+    response: Dict[str, Any] = {
       "error": {
         "message": self.message,
         "code": self.error_code,
@@ -260,7 +260,7 @@ class ModelNotSupportedError(InvalidRequestError):
 
   def __init__(self, model: str, available_models: Optional[list] = None):
     """Build unsupported-model error including available models if provided."""
-    details = {"model": model}
+    details: Dict[str, Any] = {"model": model}
     if available_models:
       details["available_models"] = available_models
 
@@ -290,7 +290,7 @@ class InteractionNotFoundError(ResourceNotFoundError):
   Used when querying for an interaction that doesn't exist.
   """
 
-  def __init__(self, interaction_id: int):
+  def __init__(self, interaction_id: int | str):
     """Build not-found error for an interaction."""
     super().__init__(resource_type="Interaction", resource_id=interaction_id)
 

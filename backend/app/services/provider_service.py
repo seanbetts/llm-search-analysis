@@ -142,7 +142,9 @@ class ProviderService:
 
     # Return full response using get_interaction_details to get proper schema
     if interaction_id:
-      return self.interaction_service.get_interaction_details(interaction_id)
+      details = self.interaction_service.get_interaction_details(interaction_id)
+      assert details is not None
+      return details
     else:
       # If not saved, construct response directly
       from datetime import datetime
@@ -161,6 +163,7 @@ class ProviderService:
             rank=s.rank,
             pub_date=s.pub_date,
             search_description=s.search_description,
+            snippet_text=s.search_description,
             internal_score=s.internal_score,
             metadata=s.metadata,
           )
@@ -188,6 +191,7 @@ class ProviderService:
             text_snippet=c.text_snippet,
             start_index=c.start_index,
             end_index=c.end_index,
+            published_at=c.published_at,
             snippet_cited=c.snippet_cited,
             citation_confidence=c.citation_confidence,
             metadata=c.metadata,
@@ -218,10 +222,14 @@ class ProviderService:
         model_display_name=get_model_display_name(provider_response.model),
         response_time_ms=provider_response.response_time_ms,
         data_source=provider_response.data_source,
+        sources_found=len(sources_dict) if sources_dict else 0,
+        sources_used=len([c for c in provider_response.citations if c.rank is not None]),
+        avg_rank=None,
         extra_links_count=provider_response.extra_links_count,
         interaction_id=None,
         created_at=datetime.utcnow(),
         raw_response=provider_response.raw_response,
+        metadata=provider_response.metadata,
       )
 
   def get_available_providers(self) -> List[ProviderInfo]:

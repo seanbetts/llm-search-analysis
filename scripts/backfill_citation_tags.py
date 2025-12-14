@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Backfill citation tags and influence summaries for stored responses."""
 
+# ruff: noqa: E402
+
 from __future__ import annotations
 
 import argparse
@@ -176,7 +178,13 @@ def backfill_citations(
 
 def parse_args() -> argparse.Namespace:
   parser = argparse.ArgumentParser(description="Backfill citation tags and influence summaries.")
-  parser.add_argument("--response-id", action="append", type=int, dest="response_ids", help="Limit to specific response IDs.")
+  parser.add_argument(
+    "--response-id",
+    action="append",
+    type=int,
+    dest="response_ids",
+    help="Limit to specific response IDs.",
+  )
   parser.add_argument("--limit", type=int, default=None, help="Limit number of responses processed.")
   parser.add_argument(
     "--include-existing",

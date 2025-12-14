@@ -68,7 +68,7 @@ class InteractionService:
     raw_response: Optional[dict],
     data_source: str = "api",
     extra_links_count: int = 0,
-    sources: List[dict] = None,
+    sources: Optional[List[dict]] = None,
   ) -> int:
     """Save interaction with business logic applied.
 
@@ -148,7 +148,7 @@ class InteractionService:
       response_time_ms=response_time_ms,
       search_queries=normalized_queries,
       sources_used=normalized_citations,
-      raw_response=normalized_raw_response,
+      raw_response=normalized_raw_response or {},
       data_source=data_source,
       extra_links_count=extra_links_count,
       sources=normalized_sources,
@@ -275,6 +275,7 @@ class InteractionService:
           rank=s.rank,
           pub_date=s.pub_date,
           search_description=None,
+          snippet_text=None,
           internal_score=s.internal_score,
           metadata=s.metadata_json,
         )
@@ -283,7 +284,7 @@ class InteractionService:
 
       search_queries.append(
         SearchQuerySchema(
-          query=query.search_query,
+          query=query.search_query or "",
           sources=sources,
           timestamp=query.created_at.isoformat() if query.created_at else None,
           order_index=query.order_index,
@@ -305,6 +306,7 @@ class InteractionService:
           text_snippet=c.snippet_cited,
           start_index=metadata.get("start_index"),
           end_index=metadata.get("end_index"),
+          published_at=metadata.get("published_at"),
           snippet_cited=c.snippet_cited,
           citation_confidence=c.citation_confidence,
           metadata=metadata,
@@ -328,6 +330,7 @@ class InteractionService:
           rank=s.rank,
           pub_date=s.pub_date,
           search_description=s.search_description,
+          snippet_text=s.search_description,
           internal_score=s.internal_score,
           metadata=s.metadata_json,
         )
@@ -345,6 +348,7 @@ class InteractionService:
               rank=s.rank,
               pub_date=s.pub_date,
               search_description=None,
+              snippet_text=None,
               internal_score=s.internal_score,
               metadata=s.metadata_json,
             )
@@ -367,7 +371,7 @@ class InteractionService:
     if (provider_name or "").lower() in skip_format_providers:
       formatted_response = response.response_text or ""
     else:
-      formatted_response = self._format_response_text_with_citations(response.response_text, citations)
+      formatted_response = self._format_response_text_with_citations(response.response_text or "", citations)
     return SendPromptResponse(
       prompt=prompt_text,
       response_text=formatted_response,
@@ -438,7 +442,9 @@ class InteractionService:
     )
 
     # Retrieve the saved interaction to return full data
-    return self.get_interaction_details(response_id)
+    details = self.get_interaction_details(response_id)
+    assert details is not None
+    return details
 
   def delete_interaction(self, interaction_id: int) -> bool:
     """Delete an interaction.

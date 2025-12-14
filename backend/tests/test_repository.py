@@ -369,7 +369,7 @@ class TestInteractionRepository:
     assert citation.metadata_json == {"citation_id": "1"}
 
   def test_save_interaction_derives_snippet_from_indices(self, repository):
-    """Snippets should be derived from response_text when indices exist."""
+    """API mode should store indices but not persist snippet_cited."""
     snippet = "Derived snippet"
     response_body = f"Intro text. {snippet} follows with more text."
     response_id = repository.save(
@@ -392,10 +392,12 @@ class TestInteractionRepository:
 
     stored = repository.get_by_id(response_id)
     assert stored is not None
-    assert stored.sources_used[0].snippet_cited == snippet
+    assert stored.sources_used[0].snippet_cited is None
+    assert stored.sources_used[0].metadata_json["start_index"] == response_body.index(snippet)
+    assert stored.sources_used[0].metadata_json["end_index"] == response_body.index(snippet) + len(snippet)
 
   def test_save_interaction_uses_raw_text_for_indices(self, repository):
-    """Raw payload text should backfill snippets when trimmed response lacks span."""
+    """API mode should store indices even if raw payload includes the full text."""
     raw_text = "Summary. Detailed citation sentence."
     trimmed_text = "Summary."
     snippet = "Detailed citation sentence."
@@ -433,4 +435,6 @@ class TestInteractionRepository:
 
     stored = repository.get_by_id(response_id)
     assert stored is not None
-    assert stored.sources_used[0].snippet_cited == snippet
+    assert stored.sources_used[0].snippet_cited is None
+    assert stored.sources_used[0].metadata_json["start_index"] == start
+    assert stored.sources_used[0].metadata_json["end_index"] == end

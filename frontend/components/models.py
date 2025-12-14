@@ -5,6 +5,7 @@ consistency with the centralized model registry.
 """
 
 import streamlit as st
+
 from frontend.helpers.metrics import get_model_display_name, is_known_model_id
 
 

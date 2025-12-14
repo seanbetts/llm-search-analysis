@@ -8,10 +8,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
-from google.genai import Client as GoogleClient
-from google.genai.types import GenerateContentConfig
+from google.genai import Client as GoogleClient  # type: ignore[import-untyped]
+from google.genai.types import GenerateContentConfig  # type: ignore[import-untyped]
 from openai import OpenAI
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.config import settings
 

@@ -25,9 +25,9 @@ from sqlalchemy.orm import Session, joinedload, sessionmaker  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.models.database import Response  # noqa: E402
 from app.services.citation_tagging_service import (  # noqa: E402
+  CitationInfluenceService,
   CitationTaggingConfig,
   CitationTaggingService,
-  CitationInfluenceService,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -326,8 +326,13 @@ def main() -> None:
         est_cost = ""
         if spec.price_per_million and total_tokens is not None:
           est_cost = (spec.price_per_million * total_tokens) / 1_000_000
-        if citation.get("function_tags") or citation.get("stance_tags") or citation.get("provenance_tags"):
-          total_tagged_assignments += len(citation.get("function_tags") or []) + len(citation.get("stance_tags") or []) + len(citation.get("provenance_tags") or [])
+        function_tags = citation.get("function_tags") or []
+        stance_tags = citation.get("stance_tags") or []
+        provenance_tags = citation.get("provenance_tags") or []
+        if function_tags or stance_tags or provenance_tags:
+          total_tagged_assignments += (
+            len(function_tags) + len(stance_tags) + len(provenance_tags)
+          )
         row = {
           "benchmark_provider": spec.provider,
           "benchmark_model": spec.model,
@@ -339,9 +344,9 @@ def main() -> None:
           "citation_url": citation.get("url"),
           "citation_title": citation.get("title"),
           "citation_rank": citation.get("rank"),
-          "function_tags": ";".join(citation.get("function_tags") or []),
-          "stance_tags": ";".join(citation.get("stance_tags") or []),
-          "provenance_tags": ";".join(citation.get("provenance_tags") or []),
+          "function_tags": ";".join(function_tags),
+          "stance_tags": ";".join(stance_tags),
+          "provenance_tags": ";".join(provenance_tags),
           "input_tokens": input_tokens if input_tokens is not None else "",
           "output_tokens": output_tokens if output_tokens is not None else "",
           "total_tokens": total_tokens if total_tokens is not None else "",

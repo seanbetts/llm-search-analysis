@@ -2,7 +2,7 @@
 
 import re
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 from urllib.parse import urlparse
 
 
@@ -77,15 +77,19 @@ def normalize_model_name(model_name: str) -> str:
       if parts[-2].isdigit() and len(parts[-2]) == 1 and parts[-1][0].isdigit():
         # Replace the dash before the last digit with a dot
         parts[-2] = f"{parts[-2]}.{parts[-1][0]}"
-        parts[-1] = parts[-1][1:] if len(parts[-1]) > 1 else None
-        model_name = "-".join(p for p in parts if p)
+        remainder = parts[-1][1:]
+        if remainder:
+          parts[-1] = remainder
+        else:
+          parts.pop()
+        model_name = "-".join(parts)
     except (IndexError, AttributeError):
       pass
 
   return model_name
 
 
-def calculate_average_rank(citations: list) -> Optional[float]:
+def calculate_average_rank(citations: list[Any]) -> Optional[float]:
   """Calculate average rank of citations.
 
   Args:
@@ -101,8 +105,8 @@ def calculate_average_rank(citations: list) -> Optional[float]:
   """
   if not citations:
     return None
-  ranks = [getattr(c, 'rank', None) for c in citations]
-  ranks = [r for r in ranks if r is not None]
+  rank_values = [getattr(c, 'rank', None) for c in citations]
+  ranks: list[float] = [float(r) for r in rank_values if isinstance(r, (int, float))]
   if not ranks:
     return None
   return sum(ranks) / len(ranks)
@@ -131,10 +135,14 @@ def get_model_display_name(model: str) -> str:
   if not model:
     return ''
 
+  model = normalize_model_name(model)
+
   # Try to get from centralized registry first
   try:
     from app.services.providers.provider_factory import ProviderFactory
     display_name = ProviderFactory.get_display_name(model)
+    if not display_name and model.startswith("claude-"):
+      display_name = ProviderFactory.get_display_name(model.replace(".", "-"))
     if display_name:
       return display_name
   except ImportError:
@@ -149,14 +157,27 @@ def get_model_display_name(model: str) -> str:
   if model in web_capture_models:
     return web_capture_models[model]
 
-  # Fallback: Format unknown model IDs nicely
-  # Remove date suffixes (e.g., -20250929 or -0250929)
-  formatted = re.sub(r'-\d{7,8}$', '', model)
-  # Remove any trailing version numbers like .2
-  formatted = re.sub(r'\.\d+$', '', formatted)
-  # Convert hyphens to spaces and capitalize words
-  formatted = ' '.join(word.capitalize() for word in formatted.split('-'))
-  return formatted
+  # Fallback: Format unknown model IDs nicely.
+  # Remove date suffixes (e.g., -20250929 or -0250929).
+  core = re.sub(r'-\d{7,8}$', '', model)
+
+  # Claude variants can appear with dotted minor versions (e.g., 4.1) or patch versions (e.g., 4-5.2).
+  m = re.match(r"^(claude)-(sonnet|opus|haiku)-(\d+)[-\.](\d+)(?:\.\d+)?$", core)
+  if m:
+    family = m.group(2).capitalize()
+    return f"Claude {family} {m.group(3)}.{m.group(4)}"
+
+  # GPT / Gemini: keep dots (e.g., gpt-5.1), and render as prefix-joined.
+  if core.startswith("gpt-"):
+    return f"GPT-{core[4:]}"
+  if core.startswith("gemini-"):
+    return f"Gemini-{core[7:]}"
+
+  # Generic models sometimes include trailing patch-like versions (e.g., v2.5).
+  core = re.sub(r"(v\d+)\.\d+$", r"\1", core, flags=re.IGNORECASE)
+
+  # Generic: hyphens to spaces, title-case words, preserve dots.
+  return ' '.join(word.capitalize() for word in core.split('-'))
 
 
 def format_pub_date(pub_date: str) -> str:

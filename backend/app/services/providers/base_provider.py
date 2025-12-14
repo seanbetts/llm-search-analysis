@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 class SearchQuery:
   """Represents a search query made by the model."""
   query: str
-  sources: List['Source'] = None
+  sources: List['Source'] = field(default_factory=list)
   timestamp: Optional[str] = None
   order_index: int = 0
   # Network log exclusive fields

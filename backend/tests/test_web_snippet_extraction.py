@@ -38,7 +38,8 @@ class TestWebSnippetExtraction:
     # Realistic response_text with inline citations and footnotes
     response_text = """Based on my analysis of recent developments:
 
-The M4 chip represents Apple's latest advancement ([Apple Newsroom][1]). According to industry reports, the new MacBook Pro features significant performance improvements ([The Verge][2]).
+The M4 chip represents Apple's latest advancement ([Apple Newsroom][1]).
+According to industry reports, the new MacBook Pro features significant performance improvements ([The Verge][2]).
 
 Key features include:
 * Enhanced neural engine capabilities ([Apple Newsroom][1])
