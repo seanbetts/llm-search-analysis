@@ -570,6 +570,88 @@ class TestBatchEndpoints:
     recent_data = recent.json()
     assert any(item["prompt"] == payload["prompt"] for item in recent_data["items"])
 
+  def test_save_network_log_runs_citation_tagging_when_snippets_present(self, client, monkeypatch):
+    """Web captures should run citation tagging after snippet_cited is derived."""
+    from types import SimpleNamespace
+
+    import app.dependencies as dependencies
+    from app.services.citation_tagging_service import CitationInfluenceService
+
+    class DummyTagger:
+      """Citation tagger stub that assigns deterministic tags."""
+
+      def __init__(self):
+        """Initialise a config compatible with CitationInfluenceService."""
+        self.config = SimpleNamespace(
+          enabled=True,
+          provider="openai",
+          model="gpt-5-mini",
+          temperature=0.0,
+          openai_api_key="test",
+          google_api_key="",
+        )
+
+      def annotate_citations(self, prompt: str, response_text: str, citations: list[dict]) -> list[dict]:
+        """Assign tags to each citation."""
+        for citation in citations:
+          citation["function_tags"] = ["evidence"]
+          citation["stance_tags"] = ["supports"]
+          citation["provenance_tags"] = ["reference"]
+        return citations
+
+    def fake_annotate_influence(self, prompt: str, response_text: str, citations: list[dict]) -> list[dict]:
+      """Assign a deterministic influence summary."""
+      for citation in citations:
+        citation["influence_summary"] = "Used as supporting context for the claim."
+      return citations
+
+    monkeypatch.setattr(dependencies, "citation_tagger_instance", DummyTagger())
+    monkeypatch.setattr(CitationInfluenceService, "annotate_influence", fake_annotate_influence)
+
+    response_text = (
+      "Steam Frame is an open standard for capturing network traces ([Example][1]).\n\n"
+      '[1]: https://example.com/article "Example Article"\n'
+    )
+    payload = {
+      "provider": "openai",
+      "model": "chatgpt-free",
+      "prompt": "Capture ChatGPT conversation",
+      "response_text": response_text,
+      "search_queries": [],
+      "sources": [
+        {
+          "url": "https://example.com/article",
+          "title": "Example Article",
+          "domain": "example.com",
+          "rank": 1,
+          "search_description": "Example snippet",
+          "pub_date": "2024-01-01"
+        }
+      ],
+      "citations": [
+        {
+          "url": "https://example.com/article",
+          "title": "Example Article",
+          "rank": 1,
+        }
+      ],
+      "response_time_ms": 1200,
+      "extra_links_count": 0,
+      "raw_response": {"mode": "network_log"}
+    }
+
+    response = client.post("/api/v1/interactions/save-network-log", json=payload)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["data_source"] == "web"
+    assert data["citations"], "Expected citations to be returned"
+    citation = data["citations"][0]
+    assert citation["snippet_cited"], "Expected snippet_cited to be populated for web captures"
+    assert citation["function_tags"] == ["evidence"]
+    assert citation["stance_tags"] == ["supports"]
+    assert citation["provenance_tags"] == ["reference"]
+    assert citation["influence_summary"] == "Used as supporting context for the claim."
+
   def test_save_network_log_invalid_payload(self, client):
     """Invalid network log payloads should return 422 with detail."""
     payload = {

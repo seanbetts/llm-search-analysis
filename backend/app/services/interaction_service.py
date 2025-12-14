@@ -32,7 +32,7 @@ from app.core.utils import (
   normalize_model_name,
 )
 from app.repositories.interaction_repository import InteractionRepository
-from app.services.citation_tagging_service import CitationTaggingService
+from app.services.citation_tagging_service import CitationInfluenceService, CitationTaggingService
 from app.services.providers.base_provider import Citation as CitationModel
 from app.services.response_formatter import format_response_with_citations
 
@@ -100,12 +100,6 @@ class InteractionService:
     normalized_citations = self._normalize_citations(citations)
     normalized_sources = self._normalize_sources(sources)
     normalized_raw_response = self._normalize_raw_response(raw_response)
-    if data_source in ("web", "network_log") and self.citation_tagger:
-      normalized_citations = self.citation_tagger.annotate_citations(
-        prompt=prompt,
-        response_text=response_text,
-        citations=normalized_citations,
-      )
 
     # Extract domains from search query sources
     for query in normalized_queries:
@@ -156,6 +150,71 @@ class InteractionService:
       sources_used_count=sources_used,
       avg_rank=avg_rank,
     )
+
+  def _annotate_saved_web_citations(
+    self,
+    response_id: int,
+    prompt: str,
+    response_text: str,
+  ) -> None:
+    """Run citation tagging + influence after a web capture is persisted.
+
+    Web capture snippets (`snippet_cited`) are derived during persistence by parsing
+    the response text. To ensure claim spans line up, we run LLM tagging only after
+    the `sources_used` rows have been created with `snippet_cited`.
+    """
+    tagger = self.citation_tagger
+    if not tagger or not getattr(tagger, "config", None) or not tagger.config.enabled:
+      return
+
+    response = self.repository.get_by_id(response_id)
+    if not response or response.data_source not in ("web", "network_log"):
+      return
+
+    sources_used = list(response.sources_used or [])
+    taggable = [
+      source
+      for source in sources_used
+      if isinstance(source.snippet_cited, str) and source.snippet_cited.strip()
+    ]
+    if not taggable:
+      return
+
+    citations: List[dict] = []
+    for source in taggable:
+      metadata = source.metadata_json or {}
+      citations.append({
+        "source_used_id": source.id,
+        "url": source.url,
+        "title": source.title,
+        "rank": source.rank,
+        "snippet_cited": source.snippet_cited,
+        "start_index": metadata.get("start_index"),
+        "end_index": metadata.get("end_index"),
+        "metadata": metadata,
+        "domain": extract_domain(source.url),
+      })
+
+    tagger.annotate_citations(prompt=prompt, response_text=response_text, citations=citations)
+    influence = CitationInfluenceService(tagger.config)
+    influence.annotate_influence(prompt=prompt, response_text=response_text, citations=citations)
+
+    updated = {c.get("source_used_id"): c for c in citations if c.get("source_used_id") is not None}
+    for source in taggable:
+      payload = updated.get(source.id)
+      if not payload:
+        continue
+      source.function_tags = payload.get("function_tags") or []
+      source.stance_tags = payload.get("stance_tags") or []
+      source.provenance_tags = payload.get("provenance_tags") or []
+      influence_summary = payload.get("influence_summary")
+      source.influence_summary = (
+        influence_summary
+        if isinstance(influence_summary, str) and influence_summary.strip()
+        else None
+      )
+
+    self.repository.db.commit()
 
   def get_recent_interactions(
     self,
@@ -440,6 +499,18 @@ class InteractionService:
       extra_links_count=extra_links_count,
       sources=sources,
     )
+
+    # Run citation tagging once snippets are available in the persisted rows.
+    try:
+      self._annotate_saved_web_citations(
+        response_id=response_id,
+        prompt=prompt,
+        response_text=response_text,
+      )
+    except Exception:
+      # Tagging should never block persistence.
+      import logging
+      logging.getLogger(__name__).exception("Post-save citation tagging failed; continuing without tags")
 
     # Retrieve the saved interaction to return full data
     details = self.get_interaction_details(response_id)

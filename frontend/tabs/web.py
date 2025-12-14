@@ -37,10 +37,13 @@ def tab_web():
       st.warning("Please enter a prompt")
     else:
       status_placeholder = st.empty()
+      saved_payload = None
+      save_error = None
+      response_ns = None
 
       try:
         with status_placeholder.container():
-          with st.status("Analyzing with web capture...", expanded=True):
+          with st.status("Analyzing with web capture...", expanded=True) as status:
             status_container = st.empty()
 
             def update_status(message: str):
@@ -62,29 +65,37 @@ def tab_web():
               except Exception:
                 pass
 
-        response_ns = build_web_response(provider_response)
+            status_container.write("Processing captured response...")
+            response_ns = build_web_response(provider_response)
 
-        saved_payload, save_error = safe_api_call(
-          st.session_state.api_client.save_network_log,
-          provider=response_ns.provider,
-          model=response_ns.model,
-          prompt=trimmed_prompt,
-          response_text=response_ns.response_text,
-          search_queries=namespace_to_dict(response_ns.search_queries),
-          sources=namespace_to_dict(response_ns.all_sources),
-          citations=namespace_to_dict(response_ns.citations),
-          response_time_ms=response_ns.response_time_ms,
-          raw_response=response_ns.raw_response,
-          extra_links_count=response_ns.extra_links_count,
-          show_spinner=False
-        )
+            status_container.write("Saving capture and running citation tagging...")
+            saved_payload, save_error = safe_api_call(
+              st.session_state.api_client.save_network_log,
+              provider=response_ns.provider,
+              model=response_ns.model,
+              prompt=trimmed_prompt,
+              response_text=response_ns.response_text,
+              search_queries=namespace_to_dict(response_ns.search_queries),
+              sources=namespace_to_dict(response_ns.all_sources),
+              citations=namespace_to_dict(response_ns.citations),
+              response_time_ms=response_ns.response_time_ms,
+              raw_response=response_ns.raw_response,
+              extra_links_count=response_ns.extra_links_count,
+              show_spinner=False
+            )
+
+            if save_error:
+              status.update(label="Web analysis complete (save failed)", state="error")
+            else:
+              status.update(label="Web analysis complete", state="complete")
 
         if save_error:
           st.warning(f"Response captured but failed to save: {save_error}")
-        elif saved_payload:
+        elif saved_payload and response_ns is not None:
           response_ns = build_api_response(saved_payload)
 
-        st.session_state[RESPONSE_KEY] = response_ns
+        if response_ns is not None:
+          st.session_state[RESPONSE_KEY] = response_ns
         st.session_state[PROMPT_KEY] = trimmed_prompt
         st.session_state[ERROR_KEY] = None
 
