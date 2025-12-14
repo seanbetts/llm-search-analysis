@@ -113,7 +113,7 @@ class Settings(BaseSettings):
     description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)"
   )
   ENABLE_CITATION_TAGGING: bool = Field(
-    default=True,
+    default=False,
     description="Enable LLM-based citation tagging for web captures"
   )
   CITATION_TAGGER_PROVIDER: str = Field(

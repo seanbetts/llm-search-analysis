@@ -92,6 +92,11 @@ class Response(Base):
   sources_used_count: Mapped[int] = mapped_column(Integer, default=0)
   avg_rank: Mapped[Optional[float]] = mapped_column(Float)
 
+  citation_tagging_status: Mapped[Optional[str]] = mapped_column(String(32))
+  citation_tagging_error: Mapped[Optional[str]] = mapped_column(Text)
+  citation_tagging_started_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+  citation_tagging_completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+
   __table_args__ = (
     Index("ix_responses_created_at", "created_at"),
   )

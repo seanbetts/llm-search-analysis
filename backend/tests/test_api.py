@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -9,6 +10,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+import app.api.v1.endpoints.interactions as interactions_endpoint
+import app.dependencies as dependencies
 from app.api.v1.schemas.responses import BatchStatus, SendPromptResponse
 from app.dependencies import get_batch_service, get_db
 from app.main import app
@@ -571,17 +574,13 @@ class TestBatchEndpoints:
     assert any(item["prompt"] == payload["prompt"] for item in recent_data["items"])
 
   def test_save_network_log_runs_citation_tagging_when_snippets_present(self, client, monkeypatch):
-    """Web captures should run citation tagging after snippet_cited is derived."""
-    from types import SimpleNamespace
-
-    import app.dependencies as dependencies
-    from app.services.citation_tagging_service import CitationInfluenceService
+    """Web captures should enqueue citation tagging after snippet_cited is derived."""
 
     class DummyTagger:
-      """Citation tagger stub that assigns deterministic tags."""
+      """Citation tagger stub that signals tagging is enabled."""
 
       def __init__(self):
-        """Initialise a config compatible with CitationInfluenceService."""
+        """Initialise config used to decide whether to enqueue tagging."""
         self.config = SimpleNamespace(
           enabled=True,
           provider="openai",
@@ -591,22 +590,17 @@ class TestBatchEndpoints:
           google_api_key="",
         )
 
-      def annotate_citations(self, prompt: str, response_text: str, citations: list[dict]) -> list[dict]:
-        """Assign tags to each citation."""
-        for citation in citations:
-          citation["function_tags"] = ["evidence"]
-          citation["stance_tags"] = ["supports"]
-          citation["provenance_tags"] = ["reference"]
-        return citations
-
-    def fake_annotate_influence(self, prompt: str, response_text: str, citations: list[dict]) -> list[dict]:
-      """Assign a deterministic influence summary."""
-      for citation in citations:
-        citation["influence_summary"] = "Used as supporting context for the claim."
-      return citations
-
     monkeypatch.setattr(dependencies, "citation_tagger_instance", DummyTagger())
-    monkeypatch.setattr(CitationInfluenceService, "annotate_influence", fake_annotate_influence)
+
+    enqueued = {}
+
+    def fake_enqueue(response_id: int, prompt: str, response_text: str) -> None:
+      """Capture enqueue arguments without starting threads."""
+      enqueued["response_id"] = response_id
+      enqueued["prompt"] = prompt
+      enqueued["response_text"] = response_text
+
+    monkeypatch.setattr(interactions_endpoint, "enqueue_web_citation_tagging", fake_enqueue)
 
     response_text = (
       "Steam Frame is an open standard for capturing network traces ([Example][1]).\n\n"
@@ -647,10 +641,14 @@ class TestBatchEndpoints:
     assert data["citations"], "Expected citations to be returned"
     citation = data["citations"][0]
     assert citation["snippet_cited"], "Expected snippet_cited to be populated for web captures"
-    assert citation["function_tags"] == ["evidence"]
-    assert citation["stance_tags"] == ["supports"]
-    assert citation["provenance_tags"] == ["reference"]
-    assert citation["influence_summary"] == "Used as supporting context for the claim."
+    assert citation["function_tags"] == []
+    assert citation["stance_tags"] == []
+    assert citation["provenance_tags"] == []
+    assert citation["influence_summary"] in (None, "")
+
+    metadata = data.get("metadata") or {}
+    assert metadata.get("citation_tagging_status") == "queued"
+    assert enqueued.get("response_id") == data["interaction_id"]
 
   def test_save_network_log_invalid_payload(self, client):
     """Invalid network log payloads should return 422 with detail."""

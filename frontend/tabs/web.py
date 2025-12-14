@@ -68,7 +68,7 @@ def tab_web():
             status_container.write("Processing captured response...")
             response_ns = build_web_response(provider_response)
 
-            status_container.write("Saving capture and running citation tagging...")
+            status_container.write("Saving capture (citation tagging will run in the background)...")
             saved_payload, save_error = safe_api_call(
               st.session_state.api_client.save_network_log,
               provider=response_ns.provider,
@@ -88,13 +88,29 @@ def tab_web():
               status.update(label="Web analysis complete (save failed)", state="error")
             else:
               annotations = None
+              citation_status = None
+              citation_error = None
               if isinstance(saved_payload, dict):
-                annotations = (saved_payload.get("metadata") or {}).get("citation_annotations")
+                metadata = saved_payload.get("metadata") or {}
+                annotations = metadata.get("citation_annotations")
+                citation_status = metadata.get("citation_tagging_status")
+                citation_error = metadata.get("citation_tagging_error")
               if isinstance(annotations, dict):
                 annotated = annotations.get("annotated_citations")
                 total = annotations.get("total_citations")
                 if annotated is not None and total is not None:
-                  status_container.write(f"✅ Citation annotations saved: {annotated}/{total} citations annotated.")
+                  if citation_status == "queued":
+                    status_container.write(f"⏳ Citation tagging queued: {annotated}/{total} annotated so far.")
+                  elif citation_status == "completed":
+                    status_container.write(f"✅ Citation annotations saved: {annotated}/{total} citations annotated.")
+                  elif citation_status == "failed":
+                    status_container.write("⚠️ Citation tagging failed (see History for details).")
+                  elif citation_status == "disabled":
+                    status_container.write("ℹ️ Citation tagging is disabled.")
+                  else:
+                    status_container.write(f"ℹ️ Citation tagging status: {citation_status or 'unknown'}")
+              if citation_error:
+                status_container.write(f"⚠️ Citation tagging error: {citation_error}")
               status.update(label="Web analysis complete", state="complete")
 
         if save_error:
