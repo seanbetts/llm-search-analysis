@@ -4,7 +4,7 @@ FastAPI-based REST API for analyzing LLM search capabilities across OpenAI, Goog
 
 **Version:** 1.0.0
 **Test Coverage:** 95% (191 tests)
-**Python:** 3.10+
+**Python:** 3.11+
 
 ## Table of Contents
 
