@@ -26,6 +26,29 @@ class NetworkLogParser:
     """Parser for network log responses from various providers."""
 
     @staticmethod
+    def _normalize_url_for_match(url: str) -> str:
+        """Normalize URLs for matching across sources and citations.
+
+        ChatGPT often includes tracking parameters or minor variations in URLs
+        between search results and markdown citations. For matching purposes we
+        aggressively normalize to scheme+host+path, stripping query/fragment and
+        common host prefixes.
+        """
+        from urllib.parse import urlparse, urlunparse
+
+        if not isinstance(url, str) or not url.strip():
+            return ""
+        parsed = urlparse(url.strip())
+        host = (parsed.netloc or "").lower()
+        if host.startswith("www."):
+            host = host[4:]
+        path = parsed.path or ""
+        if path.endswith("/") and path != "/":
+            path = path[:-1]
+        normalized = urlunparse((parsed.scheme or "https", host, path, "", "", ""))
+        return normalized
+
+    @staticmethod
     def parse_chatgpt_response_text_fallback(
         extracted_response_text: str,
         model: str,
@@ -47,24 +70,20 @@ class NetworkLogParser:
         footnote_pattern = r'^\[(\d+)\]:\s+(https?://\S+)(?:\s+"([^"]+)")?\s*$'
         seen_urls: set[str] = set()
         citations: List[Citation] = []
-        sources: List[Source] = []
-
-        from urllib.parse import urlparse
 
         for match in re.finditer(footnote_pattern, extracted_response_text, flags=re.MULTILINE):
             url = match.group(2)
-            if not url or url in seen_urls:
+            norm = NetworkLogParser._normalize_url_for_match(url)
+            if not norm or norm in seen_urls:
                 continue
-            seen_urls.add(url)
+            seen_urls.add(norm)
             title = match.group(3) if match.group(3) else None
-            domain = urlparse(url).netloc or None
             citations.append(Citation(url=url, title=title, rank=None))
-            sources.append(Source(url=url, title=title, domain=domain, rank=None))
 
         return ProviderResponse(
             response_text=extracted_response_text,
             search_queries=[],
-            sources=sources,
+            sources=[],
             citations=citations,
             raw_response={"fallback": "response_text_only"},
             model=model,
@@ -299,18 +318,7 @@ class NetworkLogParser:
                 except Exception:
                     return None
 
-            def clean_url(url: str) -> str:
-                """Normalize URL for comparison (remove tracking params)."""
-                from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
-                if not url:
-                    return ""
-                parsed = urlparse(url)
-                qs = parse_qs(parsed.query)
-                # Drop tracking params
-                qs = {k: v for k, v in qs.items() if not k.lower().startswith('utm_') and k.lower() not in ['source']}
-                new_query = urlencode(qs, doseq=True)
-                normalized = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', new_query, ''))
-                return normalized
+            normalize = NetworkLogParser._normalize_url_for_match
 
             # Collect additional entries directly from the SSE body to avoid missing groups
             def extract_entries_from_body(body_text: str) -> List[Dict[str, Any]]:
@@ -382,7 +390,7 @@ class NetworkLogParser:
                         continue
 
                     # Deduplicate by normalized URL
-                    clean = clean_url(url)
+                    clean = normalize(url)
                     if clean in seen_urls:
                         continue
                     seen_urls.add(clean)
@@ -477,20 +485,9 @@ class NetworkLogParser:
             - Citations include both sources used (from search) and extra links
             - extra_links_count is the number of citations NOT from search results
         """
-        from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
-
-        def clean_url(url: str) -> str:
-            """Normalize URL for comparison (remove tracking params)."""
-            if not url:
-                return ""
-            parsed = urlparse(url)
-            qs = parse_qs(parsed.query)
-            qs = {k: v for k, v in qs.items() if not k.lower().startswith('utm_') and k.lower() not in ['source']}
-            new_query = urlencode(qs, doseq=True)
-            return urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', new_query, ''))
-
+        normalize = NetworkLogParser._normalize_url_for_match
         # Build URL mapping from sources for quick lookup
-        source_map = {clean_url(s.url): s for s in sources}
+        source_map = {normalize(s.url): s for s in sources}
 
         citations: List[Citation] = []
         extra_links_count = 0
@@ -512,7 +509,7 @@ class NetworkLogParser:
 
         for match in re.finditer(ref_def_pattern, response_text, flags=re.MULTILINE):
             ref_num, url, title = match.group(1), match.group(2), strip_html(match.group(3) or "")
-            norm = clean_url(url)
+            norm = normalize(url)
             if norm in seen_norm_urls:
                 continue
             seen_norm_urls.add(norm)
@@ -550,7 +547,7 @@ class NetworkLogParser:
         inline_pattern = r'(?<!!)\[([^\]]+)\]\((https?://[^\s)]+)\)'
         for match in re.finditer(inline_pattern, response_text):
             link_text, url = strip_html(match.group(1)), match.group(2)
-            norm = clean_url(url)
+            norm = normalize(url)
             if norm in seen_norm_urls:
                 continue
             seen_norm_urls.add(norm)

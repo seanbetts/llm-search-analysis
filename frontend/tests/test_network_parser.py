@@ -65,4 +65,24 @@ def test_parse_chatgpt_response_text_fallback_extracts_footnote_citations():
   assert len(response.citations) == 2
   assert response.citations[0].url == "https://example.com/a"
   assert response.citations[0].title == "Example A"
-  assert len(response.sources) == 2
+  assert response.sources == []
+
+
+def test_parse_chatgpt_log_matches_sources_to_citations_with_tracking_params():
+  """Citation URLs should match sources even when they include tracking params."""
+  sse_body = "\n".join([
+    'data: {"v":{"message":{"metadata":{"search_result_groups":[{"domain":"example.com","entries":[{"type":"search_result","url":"https://example.com/article?ref=abc&utm_source=openai","title":"Example Title","snippet":"Snippet text"}]}]}}}}',  # noqa: E501
+  ])
+  response = NetworkLogParser.parse_chatgpt_log(
+    network_response={"body": sse_body},
+    model="chatgpt-free",
+    response_time_ms=1500,
+    extracted_response_text=(
+      "Answer with [1]\n\n"
+      '[1]: https://example.com/article?utm_source=openai "Example Title"\n'
+    )
+  )
+  assert len(response.sources) == 1
+  assert len(response.citations) == 1
+  assert response.citations[0].rank == 1
+  assert response.extra_links_count == 0
