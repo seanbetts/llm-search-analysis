@@ -15,7 +15,6 @@ RESPONSE_KEY = "web_response"
 ERROR_KEY = "web_error"
 PROMPT_KEY = "web_prompt"
 TAGGING_KEY = "web_enable_citation_tagging"
-TAGGING_WAIT_KEY = "web_wait_for_citation_tagging"
 
 
 def tab_web():
@@ -25,7 +24,6 @@ def tab_web():
   st.session_state.setdefault(PROMPT_KEY, None)
   st.session_state.setdefault('network_show_browser', False)
   st.session_state.setdefault(TAGGING_KEY, True)
-  st.session_state.setdefault(TAGGING_WAIT_KEY, True)
 
   st.markdown("### 🌐 Web Testing")
 
@@ -39,11 +37,6 @@ def tab_web():
     "Enable citation tagging",
     key=TAGGING_KEY,
     help="Runs in the background after saving (adds tags and influence summaries)."
-  )
-  st.checkbox(
-    "Wait for citation tagging before showing results",
-    key=TAGGING_WAIT_KEY,
-    help="When enabled, the Web tab polls until tagging finishes before rendering Sources Used.",
   )
 
   prompt = st.chat_input("Prompt (Enter to send, Shift+Enter for new line)", key="web_prompt_input")
@@ -138,7 +131,6 @@ def tab_web():
           citation_status = metadata.get("citation_tagging_status")
           should_wait = (
             bool(st.session_state.get(TAGGING_KEY, True))
-            and bool(st.session_state.get(TAGGING_WAIT_KEY, True))
             and citation_status in {"queued", "running"}
             and isinstance(interaction_id, int)
           )
