@@ -45,6 +45,55 @@ def _render_citation_tags(citation):
   )
 
 
+def _extract_citation_mentions(citation):
+  """Return normalized mention dicts for a citation."""
+  raw_mentions = getattr(citation, "mentions", None) or []
+  mentions = []
+  for item in raw_mentions:
+    if isinstance(item, dict):
+      mention = dict(item)
+    else:
+      mention = {
+        "mention_index": getattr(item, "mention_index", None),
+        "start_index": getattr(item, "start_index", None),
+        "end_index": getattr(item, "end_index", None),
+        "snippet_cited": getattr(item, "snippet_cited", None),
+        "metadata": getattr(item, "metadata", None),
+        "function_tags": getattr(item, "function_tags", None),
+        "stance_tags": getattr(item, "stance_tags", None),
+        "provenance_tags": getattr(item, "provenance_tags", None),
+        "influence_summary": getattr(item, "influence_summary", None),
+      }
+    mentions.append(mention)
+  mentions.sort(key=lambda m: m.get("mention_index") if isinstance(m.get("mention_index"), int) else 10**9)
+  return mentions
+
+
+def _render_citation_mentions(citation):
+  """Render numbered Snippet Cited / Influence Summary blocks for mentions."""
+  mentions = _extract_citation_mentions(citation)
+  if not mentions:
+    return ""
+
+  blocks = []
+  for fallback_idx, mention in enumerate(mentions):
+    mention_index = mention.get("mention_index")
+    display_idx = (mention_index + 1) if isinstance(mention_index, int) else (fallback_idx + 1)
+    snippet_display = _format_snippet(mention.get("snippet_cited"))
+    influence_display = _format_snippet(mention.get("influence_summary"))
+    blocks.append(
+      "<div style='margin-top:4px; font-size:0.95rem;'>"
+      f"<strong>Snippet Cited {display_idx}:</strong> <em>{snippet_display}</em>"
+      "</div>"
+    )
+    blocks.append(
+      "<div style='margin-top:4px; font-size:0.95rem;'>"
+      f"<strong>Influence Summary {display_idx}:</strong> <em>{influence_display}</em>"
+      "</div>"
+    )
+  return "".join(blocks)
+
+
 def sanitize_response_markdown(text: str) -> str:
   """Remove heavy dividers and downscale large headings so they don't exceed the section title.
 
@@ -373,6 +422,7 @@ def display_response(response, prompt=None):
           or getattr(citation, "snippet_used", None)
           or None
         )
+        mentions_block = _render_citation_mentions(citation)
         influence_summary = getattr(citation, "influence_summary", None)
         pub_date_val = getattr(source_fallback, "pub_date", None)
         snippet_display = _format_snippet(snippet)
@@ -404,8 +454,7 @@ def display_response(response, prompt=None):
             {description_block}
             {pub_date_block}
             {divider_block}
-            {snippet_cited_block}
-            {influence_block}
+            {mentions_block or (snippet_cited_block + influence_block)}
             {tags_block}
         </div>
         """, unsafe_allow_html=True)
@@ -443,6 +492,7 @@ def display_response(response, prompt=None):
           or getattr(citation, "snippet_used", None)
           or None
         )
+        mentions_block = _render_citation_mentions(citation)
         snippet_cited_display = _format_snippet(snippet_cited)
         snippet_cited_block = (
           "<div style='margin-top:4px; font-size:0.95rem;'>"
@@ -473,8 +523,7 @@ def display_response(response, prompt=None):
             {description_block}
             {pub_date_block}
             {divider_block}
-            {snippet_cited_block}
-            {influence_block}
+            {mentions_block or (snippet_cited_block + influence_block)}
             {tags_block}
         </div>
         """, unsafe_allow_html=True)
