@@ -428,20 +428,14 @@ def display_response(response, prompt=None):
         domain = urlparse(citation.url).netloc if citation.url else 'Unknown domain'
         display_title = citation.title or domain or 'Unknown source'
 
-        # Get snippet from metadata if available
-        snippet = None
+        # Extra links do not have a search result description; only show a description if it is explicitly present.
+        description = None
         if getattr(citation, "metadata", None):
-          snippet = citation.metadata.get("snippet")
-        if not snippet:
-          snippet = (
-            getattr(citation, "text_snippet", None)
-            or getattr(citation, "snippet_cited", None)
-            or getattr(citation, "snippet_used", None)
-          )
-        snippet_display = _format_snippet(snippet)
-        snippet_block = (
+          description = citation.metadata.get("snippet")
+        description_display = _format_snippet(description)
+        description_block = (
           "<div style='margin-top:4px; font-size:0.95rem;'>"
-          f"<strong>Description:</strong> <em>{snippet_display}</em>"
+          f"<strong>Description:</strong> <em>{description_display}</em>"
           "</div>"
         )
         snippet_cited = (
@@ -455,14 +449,32 @@ def display_response(response, prompt=None):
           f"<strong>Snippet Cited:</strong> <em>{snippet_cited_display}</em>"
           "</div>"
         )
+        pub_date_val = (
+          getattr(citation, "published_at", None)
+          or (citation.metadata or {}).get("published_at")
+          or (citation.metadata or {}).get("pub_date")
+        )
+        pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"
+        pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
+        divider_block = "<div style='margin-top:6px;border-top:1px solid rgba(0,0,0,0.12);'></div>"
+        influence_summary = getattr(citation, "influence_summary", None)
+        influence_display = _format_snippet(influence_summary)
+        influence_block = (
+          "<div style='margin-top:4px; font-size:0.95rem;'>"
+          f"<strong>Influence Summary:</strong> <em>{influence_display}</em>"
+          "</div>"
+        )
         tags_block = _render_citation_tags(citation)
 
         st.markdown(f"""
         <div class="citation-item">
             <strong>{i}. {display_title}</strong><br/>
             {domain_link}
-            {snippet_block}
+            {description_block}
+            {pub_date_block}
+            {divider_block}
             {snippet_cited_block}
+            {influence_block}
             {tags_block}
         </div>
         """, unsafe_allow_html=True)
