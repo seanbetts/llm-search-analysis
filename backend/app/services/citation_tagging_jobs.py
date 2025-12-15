@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import logging
 import threading
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import Optional
 
@@ -24,6 +26,8 @@ from app.services.citation_tagging_service import (
 )
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_MAX_CONCURRENCY = 6
 
 
 def _create_session_factory() -> sessionmaker:
@@ -83,8 +87,8 @@ def _run_web_citation_tagging_job(response_id: int, prompt: str, response_text: 
       _update_status(session, response, status="disabled")
       return
 
-    tagger = CitationTaggingService.from_settings(enabled_override=True)
-    if not tagger.config.enabled:
+    tagger_config_probe = CitationTaggingService.from_settings(enabled_override=True)
+    if not tagger_config_probe.config.enabled:
       _update_status(session, response, status="disabled")
       return
 
@@ -114,11 +118,34 @@ def _run_web_citation_tagging_job(response_id: int, prompt: str, response_text: 
         "domain": extract_domain(source.url),
       })
 
-    tagger.annotate_citations(prompt=prompt, response_text=response_text, citations=citations)
-    influence = CitationInfluenceService(tagger.config)
-    influence.annotate_influence(prompt=prompt, response_text=response_text, citations=citations)
+    def _process_one(citation: dict) -> dict:
+      local_tagger = CitationTaggingService.from_settings(enabled_override=True)
+      local_tagger.annotate_citations(prompt=prompt, response_text=response_text, citations=[citation])
+      local_influence = CitationInfluenceService(local_tagger.config)
+      local_influence.annotate_influence(prompt=prompt, response_text=response_text, citations=[citation])
+      return citation
 
-    updated = {c.get("source_used_id"): c for c in citations if c.get("source_used_id") is not None}
+    max_workers = min(DEFAULT_MAX_CONCURRENCY, max(1, len(citations)))
+    updated_payloads: list[dict] = []
+    start = time.perf_counter()
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+      futures = [pool.submit(_process_one, citation) for citation in citations]
+      for future in as_completed(futures):
+        updated_payloads.append(future.result())
+    elapsed = time.perf_counter() - start
+    logger.info(
+      "Citation tagging completed for response_id=%s (%s citations, %s workers) in %.2fs",
+      response_id,
+      len(citations),
+      max_workers,
+      elapsed,
+    )
+
+    updated = {
+      c.get("source_used_id"): c
+      for c in updated_payloads
+      if c.get("source_used_id") is not None
+    }
     for source in taggable:
       payload = updated.get(source.id)
       if not payload:

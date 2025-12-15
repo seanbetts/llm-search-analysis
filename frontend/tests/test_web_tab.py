@@ -52,4 +52,4 @@ def test_tab_web_does_not_pass_widget_defaults_when_using_session_state(monkeypa
   keys = {call.get("key") for call in st_stub.checkbox_calls}
   assert "network_show_browser" in keys
   assert web_tab.TAGGING_KEY in keys
-
+  assert web_tab.TAGGING_WAIT_KEY in keys
