@@ -193,7 +193,7 @@ def test_extra_links_render_numbered_mentions(monkeypatch):
   response_module.display_response(response, prompt="Prompt")
 
   html = "\n".join(st_stub.markdown_calls)
-  assert "Snippet Cited 1:</strong> <em>S1</em>" in html
-  assert "Influence Summary 1:</strong> <em>I1</em>" in html
-  assert "Snippet Cited 2:</strong> <em>S2</em>" in html
-  assert "Influence Summary 2:</strong> <em>I2</em>" in html
+  assert "<table" in html
+  assert "<th" in html and "Snippet Cited" in html and "Influence Summary" in html
+  assert "<strong>1</strong>" in html and "<em>S1</em>" in html and "<em>I1</em>" in html
+  assert "<strong>2</strong>" in html and "<em>S2</em>" in html and "<em>I2</em>" in html

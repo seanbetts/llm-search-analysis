@@ -69,29 +69,41 @@ def _extract_citation_mentions(citation):
   return mentions
 
 
-def _render_citation_mentions(citation):
-  """Render numbered Snippet Cited / Influence Summary blocks for mentions."""
+def _render_citation_mentions_table(citation):
+  """Render a compact HTML table for all citation mentions."""
   mentions = _extract_citation_mentions(citation)
   if not mentions:
     return ""
 
-  blocks = []
+  rows = []
   for fallback_idx, mention in enumerate(mentions):
     mention_index = mention.get("mention_index")
     display_idx = (mention_index + 1) if isinstance(mention_index, int) else (fallback_idx + 1)
     snippet_display = _format_snippet(mention.get("snippet_cited"))
     influence_display = _format_snippet(mention.get("influence_summary"))
-    blocks.append(
-      "<div style='margin-top:4px; font-size:0.95rem;'>"
-      f"<strong>Snippet Cited {display_idx}:</strong> <em>{snippet_display}</em>"
-      "</div>"
+    rows.append(
+      "<tr>"
+      f"<td style='vertical-align:top;padding:6px 8px;border:1px solid rgba(0,0,0,0.08);width:36px;'><strong>{display_idx}</strong></td>"  # noqa: E501
+      f"<td style='vertical-align:top;padding:6px 8px;border:1px solid rgba(0,0,0,0.08);'><em>{snippet_display}</em></td>"  # noqa: E501
+      f"<td style='vertical-align:top;padding:6px 8px;border:1px solid rgba(0,0,0,0.08);'><em>{influence_display}</em></td>"  # noqa: E501
+      "</tr>"
     )
-    blocks.append(
-      "<div style='margin-top:4px; font-size:0.95rem;'>"
-      f"<strong>Influence Summary {display_idx}:</strong> <em>{influence_display}</em>"
-      "</div>"
-    )
-  return "".join(blocks)
+
+  header = (
+    "<tr>"
+    "<th style='text-align:left;padding:6px 8px;border:1px solid rgba(0,0,0,0.08);width:36px;'>#</th>"
+    "<th style='text-align:left;padding:6px 8px;border:1px solid rgba(0,0,0,0.08);'>Snippet Cited</th>"
+    "<th style='text-align:left;padding:6px 8px;border:1px solid rgba(0,0,0,0.08);'>Influence Summary</th>"
+    "</tr>"
+  )
+  table = (
+    "<div style='margin-top:4px;'>"
+    "<table style='width:100%;border-collapse:collapse;font-size:0.95rem;'>"
+    f"{header}{''.join(rows)}"
+    "</table>"
+    "</div>"
+  )
+  return table
 
 
 def sanitize_response_markdown(text: str) -> str:
@@ -422,7 +434,7 @@ def display_response(response, prompt=None):
           or getattr(citation, "snippet_used", None)
           or None
         )
-        mentions_block = _render_citation_mentions(citation)
+        mentions_block = _render_citation_mentions_table(citation)
         influence_summary = getattr(citation, "influence_summary", None)
         pub_date_val = getattr(source_fallback, "pub_date", None)
         snippet_display = _format_snippet(snippet)
@@ -492,7 +504,7 @@ def display_response(response, prompt=None):
           or getattr(citation, "snippet_used", None)
           or None
         )
-        mentions_block = _render_citation_mentions(citation)
+        mentions_block = _render_citation_mentions_table(citation)
         snippet_cited_display = _format_snippet(snippet_cited)
         snippet_cited_block = (
           "<div style='margin-top:4px; font-size:0.95rem;'>"
