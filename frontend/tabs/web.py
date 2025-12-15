@@ -27,14 +27,12 @@ def tab_web():
 
   st.checkbox(
     "Show browser window",
-    value=st.session_state.network_show_browser,
     key="network_show_browser",
     help="Uncheck to run headless for faster captures."
   )
 
   st.checkbox(
     "Enable citation tagging",
-    value=st.session_state[TAGGING_KEY],
     key=TAGGING_KEY,
     help="Runs in the background after saving (adds tags and influence summaries)."
   )
