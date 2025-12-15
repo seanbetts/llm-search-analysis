@@ -181,6 +181,7 @@ def tab_web():
     )
     interaction_id = getattr(st.session_state[RESPONSE_KEY], "interaction_id", None)
     if interaction_id:
+      st.divider()
       btn_wrap, _ = st.columns([1, 4])
       with btn_wrap:
         render_markdown_download_button(
