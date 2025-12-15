@@ -912,33 +912,41 @@ Waiting up to 120 seconds for you to complete this...
             # Find the event stream response containing search data
             print(f"📊 Captured {len(captured_responses)} network responses")
 
-            # Look for event-stream response (contains all search data)
-            event_stream_response = None
-            largest_stream = None
-            for resp in captured_responses:
-                if 'event-stream' in resp.get('content_type', ''):
-                    if not event_stream_response:
-                        event_stream_response = resp
-                    # track largest by body_size
-                    if not largest_stream or resp.get('body_size', 0) > largest_stream.get('body_size', 0):
-                        largest_stream = resp
+            def looks_like_chatgpt_stream(resp: dict) -> bool:
+                """Heuristic: identify the ChatGPT streaming payload response."""
+                content_type = (resp.get('content_type') or '').lower()
+                url = (resp.get('url') or '')
+                body = resp.get('body') or ''
+                if 'event-stream' in content_type:
+                    return True
+                if isinstance(body, str):
+                    if body.startswith('data: ') or '\ndata: ' in body:
+                        return True
+                # Some deployments return text/plain for the stream; rely on URL hints.
+                if '/backend-api/conversation' in url and isinstance(body, str) and ('data: ' in body):
+                    return True
+                return False
 
-            if not event_stream_response and largest_stream:
-                event_stream_response = largest_stream
+            # Prefer an SSE-like response; fall back to the largest SSE-like payload.
+            candidates = [resp for resp in captured_responses if looks_like_chatgpt_stream(resp)]
+            event_stream_response = None
+            if candidates:
+                event_stream_response = max(candidates, key=lambda r: r.get('body_size', 0))
 
             if not event_stream_response:
                 print("⚠️  No event stream found in network capture")
-                # Return response with extracted text but no search data
-                return ProviderResponse(
-                    response_text=response_text if response_text else "ChatGPT responded but network capture did not find event stream data.",  # noqa: E501
-                    search_queries=[],
-                    sources=[],
-                    citations=[],
-                    raw_response={'captured_responses': len(captured_responses)},
+                self._log_status("⚠️  No stream payload found; extracting citations from response text only.")
+                fallback_text = response_text if response_text else ""
+                parsed_response = NetworkLogParser.parse_chatgpt_response_text_fallback(
+                    extracted_response_text=fallback_text,
                     model="ChatGPT",
-                    provider='openai',
-                    response_time_ms=response_time_ms
+                    response_time_ms=response_time_ms,
                 )
+                parsed_response.raw_response = {
+                    "captured_responses": len(captured_responses),
+                    "fallback": "response_text_only",
+                }
+                return parsed_response
 
             # Parse the event stream response
             self._log_status("🔍 Parsing network logs...")

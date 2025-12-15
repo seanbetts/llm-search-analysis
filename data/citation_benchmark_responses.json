@@ -1,0 +1,2363 @@
+[
+  {
+    "response_id": 275,
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-5-20250929",
+    "data_source": "api",
+    "created_at": "2025-12-11T13:15:30.780730",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "Based on the latest information, here are the key details about the **Steam Frame**:\n\n## Overview\nSteam Frame is an upcoming standalone virtual reality headset developed by Valve Corporation, announced in November 2025 and expected to be released in early 2026. Valve describes it as a \"streaming-first\" standalone VR headset.\n\n## Key Specifications\n- **Processor:** Qualcomm Snapdragon 8 Gen 3 with 16 GB of LPDDR5X memory\n- **Display:** LCD displays with 2160\u00d72160 per-eye resolution and support for refresh rates of 72, 120 and 144 Hz\n- **Storage:** 256 GB and 1 TB models, expandable via microSD cards\n- **Weight:** Core frontbox weighs 185 grams, entire system with default strap and battery weighs 440 grams\n- **Field of View:** 110 degrees horizontal and vertical\n\n## Key Features\nIt runs SteamOS and can run VR games natively on the headset or stream them from a PC over Wi-Fi. Unlike the Valve Index, it's a standalone device that doesn't need to be tethered to a PC or use external \"lighthouse\" base stations.\n\nIt features multiple Wi-Fi 7 radios to split internet and VR streaming traffic, and includes a bundled Wi-Fi 6E USB adapter for a dedicated 6GHz connection to reduce latency.\n\nIt has four onboard grayscale tracking cameras (two for monochrome passthrough) and eye tracking for foveated streaming.\n\n## Software Compatibility\nIt runs SteamOS with various compatibility layers including Proton for Windows games, FEX-Emu for x86 software on ARM, and Lepton for Android apps.\n\n## Pricing & Availability\nValve has confirmed the headset will launch in Q1 2026, meaning before March 31, 2026. Pricing wasn't announced, but Valve stated it expects Steam Frame to be cheaper than the Index.\n\nSteam Frame will replace the Valve Index, which is no longer in production.",
+    "citations": [
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame",
+        "title": "Steam Frame - Wikipedia",
+        "rank": 3,
+        "text_snippet": "Steam Frame is an upcoming standalone virtual reality headset developed by Valve Corporation. Announced in November 2025 as part of a new lineup of St...",
+        "snippet_cited": "Steam Frame is an upcoming standalone virtual reality headset developed by Valve Corporation. Announced in November 2025 as part of a new lineup of St...",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.uploadvr.com/valve-steam-frame-official-announcement-features-details/",
+        "title": "Valve Officially Announces Steam Frame, A \"Streaming-First\" Standalone VR Headset",
+        "rank": 7,
+        "text_snippet": "Valve just officially announced Steam Frame, a \"streaming-first\" standalone VR headset launching in \"early 2026\".",
+        "snippet_cited": "Valve just officially announced Steam Frame, a \"streaming-first\" standalone VR headset launching in \"early 2026\".",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+        "title": "Steam Frame Release Date Window, Possible Price, Specs, And Everything We Know About Valve's Next-Gen VR Headset - GameSpot",
+        "rank": 8,
+        "text_snippet": "Instead, Valve promises that the new VR headset is primed to launch in early 2026, with further clarification from the company constraining that to Q1...",
+        "snippet_cited": "Instead, Valve promises that the new VR headset is primed to launch in early 2026, with further clarification from the company constraining that to Q1...",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 274,
+    "provider": "google",
+    "model": "gemini-3-pro-preview",
+    "data_source": "api",
+    "created_at": "2025-12-11T13:15:01.160868",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "The **Steam Frame** is Valve\u2019s newly announced standalone VR headset, officially revealed in November 2025. It is designed as a \"streaming-first\" device that can also function independently, aiming to bridge the gap between high-end PC VR and standalone convenience.\n\nHere are the latest details available as of December 2025:\n\n### **Release Date & Pricing**\n*   **Release Window:** Early 2026 (specifically targeted for Q1).\n*   **Price:** Not yet officially confirmed. However, Valve has stated they expect it to be **cheaper than the Valve Index** launch price (which was $999 for the full kit).\n\n### **Key Features**\n*   **Streaming-First Design:** While it can run games natively, its primary focus is wireless PC streaming. It comes with a dedicated **Wi-Fi 6E USB dongle** to create a direct, low-latency 6GHz connection to your PC, bypassing your home router.\n*   **\"Foveated Streaming\":** A unique feature that uses eye-tracking to prioritize bandwidth and image clarity exactly where you are looking, allowing for higher fidelity visuals even over wireless connections.\n*   **Hybrid Play (VR & Flat):** The headset is designed to play your **entire Steam library**. Non-VR games (2D titles) can be played on a massive virtual screen within the headset, similar to a cinema mode.\n*   **Standalone Capability:** Powered by an Arm-based processor and SteamOS, it can run lightweight VR titles and Android apps directly on the device without a PC.\n\n### **Technical Specifications**\n*   **Processor:** Qualcomm Snapdragon 8 Gen 3 (Arm-based), running a version of SteamOS optimized for Arm.\n*   **Display:** Dual LCD pancake lenses with a resolution of **2160 x 2160 per eye**.\n*   **Refresh Rate:** Supports 72Hz, 120Hz, and an experimental 144Hz mode.\n*   **Tracking:** Inside-out tracking via 4 monochrome cameras (no base stations required).\n*   **Passthrough:** Black-and-white passthrough for seeing your surroundings (not full color mixed reality).\n*   **Weight:** Extremely light core unit (~185g), increasing to ~440g with the battery strap attached.\n\n### **New Controllers**\nThe Steam Frame introduces updated controllers that differ significantly from the \"Knuckles\" controllers of the Index.\n*   **Hybrid Layout:** They feature a split gamepad layout (D-pad, ABXY buttons) alongside traditional VR inputs (thumbsticks, triggers).\n*   **Purpose:** This design allows them to work seamlessly for both VR interactions and playing standard 2D gamepad games on the virtual screen.\n*   **Battery:** They run on AA batteries with an estimated 40-hour battery life.\n\n### **Software Ecosystem**\n*   **SteamOS on Arm:** It uses FEX-Emu (emulation layer) and Proton to run x86 Windows games on the Arm processor, though performance for demanding AAA titles in standalone mode will likely be limited compared to streaming.\n*   **Android Support:** It has native support for Android apps, potentially opening the door for side-loading other mobile VR content.",
+    "citations": [
+      {
+        "url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+        "title": "gamespot.com",
+        "rank": 1,
+        "text_snippet": "The **Steam Frame** is Valve\u2019s newly announced standalone VR headset, officially revealed in November 2025. I",
+        "snippet_cited": "The **Steam Frame** is Valve\u2019s newly announced standalone VR headset, officially revealed in November 2025. I",
+        "start_index": 0,
+        "end_index": 109,
+        "metadata": {
+          "grounding_chunk_index": 0,
+          "segment_end_index": 109,
+          "start_index": 0,
+          "end_index": 109
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.tomshardware.com/peripherals/gaming-headsets/hands-on-with-valves-new-steam-frame-headset-arm-powered-mixed-mode-device-uses-new-fex-translation-layer-for-traditional-x86-games",
+        "title": "tomshardware.com",
+        "rank": 10,
+        "text_snippet": "is designed as a \"streaming-first\" device that can also function independently, aiming to bridge the gap between high-end PC VR and standalone convenience.",
+        "snippet_cited": "is designed as a \"streaming-first\" device that can also function independently, aiming to bridge the gap between high-end PC VR and standalone convenience.",
+        "start_index": 111,
+        "end_index": 266,
+        "metadata": {
+          "grounding_chunk_index": 9,
+          "segment_start_index": 110,
+          "segment_end_index": 268,
+          "start_index": 111,
+          "end_index": 266
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame",
+        "title": "wikipedia.org",
+        "rank": 2,
+        "text_snippet": "Price:** Not yet officially confirmed. H",
+        "snippet_cited": "Price:** Not yet officially confirmed. H",
+        "start_index": 432,
+        "end_index": 472,
+        "metadata": {
+          "grounding_chunk_index": 1,
+          "segment_start_index": 428,
+          "segment_end_index": 472,
+          "start_index": 432,
+          "end_index": 472
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.pcgamer.com/hardware/vr-hardware/steam-frame-specs-availability/",
+        "title": "pcgamer.com",
+        "rank": 5,
+        "text_snippet": "Streaming-First Design:** While it can run games natively, its primary focus is wireless PC streaming. I",
+        "snippet_cited": "Streaming-First Design:** While it can run games natively, its primary focus is wireless PC streaming. I",
+        "start_index": 627,
+        "end_index": 731,
+        "metadata": {
+          "grounding_chunk_index": 4,
+          "segment_start_index": 623,
+          "segment_end_index": 731,
+          "start_index": 627,
+          "end_index": 731
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://store.steampowered.com/sale/steamframe",
+        "title": "steampowered.com",
+        "rank": 11,
+        "text_snippet": "\"Foveated Streaming\":** A unique feature that uses eye-tracking to prioritize bandwidth and image clarity exactly where you are looking, allowing for higher fidelity visuals even over wireless connections.",
+        "snippet_cited": "\"Foveated Streaming\":** A unique feature that uses eye-tracking to prioritize bandwidth and image clarity exactly where you are looking, allowing for higher fidelity visuals even over wireless connections.",
+        "start_index": 874,
+        "end_index": 1079,
+        "metadata": {
+          "grounding_chunk_index": 10,
+          "segment_start_index": 870,
+          "segment_end_index": 1081,
+          "start_index": 874,
+          "end_index": 1079
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.ign.com/articles/valve-heads-into-vr-headset-hardware-once-again-with-steam-frame-the-big-interview",
+        "title": "ign.com",
+        "rank": 7,
+        "text_snippet": "Refresh Rate:** Supports 72Hz, 120Hz, and an experimental 144Hz mode.",
+        "snippet_cited": "Refresh Rate:** Supports 72Hz, 120Hz, and an experimental 144Hz mode.",
+        "start_index": 1689,
+        "end_index": 1758,
+        "metadata": {
+          "grounding_chunk_index": 6,
+          "segment_start_index": 1685,
+          "segment_end_index": 1760,
+          "start_index": 1689,
+          "end_index": 1758
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 273,
+    "provider": "openai",
+    "model": "gpt-5.1",
+    "data_source": "api",
+    "created_at": "2025-12-11T13:14:20.015762",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "Here\u2019s the current, high\u2011level picture of Valve\u2019s **Steam Frame** as of December 11, 2025.\n\n## What it is\n\n- **Standalone VR headset** made by Valve, successor to the Valve Index.  \n- Runs **SteamOS on ARM** and can:\n  - Run VR games **natively on\u2011device**, and  \n  - **Stream PC games** (VR *and* non\u2011VR) wirelessly from a gaming PC, Steam Deck, or the new Steam Machine. ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- Internally it\u2019s essentially a **Snapdragon 8 Gen 3 + SteamOS ARM** box strapped to your face, with eye tracking and foveated streaming. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n## Release window, price, availability\n\n- **Announced:** November 12, 2025, alongside the new Steam Machine and Steam Controller. ([gematsu.com](https://www.gematsu.com/2025/11/valve-announces-steam-machine-steam-frame-and-steam-controller?utm_source=openai))  \n- **Release window:** \u201cearly 2026\u201d / \u201cQ1 2026\u201d (no exact date yet). ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- **Price:** Not yet publicly announced; Valve has only said it aims to price it **below the Valve Index\u2019s original price**. ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n- **Dev kits:** A Steam Frame Developer Kit program is open for Steam partners; kits are shipping in waves. ([play.asia](https://play.asia/blog/2025/11/13/the-steam-hardware-family-expands-valve-announces-frame-machine-and-controller-for-early-2026-release/?utm_source=openai))  \n\n## Key hardware specs (headset)\n\nFrom Valve\u2019s spec sheet and recent hands\u2011ons: ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n- **Processor / RAM**\n  - 4 nm **Qualcomm Snapdragon 8 Gen 3 (ARM64)**  \n  - **16 GB unified LPDDR5X RAM**\n\n- **Storage**\n  - Models with **256 GB or 1 TB UFS** storage  \n  - **microSD slot** for expansion (shares cards with Steam Deck / Steam Machine)\n\n- **Display & optics**\n  - **2160 \u00d7 2160 LCD per eye**  \n  - **Pancake lenses**, ~**up to 110\u00b0 FOV**  \n  - Refresh rates: **72, 120, 144 Hz (144 Hz marked experimental)**  \n\n- **Tracking & sensors**\n  - **Inside\u2011out tracking** with multiple outward\u2011facing cameras (no external base stations)  \n  - **Eye tracking** for foveated rendering / streaming  \n  - Included controllers: 6\u2011DOF tracking, haptics, standard gamepad\u2011style buttons & sticks. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n- **Connectivity**\n  - **Wi\u2011Fi 7 (2\u00d72)** with dual 5 GHz / 6 GHz radios so one band can handle streaming while the other handles regular internet traffic  \n  - **Included 6 GHz Wi\u2011Fi 6E dongle** for low\u2011latency PC streaming  \n  - **Bluetooth 5.3**  \n  - One **rear USB\u2011C 2.0** port (charging + data), 45 W charging ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n\n- **Weight & design**\n  - **185 g \u201ccore\u201d module** (all the electronics, optics, SoC)  \n  - **440 g total** with default headstrap and battery  \n  - Headstrap is **modular**; the core can be detached for other straps / experimental shells. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n- **Battery & audio**\n  - **21.6 Wh Li\u2011ion battery**, in the rear of the strap, helps balance weight  \n  - Dual speakers per ear + dual\u2011mic array ([windowscentral.com](https://www.windowscentral.com/hardware/virtual-reality/valve-announce-steam-frame-snapdragon-xr-headset-steam-os-arm-support?utm_source=openai))  \n\n## Software & compatibility\n\n- **OS:** SteamOS (ARM build)  \n- **Game compatibility paths:**  \n  - Native **ARM** builds  \n  - x86/x86\u201164 games via **FEX translation + Proton** (like Deck, but on ARM)  \n  - **Android apps/games** via an Android compatibility layer; Valve is also working on a \u201cLepton\u201d layer for broader Android compatibility. Play Store support is not currently planned. ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- **Use cases Valve is pitching:**\n  - Full VR titles (native or streamed)  \n  - **Flat, non\u2011VR Steam library** playable on a giant virtual screen via streaming, and some titles running standalone. ([gameinformer.com](https://gameinformer.com/2025/11/12/valve-announces-console-like-steam-machine-steam-frame-vr-headset-and-new-steam?utm_source=openai))  \n- A **\u201cSteam Frame Verified\u201d** program (similar to Deck Verified) will label which games run well standalone on the headset. ([play.asia](https://play.asia/blog/2025/11/13/the-steam-hardware-family-expands-valve-announces-frame-machine-and-controller-for-early-2026-release/?utm_source=openai))  \n\n## Notable limitations / missing features (so far)\n\n- **No wired PC mode:** Valve is focusing on **wireless only**; there\u2019s no DisplayPort or USB\u2011C video link announced, only wireless streaming. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n- **No stereoscopic 3D for 2D content at launch:** Unlike Apple Vision Pro or some Meta features, Steam Frame **won\u2019t initially support automatic stereoscopic 3D for flat photos/videos/games**. Valve says it\u2019s \u201con our list\u201d for later, potentially via streaming or future updates. ([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))  \n\n## How it fits in Valve\u2019s lineup\n\n- Succeeds **Valve Index** (which Valve has now stopped producing, though they\u2019ll support it \u201cindefinitely\u201d). ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n- Launches alongside:\n  - **Second\u2011gen Steam Machine** (small living\u2011room PC console), and  \n  - A **new Steam Controller**, all targeting early 2026 as a full Steam hardware ecosystem. ([gematsu.com](https://www.gematsu.com/2025/11/valve-announces-steam-machine-steam-frame-and-steam-controller?utm_source=openai))  \n\n---\n\nIf you tell me what you care about most (e.g., PC VR streaming vs standalone use, comfort, productivity apps, comparison with Quest 3/3S or Vision Pro), I can zoom in on that and translate these specs into real\u2011world expectations.",
+    "citations": [
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai",
+        "title": "Steam Frame",
+        "rank": 10,
+        "text_snippet": "([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))",
+        "snippet_cited": "([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))",
+        "start_index": 373,
+        "end_index": 454,
+        "metadata": {
+          "start_index": 373,
+          "end_index": 454
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai",
+        "title": "Valve rejoins the VR hardware wars with standalone Steam Frame - Ars Technica",
+        "rank": 9,
+        "text_snippet": "([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))",
+        "snippet_cited": "([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))",
+        "start_index": 595,
+        "end_index": 736,
+        "metadata": {
+          "start_index": 595,
+          "end_index": 736
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.gematsu.com/2025/11/valve-announces-steam-machine-steam-frame-and-steam-controller?utm_source=openai",
+        "title": "Valve announces Steam Machine, Steam Frame, and Steam Controller - Gematsu",
+        "rank": 11,
+        "text_snippet": "([gematsu.com](https://www.gematsu.com/2025/11/valve-announces-steam-machine-steam-frame-and-steam-controller?utm_source=openai))",
+        "snippet_cited": "([gematsu.com](https://www.gematsu.com/2025/11/valve-announces-steam-machine-steam-frame-and-steam-controller?utm_source=openai))",
+        "start_index": 870,
+        "end_index": 999,
+        "metadata": {
+          "start_index": 870,
+          "end_index": 999
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai",
+        "title": "Valve announces three new Steam Hardware devices: Steam Machine, Steam Frame, and Steam Controller \u00b7 SteamDB",
+        "rank": 12,
+        "text_snippet": "([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))",
+        "snippet_cited": "([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))",
+        "start_index": 1279,
+        "end_index": 1361,
+        "metadata": {
+          "start_index": 1279,
+          "end_index": 1361
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://play.asia/blog/2025/11/13/the-steam-hardware-family-expands-valve-announces-frame-machine-and-controller-for-early-2026-release/?utm_source=openai",
+        "title": "The Steam Hardware Family Expands: Valve Announces Frame, Machine, and Controller For Early 2026 Release",
+        "rank": 15,
+        "text_snippet": "([play.asia](https://play.asia/blog/2025/11/13/the-steam-hardware-family-expands-valve-announces-frame-machine-and-controller-for-early-2026-release/?utm_source=openai))",
+        "snippet_cited": "([play.asia](https://play.asia/blog/2025/11/13/the-steam-hardware-family-expands-valve-announces-frame-machine-and-controller-for-early-2026-release/?utm_source=openai))",
+        "start_index": 1472,
+        "end_index": 1641,
+        "metadata": {
+          "start_index": 1472,
+          "end_index": 1641
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.windowscentral.com/hardware/virtual-reality/valve-announce-steam-frame-snapdragon-xr-headset-steam-os-arm-support?utm_source=openai",
+        "title": "Valve lays the foundations for an Arm-based gaming handheld future with first Snapdragon-powered SteamOS VR headset | Windows Central",
+        "rank": 5,
+        "text_snippet": "([windowscentral.com](https://www.windowscentral.com/hardware/virtual-reality/valve-announce-steam-frame-snapdragon-xr-headset-steam-os-arm-support?utm_source=openai))",
+        "snippet_cited": "([windowscentral.com](https://www.windowscentral.com/hardware/virtual-reality/valve-announce-steam-frame-snapdragon-xr-headset-steam-os-arm-support?utm_source=openai))",
+        "start_index": 3643,
+        "end_index": 3810,
+        "metadata": {
+          "start_index": 3643,
+          "end_index": 3810
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://gameinformer.com/2025/11/12/valve-announces-console-like-steam-machine-steam-frame-vr-headset-and-new-steam?utm_source=openai",
+        "title": "Valve Announces Console-Like Steam Machine, Steam Frame VR Headset, And New Steam Controller - Game Informer",
+        "rank": 13,
+        "text_snippet": "([gameinformer.com](https://gameinformer.com/2025/11/12/valve-announces-console-like-steam-machine-steam-frame-vr-headset-and-new-steam?utm_source=openai))",
+        "snippet_cited": "([gameinformer.com](https://gameinformer.com/2025/11/12/valve-announces-console-like-steam-machine-steam-frame-vr-headset-and-new-steam?utm_source=openai))",
+        "start_index": 4484,
+        "end_index": 4639,
+        "metadata": {
+          "start_index": 4484,
+          "end_index": 4639
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai",
+        "title": "Confirmed: Steam Frame will lack this Apple Vision Pro and Meta Quest feature at launch - Valve says it's 'on our list'",
+        "rank": 8,
+        "text_snippet": "([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))",
+        "snippet_cited": "([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))",
+        "start_index": 5559,
+        "end_index": 5751,
+        "metadata": {
+          "start_index": 5559,
+          "end_index": 5751
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 272,
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-5-20250929",
+    "data_source": "api",
+    "created_at": "2025-12-11T13:06:43.619986",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "Based on the latest information, here are the key details about the **Steam Frame**:\n\n## Release Date\nThe Steam Frame will be released in Q1 2026, which means it should launch sometime before March 31, 2026.\n\n## Overview\nSteam Frame is a \"streaming-first\" standalone VR headset with a lightweight modular design that runs a VR version of Valve's SteamOS. It's the lightest fully-featured standalone VR headset to date.\n\n## Key Specifications\n- **Processor**: Snapdragon 8 Gen 3 ARM64 chip with 16GB of unified LPDDR5X RAM\n- **Display**: Dual 2160\u00d72160 LCD panels, with twice as many pixels as the Valve Index\n- **Refresh Rate**: 72Hz to 144Hz\n- **Field of View**: Approximately 110 degrees horizontal and vertical, slightly less than the Valve Index\n- **Weight**: 440 grams total with default strap and battery; core frontbox weighs just 185 grams\n- **Storage**: Available in 256 GB and 1 TB models, expandable via microSD cards\n- **Tracking**: Four onboard grayscale tracking cameras for inside-out tracking, with two used for monochrome passthrough, plus eye tracking for foveated streaming\n\n## Key Features\n- Runs SteamOS natively on ARM with translation layers like Proton, and can run both native games and Android apps\n- Valve describes it as a \"streaming first headset,\" allowing games to be played on a gaming PC and streamed wirelessly to the headset\n- Includes a Wi-Fi 6E USB adapter for a dedicated 6GHz connection between PC and headset\n- Modular design with CAD and electrical specs available to third parties for custom accessories\n\n## Price\nThe Steam Frame will be cheaper than the Valve Index, which launched at $999, though exact pricing hasn't been announced yet.\n\n## Availability\nThe Steam Frame will be distributed through Steam in the same regions that support Steam Deck, with the headset replacing the Valve Index, which is no longer in production.",
+    "citations": [
+      {
+        "url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+        "title": "Steam Frame Release Date Window, Possible Price, Specs, And Everything We Know About Valve's Next-Gen VR Headset - GameSpot",
+        "rank": 1,
+        "text_snippet": "The Steam Frame will be released in Q1 2026.",
+        "snippet_cited": "The Steam Frame will be released in Q1 2026.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.uploadvr.com/valve-steam-frame-official-announcement-features-details/",
+        "title": "Valve Officially Announces Steam Frame, A \"Streaming-First\" Standalone VR Headset",
+        "rank": 3,
+        "text_snippet": "Valve just officially announced Steam Frame, a \"streaming-first\" standalone VR headset launching in \"early 2026\". Steam Frame has a lightweight modula...",
+        "snippet_cited": "Valve just officially announced Steam Frame, a \"streaming-first\" standalone VR headset launching in \"early 2026\". Steam Frame has a lightweight modula...",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://vr-compare.com/headset/steamframe",
+        "title": "Steam Frame: Full Specification - VRcompare",
+        "rank": 9,
+        "text_snippet": "Features Qualcomm Snapdragon 8 Gen 3, 110\u00b0 FoV, 2160x2160 per eye resolution, 144 Hz refresh rate.",
+        "snippet_cited": "Features Qualcomm Snapdragon 8 Gen 3, 110\u00b0 FoV, 2160x2160 per eye resolution, 144 Hz refresh rate.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame",
+        "title": "Steam Frame - Wikipedia",
+        "rank": 4,
+        "text_snippet": "The Frame will use a Qualcomm Snapdragon 8 Gen 3 system-on-chip with 16 GB of LPDDR5X memory, and be sold in models with 256 GB and 1 TB of internal s...",
+        "snippet_cited": "The Frame will use a Qualcomm Snapdragon 8 Gen 3 system-on-chip with 16 GB of LPDDR5X memory, and be sold in models with 256 GB and 1 TB of internal s...",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.pcgamer.com/hardware/vr-hardware/steam-frame-specs-availability/",
+        "title": "Valve announces the Steam Frame: 'a new way to play your entire Steam library' | PC Gamer",
+        "rank": 2,
+        "text_snippet": "\"We see Steam Frame as a streaming first headset,\" Lawrence Yang, a designer at Valve, tells me.",
+        "snippet_cited": "\"We see Steam Frame as a streaming first headset,\" Lawrence Yang, a designer at Valve, tells me.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.pcguide.com/vr/steam-frame-release-date-specs-price/",
+        "title": "Steam Frame VR headset release date window, specs, and price estimate - PC Guide",
+        "rank": 8,
+        "text_snippet": "However, what we do know is that it will be cheaper than the Valve Index. This detail was confirmed by VR-focused publication Road to VR during an int...",
+        "snippet_cited": "However, what we do know is that it will be cheaper than the Valve Index. This detail was confirmed by VR-focused publication Road to VR during an int...",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 271,
+    "provider": "google",
+    "model": "gemini-3-pro-preview",
+    "data_source": "api",
+    "created_at": "2025-12-11T13:05:52.491570",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "Based on the official announcement from Valve in November 2025 and subsequent details emerging in December 2025, here are the latest details on the **Steam Frame**.\n\n### **What is the Steam Frame?**\nThe Steam Frame is Valve's new **standalone virtual reality headset**. It serves as the spiritual successor to the Valve Index but differs significantly by being a wireless, standalone device (similar to the Meta Quest) rather than requiring a tethered PC connection.\n\nIt is part of a new hardware family announced by Valve, which also includes a **second-generation Steam Machine** console and a new **Steam Controller**.\n\n### **Key Hardware Specifications**\n*   **Processor:** Qualcomm Snapdragon 8 Gen 3 (ARM64 architecture).\n*   **Display:** Dual 2160 x 2160 LCD panels with pancake lenses.\n*   **Refresh Rate:** Supports 72Hz, 120Hz, and an experimental 144Hz mode.\n*   **Memory & Storage:** 16GB LPDDR5X RAM with storage options of 256GB and 1TB (expandable via microSD).\n*   **Tracking:** Inside-out tracking via four monochrome cameras; includes infrared illuminators for playing in dark environments.\n*   **Connectivity:** Wi-Fi 7 (dual radios for splitting internet and streaming traffic) and a bundled Wi-Fi 6E USB dongle for low-latency PC connection.\n\n### **Standout Features**\n*   **Foveated Streaming:** Unlike standard foveated rendering (which lowers resolution in your peripheral vision to save processing power), this feature uses the headset's eye-tracking to optimize the *wireless stream* from your PC. It allocates higher bitrate/clarity only to the exact spot you are looking at, drastically reducing latency and artifacting.\n*   **SteamOS on ARM:** This is the first device to run a version of SteamOS on an ARM processor. It uses compatibility layers (Proton for Windows games, FEX for x86 emulation, and Waydroid for Android apps) to run a vast library of software.\n*   **\"Steam Deck for Your Face\":** Valve is marketing it as a device for your entire library, not just VR. You can play standard \"flat\" (2D) games on a massive virtual screen using the split controllers.\n*   **Hybrid Controllers:** The controllers resemble Meta Quest controllers but feature a standard gamepad layout (including a D-pad and ABXY face buttons) to ensure full compatibility with non-VR Steam games.\n\n### **Release Date & Pricing**\n*   **Release Window:** Expected **Q1 2026** (Early 2026).\n*   **Price:** Official pricing has not been revealed yet, though Valve has stated they intend for it to be **cheaper than the original Valve Index** launch price ($999).\n\n### **Ecosystem Integration**\nThe Steam Frame is designed to work seamlessly with the newly announced **Steam Machine**. You can wake the console remotely and stream games directly to the headset. It also supports \"Cloud Save\" integration, allowing you to move a microSD card between your Steam Deck, Steam Machine, and Steam Frame to carry your library instantly.",
+    "citations": [
+      {
+        "url": "https://www.youtube.com/watch?v=2UK6VDUOtXo",
+        "title": "youtube.com",
+        "rank": 1,
+        "text_snippet": "The Steam Frame is Valve's new **standalone virtual reality headset**.",
+        "snippet_cited": "The Steam Frame is Valve's new **standalone virtual reality headset**.",
+        "start_index": 199,
+        "end_index": 269,
+        "metadata": {
+          "grounding_chunk_index": 0,
+          "segment_start_index": 166,
+          "segment_end_index": 269,
+          "start_index": 199,
+          "end_index": 269
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame",
+        "title": "wikipedia.org",
+        "rank": 3,
+        "text_snippet": "Processor:** Qualcomm Snapdragon 8 Gen 3 (ARM64 architecture).",
+        "snippet_cited": "Processor:** Qualcomm Snapdragon 8 Gen 3 (ARM64 architecture).",
+        "start_index": 665,
+        "end_index": 727,
+        "metadata": {
+          "grounding_chunk_index": 2,
+          "segment_start_index": 659,
+          "segment_end_index": 727,
+          "start_index": 665,
+          "end_index": 727
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://store.steampowered.com/sale/steamframe",
+        "title": "steampowered.com",
+        "rank": 5,
+        "text_snippet": "Display:** Dual 2160 x 2160 LCD panels with pancake lenses.",
+        "snippet_cited": "Display:** Dual 2160 x 2160 LCD panels with pancake lenses.",
+        "start_index": 734,
+        "end_index": 793,
+        "metadata": {
+          "grounding_chunk_index": 4,
+          "segment_start_index": 728,
+          "segment_end_index": 793,
+          "start_index": 734,
+          "end_index": 793
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.cnet.com/tech/gaming/i-tried-valves-steam-frame-machine-and-controller-coming-in-2026-steam-os-is-coming-for-your-face-and-tv/",
+        "title": "cnet.com",
+        "rank": 4,
+        "text_snippet": "\"Steam Deck for Your Face\":** Valve is marketing it as a device for your entire library, not just VR.",
+        "snippet_cited": "\"Steam Deck for Your Face\":** Valve is marketing it as a device for your entire library, not just VR.",
+        "start_index": 1898,
+        "end_index": 1999,
+        "metadata": {
+          "grounding_chunk_index": 3,
+          "segment_start_index": 1892,
+          "segment_end_index": 1999,
+          "start_index": 1898,
+          "end_index": 1999
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 270,
+    "provider": "openai",
+    "model": "gpt-5.1",
+    "data_source": "api",
+    "created_at": "2025-12-11T12:58:45.689689",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "Here\u2019s the latest publicly available information on Valve\u2019s **Steam Frame** as of December 11, 2025:\n\n---\n\n## What it is\n\n- **Standalone VR headset** from Valve, successor to the Valve Index, previously rumored under the codename \u201cDeckard.\u201d ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- Designed for **both VR and traditional (non\u2011VR) Steam games**, either running locally on the headset via SteamOS or streamed from a PC. ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n\n---\n\n## Release window & pricing\n\n- **Release window:** \u201cEarly 2026\u201d / **Q1 2026** (no exact date yet). ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- **Price:** Not announced. Valve has only said it should be **cheaper than the Index**, but no numbers. ([digitaltrends.com](https://www.digitaltrends.com/gaming/valves-steam-frame-is-an-all-in-one-headset-for-vr-pc-games-and-streaming/?utm_source=openai))  \n\n---\n\n## Hardware specs (current info)\n\n**Core platform**\n\n- SoC: **Qualcomm Snapdragon 8 Gen 3** (ARM64). ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n- RAM: **16 GB LPDDR5X unified memory**. ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- Storage options: **256 GB or 1 TB UFS**, plus **microSD slot** (can share cards with Steam Deck and other SteamOS devices). ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n\n**Display & optics**\n\n- Dual **LCD panels, 2160 \u00d7 2160 per eye**. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n- Refresh rates: **72 Hz, 120 Hz**, with **144 Hz as an experimental mode**. ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- **Pancake lenses**, physical IPD adjustment knob, and **eye tracking with foveated rendering**. ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- Field of view: up to **~110\u00b0**, similar to Meta Quest 3. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n**Tracking, controllers, and comfort**\n\n- **Inside\u2011out tracking** (built\u2011in cameras); no external Lighthouse base stations. Old SteamVR base\u2011station controllers will not be compatible. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n- New **Steam Frame controllers** with thumbsticks, buttons, detailed haptics, and a D\u2011pad; similar layout to Meta Quest controllers. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n- Weight: about **440 g** with strap and battery; **185 g** for the \u201ccore\u201d module alone, which is designed to be **modular** so other headstrap/battery shells could be built around it. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n- **Rear battery** for better balance; emphasis on easy \u201cslip on and play\u201d usage with no wires. ([gameinformer.com](https://gameinformer.com/2025/11/12/valve-announces-console-like-steam-machine-steam-frame-vr-headset-and-new-steam?utm_source=openai))  \n\n**Connectivity & power**\n\n- Wireless: **Wi\u2011Fi 7** (multiple radios; 5 GHz + 6 GHz separation for internet vs. PC streaming) plus an **included Wi\u2011Fi 6E (6 GHz) low\u2011latency PC link adapter**. ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- Bluetooth **5.3**. ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- USB\u2011C 2.0 on the rear for **charging and data**, up to **45 W** input. ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- Battery: about **21.6 Wh** lithium\u2011ion pack. ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- Audio: built\u2011in **spatial 3D audio** via dual speaker drivers per ear and a dual\u2011mic array. ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n\n---\n\n## Software & compatibility\n\n- OS: **SteamOS** (same family as Steam Deck; Arch\u2011based). ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- Can run:\n  - **Native VR games and apps** from Steam.  \n  - Many **non\u2011VR Steam games** on\u2011device, using compatibility layers. ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- Compatibility stack:\n  - **Proton** (for Windows/x86\u201164 titles).  \n  - **FEX** translation layer to run x86 games on ARM. ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n  - **Android apps/games** natively via an Android compatibility layer (no official Google Play Store confirmed yet). ([timesofgames.com](https://www.timesofgames.com/news/steam-frame-pc-gaming-arm/?utm_source=openai))  \n- Optimized wireless PC streaming with **\u201cFoveated Streaming\u201d** that prioritizes detail where your eyes are looking. ([gameinformer.com](https://gameinformer.com/2025/11/12/valve-announces-console-like-steam-machine-steam-frame-vr-headset-and-new-steam?utm_source=openai))  \n- Steam\u2019s **Verified** program is being extended specifically for Steam Frame titles/compatibility. ([gameinformer.com](https://gameinformer.com/2025/11/12/valve-announces-console-like-steam-machine-steam-frame-vr-headset-and-new-steam?utm_source=openai))  \n\n---\n\n## Known limitations or open questions (as of now)\n\n- **No official price** or exact launch date beyond \u201cearly 2026.\u201d ([digitaltrends.com](https://www.digitaltrends.com/gaming/valves-steam-frame-is-an-all-in-one-headset-for-vr-pc-games-and-streaming/?utm_source=openai))  \n- Valve has confirmed that **stereoscopic 3D conversion of 2D content (like Vision Pro\u2019s 3D for 2D video)** will *not* be supported at launch, though it\u2019s \u201con our list\u201d for potential future updates. ([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))  \n- No mention of **wired PC tethering**; the focus is on standalone use plus **wireless** PC streaming. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n---\n\n## Quick summary\n\n- **Product:** Steam Frame, Valve\u2019s standalone SteamOS VR & gaming headset.  \n- **Status:** Announced November 2025; release planned for **Q1 2026**.  \n- **Positioning:** All\u2011in\u2011one device for VR, PC\u2011style games, and streaming; aims to blend Steam Deck\u2011style flexibility with high\u2011end standalone VR (Meta Quest / PSVR 2 territory).  \n- **Key traits:** Snapdragon 8 Gen 3, 16 GB RAM, 2160\u00d72160 per eye LCD, up to 144 Hz, Wi\u2011Fi 7 + low\u2011latency 6 GHz streaming dongle, eye tracking + foveated rendering, modular core + strap design. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\nIf you tell me what specifically you care about (price expectations, performance vs Quest 3 / Vision Pro, PC\u2011streaming quality, modding potential, etc.), I can dive deeper into just those aspects.",
+    "citations": [
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai",
+        "title": "Steam Frame",
+        "rank": 3,
+        "text_snippet": "([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))",
+        "snippet_cited": "([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))",
+        "start_index": 241,
+        "end_index": 322,
+        "metadata": {
+          "start_index": 241,
+          "end_index": 322
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.digitaltrends.com/gaming/valves-steam-frame-is-an-all-in-one-headset-for-vr-pc-games-and-streaming/?utm_source=openai",
+        "title": "Valve\u2019s Steam Frame is an all-in one headset for VR, PC games, and streaming - Digital Trends",
+        "rank": 4,
+        "text_snippet": "([digitaltrends.com](https://www.digitaltrends.com/gaming/valves-steam-frame-is-an-all-in-one-headset-for-vr-pc-games-and-streaming/?utm_source=openai))",
+        "snippet_cited": "([digitaltrends.com](https://www.digitaltrends.com/gaming/valves-steam-frame-is-an-all-in-one-headset-for-vr-pc-games-and-streaming/?utm_source=openai))",
+        "start_index": 841,
+        "end_index": 993,
+        "metadata": {
+          "start_index": 841,
+          "end_index": 993
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai",
+        "title": "Valve rejoins the VR hardware wars with standalone Steam Frame - Ars Technica",
+        "rank": 2,
+        "text_snippet": "([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))",
+        "snippet_cited": "([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))",
+        "start_index": 1103,
+        "end_index": 1244,
+        "metadata": {
+          "start_index": 1103,
+          "end_index": 1244
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://gameinformer.com/2025/11/12/valve-announces-console-like-steam-machine-steam-frame-vr-headset-and-new-steam?utm_source=openai",
+        "title": "Valve Announces Console-Like Steam Machine, Steam Frame VR Headset, And New Steam Controller - Game Informer",
+        "rank": 5,
+        "text_snippet": "([gameinformer.com](https://gameinformer.com/2025/11/12/valve-announces-console-like-steam-machine-steam-frame-vr-headset-and-new-steam?utm_source=openai))",
+        "snippet_cited": "([gameinformer.com](https://gameinformer.com/2025/11/12/valve-announces-console-like-steam-machine-steam-frame-vr-headset-and-new-steam?utm_source=openai))",
+        "start_index": 3372,
+        "end_index": 3527,
+        "metadata": {
+          "start_index": 3372,
+          "end_index": 3527
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.timesofgames.com/news/steam-frame-pc-gaming-arm/?utm_source=openai",
+        "title": "ARM Gaming Is the Future, Thanks to the Steam Frame",
+        "rank": 6,
+        "text_snippet": "([timesofgames.com](https://www.timesofgames.com/news/steam-frame-pc-gaming-arm/?utm_source=openai))",
+        "snippet_cited": "([timesofgames.com](https://www.timesofgames.com/news/steam-frame-pc-gaming-arm/?utm_source=openai))",
+        "start_index": 5094,
+        "end_index": 5194,
+        "metadata": {
+          "start_index": 5094,
+          "end_index": 5194
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai",
+        "title": "Confirmed: Steam Frame will lack this Apple Vision Pro and Meta Quest feature at launch - Valve says it's 'on our list'",
+        "rank": 1,
+        "text_snippet": "([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))",
+        "snippet_cited": "([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))",
+        "start_index": 6208,
+        "end_index": 6400,
+        "metadata": {
+          "start_index": 6208,
+          "end_index": 6400
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 269,
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-5-20250929",
+    "data_source": "api",
+    "created_at": "2025-12-11T12:46:31.398835",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "Based on the latest information, here are the key details about the **Steam Frame**:\n\n## Overview\nSteam Frame is an upcoming standalone virtual reality headset developed by Valve Corporation, announced in November 2025 and expected to be released in early 2026. Valve describes it as a \"streaming-first\" standalone VR headset.\n\n## Key Specifications\n- **Display**: Dual 2160\u00d72160 LCD panels with pancake lenses\n- **Processor**: Qualcomm Snapdragon 8 Gen 3 system-on-chip with 16 GB of LPDDR5X memory\n- **Storage**: 256 GB and 1 TB models, expandable via microSD cards\n- **Refresh Rate**: 72, 120 and 144 Hz support\n- **Field of View**: \"Conservatively\" 110 degrees horizontal and vertical\n- **Weight**: The core frontbox weighs just 185 grams, while the entire system with default strap and battery weighs 440 grams\n\n## Notable Features\n- Unlike the Valve Index, the Frame is a standalone device that doesn't need to be physically tethered to a PC nor does it need external \"lighthouse\" base stations\n- Uses multiple Wi-Fi 7 radios and includes a bundled Wi-Fi 6E USB adapter for dedicated 6GHz PC streaming\n- Four onboard grayscale tracking cameras for inside-out tracking, with two for monochrome passthrough, plus eye tracking for foveated streaming\n- Runs SteamOS with compatibility layers including Proton for Windows games, FEX-Emu for x86 emulation on ARM, and Lepton for Android apps\n\n## Pricing & Availability\nPricing details were not announced, but Valve stated that it expected Steam Frame to be cheaper than the Index. Valve has clarified the launch will be in Q1 2026, meaning before March 31, 2026.\n\n## Latest Updates\nReviews are expected in 2026, and Steam Frame will replace Valve Index on the market, which Valve confirmed is no longer in production.",
+    "citations": [
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame",
+        "title": "Steam Frame - Wikipedia",
+        "rank": 3,
+        "text_snippet": "Steam Frame is an upcoming standalone virtual reality headset developed by Valve Corporation. Announced in November 2025 as part of a new lineup of St...",
+        "snippet_cited": "Steam Frame is an upcoming standalone virtual reality headset developed by Valve Corporation. Announced in November 2025 as part of a new lineup of St...",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.uploadvr.com/valve-steam-frame-official-announcement-features-details/",
+        "title": "Valve Officially Announces Steam Frame, A \"Streaming-First\" Standalone VR Headset",
+        "rank": 7,
+        "text_snippet": "Valve just officially announced Steam Frame, a \"streaming-first\" standalone VR headset launching in \"early 2026\".",
+        "snippet_cited": "Valve just officially announced Steam Frame, a \"streaming-first\" standalone VR headset launching in \"early 2026\".",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://vr-compare.com/headset/steamframe",
+        "title": "Steam Frame: Full Specification - VRcompare",
+        "rank": 6,
+        "text_snippet": "Features Qualcomm Snapdragon 8 Gen 3, 110\u00b0 FoV, 2160x2160 per eye resolution, 144 Hz refresh rate.",
+        "snippet_cited": "Features Qualcomm Snapdragon 8 Gen 3, 110\u00b0 FoV, 2160x2160 per eye resolution, 144 Hz refresh rate.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+        "title": "Steam Frame Release Date Window, Possible Price, Specs, And Everything We Know About Valve's Next-Gen VR Headset - GameSpot",
+        "rank": 8,
+        "text_snippet": "Instead, Valve promises that the new VR headset is primed to launch in early 2026, with further clarification from the company constraining that to Q1...",
+        "snippet_cited": "Instead, Valve promises that the new VR headset is primed to launch in early 2026, with further clarification from the company constraining that to Q1...",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.uploadvr.com/valve-steam-frame-content-no-divide/",
+        "title": "Valve: 'We See The Lines Between VR & Non-VR Content Really Being Blurred'",
+        "rank": 2,
+        "text_snippet": "We expect to have a review of Steam Frame in 2026 and will always bring you the latest.",
+        "snippet_cited": "We expect to have a review of Steam Frame in 2026 and will always bring you the latest.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 268,
+    "provider": "google",
+    "model": "gemini-3-pro-preview",
+    "data_source": "api",
+    "created_at": "2025-12-11T12:44:54.394362",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "The Steam Frame was officially announced by Valve on **November 12, 2025**, marking their entry into the standalone VR market. It is designed to be a \"streaming-first\" headset that can also play games natively, effectively serving as a successor to the Valve Index but without the need for base stations or a tether.\n\nHere are the latest details as of December 2025:\n\n### **Release Date & Pricing**\n*   **Release Window:** Early 2026 (Spring 2026 target).\n*   **Price:** Not yet officially confirmed, though Valve has stated they expect it to be cheaper than the original Valve Index launch price ($999).\n*   **Models:** Two storage variants will be available\u2014**256GB** and **1TB**.\n\n### **Key Features**\n*   **Hybrid Architecture:** The headset runs on **SteamOS** (Arch Linux-based) and uses an ARM processor (Qualcomm Snapdragon 8 Gen 3). It can play standalone VR titles or stream PC VR games.\n*   **Streaming-First Focus:** It includes a dedicated **6GHz Wi-Fi 7 wireless adapter** to plug into your PC. This creates a direct, low-latency link for streaming your entire Steam library (both VR and non-VR \"flat\" games) without clogging your home Wi-Fi.\n*   **Foveated Streaming:** Using built-in eye-tracking, the headset optimizes bandwidth by streaming high-quality pixels only to where you are looking, improving image clarity and performance.\n*   **Ecosystem:** It launched alongside a new \"Steam Machine\" console and a new \"Steam Controller,\" intending to create a unified hardware family.\n\n### **Hardware Specifications**\n*   **Display:** Dual LCD panels with **2160 x 2160 resolution per eye**.\n*   **Lenses:** Custom \"pancake\" lenses for edge-to-edge sharpness and a slimmer profile.\n*   **Refresh Rate:** Supports 72Hz, 120Hz, and an experimental **144Hz** mode.\n*   **Processor:** Qualcomm Snapdragon 8 Gen 3 with 16GB LPDDR5X RAM.\n*   **Tracking:** Inside-out 6DoF tracking via 4 monochrome cameras (no base stations required).\n*   **Passthrough:** Black-and-white passthrough cameras for boundary setup and safety (not designed for mixed reality/AR).\n*   **Battery:** \n    *   **Headset:** 21.6 Wh battery located in the rear strap for weight balance.\n    *   **Controllers:** Run on single AA batteries (approx. 40 hours of battery life).\n*   **Audio:** Dual off-ear stereo speakers (similar to the Index) and dual microphones.\n\n### **Recent Updates (December 2025)**\n*   **No Stereoscopic 3D for Flat Games (Yet):** In an interview published in early December 2025, Valve clarified that while you can play standard 2D (flat) games on a virtual screen inside the headset, it will **not** support stereoscopic 3D conversion for these games at launch. However, Valve confirmed this feature is \"on their list\" for future software updates.\n*   **Controller Design:** The new controllers feature a split-gamepad layout that mimics the Steam Deck's inputs (including trackpads), ensuring compatibility with non-VR games.\n\nThe Steam Frame is effectively Valve's answer to the Meta Quest, but with a heavy emphasis on seamless integration with your existing PC Steam library.",
+    "citations": [
+      {
+        "url": "https://www.techradar.com/tech/steam-frame-official-7-things-you-need-to-know-about-valves-quest-3-rival",
+        "title": "techradar.com",
+        "rank": 1,
+        "text_snippet": "The Steam Frame was officially announced by Valve on **November 12, 2025**, marking their entry into the standalone VR market.",
+        "snippet_cited": "The Steam Frame was officially announced by Valve on **November 12, 2025**, marking their entry into the standalone VR market.",
+        "start_index": 0,
+        "end_index": 126,
+        "metadata": {
+          "grounding_chunk_index": 0,
+          "segment_end_index": 126,
+          "start_index": 0,
+          "end_index": 126
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.pcgamer.com/hardware/vr-hardware/steam-frame-specs-availability/",
+        "title": "pcgamer.com",
+        "rank": 2,
+        "text_snippet": "It is designed to be a \"streaming-first\" headset that can also play games natively, effectively serving as a successor to the Valve Index but without the need for base stations or a tether.",
+        "snippet_cited": "It is designed to be a \"streaming-first\" headset that can also play games natively, effectively serving as a successor to the Valve Index but without the need for base stations or a tether.",
+        "start_index": 127,
+        "end_index": 316,
+        "metadata": {
+          "grounding_chunk_index": 1,
+          "segment_start_index": 127,
+          "segment_end_index": 316,
+          "start_index": 127,
+          "end_index": 316
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame",
+        "title": "wikipedia.org",
+        "rank": 5,
+        "text_snippet": "Models:** Two storage variants will be available\u2014**256GB** and **1TB**.",
+        "snippet_cited": "Models:** Two storage variants will be available\u2014**256GB** and **1TB**.",
+        "start_index": 611,
+        "end_index": 682,
+        "metadata": {
+          "grounding_chunk_index": 4,
+          "segment_start_index": 605,
+          "segment_end_index": 684,
+          "start_index": 611,
+          "end_index": 682
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.ign.com/articles/valve-announces-steam-frame-its-next-gen-vr-headset",
+        "title": "ign.com",
+        "rank": 4,
+        "text_snippet": "Streaming-First Focus:** It includes a dedicated **6GHz Wi-Fi 7 wireless adapter** to plug into your PC. T",
+        "snippet_cited": "Streaming-First Focus:** It includes a dedicated **6GHz Wi-Fi 7 wireless adapter** to plug into your PC. T",
+        "start_index": 904,
+        "end_index": 1010,
+        "metadata": {
+          "grounding_chunk_index": 3,
+          "segment_start_index": 900,
+          "segment_end_index": 1010,
+          "start_index": 904,
+          "end_index": 1010
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.cnet.com/tech/gaming/i-tried-valves-steam-frame-machine-and-controller-coming-in-2026-steam-os-is-coming-for-your-face-and-tv/",
+        "title": "cnet.com",
+        "rank": 6,
+        "text_snippet": "is creates a direct, low-latency link for streaming your entire Steam library (both VR and non-VR \"flat\" games) without clogging your home Wi-Fi.",
+        "snippet_cited": "is creates a direct, low-latency link for streaming your entire Steam library (both VR and non-VR \"flat\" games) without clogging your home Wi-Fi.",
+        "start_index": 1011,
+        "end_index": 1156,
+        "metadata": {
+          "grounding_chunk_index": 5,
+          "segment_start_index": 1011,
+          "segment_end_index": 1158,
+          "start_index": 1011,
+          "end_index": 1156
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://store.steampowered.com/sale/steamframe",
+        "title": "steampowered.com",
+        "rank": 7,
+        "text_snippet": "Lenses:** Custom \"pancake\" lenses for edge-to-edge sharpness and a slimmer profile.",
+        "snippet_cited": "Lenses:** Custom \"pancake\" lenses for edge-to-edge sharpness and a slimmer profile.",
+        "start_index": 1612,
+        "end_index": 1695,
+        "metadata": {
+          "grounding_chunk_index": 6,
+          "segment_start_index": 1608,
+          "segment_end_index": 1697,
+          "start_index": 1612,
+          "end_index": 1695
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.roadtovr.com/valve-steam-frame-stereoscopic-3d-support-flat-games-spatial-video/",
+        "title": "roadtovr.com",
+        "rank": 8,
+        "text_snippet": "No Stereoscopic 3D for Flat Games (Yet):** In an interview published in early December 2025, Valve clarified that while you can play standard 2D (flat) games on a virtual screen inside the headset, it will **not** support stereoscopic 3D conversion for these games at launch. H",
+        "snippet_cited": "No Stereoscopic 3D for Flat Games (Yet):** In an interview published in early December 2025, Valve clarified that while you can play standard 2D (flat) games on a virtual screen inside the headset, it will **not** support stereoscopic 3D conversion for these games at launch. H",
+        "start_index": 2391,
+        "end_index": 2668,
+        "metadata": {
+          "grounding_chunk_index": 7,
+          "segment_start_index": 2387,
+          "segment_end_index": 2668,
+          "start_index": 2391,
+          "end_index": 2668
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 267,
+    "provider": "google",
+    "model": "gemini-3-pro-preview",
+    "data_source": "api",
+    "created_at": "2025-12-11T12:29:39.764973",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "As of December 2025, Valve has officially announced the **Steam Frame**, a new standalone virtual reality headset.\n\nRevealed on November 12, 2025, alongside a new Steam Machine and Steam Controller, the Steam Frame is the long-rumored \"Deckard\" project. It positions itself as a \"Steam Deck for your face,\" capable of playing both VR and standard 2D Steam games without needing a PC, while also offering high-end wireless PC VR streaming.\n\nHere are the latest details:\n\n### **Release Date & Pricing**\n*   **Release Window:** Early 2026 (Q1).\n*   **Price:** Not yet officially confirmed, but Valve has stated they expect it to be **cheaper than the original Valve Index** (which launched at $999).\n*   **Models:** Two storage variations are expected\u2014**256GB** and **1TB**\u2014similar to the Steam Deck lineup.\n\n### **Key Features**\n*   **Standalone Capability:** Unlike the Valve Index, the Steam Frame does not need to be tethered to a PC. It runs **SteamOS** natively, allowing you to play games directly on the headset.\n*   **\"Steam Deck for Your Face\":** It is designed to play your entire Steam library.\n    *   **VR Games:** Runs standalone VR titles natively or streams high-fidelity VR from a PC.\n    *   **2D Games:** Plays standard non-VR games (like *Elden Ring* or *Stardew Valley*) on a large virtual theater screen within the headset.\n*   **Wireless PC Streaming:** Includes a dedicated **Wi-Fi 6E/7 dongle** to plug into your PC for low-latency, uncompressed wireless VR streaming, eliminating the need for a link cable.\n*   **Inside-Out Tracking:** No external \"Lighthouse\" base stations are required. The headset uses built-in cameras for tracking.\n\n### **Technical Specifications**\n*   **Processor:** Qualcomm **Snapdragon 8 Gen 3** (ARM64). This is a departure from the x86 chips in the Steam Deck, but Valve utilizes compatibility layers (like Proton and FEX-Emu) to run Steam games on this architecture.\n*   **RAM:** 16GB Unified LPDDR5X.\n*   **Display:**\n    *   Dual **2160 x 2160 LCD** panels (per eye).\n    *   **Pancake lenses** for a slimmer profile and clearer edge-to-edge clarity.\n    *   Refresh rates: 72Hz, 120Hz, and 144Hz.\n    *   *Note: There is currently no OLED model announced.*\n*   **Eye Tracking:** Integrated eye tracking is used for **foveated rendering** (improving performance by rendering only where you look in high detail) and foveated streaming.\n*   **Passthrough:** Monochrome (black and white) camera passthrough, meaning it is focused on VR gaming rather than Mixed Reality (MR) experiences like the Meta Quest 3 or Apple Vision Pro.\n\n### **The Ecosystem**\nValve announced the Steam Frame as part of a broader hardware push:\n*   **Steam Machine (2026):** A new console-sized PC designed for the living room.\n*   **Steam Controller 2:** A refreshed version of their gamepad, featuring new trackpads and inputs designed to work seamlessly with the headset and console.\n\nThe device is currently in the hands of select press and developers, with a full consumer launch expected in the coming months.",
+    "citations": [
+      {
+        "url": "https://www.cnet.com/tech/gaming/i-tried-valves-steam-frame-machine-and-controller-coming-in-2026-steam-os-is-coming-for-your-face-and-tv/",
+        "title": "cnet.com",
+        "rank": 1,
+        "text_snippet": "As of December 2025, Valve has officially announced the **Steam Frame**, a new standalone virtual reality headset.",
+        "snippet_cited": "As of December 2025, Valve has officially announced the **Steam Frame**, a new standalone virtual reality headset.",
+        "start_index": 0,
+        "end_index": 114,
+        "metadata": {
+          "grounding_chunk_index": 0,
+          "segment_end_index": 114,
+          "start_index": 0,
+          "end_index": 114
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame",
+        "title": "wikipedia.org",
+        "rank": 6,
+        "text_snippet": "Release Window:** Early 2026 (Q1).",
+        "snippet_cited": "Release Window:** Early 2026 (Q1).",
+        "start_index": 507,
+        "end_index": 541,
+        "metadata": {
+          "grounding_chunk_index": 5,
+          "segment_start_index": 501,
+          "segment_end_index": 541,
+          "start_index": 507,
+          "end_index": 541
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Deck",
+        "title": "wikipedia.org",
+        "rank": 7,
+        "text_snippet": "Models:** Two storage variations are expected\u2014**256GB** and **1TB**\u2014similar to the Steam Deck lineup.\n\n##",
+        "snippet_cited": "Models:** Two storage variations are expected\u2014**256GB** and **1TB**\u2014similar to the Steam Deck lineup.\n\n##",
+        "start_index": 703,
+        "end_index": 808,
+        "metadata": {
+          "grounding_chunk_index": 6,
+          "segment_start_index": 697,
+          "segment_end_index": 808,
+          "start_index": 703,
+          "end_index": 808
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.techradar.com/tech/steam-frame-official-7-things-you-need-to-know-about-valves-quest-3-rival",
+        "title": "techradar.com",
+        "rank": 2,
+        "text_snippet": "Note: There is currently no OLED model announced.",
+        "snippet_cited": "Note: There is currently no OLED model announced.",
+        "start_index": 2162,
+        "end_index": 2211,
+        "metadata": {
+          "grounding_chunk_index": 1,
+          "segment_start_index": 2161,
+          "segment_end_index": 2216,
+          "start_index": 2162,
+          "end_index": 2211
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.ign.com/articles/valve-heads-into-vr-headset-hardware-once-again-with-steam-frame-the-big-interview",
+        "title": "ign.com",
+        "rank": 5,
+        "text_snippet": "The Ecosystem**\nValve announced the Steam Frame as part of a broader hardware push:",
+        "snippet_cited": "The Ecosystem**\nValve announced the Steam Frame as part of a broader hardware push:",
+        "start_index": 2588,
+        "end_index": 2671,
+        "metadata": {
+          "grounding_chunk_index": 4,
+          "segment_start_index": 2586,
+          "segment_end_index": 2675,
+          "start_index": 2588,
+          "end_index": 2671
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://twit.tv/posts/tech/steam-frame-steam-machine-and-more-valves-new-hardware",
+        "title": "twit.tv",
+        "rank": 8,
+        "text_snippet": "Steam Machine (2026):** A new console-sized PC designed for the living room.",
+        "snippet_cited": "Steam Machine (2026):** A new console-sized PC designed for the living room.",
+        "start_index": 2678,
+        "end_index": 2754,
+        "metadata": {
+          "grounding_chunk_index": 7,
+          "segment_start_index": 2676,
+          "segment_end_index": 2758,
+          "start_index": 2678,
+          "end_index": 2754
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 266,
+    "provider": "google",
+    "model": "gemini-3-pro-preview",
+    "data_source": "api",
+    "created_at": "2025-12-11T12:26:28.795098",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "The Steam Frame was officially announced by Valve in November 2025 as their next-generation, standalone VR headset. It is designed to be a \"streaming-first\" device that also possesses standalone capabilities, effectively serving as a successor to the Valve Index.\n\nHere are the latest details available as of December 11, 2025:\n\n### **Release Date & Price**\n*   **Release Window:** **Q1 2026** (expected between January and March).\n*   **Price:** Official pricing has not been announced, but Valve has stated it aims to be **cheaper than the Valve Index** launch price ($999). Analysts estimate it will likely fall in the **$500\u2013$600** range to compete with headsets like the Meta Quest 3, with price varying by storage model (256GB vs. 1TB).\n\n### **Key Concept: \"Streaming-First\"**\n*   **Wireless PCVR:** The device is built to stream games wirelessly from your PC (or the newly announced Steam Machine) with high fidelity.\n*   **Dedicated Adapter:** It ships with a **6GHz wireless adapter** that plugs into your PC to create a dedicated, low-latency link, bypassing your home Wi-Fi network traffic.\n*   **Foveated Streaming:** Using built-in eye-tracking, the headset optimizes the stream quality by rendering the highest resolution only where you are looking, saving bandwidth and improving visual fidelity.\n\n### **Hardware Specifications**\n*   **Processor:** **Qualcomm Snapdragon 8 Gen 3** (Arm-based). This is a shift from x86, but it uses compatibility layers to run Steam games.\n*   **Display:** Dual **2160 x 2160 LCD panels** (one per eye) with pancake lenses for a slimmer profile.\n*   **Refresh Rate:** Supports **72Hz, 120Hz, and an experimental 144Hz**.\n*   **Field of View:** Approximately **110 degrees**.\n*   **Tracking:** Inside-out tracking via 4 monochrome cameras and infrared LEDs (no base stations required).\n*   **Battery:** Rear-mounted 21.6 Wh battery for balance; allows for roughly **2-3 hours** of use (exact runtime varies by usage).\n*   **Pass-through:** Black-and-white pass-through cameras for seeing your surroundings (not full color mixed reality).\n\n### **Software & Compatibility**\n*   **OS:** Runs a version of **SteamOS** adapted for Arm architecture.\n*   **Standalone Play:** While streaming is the focus, it can play games natively. It supports Linux, Windows (via Proton), and Android titles.\n*   **Library:** It is designed to play your **entire Steam library**. You can play non-VR (\"flat\") games on a virtual screen within the headset.\n*   **Missing Feature:** At launch, it will **not support stereoscopic 3D rendering** for 2D content (a feature found on Apple Vision Pro), though Valve has said this is \"on their list\" for future updates.\n\n### **New Controllers**\n*   **Design:** New \"Steam Frame Controllers\" feature a split-gamepad layout (ABXY, D-pad, triggers) to support both VR and standard non-VR games.\n*   **Tech:** They use **magnetic thumbsticks** (to prevent drift) and capacitive finger sensing similar to the Index controllers.\n*   **Power:** Each controller runs on a single AA battery, offering ~40 hours of playtime.\n\n### **The Ecosystem**\nThe Steam Frame was announced alongside a new **Steam Machine** (a console-sized PC) and a new **Steam Controller**. The devices are designed to work together seamlessly, allowing you to switch a game from your TV (Steam Machine) to your headset (Steam Frame) instantly.\\nExtra text from PC Gamer: Valve announced that...",
+    "citations": [
+      {
+        "url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+        "title": "gamespot.com",
+        "rank": 1,
+        "text_snippet": "The Steam Frame was officially announced by Valve in November 2025 as their next-generation, standalone VR headset.",
+        "snippet_cited": "The Steam Frame was officially announced by Valve in November 2025 as their next-generation, standalone VR headset.",
+        "start_index": 0,
+        "end_index": 115,
+        "metadata": {
+          "grounding_chunk_index": 0,
+          "segment_end_index": 115,
+          "start_index": 0,
+          "end_index": 115
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.uploadvr.com/valve-steam-frame-official-announcement-features-details/",
+        "title": "uploadvr.com",
+        "rank": 2,
+        "text_snippet": "It is designed to be a \"streaming-first\" device that also possesses standalone capabilities, effectively serving as a successor to the Valve Index.",
+        "snippet_cited": "It is designed to be a \"streaming-first\" device that also possesses standalone capabilities, effectively serving as a successor to the Valve Index.",
+        "start_index": 116,
+        "end_index": 263,
+        "metadata": {
+          "grounding_chunk_index": 1,
+          "segment_start_index": 116,
+          "segment_end_index": 263,
+          "start_index": 116,
+          "end_index": 263
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.escapistmagazine.com/steam-frame-release/",
+        "title": "escapistmagazine.com",
+        "rank": 6,
+        "text_snippet": "Analysts estimate it will likely fall in the **$500\u2013$600** range to compete with headsets like the Meta Quest 3, with price varying by storage model (256GB vs. 1TB).",
+        "snippet_cited": "Analysts estimate it will likely fall in the **$500\u2013$600** range to compete with headsets like the Meta Quest 3, with price varying by storage model (256GB vs. 1TB).",
+        "start_index": 577,
+        "end_index": 742,
+        "metadata": {
+          "grounding_chunk_index": 5,
+          "segment_start_index": 577,
+          "segment_end_index": 744,
+          "start_index": 577,
+          "end_index": 742
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame",
+        "title": "wikipedia.org",
+        "rank": 3,
+        "text_snippet": "Processor:** **Qualcomm Snapdragon 8 Gen 3** (Arm-based). T",
+        "snippet_cited": "Processor:** **Qualcomm Snapdragon 8 Gen 3** (Arm-based). T",
+        "start_index": 1351,
+        "end_index": 1410,
+        "metadata": {
+          "grounding_chunk_index": 2,
+          "segment_start_index": 1347,
+          "segment_end_index": 1410,
+          "start_index": 1351,
+          "end_index": 1410
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://store.steampowered.com/sale/steamframe",
+        "title": "steampowered.com",
+        "rank": 7,
+        "text_snippet": "Display:** Dual **2160 x 2160 LCD panels** (one per eye) with pancake lenses for a slimmer profile.",
+        "snippet_cited": "Display:** Dual **2160 x 2160 LCD panels** (one per eye) with pancake lenses for a slimmer profile.",
+        "start_index": 1494,
+        "end_index": 1593,
+        "metadata": {
+          "grounding_chunk_index": 6,
+          "segment_start_index": 1490,
+          "segment_end_index": 1595,
+          "start_index": 1494,
+          "end_index": 1593
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://vr-compare.com/headset/steamframe",
+        "title": "vr-compare.com",
+        "rank": 9,
+        "text_snippet": "Field of View:** Approximately **110 degrees**.",
+        "snippet_cited": "Field of View:** Approximately **110 degrees**.",
+        "start_index": 1675,
+        "end_index": 1722,
+        "metadata": {
+          "grounding_chunk_index": 8,
+          "segment_start_index": 1671,
+          "segment_end_index": 1724,
+          "start_index": 1675,
+          "end_index": 1722
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.cnet.com/tech/gaming/i-tried-valves-steam-frame-machine-and-controller-coming-in-2026-steam-os-is-coming-for-your-face-and-tv/",
+        "title": "cnet.com",
+        "rank": 8,
+        "text_snippet": "Pass-through:** Black-and-white pass-through cameras for seeing your surroundings (not full color mixed reality).",
+        "snippet_cited": "Pass-through:** Black-and-white pass-through cameras for seeing your surroundings (not full color mixed reality).",
+        "start_index": 1971,
+        "end_index": 2084,
+        "metadata": {
+          "grounding_chunk_index": 7,
+          "segment_start_index": 1967,
+          "segment_end_index": 2086,
+          "start_index": 1971,
+          "end_index": 2084
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list",
+        "title": "tomsguide.com",
+        "rank": 10,
+        "text_snippet": "Missing Feature:** At launch, it will **not support stereoscopic 3D rendering** for 2D content (a feature found on Apple Vision Pro), though Valve has said this is \"on their list\" for future updates.",
+        "snippet_cited": "Missing Feature:** At launch, it will **not support stereoscopic 3D rendering** for 2D content (a feature found on Apple Vision Pro), though Valve has said this is \"on their list\" for future updates.",
+        "start_index": 2487,
+        "end_index": 2686,
+        "metadata": {
+          "grounding_chunk_index": 9,
+          "segment_start_index": 2483,
+          "segment_end_index": 2688,
+          "start_index": 2487,
+          "end_index": 2686
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.pcgamer.com/hardware/vr-hardware/steam-frame-specs-availability/",
+        "title": "pcgamer.com",
+        "rank": 4,
+        "text_snippet": "e devices are designed to work together seamlessly, allowing you to switch a game from your TV (Steam Machine) to your headset (Steam Frame) instantly.\\n",
+        "snippet_cited": "e devices are designed to work together seamlessly, allowing you to switch a game from your TV (Steam Machine) to your headset (Steam Frame) instantly.\\n",
+        "start_index": 3224,
+        "end_index": 3377,
+        "metadata": {
+          "grounding_chunk_index": 3,
+          "segment_start_index": 3224,
+          "segment_end_index": 3377,
+          "start_index": 3224,
+          "end_index": 3377
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 265,
+    "provider": "google",
+    "model": "gemini-3-pro-preview",
+    "data_source": "api",
+    "created_at": "2025-12-11T12:19:02.087449",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "As of December 11, 2025, Valve has officially announced the **Steam Frame**, a new standalone VR headset designed to succeed the Valve Index.\n\nAnnounced on November 12, 2025, alongside a new Steam Machine and Steam Controller, the Steam Frame represents Valve's major push into the standalone VR market while maintaining a \"streaming-first\" philosophy for high-end PC VR.\n\nHere are the latest details regarding its specs, release date, and features.\n\n### **Release Date & Pricing**\n*   **Release Window:** **Early 2026 (Q1)**. While a specific day hasn't been set, speculation points to a February 2026 shipping timeframe.\n*   **Price:** Official pricing is **TBA**, but Valve has stated it aims to be cheaper than the original Valve Index full kit ($999). Analysts estimate a price range between **$500 and $600**, placing it in direct competition with the Meta Quest 3 and similar headsets.\n\n### **Hardware Specifications**\nThe Steam Frame is built on ARM architecture, similar to mobile VR headsets, but runs a specialized version of SteamOS.\n*   **Processor:** Qualcomm **Snapdragon 8 Gen 3** (ARM64).\n*   **Memory:** 16GB LPDDR5X RAM.\n*   **Storage:** Available in **256GB** and **1TB** models (with microSD expansion).\n*   **Display:** Dual **2160 x 2160 LCD panels** per eye.\n*   **Optics:** Custom **Pancake lenses** for a slimmer profile and edge-to-edge clarity.\n*   **Refresh Rate:** Supports 72Hz, 120Hz, and an experimental **144Hz** mode.\n*   **Tracking:** **Inside-out tracking** via 4 monochrome cameras (no base stations required). It also features **eye tracking** for foveated rendering.\n*   **Connectivity:** Wi-Fi 7 support. It ships with a **dedicated 6GHz wireless adapter** for low-latency PC streaming that doesn't clog your home Wi-Fi bandwidth.\n\n### **Key Features & Software**\n*   **Streaming-First Focus:** While it is a standalone device, Valve emphasizes its ability to stream PC VR games wirelessly with \"wired-like\" quality using **Foveated Streaming**. This uses eye-tracking data to prioritize image quality exactly where you are looking, saving bandwidth and reducing latency.\n*   **Standalone Capability:** The headset runs **SteamOS on ARM**. It can play standalone VR titles and uses compatibility layers (Proton and FEX-Emu) to run standard x86 Steam games (non-VR titles) on a virtual 2D screen.\n*   **Android App Support:** Through a compatibility layer called **Lepton** (based on Waydroid), the headset can natively run Android apps and games, bridging the gap between mobile and PC ecosystems.\n*   **No Stereoscopic 3D at Launch:** Reports confirm that while the headset is excellent for VR and 2D gaming, it will not support stereoscopic 3D for 2D content (like 3D movies or spatial photos) at launch, though Valve has said this is \"on their list.\"\n\n### **Controllers**\nThe headset comes with the new **Steam Frame Controllers**.\n*   **Design:** A \"split gamepad\" layout that differs significantly from the \"Knuckles\" controllers of the Valve Index.\n*   **Features:** They include capacitive finger tracking, magnetic thumbsticks (for drift resistance), and standard gamepad inputs (ABXY, D-pad) to ensure full compatibility with non-VR Steam games.\n\n### **Summary**\nThe Steam Frame is effectively a \"Steam Deck for your face.\" It allows you to take your entire Steam library with you\u2014playing lighter games natively on the device and streaming demanding AAA VR titles from your PC\u2014without the friction of wires or base stations.",
+    "citations": [
+      {
+        "url": "https://www.pcgamer.com/hardware/vr-hardware/steam-frame-specs-availability/",
+        "title": "pcgamer.com",
+        "rank": 1,
+        "text_snippet": "As of December 11, 2025, Valve has officially announced the **Steam Frame**, a new standalone VR headset designed to succeed the Valve Index.",
+        "snippet_cited": "As of December 11, 2025, Valve has officially announced the **Steam Frame**, a new standalone VR headset designed to succeed the Valve Index.",
+        "start_index": 0,
+        "end_index": 141,
+        "metadata": {
+          "grounding_chunk_index": 0,
+          "segment_end_index": 141,
+          "start_index": 0,
+          "end_index": 141
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame",
+        "title": "wikipedia.org",
+        "rank": 4,
+        "text_snippet": "Release Window:** **Early 2026 (Q1)**.",
+        "snippet_cited": "Release Window:** **Early 2026 (Q1)**.",
+        "start_index": 488,
+        "end_index": 526,
+        "metadata": {
+          "grounding_chunk_index": 3,
+          "segment_start_index": 482,
+          "segment_end_index": 526,
+          "start_index": 488,
+          "end_index": 526
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.escapistmagazine.com/steam-frame-release/",
+        "title": "escapistmagazine.com",
+        "rank": 6,
+        "text_snippet": "While a specific day hasn't been set, speculation points to a February 2026 shipping timeframe.",
+        "snippet_cited": "While a specific day hasn't been set, speculation points to a February 2026 shipping timeframe.",
+        "start_index": 527,
+        "end_index": 622,
+        "metadata": {
+          "grounding_chunk_index": 5,
+          "segment_start_index": 527,
+          "segment_end_index": 622,
+          "start_index": 527,
+          "end_index": 622
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://store.steampowered.com/sale/steamframe",
+        "title": "steampowered.com",
+        "rank": 8,
+        "text_snippet": "Display:** Dual **2160 x 2160 LCD panels** per eye.",
+        "snippet_cited": "Display:** Dual **2160 x 2160 LCD panels** per eye.",
+        "start_index": 1231,
+        "end_index": 1282,
+        "metadata": {
+          "grounding_chunk_index": 7,
+          "segment_start_index": 1225,
+          "segment_end_index": 1282,
+          "start_index": 1231,
+          "end_index": 1282
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=vBhYlgYY4Kk",
+        "title": "youtube.com",
+        "rank": 9,
+        "text_snippet": "It also features **eye tracking** for foveated rendering.",
+        "snippet_cited": "It also features **eye tracking** for foveated rendering.",
+        "start_index": 1549,
+        "end_index": 1606,
+        "metadata": {
+          "grounding_chunk_index": 8,
+          "segment_start_index": 1549,
+          "segment_end_index": 1606,
+          "start_index": 1549,
+          "end_index": 1606
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.reddit.com/r/Steam/comments/1ovc7id/introducing_steam_frame/",
+        "title": "reddit.com",
+        "rank": 11,
+        "text_snippet": "Standalone Capability:** The headset runs **SteamOS on ARM**.",
+        "snippet_cited": "Standalone Capability:** The headset runs **SteamOS on ARM**.",
+        "start_index": 2119,
+        "end_index": 2180,
+        "metadata": {
+          "grounding_chunk_index": 10,
+          "segment_start_index": 2113,
+          "segment_end_index": 2180,
+          "start_index": 2119,
+          "end_index": 2180
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list",
+        "title": "tomsguide.com",
+        "rank": 12,
+        "text_snippet": "No Stereoscopic 3D at Launch:** Reports confirm that while the headset is excellent for VR and 2D gaming, it will not support stereoscopic 3D for 2D content (like 3D movies or spatial photos) at launch, though Valve has said this is \"on their list.\"",
+        "snippet_cited": "No Stereoscopic 3D at Launch:** Reports confirm that while the headset is excellent for VR and 2D gaming, it will not support stereoscopic 3D for 2D content (like 3D movies or spatial photos) at launch, though Valve has said this is \"on their list.\"",
+        "start_index": 2545,
+        "end_index": 2794,
+        "metadata": {
+          "grounding_chunk_index": 11,
+          "segment_start_index": 2539,
+          "segment_end_index": 2794,
+          "start_index": 2545,
+          "end_index": 2794
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 264,
+    "provider": "google",
+    "model": "gemini-3-pro-preview",
+    "data_source": "api",
+    "created_at": "2025-12-11T11:43:36.327317",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "Based on the official announcements from November and December 2025, here are the latest details on the **Steam Frame**, Valve's newly revealed standalone VR headset.\n\n### **Quick Summary**\n*   **What it is:** A standalone, wireless VR headset that runs SteamOS. It is the successor to the Valve Index (formerly rumored as \"Deckard\").\n*   **Release Date:** Scheduled for **Q1 2026** (Spring 2026).\n*   **Price:** Not yet officially announced, though it is expected to be a premium device positioned competitively against the Meta Quest 3 and Apple Vision Pro.\n\n---\n\n### **Key Features & Functionality**\nThe Steam Frame is marketed as a \"streaming-first\" device designed to play your **entire Steam library**, including both VR titles and standard \"flat\" (non-VR) games on a virtual screen.\n\n*   **Dual-Mode Capability:**\n    *   **PCVR Streaming:** It comes with a dedicated **6GHz USB wireless adapter** to plug into your PC. This creates a direct, low-latency link for streaming high-fidelity VR games from your computer without cables.\n    *   **Standalone Play:** It features an onboard ARM processor (Qualcomm Snapdragon 8 Gen 3) allowing it to run games natively without a PC. It uses compatibility layers (like Proton and FEX-Emu) to run standard x86 Windows games on its ARM architecture.\n*   **Foveated Streaming:** Using built-in eye-tracking, the headset optimizes the video stream to prioritize high resolution only where you are looking, saving bandwidth and improving visual fidelity.\n*   **Ecosystem Compatibility:** It features a microSD card slot that is fully interoperable with the **Steam Deck**. You can take a card out of your Deck, pop it into the Frame, and immediately access your installed library.\n\n### **Hardware Specifications**\n*   **Processor:** Qualcomm Snapdragon 8 Gen 3 (ARM-based).\n*   **Display:** Dual LCD panels with **2160 x 2160 resolution per eye**.\n*   **Optics:** Custom \"pancake\" lenses for edge-to-edge clarity; supports 72Hz, 120Hz, and an experimental **144Hz** refresh rate.\n*   **Memory:** 16GB LPDDR5X RAM.\n*   **Storage:** Available in **256GB** and **1TB** models.\n*   **Tracking:** Inside-out tracking (no base stations required) with 4 monochrome cameras and infrared LEDs for low-light play.\n*   **Battery:** Rear-mounted 21.6 Wh battery for weight balance.\n\n### **New Controllers**\nThe Steam Frame controllers are a significant evolution from the Index \"Knuckles\" controllers.\n*   **Hybrid Design:** They feature a split-gamepad layout (ABXY, D-pad, triggers, bumpers) specifically designed so you can play standard non-VR games comfortably.\n*   **Features:** Capacitive finger tracking, haptic feedback, and new \"magnetic thumbsticks\" (TMR) designed to eliminate drift.\n*   **Power:** They are powered by AA batteries (approx. 40 hours of battery life).\n\n### **Limitations at Launch**\n*   **No Stereoscopic 3D for 2D Games:** Valve has confirmed that at launch, the headset will *not* automatically convert standard 2D games or movies into 3D (a feature seen on Apple Vision Pro), though they have stated this is \"on their list\" for future updates.\n*   **No OLED:** Unlike the Steam Deck OLED, the Frame uses LCD panels, likely to keep costs and weight down while maintaining high pixel density.",
+    "citations": [
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame",
+        "title": "wikipedia.org",
+        "rank": 1,
+        "text_snippet": "What it is:** A standalone, wireless VR headset that runs SteamOS.",
+        "snippet_cited": "What it is:** A standalone, wireless VR headset that runs SteamOS.",
+        "start_index": 196,
+        "end_index": 262,
+        "metadata": {
+          "grounding_chunk_index": 0,
+          "segment_start_index": 190,
+          "segment_end_index": 262,
+          "start_index": 196,
+          "end_index": 262
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=X_QLKI25SGk",
+        "title": "youtube.com",
+        "rank": 3,
+        "text_snippet": "It is the successor to the Valve Index (formerly rumored as \"Deckard\").",
+        "snippet_cited": "It is the successor to the Valve Index (formerly rumored as \"Deckard\").",
+        "start_index": 263,
+        "end_index": 334,
+        "metadata": {
+          "grounding_chunk_index": 2,
+          "segment_start_index": 263,
+          "segment_end_index": 334,
+          "start_index": 263,
+          "end_index": 334
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.pcgamer.com/hardware/vr-hardware/steam-frame-specs-availability/",
+        "title": "pcgamer.com",
+        "rank": 2,
+        "text_snippet": "Key Features & Functionality**\nThe Steam Frame is marketed as a \"streaming-first\" device designed to play your **entire Steam library**, including both VR titles and standard \"flat\" (non-VR) games on a virtual screen.",
+        "snippet_cited": "Key Features & Functionality**\nThe Steam Frame is marketed as a \"streaming-first\" device designed to play your **entire Steam library**, including both VR titles and standard \"flat\" (non-VR) games on a virtual screen.",
+        "start_index": 572,
+        "end_index": 789,
+        "metadata": {
+          "grounding_chunk_index": 1,
+          "segment_start_index": 566,
+          "segment_end_index": 789,
+          "start_index": 572,
+          "end_index": 789
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.ign.com/articles/valve-announces-steam-frame-its-next-gen-vr-headset",
+        "title": "ign.com",
+        "rank": 7,
+        "text_snippet": "This creates a direct, low-latency link for streaming high-fidelity VR games from your computer without cables.",
+        "snippet_cited": "This creates a direct, low-latency link for streaming high-fidelity VR games from your computer without cables.",
+        "start_index": 927,
+        "end_index": 1038,
+        "metadata": {
+          "grounding_chunk_index": 6,
+          "segment_start_index": 927,
+          "segment_end_index": 1038,
+          "start_index": 927,
+          "end_index": 1038
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.techradar.com/tech/steam-frame-official-7-things-you-need-to-know-about-valves-quest-3-rival",
+        "title": "techradar.com",
+        "rank": 8,
+        "text_snippet": "Foveated Streaming:** Using built-in eye-tracking, the headset optimizes the video stream to prioritize high resolution only where you are looking, saving bandwidth and improving visual fidelity.",
+        "snippet_cited": "Foveated Streaming:** Using built-in eye-tracking, the headset optimizes the video stream to prioritize high resolution only where you are looking, saving bandwidth and improving visual fidelity.",
+        "start_index": 1303,
+        "end_index": 1498,
+        "metadata": {
+          "grounding_chunk_index": 7,
+          "segment_start_index": 1297,
+          "segment_end_index": 1498,
+          "start_index": 1303,
+          "end_index": 1498
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.tomshardware.com/peripherals/gaming-headsets/hands-on-with-valves-new-steam-frame-headset-arm-powered-mixed-mode-device-uses-new-fex-translation-layer-for-traditional-x86-games",
+        "title": "tomshardware.com",
+        "rank": 6,
+        "text_snippet": "You can take a card out of your Deck, pop it into the Frame, and immediately access your installed library.",
+        "snippet_cited": "You can take a card out of your Deck, pop it into the Frame, and immediately access your installed library.",
+        "start_index": 1617,
+        "end_index": 1724,
+        "metadata": {
+          "grounding_chunk_index": 5,
+          "segment_start_index": 1617,
+          "segment_end_index": 1724,
+          "start_index": 1617,
+          "end_index": 1724
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://store.steampowered.com/sale/steamframe",
+        "title": "steampowered.com",
+        "rank": 5,
+        "text_snippet": "Tracking:** Inside-out tracking (no base stations required) with 4 monochrome cameras and infrared LEDs for low-light play.",
+        "snippet_cited": "Tracking:** Inside-out tracking (no base stations required) with 4 monochrome cameras and infrared LEDs for low-light play.",
+        "start_index": 2124,
+        "end_index": 2247,
+        "metadata": {
+          "grounding_chunk_index": 4,
+          "segment_start_index": 2118,
+          "segment_end_index": 2247,
+          "start_index": 2124,
+          "end_index": 2247
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list",
+        "title": "tomsguide.com",
+        "rank": 10,
+        "text_snippet": "No Stereoscopic 3D for 2D Games:** Valve has confirmed that at launch, the headset will *not* automatically convert standard 2D games or movies into 3D (a feature seen on Apple Vision Pro), though they have stated this is \"on their list\" for future updates.",
+        "snippet_cited": "No Stereoscopic 3D for 2D Games:** Valve has confirmed that at launch, the headset will *not* automatically convert standard 2D games or movies into 3D (a feature seen on Apple Vision Pro), though they have stated this is \"on their list\" for future updates.",
+        "start_index": 2849,
+        "end_index": 3106,
+        "metadata": {
+          "grounding_chunk_index": 9,
+          "segment_start_index": 2843,
+          "segment_end_index": 3106,
+          "start_index": 2849,
+          "end_index": 3106
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 263,
+    "provider": "google",
+    "model": "gemini-3-pro-preview",
+    "data_source": "api",
+    "created_at": "2025-12-11T11:35:11.433735",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "The **Steam Frame** is Valve's newly announced standalone VR headset, officially revealed on November 12, 2025. It serves as a spiritual successor to the Valve Index but shifts to a standalone, wireless form factor similar to the Meta Quest, running natively on SteamOS.\n\nHere are the latest details on specs, features, and release information:\n\n### **Release & Pricing**\n*   **Release Window:** Q1 2026 (expected before March 31, 2026).\n*   **Price:** Not yet confirmed, though Valve has stated it expects the headset to be \"cheaper than the Index\" launch price ($999).\n*   **Models:** It will launch with two storage options: **256GB** and **1TB** (expandable via microSD).\n\n### **Key Hardware Specs**\n*   **Processor:** Qualcomm Snapdragon 8 Gen 3 (running a version of SteamOS optimized for ARM).\n*   **Memory:** 16GB Unified LPDDR5X RAM.\n*   **Display:** Dual LCD panels with **2160 x 2160 resolution per eye**.\n*   **Optics:** Custom pancake lenses with a **110-degree Field of View (FOV)**.\n*   **Refresh Rate:** Supports 72Hz, 120Hz, and an experimental 144Hz mode.\n*   **Weight:** Extremely light at **185g** for the visor alone, or **440g** total with the headstrap and battery included.\n*   **Battery:** Rear-mounted 21.6 Wh battery (approx. 2 hours of use), distinct from the front visor to balance weight.\n\n### **Standout Features**\n*   **Standalone & Wireless:** Unlike the Index, it does not need to be tethered to a PC. It can play standalone VR titles or stream PC VR games wirelessly.\n*   **Wi-Fi 7 & 6GHz Streaming:** It includes a dedicated USB dongle for your PC to establish a low-latency 6GHz connection for high-fidelity wireless streaming.\n*   **Foveated Streaming:** Using built-in eye-tracking, the headset optimizes image quality exactly where you are looking, saving bandwidth and improving visual fidelity.\n*   **SteamOS Integration:** It runs SteamOS natively, allowing you to play your standard flat-screen Steam library on a virtual theater screen, effectively acting as a wearable Steam Deck.\n*   **Tracking:** Inside-out tracking via four monochrome cameras (no external base stations required).\n\n### **Ecosystem**\nThe Steam Frame was announced alongside two other devices designed to work in unison with it:\n*   **New Steam Machine:** A console-like PC for the living room intended to beam high-end VR graphics to the Frame.\n*   **Steam Controller 2:** A new gamepad with \"magnetic\" thumbsticks, designed to be compatible with the headset for non-VR gaming.",
+    "citations": [
+      {
+        "url": "https://www.techradar.com/tech/steam-frame-official-7-things-you-need-to-know-about-valves-quest-3-rival",
+        "title": "techradar.com",
+        "rank": 1,
+        "text_snippet": "The **Steam Frame** is Valve's newly announced standalone VR headset, officially revealed on November 12, 2025.",
+        "snippet_cited": "The **Steam Frame** is Valve's newly announced standalone VR headset, officially revealed on November 12, 2025.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {
+          "grounding_chunk_index": 0,
+          "segment_end_index": 111
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+        "title": "gamespot.com",
+        "rank": 4,
+        "text_snippet": "*   **Release Window:** Q1 2026 (expected before March 31, 2026).",
+        "snippet_cited": "*   **Release Window:** Q1 2026 (expected before March 31, 2026).",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {
+          "grounding_chunk_index": 3,
+          "segment_start_index": 372,
+          "segment_end_index": 437
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.reddit.com/r/virtualreality/comments/1ovdwx8/valve_rejoins_the_vr_hardware_wars_with/",
+        "title": "reddit.com",
+        "rank": 5,
+        "text_snippet": "*   **Models:** It will launch with two storage options: **256GB** and **1TB** (expandable via microSD).",
+        "snippet_cited": "*   **Models:** It will launch with two storage options: **256GB** and **1TB** (expandable via microSD).",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {
+          "grounding_chunk_index": 4,
+          "segment_start_index": 571,
+          "segment_end_index": 675
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame",
+        "title": "wikipedia.org",
+        "rank": 6,
+        "text_snippet": "*   **Processor:** Qualcomm Snapdragon 8 Gen 3 (running a version of SteamOS optimized for ARM).",
+        "snippet_cited": "*   **Processor:** Qualcomm Snapdragon 8 Gen 3 (running a version of SteamOS optimized for ARM).",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {
+          "grounding_chunk_index": 5,
+          "segment_start_index": 704,
+          "segment_end_index": 800
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://store.steampowered.com/sale/steamframe",
+        "title": "steampowered.com",
+        "rank": 9,
+        "text_snippet": "*   **Display:** Dual LCD panels with **2160 x 2160 resolution per eye**.",
+        "snippet_cited": "*   **Display:** Dual LCD panels with **2160 x 2160 resolution per eye**.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {
+          "grounding_chunk_index": 8,
+          "segment_start_index": 843,
+          "segment_end_index": 916
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.pcgamer.com/hardware/valve-announces-steam-machine-frame-controller/",
+        "title": "pcgamer.com",
+        "rank": 10,
+        "text_snippet": "*   **Optics:** Custom pancake lenses with a **110-degree Field of View (FOV)**.",
+        "snippet_cited": "*   **Optics:** Custom pancake lenses with a **110-degree Field of View (FOV)**.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {
+          "grounding_chunk_index": 9,
+          "segment_start_index": 917,
+          "segment_end_index": 997
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.ign.com/articles/steam-frame-preview-hands-on-with-valves-state-of-the-art-vr-headset",
+        "title": "ign.com",
+        "rank": 7,
+        "text_snippet": "*   **Refresh Rate:** Supports 72Hz, 120Hz, and an experimental 144Hz mode.",
+        "snippet_cited": "*   **Refresh Rate:** Supports 72Hz, 120Hz, and an experimental 144Hz mode.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {
+          "grounding_chunk_index": 6,
+          "segment_start_index": 998,
+          "segment_end_index": 1073
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.cnet.com/tech/gaming/i-tried-valves-steam-frame-machine-and-controller-coming-in-2026-steam-os-is-coming-for-your-face-and-tv/",
+        "title": "cnet.com",
+        "rank": 11,
+        "text_snippet": "### **Ecosystem**\nThe Steam Frame was announced alongside two other devices designed to work in unison with it:",
+        "snippet_cited": "### **Ecosystem**\nThe Steam Frame was announced alongside two other devices designed to work in unison with it:",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {
+          "grounding_chunk_index": 10,
+          "segment_start_index": 2132,
+          "segment_end_index": 2243
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 262,
+    "provider": "openai",
+    "model": "gpt-5.1",
+    "data_source": "api",
+    "created_at": "2025-12-11T11:33:18.409026",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "Here\u2019s the current state of what\u2019s publicly known about Valve\u2019s **Steam Frame** as of December 11, 2025.\n\n---\n\n## What it is\n\n- **Standalone VR headset** from Valve, successor to the Valve Index.  \n- Runs **SteamOS** (Arch Linux\u2013based), so it can:\n  - Run VR and some non\u2011VR Steam games **locally**.\n  - **Stream PC VR** over Wi\u2011Fi from a gaming PC (wireless only; no tethered cable mode announced). ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n- Officially announced **November 12, 2025**, alongside a new Steam Machine and Steam Controller. ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n\n---\n\n## Release window & price\n\n- **Release window:** \u201cearly 2026\u201d / \u201cQ1 2026\u201d (Valve and press all use roughly that phrasing). ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n- **Price:** Not announced yet. Valve keeps saying only that it aims to be **cheaper than the Valve Index**. ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n\nNo preorder date or SKU pricing has been officially confirmed as of today.\n\n---\n\n## Hardware highlights (latest specs)\n\nFrom Valve\u2019s spec sheets and hands\u2011on coverage: ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n- **Display & optics**\n  - Dual LCDs, **2160 \u00d7 2160 per eye**.\n  - **72\u2013120 Hz** refresh officially, with **144 Hz experimental** mode mentioned. ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n  - **Pancake lenses**, ~**110\u00b0 FOV**. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n  - **Eye\u2011tracking** for **foveated rendering** (higher resolution where you\u2019re looking). ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n- **Processing & memory**\n  - **Qualcomm Snapdragon 8 Gen 3** SoC (4 nm ARM64). ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n  - **16 GB LPDDR5X unified RAM**. ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n\n- **Storage**\n  - Models with **256 GB** or **1 TB UFS** internal storage.  \n  - **microSD slot** for expansion, shared ecosystem with Steam Deck / new Steam Machine. ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n\n- **Weight & design**\n  - **Core module:** ~**185 g**.  \n  - With standard strap + rear battery: **~435\u2013440 g** (varies slightly by source, but Valve\u2019s sheet lists ~440 g). ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n  - Visor\u2011style design, **modular \u201ccore\u201d** so third parties or modders could build alternative straps/shells around it. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n- **Battery & power**\n  - **21.6 Wh** rear battery, charges via **USB\u2011C (45 W)**. ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n\n- **Connectivity**\n  - **Wi\u2011Fi 7** with dual radios (5 GHz + 6 GHz) for splitting VR stream vs normal network traffic. ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n  - Dedicated **6 GHz Wi\u2011Fi 6E dongle** included for low\u2011latency PC streaming. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n  - **Bluetooth 5.3**, rear **USB\u2011C 2.0** for charging/data. ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n\n- **Cameras, tracking, expansion**\n  - Inside\u2011out tracking via **4 external tracking cameras** plus **2 inward eye\u2011tracking cameras** (total 6). ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n  - **Monochrome passthrough** (no full\u2011color MR at launch). ([gigazine.net](https://gigazine.net/gsc_news/en/20251113-valve-steam-machine-controller-frame/?utm_source=openai))  \n  - Front **expansion port** with PCIe Gen 4 and multiple high\u2011speed MIPI camera interfaces for potential accessories (face tracking, depth/color passthrough, etc.). ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n\n- **Audio**\n  - Dual speaker drivers per ear embedded in the strap for off\u2011ear spatial audio. ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n\n---\n\n## Controllers\n\n- Comes with **two Steam Frame controllers** (included, not optional). ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n- Design and layout are broadly similar to Meta Quest\u2011style VR controllers:\n  - Thumbsticks, buttons, triggers, grip buttons.\n  - Haptics and **new thumbstick design (\u201cTMR\u201d sticks\u201d)** highlighted by Valve. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n- Designed for **\u201cinput parity with a traditional gamepad\u201d**, so non\u2011VR games are also playable. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n- Legacy **Index controllers and lighthouse base stations are not supported**; tracking is entirely inside\u2011out. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n---\n\n## Software & compatibility\n\n- Runs **SteamOS** with:\n  - **Proton** for Windows games.\n  - **FEX\u2011Emu** for x86/64-on\u2011ARM emulation.\n  - **\u201cLepton\u201d (Waydroid fork)** for Android apps/games, including sideloading. ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- Can run:\n  - Native VR and some flat Steam titles directly on the headset.\n  - Streamed PC VR for heavier games via the included 6 GHz adapter.\n- Positioning is very \u201c**streaming\u2011first**\u201d: Valve is emphasizing great PC\u2011to\u2011headset wireless performance over being a purely standalone Quest competitor. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n---\n\n## Limitations / \u201cmissing\u201d features at launch\n\n- **No stereoscopic 3D conversion for flat content (at launch):**\n  - Valve has confirmed Steam Frame will **not initially support stereoscopic 3D rendering** like Apple Vision Pro\u2019s 3D video/photo system or some Samsung / Meta features.\n  - Valve has said this is \u201c**on our list**\u201d for the future, but not part of the launch feature set. ([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))  \n- **Monochrome passthrough only**; no color mixed reality mode announced yet. ([gigazine.net](https://gigazine.net/gsc_news/en/20251113-valve-steam-machine-controller-frame/?utm_source=openai))  \n- **No wired PC mode announced** (everything points to wireless PC streaming only). ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n---\n\n## Where Valve is positioning it\n\n- Marketed as:\n  - A **premium VR headset** meant to be **cheaper than Valve Index**, not a budget Quest\u2011like. ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n  - A \u201c**new way to play your entire Steam library**,\u201d with strong emphasis on compatibility layers and wireless PC VR. ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- Competes with **Meta Quest 3/3S**, **PSVR 2** (though that\u2019s tethered), **HTC\u2019s standalone headsets**, and newer devices like **Samsung\u2019s Galaxy XR**. ([gamesradar.com](https://www.gamesradar.com/hardware/vr/valve-deckard-has-been-officially-revealed-as-the-steam-frame-and-it-looks-like-a-combination-of-psvr-2-and-the-meta-quest-3s-best-features/?utm_source=openai))  \n\n---\n\nIf you tell me what you care about most\u2014standalone use vs PCVR, comfort/weight, or app ecosystem\u2014I can narrow this down to how Steam Frame specifically compares to something like Quest 3 or Apple Vision Pro for your use case.",
+    "citations": [
+      {
+        "url": "https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai",
+        "title": "Valve rejoins the VR hardware wars with standalone Steam Frame - Ars Technica",
+        "rank": 3,
+        "text_snippet": "([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))",
+        "snippet_cited": "([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))",
+        "start_index": 400,
+        "end_index": 541,
+        "metadata": {
+          "start_index": 400,
+          "end_index": 541
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai",
+        "title": "Valve announces three new Steam Hardware devices: Steam Machine, Steam Frame, and Steam Controller \u00b7 SteamDB",
+        "rank": 4,
+        "text_snippet": "([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))",
+        "snippet_cited": "([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))",
+        "start_index": 642,
+        "end_index": 724,
+        "metadata": {
+          "start_index": 642,
+          "end_index": 724
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://gigazine.net/gsc_news/en/20251113-valve-steam-machine-controller-frame/?utm_source=openai",
+        "title": "Valve announces SteamOS gaming PC 'Steam Machine,' standalone VR device 'Steam Frame,' and game controller 'Steam Controller' - GIGAZINE",
+        "rank": 8,
+        "text_snippet": "([gigazine.net](https://gigazine.net/gsc_news/en/20251113-valve-steam-machine-controller-frame/?utm_source=openai))",
+        "snippet_cited": "([gigazine.net](https://gigazine.net/gsc_news/en/20251113-valve-steam-machine-controller-frame/?utm_source=openai))",
+        "start_index": 4429,
+        "end_index": 4544,
+        "metadata": {
+          "start_index": 4429,
+          "end_index": 4544
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai",
+        "title": "Steam Frame",
+        "rank": 2,
+        "text_snippet": "([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))",
+        "snippet_cited": "([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))",
+        "start_index": 6222,
+        "end_index": 6303,
+        "metadata": {
+          "start_index": 6222,
+          "end_index": 6303
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai",
+        "title": "Confirmed: Steam Frame will lack this Apple Vision Pro and Meta Quest feature at launch - Valve says it's 'on our list'",
+        "rank": 1,
+        "text_snippet": "([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))",
+        "snippet_cited": "([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))",
+        "start_index": 7144,
+        "end_index": 7336,
+        "metadata": {
+          "start_index": 7144,
+          "end_index": 7336
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.gamesradar.com/hardware/vr/valve-deckard-has-been-officially-revealed-as-the-steam-frame-and-it-looks-like-a-combination-of-psvr-2-and-the-meta-quest-3s-best-features/?utm_source=openai",
+        "title": "Valve Deckard has been officially revealed as the Steam Frame, and it looks like a combination of PSVR 2 and the Meta Quest 3's best features",
+        "rank": 10,
+        "text_snippet": "([gamesradar.com](https://www.gamesradar.com/hardware/vr/valve-deckard-has-been-officially-revealed-as-the-steam-frame-and-it-looks-like-a-combination-of-psvr-2-and-the-meta-quest-3s-best-features/?utm_source=openai))",
+        "snippet_cited": "([gamesradar.com](https://www.gamesradar.com/hardware/vr/valve-deckard-has-been-officially-revealed-as-the-steam-frame-and-it-looks-like-a-combination-of-psvr-2-and-the-meta-quest-3s-best-features/?utm_source=openai))",
+        "start_index": 8356,
+        "end_index": 8573,
+        "metadata": {
+          "start_index": 8356,
+          "end_index": 8573
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 261,
+    "provider": "openai",
+    "model": "gpt-5.1",
+    "data_source": "api",
+    "created_at": "2025-12-11T11:13:47.951505",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "Here are the latest publicly known details on Valve\u2019s **Steam Frame** as of December 11, 2025:\n\n## What it is & release window\n- **Product**: Steam Frame \u2013 a standalone VR headset from Valve (successor to the Valve Index).\n- **Positioning**: \u201cSteam Deck for your face\u201d \u2013 runs games locally and can also stream from a PC.\n- **OS**: Runs **SteamOS** (Arch Linux\u2013based) with Proton and other compatibility layers.\n- **Release**: Targeted for **early 2026 / Q1 2026**. No exact date yet.  \n- **Price**: Not yet announced, but Valve has repeatedly said it will be **cheaper than the $999 Index**.  \n\n## Hardware specs (headset)\n\nCore specs from Valve and hands\u2011on previews:\n\n- **Display**\n  - Dual **LCD** panels.\n  - **2160 \u00d7 2160 per eye**.\n  - Refresh rates: **72, 90, 120 Hz**, with **144 Hz experimental** mode.  \n- **Optics**\n  - **Pancake lenses**.\n  - Physical **IPD dial**.\n  - Horizontal FOV up to ~**110\u00b0** (exact vertical FOV not fully locked down).  \n- **SoC / performance**\n  - **Qualcomm Snapdragon 8 Gen 3\u2013class** ARM SoC.\n  - **16 GB unified LPDDR5/LPDDR5X RAM**.\n  - Storage options: **256 GB** or **1 TB UFS**, plus **microSD slot** (shared ecosystem with Steam Deck and new Steam Machine).  \n- **Weight**\n  - ~**185\u2013190 g** for the core module alone.\n  - ~**435\u2013440 g** with strap + facial interface (lighter than Index and Meta Quest 3 with strap).  \n- **Battery**\n  - ~**21.6 Wh** rear battery (in strap), USB\u2011C charging (\u224845 W).  \n\n## Tracking, sensors, and passthrough\n\n- **Tracking**\n  - **Inside\u2011out**: 4 external monochrome tracking cameras.\n  - **No lighthouse / base station support**; Valve has explicitly said Index\u2011style lighthouse tracking isn\u2019t planned.  \n- **Eye tracking**\n  - 2 internal eye\u2011tracking cameras.\n  - Used for:\n    - **Foveated rendering** (local).\n    - **\u201cFoveated streaming\u201d** to reduce bandwidth when streaming from PC.  \n- **Passthrough**\n  - **Monochrome passthrough** only at launch (no full\u2011color mixed reality like Quest 3 / Apple Vision Pro).  \n\n## Connectivity & streaming\n\n- **On\u2011device wireless**\n  - **Wi\u2011Fi 7 (2\u00d72)** with dual\u2011radio design to separate internet vs. PC streaming traffic across **5 GHz and 6 GHz**.  \n- **Included wireless adapter**\n  - Bundled **Wi\u2011Fi 6E (6 GHz) streaming dongle** for low\u2011latency PCVR from a Windows PC.  \n- **Other ports**\n  - **USB\u2011C** for charging/data.\n  - Front **expansion port** with PCIe Gen 4 lane + camera interface, intended for future accessories such as depth sensors, full\u2011color passthrough, or face\u2011tracking modules.  \n\n## Controllers\n\n- **Steam Frame Controllers**\n  - Included pair of 6\u2011DOF controllers.\n  - Tracking via the headset cameras (inside\u2011out).\n  - **Capacitive sensing** on buttons for basic finger\u2011tracking\u2011style gestures.\n  - Each uses **1\u00d7 AA battery**, Valve is quoting around **40 hours** per controller in previews.  \n  - Optional hand straps that echo the Index \u201cKnuckles\u201d feel.  \n\n## Software & ecosystem\n\n- **SteamOS on ARM**\n  - SteamOS adapted for **ARM64** on Snapdragon, including:\n    - **Proton** for Windows/x86\u201164 games.\n    - **FEX\u2011Emu** and related layers for x86 emulation.\n    - **Lepton / Waydroid\u2011based Android runtime** for Android apps (with APK sideloading).  \n- **Content**\n  - Runs **SteamVR** titles natively where available.\n  - Can run **non\u2011VR** PC games in a virtual screen environment (\u201cbig screen\u201d\u2011style) via Proton/x86 emulation.\n  - Heavy emphasis on **wireless PCVR** and existing Steam libraries rather than brand\u2011new first\u2011party VR exclusives (Valve has said no new flagship VR game is tied to launch).  \n- **Android apps**\n  - Android apps can run via the Arm\u2011native runtime; Valve is targeting a unified experience where Android and VR apps coexist in the same interface.  \n\n## Relationship to Index and Steam Deck ecosystem\n\n- **Successor to Valve Index**\n  - Index manufacturing has been **stopped**; Valve explicitly frames Steam Frame as the future of its VR hardware.  \n- **Ecosystem with Deck & Steam Machine**\n  - Launching alongside **new Steam Machine** and updated **Steam Controller**.\n  - All three (Deck, Frame, Machine) have **microSD slots** and share game libraries via plug\u2011and\u2011play microSD cards.  \n\n## Notable limitations / open questions (as of now)\n\n- **No lighthouse tracking**, which may be a downside for sim enthusiasts with existing Index setups.\n- **Monochrome passthrough only** (no mixed\u2011reality color passthrough).\n- **No final price** or exact launch date; just \u201ccheaper than Index\u201d and \u201cearly 2026\u201d.\n- Valve has acknowledged some advanced features like sophisticated stereoscopic 3D for 2D content conversion are **\u201con our list,\u201d** not present at launch.  \n\nIf you tell me what you care about most (PCVR latency, standalone performance, comfort, vs Meta Quest 3/3S or Apple Vision Pro, etc.), I can focus on those comparisons specifically.",
+    "citations": [
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai",
+        "title": "Steam Frame",
+        "rank": 3,
+        "text_snippet": "- **Price**: Not yet announced, but Valve has repeatedly said it will be **chea",
+        "snippet_cited": "- **Price**: Not yet announced, but Valve has repeatedly said it will be **chea",
+        "start_index": 484,
+        "end_index": 565,
+        "metadata": {
+          "start_index": 484,
+          "end_index": 565
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.theverge.com/news/817967/valve-index-vr-headset-stopped-manufacturing-frame?utm_source=openai",
+        "title": "Valve has stopped manufacturing its Index VR headset",
+        "rank": 2,
+        "text_snippet": "Display**\n  - Dual **LCD** panels.\n  - **2160 \u00d7 2160 per eye**.\n  - Refresh rates: **72, 90, 120 Hz**, with **144 Hz experi",
+        "snippet_cited": "Display**\n  - Dual **LCD** panels.\n  - **2160 \u00d7 2160 per eye**.\n  - Refresh rates: **72, 90, 120 Hz**, with **144 Hz experi",
+        "start_index": 674,
+        "end_index": 797,
+        "metadata": {
+          "start_index": 674,
+          "end_index": 797
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.windowscentral.com/hardware/virtual-reality/valve-announce-steam-frame-snapdragon-xr-headset-steam-os-arm-support?utm_source=openai",
+        "title": "Valve lays the foundations for an Arm-based gaming handheld future with first Snapdragon-powered SteamOS VR headset | Windows Central",
+        "rank": 9,
+        "text_snippet": "e core module alone.\n  - ~**435\u2013440 g** with strap + facial interface (lighter than Index and Meta Quest 3 with strap).  \n- **Battery**\n  - ~**21.6 Wh** rear battery (",
+        "snippet_cited": "e core module alone.\n  - ~**435\u2013440 g** with strap + facial interface (lighter than Index and Meta Quest 3 with strap).  \n- **Battery**\n  - ~**21.6 Wh** rear battery (",
+        "start_index": 1245,
+        "end_index": 1412,
+        "metadata": {
+          "start_index": 1245,
+          "end_index": 1412
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://economictimes.indiatimes.com/news/international/us/valve-launches-the-steam-frame-steam-machine-and-steam-controller-building-a-new-gaming-ecosystem-here-are-the-key-specs-of-the-new-launches/articleshow/125282254.cms?utm_source=openai",
+        "title": "steam machine gaming: Valve launches the Steam Frame, Steam Machine, and Steam Controller \u2014 building a new gaming ecosystem- here are the key specs of the new launches - The Economic Times",
+        "rank": 7,
+        "text_snippet": "buttons for basic finger\u2011tracking\u2011style gestures.\n  - Each uses **1\u00d7 AA battery**, Valve is quoting around **40 hours** per controller in previews.  \n  - Optional hand straps that echo the Index \u201cKnuckles\u201d feel.  \n\n## Software & ecosystem\n\n- **SteamOS on ARM**\n  - SteamOS ada",
+        "snippet_cited": "buttons for basic finger\u2011tracking\u2011style gestures.\n  - Each uses **1\u00d7 AA battery**, Valve is quoting around **40 hours** per controller in previews.  \n  - Optional hand straps that echo the Index \u201cKnuckles\u201d feel.  \n\n## Software & ecosystem\n\n- **SteamOS on ARM**\n  - SteamOS ada",
+        "start_index": 2694,
+        "end_index": 2971,
+        "metadata": {
+          "start_index": 2694,
+          "end_index": 2971
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.digitaltrends.com/gaming/valves-steam-frame-is-an-all-in-one-headset-for-vr-pc-games-and-streaming/?utm_source=openai",
+        "title": "Valve\u2019s Steam Frame is an all-in one headset for VR, PC games, and streaming - Digital Trends",
+        "rank": 6,
+        "text_snippet": "eting a unified experience where Android and VR apps coexist in the same interface.  \n\n## Relationship to Index and Steam Deck ecosystem\n\n- **Successor",
+        "snippet_cited": "eting a unified experience where Android and VR apps coexist in the same interface.  \n\n## Relationship to Index and Steam Deck ecosystem\n\n- **Successor",
+        "start_index": 3651,
+        "end_index": 3803,
+        "metadata": {
+          "start_index": 3651,
+          "end_index": 3803
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.androidcentral.com/gaming/virtual-reality/steam-frame-steam-deck-meta-quest-3?utm_source=openai",
+        "title": "Valve's new Meta Quest rival completes the hybrid gaming vision the company began with the launch of the Steam Deck, even allowing you to sideload Android apps for added versatility. But how does it compare to the Quest 3?",
+        "rank": 5,
+        "text_snippet": "([androidcentral.com](https://www.androidcentral.com/gaming/virtual-reality/steam-frame-steam-deck-meta-quest-3?utm_source=openai))",
+        "snippet_cited": "([androidcentral.com](https://www.androidcentral.com/gaming/virtual-reality/steam-frame-steam-deck-meta-quest-3?utm_source=openai))",
+        "start_index": 5637,
+        "end_index": 5768,
+        "metadata": {
+          "start_index": 5637,
+          "end_index": 5768
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.pcquest.com/news-launches/valve-ignites-the-future-of-play-with-the-steam-frame-and-next-gen-steam-machine-10652867?utm_source=openai",
+        "title": "Valve\u2019s Steam Frame and Steam Machine Set a New Gaming Standard",
+        "rank": 12,
+        "text_snippet": "([pcquest.com](https://www.pcquest.com/news-launches/valve-ignites-the-future-of-play-with-the-steam-frame-and-next-gen-steam-machine-10652867?utm_source=openai))",
+        "snippet_cited": "([pcquest.com](https://www.pcquest.com/news-launches/valve-ignites-the-future-of-play-with-the-steam-frame-and-next-gen-steam-machine-10652867?utm_source=openai))",
+        "start_index": 5940,
+        "end_index": 6102,
+        "metadata": {
+          "start_index": 5940,
+          "end_index": 6102
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.pcgamer.com/hardware/valve-recommends-sharing-your-game-library-on-sd-card-between-steam-deck-steam-frame-and-steam-machine/?utm_source=openai",
+        "title": "Valve recommends sharing your game library on microSD card between Steam Deck, Steam Frame, and Steam Machine: 'They're fully interoperable, just bring it along with you'",
+        "rank": 4,
+        "text_snippet": "([pcgamer.com](https://www.pcgamer.com/hardware/valve-recommends-sharing-your-game-library-on-sd-card-between-steam-deck-steam-frame-and-steam-machine/?utm_source=openai))",
+        "snippet_cited": "([pcgamer.com](https://www.pcgamer.com/hardware/valve-recommends-sharing-your-game-library-on-sd-card-between-steam-deck-steam-frame-and-steam-machine/?utm_source=openai))",
+        "start_index": 6670,
+        "end_index": 6841,
+        "metadata": {
+          "start_index": 6670,
+          "end_index": 6841
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai",
+        "title": "Confirmed: Steam Frame will lack this Apple Vision Pro and Meta Quest feature at launch - Valve says it's 'on our list'",
+        "rank": 1,
+        "text_snippet": "([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))",
+        "snippet_cited": "([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))",
+        "start_index": 7314,
+        "end_index": 7506,
+        "metadata": {
+          "start_index": 7314,
+          "end_index": 7506
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 260,
+    "provider": "openai",
+    "model": "gpt-5.1",
+    "data_source": "api",
+    "created_at": "2025-12-11T10:44:43.340324",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "Here are the latest publicly known details on Valve\u2019s **Steam Frame** as of December 11, 2025:\n\n## What it is\n- **Device type:** Standalone VR headset (\u201cSteam Deck for your face\u201d) that can run games locally over SteamOS or stream from a PC.  \n- **Positioning:** Spiritual successor to **Valve Index**, part of a new SteamOS hardware lineup alongside the next\u2011gen Steam Machine.  \n- **Release window:** **Early 2026** (Q1 2026; exact date not yet announced).  \n- **Price:** Officially **TBA**, but Valve says it will be **cheaper than the $999 Index**; most coverage expects a sub\u2011$1,000 price.  \n\n---\n\n## Core hardware & specs (current info)\n\n**Headset & display**\n- **Resolution:** 2160 \u00d7 2160 LCD per eye (pancake lenses).  \n- **Refresh rates:** 72\u2013120 Hz, with **144 Hz experimental** support.  \n- **FOV:** \u201cUp to ~110\u00b0\u201d (similar ballpark to Quest 3).  \n- **Weight:**  \n  - Core module ~185\u2013190 g  \n  - ~440 g total with strap, speakers, and rear battery (lighter than Quest 3).  \n- **Optics & tracking:**  \n  - Pancake optics  \n  - 4 external monochrome tracking cameras + IR illuminators  \n  - 2 internal eye\u2011tracking cameras for **eye\u2011tracked foveated rendering/streaming**.  \n\n**SoC, RAM, and storage**\n- **Processor:** Qualcomm **Snapdragon 8 Gen 3\u2011class ARM64** SoC (SteamOS on ARM).  \n- **Memory:** 16 GB unified LPDDR5/LPDDR5X.  \n- **Storage options:**  \n  - 256 GB UFS  \n  - 1 TB UFS  \n  - **microSD slot** (up to 2 TB SDXC) shared across Steam Deck, Steam Machine, and Steam Frame.  \n\n**Power & comfort**\n- **Battery:** 21.6 Wh Li\u2011ion; exact playtime depends heavily on use (standalone vs. streaming).  \n- **Charging:** USB\u2011C (up to 45 W, USB\u2011C 2.0 data/charge port).  \n- Modular design: a lightweight **\u201ccore\u201d module** + removable headstrap/battery/speakers; Valve hints third parties could build alternate straps or shells around the core.  \n\n---\n\n## Controllers & tracking\n\n- **Inside\u2011out tracking** only; no lighthouse/base\u2011station support and no support planned for old Index/SteamVR tracked controllers.  \n- New **Steam Frame controllers**:  \n  - 6\u2011DOF tracking, IMU  \n  - Magnetic thumbsticks  \n  - Haptics  \n  - Capacitive sensing  \n  - Powered by AA batteries (~40 hours quoted) with optional hand straps (Index\u2011style).  \n\n---\n\n## Connectivity & streaming\n\n- **On\u2011headset wireless:**  \n  - Wi\u2011Fi 7 (2\u00d72), dual radios to separate internet traffic and PC\u2011VR streaming (5 GHz / 6 GHz).  \n- **Included PC adapter:**  \n  - USB **Wi\u2011Fi 6E 6 GHz dongle** specifically for low\u2011latency PC\u2011VR streaming.  \n- **No wired PC connection at launch** (no DisplayPort/USB\u2011C video link); Valve is focusing entirely on **wireless PCVR**.  \n- **Foveated Streaming:** uses eye tracking so the sharpest image is where you\u2019re looking, to improve effective image quality and reduce bandwidth.  \n\n---\n\n## Software, OS, and game compatibility\n\n- **OS:** SteamOS (ARM build) with sleep/resume, cloud saves, etc.  \n- **Content sources:**  \n  - Native VR games in your Steam library  \n  - Non\u2011VR Steam games on a virtual screen  \n  - PCVR titles via wireless streaming from a Windows or Linux PC  \n  - **Android apps** via a new \u201cLepton\u201d/compatibility layer and Proton/FEX emulation (you can sideload Android apps; it doesn\u2019t run Android natively).  \n- **ARM/x86 compatibility:** Valve uses **Proton** plus **FEX** (x86\u2011on\u2011ARM) to run existing x86\u201164 Steam titles on the ARM SoC, similar to how Proton handles Windows games now.  \n- **Library interoperability:** Valve explicitly recommends using microSD to share a library between **Steam Deck, Steam Frame, and new Steam Machine** (\u201cfully interoperable, just bring it along with you\u201d).  \n\n---\n\n## Features missing or limited at launch\n\n- **No full\u2011color passthrough**: current cameras are monochrome for passthrough and tracking.  \n- **No automatic 2D\u21923D conversion for flat Steam games** at launch (unlike some premium XR headsets); Valve says it\u2019s \u201con our list,\u201d but not shipping initially.  \n- **No lighthouse support**: Index base stations and controllers won\u2019t work; this is a fully inside\u2011out, standalone platform.  \n\n---\n\n## Ecosystem context & status\n\n- **Valve Index discontinued:** Valve stopped manufacturing Index in November 2025, shifting focus to Steam Frame; Index will still receive support, but production has ended.  \n- Steam Frame headline: a hybrid of **standalone VR**, **wireless PCVR**, and **\u201cbig\u2011screen\u201d flat gaming**, building on the hybrid portability vision of the Steam Deck.  \n- As of now (Dec 11, 2025):  \n  - No final **price**  \n  - No specific **release date** beyond \u201cearly 2026\u201d  \n  - No announced new first\u2011party VR launch title from Valve (Alyx\u2011style) alongside the hardware, though that could still change.  \n\nIf you tell me what you care about most (PCVR performance vs. standalone, comfort vs. raw specs, or how it compares to Quest 3/Quest 3S/Apple Vision Pro), I can focus on that and give a more targeted comparison.",
+    "citations": [
+      {
+        "url": "https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai",
+        "title": "Valve rejoins the VR hardware wars with standalone Steam Frame - Ars Technica",
+        "rank": 2,
+        "text_snippet": "- **Positioning:** Spiritual successor to **Valve Index**, part of a new SteamOS hardware lineup alongside the next\u2011gen Steam Machine.  \n-",
+        "snippet_cited": "- **Positioning:** Spiritual successor to **Valve Index**, part of a new SteamOS hardware lineup alongside the next\u2011gen Steam Machine.  \n-",
+        "start_index": 241,
+        "end_index": 382,
+        "metadata": {
+          "start_index": 241,
+          "end_index": 382
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai",
+        "title": "Valve announces three new Steam Hardware devices: Steam Machine, Steam Frame, and Steam Controller \u00b7 SteamDB",
+        "rank": 6,
+        "text_snippet": "*cheaper than the $999 Index**; most coverage expects a sub\u2011$1,000 price.  \n\n---",
+        "snippet_cited": "*cheaper than the $999 Index**; most coverage expects a sub\u2011$1,000 price.  \n\n---",
+        "start_index": 520,
+        "end_index": 602,
+        "metadata": {
+          "start_index": 520,
+          "end_index": 602
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai",
+        "title": "Steam Frame",
+        "rank": 8,
+        "text_snippet": "2160 \u00d7 2160 LCD per eye (pancake lenses).  \n- **Refresh rates:** 72\u2013120 Hz, with",
+        "snippet_cited": "2160 \u00d7 2160 LCD per eye (pancake lenses).  \n- **Refresh rates:** 72\u2013120 Hz, with",
+        "start_index": 683,
+        "end_index": 764,
+        "metadata": {
+          "start_index": 683,
+          "end_index": 764
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.theverge.com/news/817967/valve-index-vr-headset-stopped-manufacturing-frame?utm_source=openai",
+        "title": "Valve has stopped manufacturing its Index VR headset",
+        "rank": 3,
+        "text_snippet": "- ~440 g total with strap, speakers, and rear battery (lighter than Quest 3).  \n- **Optics & tracking:**  \n  - Pancake o",
+        "snippet_cited": "- ~440 g total with strap, speakers, and rear battery (lighter than Quest 3).  \n- **Optics & tracking:**  \n  - Pancake o",
+        "start_index": 901,
+        "end_index": 1024,
+        "metadata": {
+          "start_index": 901,
+          "end_index": 1024
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.windowscentral.com/hardware/virtual-reality/valve-announce-steam-frame-snapdragon-xr-headset-steam-os-arm-support?utm_source=openai",
+        "title": "Valve lays the foundations for an Arm-based gaming handheld future with first Snapdragon-powered SteamOS VR headset | Windows Central",
+        "rank": 12,
+        "text_snippet": "aptics  \n  - Capacitive sensing  \n  - Powered by AA batteries (~40 hours quoted) with optional hand straps (Index\u2011style).  \n\n---\n\n## Connectivity & streaming\n\n- **On\u2011h",
+        "snippet_cited": "aptics  \n  - Capacitive sensing  \n  - Powered by AA batteries (~40 hours quoted) with optional hand straps (Index\u2011style).  \n\n---\n\n## Connectivity & streaming\n\n- **On\u2011h",
+        "start_index": 2120,
+        "end_index": 2287,
+        "metadata": {
+          "start_index": 2120,
+          "end_index": 2287
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.pcgamer.com/hardware/valve-recommends-sharing-your-game-library-on-sd-card-between-steam-deck-steam-frame-and-steam-machine/?utm_source=openai",
+        "title": "Valve recommends sharing your game library on microSD card between Steam Deck, Steam Frame, and Steam Machine: 'They're fully interoperable, just bring it along with you'",
+        "rank": 4,
+        "text_snippet": "mpatibility\n\n- **OS:** SteamOS (ARM build) with sleep/resume, cloud saves, etc.  \n- **Content sources:**  \n  - Native VR games in your Steam library  \n  - Non\u2011VR Steam gam",
+        "snippet_cited": "mpatibility\n\n- **OS:** SteamOS (ARM build) with sleep/resume, cloud saves, etc.  \n- **Content sources:**  \n  - Native VR games in your Steam library  \n  - Non\u2011VR Steam gam",
+        "start_index": 2827,
+        "end_index": 2998,
+        "metadata": {
+          "start_index": 2827,
+          "end_index": 2998
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.androidcentral.com/gaming/virtual-reality/steam-frame-steam-deck-meta-quest-3?utm_source=openai",
+        "title": "Valve's new Meta Quest rival completes the hybrid gaming vision the company began with the launch of the Steam Deck, even allowing you to sideload Android apps for added versatility. But how does it compare to the Quest 3?",
+        "rank": 5,
+        "text_snippet": "([androidcentral.com](https://www.androidcentral.com/gaming/virtual-reality/steam-frame-steam-deck-meta-quest-3?utm_source=openai))",
+        "snippet_cited": "([androidcentral.com](https://www.androidcentral.com/gaming/virtual-reality/steam-frame-steam-deck-meta-quest-3?utm_source=openai))",
+        "start_index": 5995,
+        "end_index": 6126,
+        "metadata": {
+          "start_index": 5995,
+          "end_index": 6126
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai",
+        "title": "Confirmed: Steam Frame will lack this Apple Vision Pro and Meta Quest feature at launch - Valve says it's 'on our list'",
+        "rank": 1,
+        "text_snippet": "([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))",
+        "snippet_cited": "([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))",
+        "start_index": 7245,
+        "end_index": 7437,
+        "metadata": {
+          "start_index": 7245,
+          "end_index": 7437
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 259,
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-5-20250929",
+    "data_source": "api",
+    "created_at": "2025-12-11T10:36:21.210643",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "Based on the latest information, here are the key details about the **Steam Frame**:\n\n## Overview\nSteam Frame is an upcoming standalone virtual reality headset developed by Valve Corporation, announced in November 2025 and expected to be released in early 2026. It's positioned as a \"streaming-first\" standalone VR headset.\n\n## Key Specifications\n\n**Display & Optics:**\n- Dual 2160\u00d72160 LCD panels\n- Field of view is \"slightly less than Index\" and \"conservatively\" 110 degrees horizontal and vertical\n- Supports refresh rates of 72, 120 and 144 Hz\n- Pancake lenses with adjustable IPD\n\n**Hardware:**\n- Qualcomm Snapdragon 8 Gen 3 system-on-chip with 16 GB of LPDDR5X memory\n- Available in 256 GB and 1 TB storage models, expandable via microSD cards\n- Core frontbox weighs just 185 grams, while the entire system weighs 440 grams\n\n**Connectivity:**\n- Features multiple Wi-Fi 7 radios and includes a bundled Wi-Fi 6E USB adapter for dedicated 6GHz PC streaming\n- Does not require base stations; uses four onboard grayscale tracking cameras for inside-out tracking, with eye tracking for foveated streaming\n\n## Software Features\nRuns SteamOS with compatibility layers including Proton for Windows games, FEX-Emu for x86 emulation on ARM, and Lepton for Android apps. VR software can be wirelessly streamed from a gaming PC using Steam Link.\n\n## Pricing & Availability\nThe headset is scheduled to launch in Q1 2026, meaning before March 31, 2026. Valve stated it expects Steam Frame to be cheaper than the Index, though specific pricing hasn't been announced yet.\n\n## Recent Updates\nThe Steam Frame doesn't currently support stereoscopic 3D rendering at launch, but Valve has stated the feature is \"on our list\" for potential future implementation.",
+    "citations": [
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame",
+        "title": "Steam Frame - Wikipedia",
+        "rank": 2,
+        "text_snippet": "Steam Frame is an upcoming standalone virtual reality headset developed by Valve Corporation. Announced in November 2025 as part of a new lineup of St...",
+        "snippet_cited": "Steam Frame is an upcoming standalone virtual reality headset developed by Valve Corporation. Announced in November 2025 as part of a new lineup of St...",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.uploadvr.com/valve-steam-frame-official-announcement-features-details/",
+        "title": "Valve Officially Announces Steam Frame, A \"Streaming-First\" Standalone VR Headset",
+        "rank": 5,
+        "text_snippet": "Valve just officially announced Steam Frame, a \"streaming-first\" standalone VR headset launching in \"early 2026\".",
+        "snippet_cited": "Valve just officially announced Steam Frame, a \"streaming-first\" standalone VR headset launching in \"early 2026\".",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+        "title": "Steam Frame Release Date Window, Possible Price, Specs, And Everything We Know About Valve's Next-Gen VR Headset - GameSpot",
+        "rank": 7,
+        "text_snippet": "Instead, Valve promises that the new VR headset is primed to launch in early 2026, with further clarification from the company constraining that to Q1...",
+        "snippet_cited": "Instead, Valve promises that the new VR headset is primed to launch in early 2026, with further clarification from the company constraining that to Q1...",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list",
+        "title": "Confirmed: Steam Frame will lack this Apple Vision Pro and Meta Quest feature at launch \u2014 Valve says it's 'on our list' | Tom's Guide",
+        "rank": 10,
+        "text_snippet": "Currently, the Steam Frame doesn't support stereoscopic 3D rendering, a feature that can create a three-dimensional view of 2D content.",
+        "snippet_cited": "Currently, the Steam Frame doesn't support stereoscopic 3D rendering, a feature that can create a three-dimensional view of 2D content.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 258,
+    "provider": "google",
+    "model": "gemini-3-pro-preview",
+    "data_source": "api",
+    "created_at": "2025-12-11T10:35:12.821798",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "Based on the latest announcements as of December 11, 2025, the **Steam Frame** is Valve's newly revealed standalone VR headset. It was officially announced in November 2025 alongside a new Steam Machine and Steam Controller.\n\nHere are the key details available right now:\n\n### **Release Date & Availability**\n*   **Release Window:** Scheduled for **Q1 2026** (early 2026).\n*   **Pricing:** Official pricing has not yet been announced (TBA), though reports suggest Valve intends for it to be more accessible than the original Valve Index.\n\n### **Hardware Specifications**\n*   **Processor:** Powered by a **Qualcomm Snapdragon 8 Gen 3** (ARM64) chip, allowing it to run games independently without a PC.\n*   **Display:** Dual **2160 x 2160 LCD panels** (one per eye).\n    *   *Note:* Unlike the Steam Deck OLED, the Frame launches with LCD screens, likely to keep costs down and brightness/clarity high for VR.\n*   **Refresh Rate:** Supports **72Hz to 144Hz**.\n*   **Memory:** 16GB of LPDDR5X RAM.\n*   **Storage:** Available in **256GB** and **1TB** models, with a microSD slot for expansion.\n*   **Optics:** Custom \"pancake\" lenses for a slimmer profile and edge-to-edge clarity. Field of view is approximately 110 degrees.\n\n### **Key Features**\n*   **Hybrid Design:** It is a **standalone device** (runs its own games on SteamOS) but is also built for high-end **PC VR streaming**.\n*   **Wireless Streaming:** Includes a dedicated **Wi-Fi 6E (6GHz) wireless adapter** to plug into your PC, ensuring low-latency, high-quality streaming without needing a router upgrade.\n*   **Eye Tracking:** Features built-in eye tracking to enable **Foveated Rendering**. This improves performance by rendering the area you are looking at in full detail while reducing quality in your peripheral vision.\n*   **Tracking:** Uses **inside-out tracking** via four monochrome cameras (no external base stations/lighthouses required).\n*   **Passthrough:** Supports monochromatic passthrough for seeing your surroundings.\n\n### **Software & Ecosystem**\n*   **OS:** Runs a version of **SteamOS** adapted for VR. It supports playing standard \"flat\" Steam games on a virtual screen, as well as native VR titles.\n*   **Compatibility:** While it runs ARM-based standalone games natively, its primary power comes from streaming your existing x86 Steam VR library from a PC.\n*   **Limitations:** Valve has confirmed that at launch, it **will not support stereoscopic 3D** for traditional 2D flat games, though they have stated this feature is \"on their list\" for the future.\n\n### **Context**\nThe Steam Frame is part of Valve's broader push to expand the SteamOS ecosystem beyond the handheld Steam Deck, creating a unified family of devices that includes the new **Steam Machine** (console) and **Steam Controller 2**.",
+    "citations": [
+      {
+        "url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+        "title": "gamespot.com",
+        "rank": 1,
+        "text_snippet": "Based on the latest announcements as of December 11, 2025, the **Steam Frame** is Valve's newly revealed standalone VR headset.",
+        "snippet_cited": "Based on the latest announcements as of December 11, 2025, the **Steam Frame** is Valve's newly revealed standalone VR headset.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {
+          "grounding_chunk_index": 0,
+          "segment_end_index": 127
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame",
+        "title": "wikipedia.org",
+        "rank": 4,
+        "text_snippet": "*   **Release Window:** Scheduled for **Q1 2026** (early 2026).",
+        "snippet_cited": "*   **Release Window:** Scheduled for **Q1 2026** (early 2026).",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {
+          "grounding_chunk_index": 3,
+          "segment_start_index": 309,
+          "segment_end_index": 372
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://store.steampowered.com/sale/steamframe",
+        "title": "steampowered.com",
+        "rank": 5,
+        "text_snippet": "*   **Display:** Dual **2160 x 2160 LCD panels** (one per eye).",
+        "snippet_cited": "*   **Display:** Dual **2160 x 2160 LCD panels** (one per eye).",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {
+          "grounding_chunk_index": 4,
+          "segment_start_index": 702,
+          "segment_end_index": 765
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://vr-compare.com/headset/steamframe",
+        "title": "vr-compare.com",
+        "rank": 6,
+        "text_snippet": "Field of view is approximately 110 degrees.",
+        "snippet_cited": "Field of view is approximately 110 degrees.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {
+          "grounding_chunk_index": 5,
+          "segment_start_index": 1179,
+          "segment_end_index": 1222
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.cnet.com/tech/gaming/i-tried-valves-steam-frame-machine-and-controller-coming-in-2026-steam-os-is-coming-for-your-face-and-tv/",
+        "title": "cnet.com",
+        "rank": 3,
+        "text_snippet": "*   **Hybrid Design:** It is a **standalone device** (runs its own games on SteamOS) but is also built for high-end **PC VR streaming**.",
+        "snippet_cited": "*   **Hybrid Design:** It is a **standalone device** (runs its own games on SteamOS) but is also built for high-end **PC VR streaming**.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {
+          "grounding_chunk_index": 2,
+          "segment_start_index": 1245,
+          "segment_end_index": 1381
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFiVFtwOQFJ2tTNWaY_05BTIoPIc62BiusqusAQWofi8QNBSvD0ei9tbwXvVcrQgY0GC1OOGwULpgcQ8RKbtc9FmmbOirqczXSP_VQ4pie1pdb9ykZL3owhaVCGeQBLcHm_8kUUNktl_XkYMTqrhhBPP828922vMiXhlMrrXYA3QYfh16fiXqZzDdAei6uf3ZQQluPvf2WzioKhWvJuoL16j-m-",
+        "title": "techradar.com",
+        "rank": 2,
+        "text_snippet": "*   **Eye Tracking:** Features built-in eye tracking to enable **Foveated Rendering**.",
+        "snippet_cited": "*   **Eye Tracking:** Features built-in eye tracking to enable **Foveated Rendering**.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {
+          "grounding_chunk_index": 1,
+          "segment_start_index": 1569,
+          "segment_end_index": 1655
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list",
+        "title": "tomsguide.com",
+        "rank": 7,
+        "text_snippet": "*   **Limitations:** Valve has confirmed that at launch, it **will not support stereoscopic 3D** for traditional 2D flat games, though they have stated this feature is \"on their list\" for the future.",
+        "snippet_cited": "*   **Limitations:** Valve has confirmed that at launch, it **will not support stereoscopic 3D** for traditional 2D flat games, though they have stated this feature is \"on their list\" for the future.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {
+          "grounding_chunk_index": 6,
+          "segment_start_index": 2344,
+          "segment_end_index": 2543
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 257,
+    "provider": "openai",
+    "model": "gpt-5.1",
+    "data_source": "api",
+    "created_at": "2025-12-11T10:33:13.410136",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "Here\u2019s what\u2019s known so far about Valve\u2019s Steam Frame as of December 11, 2025.\n\n## What is the Steam Frame?\n\nSteam Frame is Valve\u2019s upcoming **standalone VR headset**, the successor to the Valve Index. It was officially announced in November 2025 as part of a new Steam hardware lineup (Steam Frame, a new Steam Machine, and a new Steam Controller), all targeting an **early 2026** consumer launch. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n## Release window & status\n\n- **Release target:** \u201cEarly 2026\u201d / \u201cQ1 2026\u201d (Valve\u2019s official language). ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n- **Production:** Industry reports said mass production was gearing up in late 2025 under the codename \u201cDeckard,\u201d with initial expectations of up to ~500k units in year one; those reports suggested late\u20112025 to early\u20112026 as the window, but Valve\u2019s own announcement now clearly points to early 2026. ([cyberockk.com](https://cyberockk.com/2025/10/valves-steam-frame-vr-headset-enters-mass-production-leaks-hint-at-late-2025-launch/?utm_source=openai))  \n- **Price:** Not announced yet; Valve has only said it aims to price it below the Valve Index at launch. ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n\n## Hardware specs (official/high\u2011confidence)\n\nFrom Valve\u2019s hardware announcement and aggregated spec sheets: ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n- **Processor (SoC):** Qualcomm **Snapdragon 8 Gen 3** (ARM64)\n- **RAM:** 16 GB **LPDDR5X** unified memory\n- **Storage options:**  \n  - 256 GB UFS  \n  - 1 TB UFS  \n  - **microSD slot** for expansion\n- **Display:**  \n  - Dual **2160 \u00d7 2160 LCD** per eye  \n  - 72\u2013144 Hz refresh (144 Hz marked experimental)  \n  - Pancake lenses  \n- **Weight:**  \n  - 185 g \u201ccore\u201d module (all main electronics, optics, tracking)  \n  - 440 g total with headstrap and rear battery\n- **Battery:** 21.6 Wh Li\u2011ion, charges over **USB\u2011C** (up to 45 W)\n- **Connectivity:**  \n  - **Wi\u2011Fi 7** (dual radios for 5 GHz & 6 GHz) in the headset  \n  - Included **Wi\u2011Fi 6E (6 GHz) wireless PC adapter** in the box for low\u2011latency PC streaming  \n  - Bluetooth 5.3  \n  - USB\u2011C 2.0 (rear, charging + data)\n- **Tracking & input:**  \n  - Inside\u2011out tracking (no external Lighthouse base stations)  \n  - New bundled controllers (similar layout to Meta Quest style: sticks + buttons, haptics, motion/inside\u2011out tracking) compatible only with Steam Frame, not old Index controllers. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n- **Audio:** Dual speakers per ear, dual\u2011mic array\n- **Passthrough / expandability:**  \n  - Monochrome passthrough cameras  \n  - Front expansion port with a standardized **PCIe Gen 4** interface for add\u2011ons (e.g., accessories using passthrough). ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n## Software & compatibility\n\nSteam Frame runs a full **SteamOS** build on ARM and is positioned as a flexible gaming/compute device, not just a console\u2011like VR box:\n\n- **Runs SteamOS natively** on ARM. ([timesofgames.com](https://www.timesofgames.com/news/steam-frame-pc-gaming-arm/?utm_source=openai))  \n- **PC Steam games (x86 / x86\u201164)** are supported using a translation layer often referred to as **FEX** (similar idea to Proton/Wine, but for CPU architecture translation). Games without invasive kernel\u2011level anti\u2011cheat are expected to run with \u201creasonable\u201d performance for a mobile chipset. ([timesofgames.com](https://www.timesofgames.com/news/steam-frame-pc-gaming-arm/?utm_source=openai))  \n- **VR games:** Runs native SteamVR titles locally or via streaming from a PC.\n- **Android apps:** Supports **Android apps and games natively** on the headset, using an Android compatibility layer; however, don\u2019t expect official Google Play Store, at least initially. ([timesofgames.com](https://www.timesofgames.com/news/steam-frame-pc-gaming-arm/?utm_source=openai))  \n- **Streaming from PC:**  \n  - Designed primarily for **wireless-only PC VR streaming**; Valve has explicitly said it does **not** support a wired PC tether.  \n  - Uses a custom \u201c**foveated streaming**\u201d system: eye tracking identifies where you\u2019re looking, so the stream sends highest detail to that region to save bandwidth and reduce latency. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n## Design & ergonomics\n\n- Weight distribution is focused around a light core plus a rear battery in the strap, similar to recent VR headsets, to improve comfort. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n- Valve is emphasizing a **modular \u201ccore\u201d** design: the 185 g core is intended to be reusable in other shells/headstrap designs. Valve has hinted that third\u2011party makers or tinkerers could build alternative frames/headstraps or even different form factors using the same core. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n\n## Feature gaps / limitations known so far\n\n- **No wired PC link:** All PC VR is over Wi\u2011Fi (using the bundled 6 GHz adapter). Valve is betting entirely on strong wireless streaming tech plus foveated rendering instead of cables. ([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))  \n- **No stereoscopic 3D \u201c2D\u2011to\u20113D\u201d at launch:**  \n  - Valve has confirmed that Steam Frame will **not** initially offer the kind of on\u2011the\u2011fly stereoscopic 3D conversion for flat photos/videos that Apple Vision Pro and some other premium XR devices offer.  \n  - Valve says this feature is **\u201con our list\u201d** for the future, but not for launch. ([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))  \n\n## Relationship to other new Steam hardware\n\nAnnounced alongside two other devices, all slated for early 2026: ([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))  \n\n- **Steam Machine (2025/26 revision):** A small SteamOS-based living\u2011room/desktop PC.  \n- **New Steam Controller:**  \n  - Works with **Steam Deck, Steam Frame, Steam Machine, and PCs**  \n  - Features capacitive touch, gyro, high\u2011def rumble, and a new \u201c**Grip Sense**\u201d mechanic for more flexible gyro activation.  \n\n## Where to watch for updates / preorders\n\n- Valve\u2019s **official Steam Frame page** on Steam (store / sale splash page). ([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))  \n- Valve\u2019s official announcements via Steam news and the @valvesoftware X/Twitter account, which has already been used to promote the new hardware lineup. ([timesofgames.com](https://www.timesofgames.com/news/steam-frame-pc-gaming-arm/?utm_source=openai))  \n\nIf you tell me what you care about most (price estimates, PC\u2011VR streaming quality vs Quest, game compatibility, or comfort/optics), I can dig into comparisons or likely real\u2011world behavior based on these specs.",
+    "citations": [
+      {
+        "url": "https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai",
+        "title": "Valve rejoins the VR hardware wars with standalone Steam Frame - Ars Technica",
+        "rank": 2,
+        "text_snippet": "([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))",
+        "snippet_cited": "([arstechnica.com](https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai))",
+        "start_index": 398,
+        "end_index": 539,
+        "metadata": {
+          "start_index": 398,
+          "end_index": 539
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://cyberockk.com/2025/10/valves-steam-frame-vr-headset-enters-mass-production-leaks-hint-at-late-2025-launch/?utm_source=openai",
+        "title": "Valve's \"Steam Frame\" VR Headset Enters Mass Production, Leaks Hint at Late 2025 Launch",
+        "rank": 6,
+        "text_snippet": "([cyberockk.com](https://cyberockk.com/2025/10/valves-steam-frame-vr-headset-enters-mass-production-leaks-hint-at-late-2025-launch/?utm_source=openai))",
+        "snippet_cited": "([cyberockk.com](https://cyberockk.com/2025/10/valves-steam-frame-vr-headset-enters-mass-production-leaks-hint-at-late-2025-launch/?utm_source=openai))",
+        "start_index": 1091,
+        "end_index": 1242,
+        "metadata": {
+          "start_index": 1091,
+          "end_index": 1242
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai",
+        "title": "Valve announces three new Steam Hardware devices: Steam Machine, Steam Frame, and Steam Controller \u00b7 SteamDB",
+        "rank": 4,
+        "text_snippet": "([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))",
+        "snippet_cited": "([steamdb.info](https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai))",
+        "start_index": 1350,
+        "end_index": 1432,
+        "metadata": {
+          "start_index": 1350,
+          "end_index": 1432
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.timesofgames.com/news/steam-frame-pc-gaming-arm/?utm_source=openai",
+        "title": "ARM Gaming Is the Future, Thanks to the Steam Frame",
+        "rank": 3,
+        "text_snippet": "([timesofgames.com](https://www.timesofgames.com/news/steam-frame-pc-gaming-arm/?utm_source=openai))",
+        "snippet_cited": "([timesofgames.com](https://www.timesofgames.com/news/steam-frame-pc-gaming-arm/?utm_source=openai))",
+        "start_index": 3467,
+        "end_index": 3567,
+        "metadata": {
+          "start_index": 3467,
+          "end_index": 3567
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai",
+        "title": "Confirmed: Steam Frame will lack this Apple Vision Pro and Meta Quest feature at launch - Valve says it's 'on our list'",
+        "rank": 1,
+        "text_snippet": "([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))",
+        "snippet_cited": "([tomsguide.com](https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai))",
+        "start_index": 6271,
+        "end_index": 6463,
+        "metadata": {
+          "start_index": 6271,
+          "end_index": 6463
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai",
+        "title": "Steam Frame",
+        "rank": 5,
+        "text_snippet": "([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))",
+        "snippet_cited": "([en.wikipedia.org](https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai))",
+        "start_index": 7099,
+        "end_index": 7180,
+        "metadata": {
+          "start_index": 7099,
+          "end_index": 7180
+        },
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  },
+  {
+    "response_id": 256,
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-5-20250929",
+    "data_source": "api",
+    "created_at": "2025-12-11T10:07:56.805668",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "response_text": "Based on the latest information, here are the key details about the **Steam Frame**, Valve's upcoming VR headset:\n\n## Release Date\nThe Steam Frame will be released in Q1 2026, with Valve promising the new VR headset is primed to launch in early 2026 with further clarification constraining that to Q1 2026. This means the Steam Frame should launch sometime before March 31, 2026.\n\n## Key Features\n\n**Design & Hardware:**\n- The core frontbox weighs just 185 grams, while the entire system with the default included facial interface, speakers, strap, and rear battery weighs 440 grams, making Steam Frame the lightest fully-featured standalone VR headset to date.\n- It features a Snapdragon 8 Gen 3 ARM64 chip with 16GB of unified LPDDR5X RAM.\n- It will be sold in models with 256 GB and 1 TB of internal storage, expandable via microSD cards.\n\n**Display & Optics:**\n- Steam Frame features dual 2160\u00d72160 LCD panels, meaning it has twice as many pixels as the Valve Index and roughly the same as Meta Quest 3.\n- Valve is using pancake lenses to dramatically reduce the size of the optics and increase edge-to-edge sharpness.\n- It offers 110\u00b0 FoV with a 144 Hz refresh rate.\n\n**Operating System:**\n- The Steam Frame runs SteamOS natively on ARM for the first time with translation to Linux similar to how Proton works, and can run Android apps with full support.\n\n**Connectivity:**\n- Valve describes it as a \"streaming first headset,\" meaning playing a game on a gaming PC and streaming it over to the Steam Frame via a wireless connection.\n- A Wi-Fi 6E USB adapter will be bundled with the Frame to provide a dedicated 6GHz connection between a PC and the headset.\n- It tracks itself and its included controllers using four onboard grayscale tracking cameras, and has eye tracking for foveated streaming.\n\n## Price\nValve has not specified a price for the Steam Frame. However, it will be cheaper than the Valve Index, according to VR-focused publication Road to VR during an interview following the reveal.\n\n## Availability\nValve plans to distribute the Steam Frame through Steam itself in the same regions currently supported for Steam Deck, with some third-party retailers supporting other regions.",
+    "citations": [
+      {
+        "url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+        "title": "Steam Frame Release Date Window, Possible Price, Specs, And Everything We Know About Valve's Next-Gen VR Headset - GameSpot",
+        "rank": 1,
+        "text_snippet": "The Steam Frame will be released in Q1 2026.",
+        "snippet_cited": "The Steam Frame will be released in Q1 2026.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.uploadvr.com/valve-steam-frame-official-announcement-features-details/",
+        "title": "Valve Officially Announces Steam Frame, A \"Streaming-First\" Standalone VR Headset",
+        "rank": 3,
+        "text_snippet": "The core frontbox of Steam Frame weighs just 185 grams, Valve says, while the entire system with the default included facial interface, speakers, stra...",
+        "snippet_cited": "The core frontbox of Steam Frame weighs just 185 grams, Valve says, while the entire system with the default included facial interface, speakers, stra...",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Steam_Frame",
+        "title": "Steam Frame - Wikipedia",
+        "rank": 4,
+        "text_snippet": "The Frame will use a Qualcomm Snapdragon 8 Gen 3 system-on-chip with 16 GB of LPDDR5X memory, and be sold in models with 256 GB and 1 TB of internal s...",
+        "snippet_cited": "The Frame will use a Qualcomm Snapdragon 8 Gen 3 system-on-chip with 16 GB of LPDDR5X memory, and be sold in models with 256 GB and 1 TB of internal s...",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://vr-compare.com/headset/steamframe",
+        "title": "Steam Frame: Full Specification - VRcompare",
+        "rank": 8,
+        "text_snippet": "Features Qualcomm Snapdragon 8 Gen 3, 110\u00b0 FoV, 2160x2160 per eye resolution, 144 Hz refresh rate.",
+        "snippet_cited": "Features Qualcomm Snapdragon 8 Gen 3, 110\u00b0 FoV, 2160x2160 per eye resolution, 144 Hz refresh rate.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.pcgamer.com/hardware/vr-hardware/steam-frame-specs-availability/",
+        "title": "Valve announces the Steam Frame: 'a new way to play your entire Steam library' | PC Gamer",
+        "rank": 2,
+        "text_snippet": "\"We see Steam Frame as a streaming first headset,\" Lawrence Yang, a designer at Valve, tells me.",
+        "snippet_cited": "\"We see Steam Frame as a streaming first headset,\" Lawrence Yang, a designer at Valve, tells me.",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      },
+      {
+        "url": "https://www.pcguide.com/vr/steam-frame-release-date-specs-price/",
+        "title": "Steam Frame VR headset release date window, specs, and price estimate - PC Guide",
+        "rank": 9,
+        "text_snippet": "However, what we do know is that it will be cheaper than the Valve Index. This detail was confirmed by VR-focused publication Road to VR during an int...",
+        "snippet_cited": "However, what we do know is that it will be cheaper than the Valve Index. This detail was confirmed by VR-focused publication Road to VR during an int...",
+        "start_index": null,
+        "end_index": null,
+        "metadata": {},
+        "function_tags": [],
+        "stance_tags": [],
+        "provenance_tags": []
+      }
+    ]
+  }
+]

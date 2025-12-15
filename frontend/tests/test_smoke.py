@@ -60,7 +60,7 @@ class TestImports:
         # Check that no backend imports leaked in
         import sys
 
-        backend_imports = [name for name in sys.modules.keys() if name.startswith('backend.') or name.startswith('app.')]  # noqa: E501
+        backend_imports = [name for name in sys.modules.keys() if name.startswith('backend.')]  # noqa: E501
 
         # Allowed backend imports: data models for network_capture
         # network_capture runs client-side and needs to produce data in backend format

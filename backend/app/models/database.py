@@ -1,12 +1,14 @@
 """Database models using SQLAlchemy."""
 
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Any, List, Optional
 
 from sqlalchemy import (
   JSON,
   Boolean,
   CheckConstraint,
-  Column,
   DateTime,
   Float,
   ForeignKey,
@@ -15,38 +17,44 @@ from sqlalchemy import (
   String,
   Text,
 )
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+  """Base class for SQLAlchemy ORM models."""
 
 
 class Provider(Base):
   """AI provider information."""
+
   __tablename__ = "providers"
 
-  id = Column(Integer, primary_key=True)
-  name = Column(String(50), unique=True, nullable=False)
-  display_name = Column(String(100))
-  is_active = Column(Boolean, default=True)
-  created_at = Column(DateTime, default=datetime.utcnow)
+  id: Mapped[int] = mapped_column(Integer, primary_key=True)
+  name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+  display_name: Mapped[Optional[str]] = mapped_column(String(100))
+  is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+  created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-  # Relationships
-  interactions = relationship("InteractionModel", back_populates="provider")
+  interactions: Mapped[List["InteractionModel"]] = relationship(
+    "InteractionModel",
+    back_populates="provider",
+  )
 
 
 class InteractionModel(Base):
   """Root interaction metadata."""
+
   __tablename__ = "interactions"
 
-  id = Column(Integer, primary_key=True)
-  provider_id = Column(Integer, ForeignKey("providers.id"), nullable=False)
-  model_name = Column(String(100), nullable=False)
-  prompt_text = Column(Text, nullable=False)
-  data_source = Column(String(20), nullable=False, default="api")
-  created_at = Column(DateTime, default=datetime.utcnow)
-  updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-  deleted_at = Column(DateTime)
-  metadata_json = Column(JSON)
+  id: Mapped[int] = mapped_column(Integer, primary_key=True)
+  provider_id: Mapped[int] = mapped_column(Integer, ForeignKey("providers.id"), nullable=False)
+  model_name: Mapped[str] = mapped_column(String(100), nullable=False)
+  prompt_text: Mapped[str] = mapped_column(Text, nullable=False)
+  data_source: Mapped[str] = mapped_column(String(20), nullable=False, default="api")
+  created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+  updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+  deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+  metadata_json: Mapped[Optional[Any]] = mapped_column(JSON)
 
   __table_args__ = (
     Index("ix_interactions_created_at", "created_at"),
@@ -54,82 +62,107 @@ class InteractionModel(Base):
     Index("ix_interactions_data_source", "data_source"),
   )
 
-  provider = relationship("Provider", back_populates="interactions")
-  responses = relationship("Response", back_populates="interaction", cascade="all, delete-orphan")
+  provider: Mapped["Provider"] = relationship("Provider", back_populates="interactions")
+  responses: Mapped[List["Response"]] = relationship(
+    "Response",
+    back_populates="interaction",
+    cascade="all, delete-orphan",
+  )
 
 
 class Response(Base):
   """Model response."""
+
   __tablename__ = "responses"
 
-  id = Column(Integer, primary_key=True)
-  interaction_id = Column(Integer, ForeignKey("interactions.id", ondelete="CASCADE"), nullable=False)
-  response_text = Column(Text)
-  response_time_ms = Column(Integer)
-  created_at = Column(DateTime, default=datetime.utcnow)
-  raw_response_json = Column(JSON)
-  data_source = Column(String(20), default='api')
-  extra_links_count = Column(Integer, default=0)
+  id: Mapped[int] = mapped_column(Integer, primary_key=True)
+  interaction_id: Mapped[int] = mapped_column(
+    Integer,
+    ForeignKey("interactions.id", ondelete="CASCADE"),
+    nullable=False,
+  )
+  response_text: Mapped[Optional[str]] = mapped_column(Text)
+  response_time_ms: Mapped[Optional[int]] = mapped_column(Integer)
+  created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+  raw_response_json: Mapped[Optional[Any]] = mapped_column(JSON)
+  data_source: Mapped[str] = mapped_column(String(20), default="api")
+  extra_links_count: Mapped[int] = mapped_column(Integer, default=0)
 
-  # Computed metrics
-  sources_found = Column(Integer, default=0)
-  sources_used_count = Column(Integer, default=0)
-  avg_rank = Column(Float)
+  sources_found: Mapped[int] = mapped_column(Integer, default=0)
+  sources_used_count: Mapped[int] = mapped_column(Integer, default=0)
+  avg_rank: Mapped[Optional[float]] = mapped_column(Float)
+
+  citation_tagging_requested: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+  citation_tagging_status: Mapped[Optional[str]] = mapped_column(String(32))
+  citation_tagging_error: Mapped[Optional[str]] = mapped_column(Text)
+  citation_tagging_started_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+  citation_tagging_completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
   __table_args__ = (
     Index("ix_responses_created_at", "created_at"),
   )
 
-  # Relationships
-  interaction = relationship("InteractionModel", back_populates="responses")
-  search_queries = relationship("SearchQuery", back_populates="response", cascade="all, delete-orphan")
-  response_sources = relationship(
+  interaction: Mapped["InteractionModel"] = relationship("InteractionModel", back_populates="responses")
+  search_queries: Mapped[List["SearchQuery"]] = relationship(
+    "SearchQuery",
+    back_populates="response",
+    cascade="all, delete-orphan",
+  )
+  response_sources: Mapped[List["ResponseSource"]] = relationship(
     "ResponseSource",
     back_populates="response",
-    cascade="all, delete-orphan"
+    cascade="all, delete-orphan",
   )
-  sources_used = relationship("SourceUsed", back_populates="response", cascade="all, delete-orphan")
+  sources_used: Mapped[List["SourceUsed"]] = relationship(
+    "SourceUsed",
+    back_populates="response",
+    cascade="all, delete-orphan",
+  )
+  citation_mentions: Mapped[List["SourceUsedMention"]] = relationship(
+    "SourceUsedMention",
+    back_populates="response",
+    cascade="all, delete-orphan",
+  )
 
 
 class SearchQuery(Base):
   """Search query made during response generation."""
+
   __tablename__ = "search_queries"
 
-  id = Column(Integer, primary_key=True)
-  response_id = Column(Integer, ForeignKey("responses.id"), nullable=False)
-  search_query = Column(Text)
-  created_at = Column(DateTime, default=datetime.utcnow)
-  order_index = Column(Integer, default=0)
+  id: Mapped[int] = mapped_column(Integer, primary_key=True)
+  response_id: Mapped[int] = mapped_column(Integer, ForeignKey("responses.id"), nullable=False)
+  search_query: Mapped[Optional[str]] = mapped_column(Text)
+  created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+  order_index: Mapped[int] = mapped_column(Integer, default=0)
 
-  # Network log exclusive fields
-  internal_ranking_scores = Column(JSON)
-  query_reformulations = Column(JSON)
+  internal_ranking_scores: Mapped[Optional[Any]] = mapped_column(JSON)
+  query_reformulations: Mapped[Optional[Any]] = mapped_column(JSON)
 
   __table_args__ = (
     Index("ix_search_queries_response_id", "response_id"),
   )
 
-  # Relationships
-  response = relationship("Response", back_populates="search_queries")
-  sources = relationship("QuerySource", back_populates="search_query")
+  response: Mapped["Response"] = relationship("Response", back_populates="search_queries")
+  sources: Mapped[List["QuerySource"]] = relationship("QuerySource", back_populates="search_query")
 
 
 class QuerySource(Base):
   """Source/URL fetched for a specific search query."""
+
   __tablename__ = "query_sources"
 
-  id = Column(Integer, primary_key=True)
-  search_query_id = Column(Integer, ForeignKey("search_queries.id"), nullable=False)
-  url = Column(Text, nullable=False)
-  title = Column(Text)
-  domain = Column(String(255))
-  rank = Column(Integer)
-  pub_date = Column(String(50))
-  snippet_text = Column(Text)
-  internal_score = Column(Float)
-  metadata_json = Column(JSON)
+  id: Mapped[int] = mapped_column(Integer, primary_key=True)
+  search_query_id: Mapped[int] = mapped_column(Integer, ForeignKey("search_queries.id"), nullable=False)
+  url: Mapped[str] = mapped_column(Text, nullable=False)
+  title: Mapped[Optional[str]] = mapped_column(Text)
+  domain: Mapped[Optional[str]] = mapped_column(String(255))
+  rank: Mapped[Optional[int]] = mapped_column(Integer)
+  pub_date: Mapped[Optional[str]] = mapped_column(String(50))
+  internal_score: Mapped[Optional[float]] = mapped_column(Float)
+  metadata_json: Mapped[Optional[Any]] = mapped_column(JSON)
 
-  search_query = relationship("SearchQuery", back_populates="sources")
+  search_query: Mapped["SearchQuery"] = relationship("SearchQuery", back_populates="sources")
 
   __table_args__ = (
     Index("ix_query_sources_search_query_id", "search_query_id"),
@@ -137,21 +170,22 @@ class QuerySource(Base):
 
 
 class ResponseSource(Base):
-  """Source fetched directly for a response (network log mode)."""
+  """Source fetched directly for a response (web/network log mode)."""
+
   __tablename__ = "response_sources"
 
-  id = Column(Integer, primary_key=True)
-  response_id = Column(Integer, ForeignKey("responses.id"), nullable=False)
-  url = Column(Text, nullable=False)
-  title = Column(Text)
-  domain = Column(String(255))
-  rank = Column(Integer)
-  pub_date = Column(String(50))
-  snippet_text = Column(Text)
-  internal_score = Column(Float)
-  metadata_json = Column(JSON)
+  id: Mapped[int] = mapped_column(Integer, primary_key=True)
+  response_id: Mapped[int] = mapped_column(Integer, ForeignKey("responses.id"), nullable=False)
+  url: Mapped[str] = mapped_column(Text, nullable=False)
+  title: Mapped[Optional[str]] = mapped_column(Text)
+  domain: Mapped[Optional[str]] = mapped_column(String(255))
+  rank: Mapped[Optional[int]] = mapped_column(Integer)
+  pub_date: Mapped[Optional[str]] = mapped_column(String(50))
+  search_description: Mapped[Optional[str]] = mapped_column(Text)
+  internal_score: Mapped[Optional[float]] = mapped_column(Float)
+  metadata_json: Mapped[Optional[Any]] = mapped_column(JSON)
 
-  response = relationship("Response", back_populates="response_sources")
+  response: Mapped["Response"] = relationship("Response", back_populates="response_sources")
 
   __table_args__ = (
     Index("ix_response_sources_response_id", "response_id"),
@@ -160,20 +194,33 @@ class ResponseSource(Base):
 
 class SourceUsed(Base):
   """Source actually used/cited in the response."""
+
   __tablename__ = "sources_used"
 
-  id = Column(Integer, primary_key=True)
-  response_id = Column(Integer, ForeignKey("responses.id"), nullable=False)
-  query_source_id = Column(Integer, ForeignKey("query_sources.id"), nullable=True)
-  response_source_id = Column(Integer, ForeignKey("response_sources.id"), nullable=True)
-  url = Column(Text, nullable=False)
-  title = Column(Text)
-  rank = Column(Integer)
+  id: Mapped[int] = mapped_column(Integer, primary_key=True)
+  response_id: Mapped[int] = mapped_column(Integer, ForeignKey("responses.id"), nullable=False)
+  query_source_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("query_sources.id"), nullable=True)
+  response_source_id: Mapped[Optional[int]] = mapped_column(
+    Integer,
+    ForeignKey("response_sources.id"),
+    nullable=True,
+  )
+  url: Mapped[str] = mapped_column(Text, nullable=False)
+  title: Mapped[Optional[str]] = mapped_column(Text)
+  rank: Mapped[Optional[int]] = mapped_column(Integer)
 
-  # Network log exclusive fields
-  snippet_used = Column(Text)
-  citation_confidence = Column(Float)
-  metadata_json = Column(JSON)
+  snippet_cited: Mapped[Optional[str]] = mapped_column(Text)
+  citation_confidence: Mapped[Optional[float]] = mapped_column(Float)
+  metadata_json: Mapped[Optional[Any]] = mapped_column(JSON)
+  function_tags: Mapped[Any] = mapped_column(JSON, default=list, nullable=False)
+  stance_tags: Mapped[Any] = mapped_column(JSON, default=list, nullable=False)
+  provenance_tags: Mapped[Any] = mapped_column(JSON, default=list, nullable=False)
+  influence_summary: Mapped[Optional[str]] = mapped_column(Text)
+  mentions: Mapped[List["SourceUsedMention"]] = relationship(
+    "SourceUsedMention",
+    back_populates="source_used",
+    cascade="all, delete-orphan",
+  )
 
   __table_args__ = (
     Index("ix_sources_used_response_id", "response_id"),
@@ -181,11 +228,50 @@ class SourceUsed(Base):
     Index("ix_sources_used_response_source_id", "response_source_id"),
     CheckConstraint(
       "(query_source_id IS NULL) OR (response_source_id IS NULL)",
-      name="ck_sources_used_single_reference"
-    )
+      name="ck_sources_used_single_reference",
+    ),
   )
 
-  # Relationships
-  response = relationship("Response", back_populates="sources_used")
-  query_source = relationship("QuerySource")
-  response_source = relationship("ResponseSource")
+  response: Mapped["Response"] = relationship("Response", back_populates="sources_used")
+  query_source: Mapped[Optional["QuerySource"]] = relationship("QuerySource")
+  response_source: Mapped[Optional["ResponseSource"]] = relationship("ResponseSource")
+
+
+class SourceUsedMention(Base):
+  """One mention of a source in the response (one cited span/snippet)."""
+
+  __tablename__ = "source_used_mentions"
+
+  id: Mapped[int] = mapped_column(Integer, primary_key=True)
+  source_used_id: Mapped[int] = mapped_column(
+    Integer,
+    ForeignKey("sources_used.id", ondelete="CASCADE"),
+    nullable=False,
+  )
+  response_id: Mapped[int] = mapped_column(
+    Integer,
+    ForeignKey("responses.id", ondelete="CASCADE"),
+    nullable=False,
+  )
+  mention_index: Mapped[int] = mapped_column(Integer, default=0)
+  start_index: Mapped[Optional[int]] = mapped_column(Integer)
+  end_index: Mapped[Optional[int]] = mapped_column(Integer)
+  snippet_cited: Mapped[Optional[str]] = mapped_column(Text)
+  metadata_json: Mapped[Optional[Any]] = mapped_column(JSON)
+
+  function_tags: Mapped[Any] = mapped_column(JSON, default=list, nullable=False)
+  stance_tags: Mapped[Any] = mapped_column(JSON, default=list, nullable=False)
+  provenance_tags: Mapped[Any] = mapped_column(JSON, default=list, nullable=False)
+  influence_summary: Mapped[Optional[str]] = mapped_column(Text)
+
+  created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+  __table_args__ = (
+    Index("ix_source_used_mentions_source_used_id", "source_used_id"),
+    Index("ix_source_used_mentions_response_id", "response_id"),
+    Index("ix_source_used_mentions_created_at", "created_at"),
+    Index("ix_source_used_mentions_source_used_id_mention_index", "source_used_id", "mention_index", unique=True),
+  )
+
+  source_used: Mapped["SourceUsed"] = relationship("SourceUsed", back_populates="mentions")
+  response: Mapped["Response"] = relationship("Response", back_populates="citation_mentions")

@@ -19,7 +19,14 @@ The schemas enforce:
 import re
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+  AliasChoices,
+  BaseModel,
+  ConfigDict,
+  Field,
+  field_validator,
+  model_validator,
+)
 
 from app.core.json_schemas import CitationMetadata, SourceMetadata, dump_metadata
 
@@ -240,7 +247,11 @@ class NetworkLogSource(BaseModel):
   domain: Optional[str] = Field(None, description="Domain name")
   rank: Optional[int] = Field(None, ge=1, description="Position in search results (1-indexed)")
   pub_date: Optional[str] = Field(None, description="ISO timestamp if available")
-  snippet_text: Optional[str] = Field(None, description="Snippet associated with the source")
+  search_description: Optional[str] = Field(
+    None,
+    description="Search result description/snippet text for the source",
+    validation_alias=AliasChoices("search_description", "snippet_text"),
+  )
   internal_score: Optional[float] = Field(None, description="Internal ranking score")
   metadata: Optional[Dict[str, Any]] = Field(None, description="Provider metadata for this source")
 
@@ -259,7 +270,17 @@ class NetworkLogCitation(BaseModel):
   url: str = Field(..., description="Citation URL")
   title: Optional[str] = Field(None, description="Citation title")
   rank: Optional[int] = Field(None, ge=1, description="Rank from search results")
-  snippet_used: Optional[str] = Field(None, description="Snippet text used in the response")
+  text_snippet: Optional[str] = Field(None, description="Text snippet from the citation")
+  snippet_cited: Optional[str] = Field(
+    None,
+    description="Snippet text cited in the model response",
+    validation_alias=AliasChoices("snippet_cited", "snippet_used"),
+  )
+  citation_confidence: Optional[float] = Field(None, description="Confidence score for this citation")
+  function_tags: List[str] = Field(default_factory=list, description="Function tags for the citation")
+  stance_tags: List[str] = Field(default_factory=list, description="Stance tags for the citation")
+  provenance_tags: List[str] = Field(default_factory=list, description="Provenance tags for the citation")
+  influence_summary: Optional[str] = Field(None, description="Summary of citation's influence on response")
   metadata: Optional[Dict[str, Any]] = Field(
     None,
     description="Additional metadata about the citation"
@@ -278,6 +299,10 @@ class NetworkLogSearchQuery(BaseModel):
   model_config = ConfigDict(extra="forbid")
 
   query: str = Field(..., description="Search query text")
+  timestamp: Optional[str] = Field(
+    default=None,
+    description="Timestamp for the query event (if available)",
+  )
   order_index: Optional[int] = Field(
     default=0,
     ge=0,
@@ -367,6 +392,11 @@ class SaveNetworkLogRequest(BaseModel):
     description="Count of extra links (citations not from search)"
   )
 
+  enable_citation_tagging: bool = Field(
+    default=True,
+    description="Whether to run citation tagging for this web capture (queued in background)."
+  )
+
   @field_validator("provider")
   @classmethod
   def validate_provider(cls, v: str) -> str:
@@ -410,7 +440,8 @@ class SaveNetworkLogRequest(BaseModel):
           ],
           "response_time_ms": 5000,
           "raw_response": {},
-          "extra_links_count": 0
+          "extra_links_count": 0,
+          "enable_citation_tagging": True
         }
       ]
     }

@@ -343,6 +343,7 @@ class APIClient:
     sources: List[Dict[str, Any]],
     citations: List[Dict[str, Any]],
     response_time_ms: int,
+    enable_citation_tagging: bool = True,
     raw_response: Optional[Dict[str, Any]] = None,
     extra_links_count: int = 0,
   ) -> Dict[str, Any]:
@@ -361,6 +362,7 @@ class APIClient:
       sources: List of source dictionaries (for web capture mode)
       citations: List of citation dictionaries
       response_time_ms: Response time in milliseconds
+      enable_citation_tagging: Whether to run citation tagging for this capture
       raw_response: Optional raw response data
       extra_links_count: Number of extra links (citations not from search)
 
@@ -396,6 +398,7 @@ class APIClient:
       "response_time_ms": response_time_ms,
       "raw_response": raw_response,
       "extra_links_count": extra_links_count,
+      "enable_citation_tagging": enable_citation_tagging,
     }
 
     return self._request(

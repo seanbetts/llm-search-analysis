@@ -93,17 +93,24 @@ These variables have different defaults depending on how you run the application
 
 ### Docker Compose Deployment (Recommended)
 
-When using `docker compose up -d`, these are **automatically configured** in `docker-compose.yml`:
+This repo uses a hybrid default: FastAPI runs in Docker, and Streamlit runs locally (so Playwright can launch your local Chrome).
+
+When using `docker compose up -d`, these are **automatically configured for the backend** in `docker-compose.yml`:
 
 | Variable | Docker Value | Purpose |
 |----------|--------------|---------|
 | `HOST` | `0.0.0.0` | Listen on all network interfaces |
 | `PORT` | `8000` | FastAPI backend port |
 | `DATABASE_URL` | `sqlite:///./data/llm_search.db` | SQLite database path (persisted in volume) |
-| `API_BASE_URL` | `http://api:8000` | Backend URL for frontend (uses Docker network) |
-| `CORS_ORIGINS` | `["http://localhost:8501","http://frontend:8501"]` | Allowed CORS origins |
+| `CORS_ORIGINS` | `["http://localhost:8501"]` | Allowed CORS origins |
 
-**You do NOT need to set these in your .env file for Docker deployment.**
+Then run Streamlit locally with:
+
+```bash
+API_BASE_URL=http://localhost:8000 streamlit run app.py --server.port 8501
+```
+
+If you choose to run Streamlit in Docker (the `frontend` service is currently commented out in `docker-compose.yml`), set `API_BASE_URL=http://api:8000` for that container.
 
 ### Local Development (Without Docker)
 
@@ -226,11 +233,10 @@ source .env  # or restart your terminal
 docker compose ps
 
 # Check backend health
-curl http://localhost:8000/api/v1/health
+curl http://localhost:8000/health
 
-# Verify API_BASE_URL is set correctly in frontend container
-docker compose exec frontend env | grep API_BASE_URL
-# Should show: API_BASE_URL=http://api:8000
+# If running Streamlit locally, point it at the Dockerized backend
+export API_BASE_URL=http://localhost:8000
 ```
 
 **Local Dev Solution:**
@@ -239,7 +245,7 @@ docker compose exec frontend env | grep API_BASE_URL
 API_BASE_URL=http://localhost:8000
 
 # Verify backend is running
-curl http://localhost:8000/api/v1/health
+curl http://localhost:8000/health
 ```
 
 ### "Database is locked"

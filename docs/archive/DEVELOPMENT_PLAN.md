@@ -254,7 +254,7 @@ Analysis & Display
 **Key Fields:**
 - `responses.data_source` - 'api' or 'network_log'
 - `sources.rank` - 1-indexed position
-- `sources.snippet_text` - Network log only
+- `response_sources.search_description` - Network log only (formerly `snippet_text`)
 - `sources.internal_score` - Network log only
 
 **Design:** Single schema handles both modes with optional fields for network-specific data.

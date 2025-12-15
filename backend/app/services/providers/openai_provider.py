@@ -125,7 +125,7 @@ class OpenAIProvider(BaseProvider):
                       domain=urlparse(source.url).netloc,
                       rank=rank,
                       pub_date=published_at,
-                      snippet_text=snippet,
+                      search_description=snippet,
                       metadata={"published_at": published_at} if published_at else None,
                     )
                     query_sources.append(source_obj)
@@ -166,7 +166,7 @@ class OpenAIProvider(BaseProvider):
                           title=annotation.title if hasattr(annotation, 'title') else None,
                           rank=rank,
                           text_snippet=getattr(annotation, 'text', None),
-                          snippet_used=getattr(annotation, 'text', None),
+                          snippet_cited=getattr(annotation, 'text', None),
                           start_index=getattr(annotation, 'start_index', None),
                           end_index=getattr(annotation, 'end_index', None),
                         ))

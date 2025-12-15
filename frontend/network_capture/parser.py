@@ -11,7 +11,7 @@ NETWORK_LOG_FINDINGS.md for full analysis.
 import json
 import re
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 # Import data models from backend
 from backend.app.services.providers.base_provider import (
@@ -24,6 +24,73 @@ from backend.app.services.providers.base_provider import (
 
 class NetworkLogParser:
     """Parser for network log responses from various providers."""
+
+    @staticmethod
+    def _normalize_url_for_match(url: str) -> str:
+        """Normalize URLs for matching across sources and citations.
+
+        ChatGPT often includes tracking parameters or minor variations in URLs
+        between search results and markdown citations. For matching purposes we
+        aggressively normalize to scheme+host+path, stripping query/fragment and
+        common host prefixes.
+        """
+        from urllib.parse import urlparse, urlunparse
+
+        if not isinstance(url, str) or not url.strip():
+            return ""
+        parsed = urlparse(url.strip())
+        host = (parsed.netloc or "").lower()
+        if host.startswith("www."):
+            host = host[4:]
+        path = parsed.path or ""
+        if path.endswith("/") and path != "/":
+            path = path[:-1]
+        normalized = urlunparse((parsed.scheme or "https", host, path, "", "", ""))
+        return normalized
+
+    @staticmethod
+    def parse_chatgpt_response_text_fallback(
+        extracted_response_text: str,
+        model: str,
+        response_time_ms: int,
+    ) -> ProviderResponse:
+        """Fallback parser that extracts citations from response markdown only.
+
+        When the ChatGPT streaming/event payload isn't captured reliably, we can still
+        recover citations from the copied markdown footnotes:
+
+          [1]: https://example.com "Title"
+
+        This does not provide search queries or full search results, but it allows
+        the app to persist and display Sources Used/Extra Links for the interaction.
+        """
+        if not extracted_response_text:
+            return NetworkLogParser._create_empty_response("", model, response_time_ms)
+
+        footnote_pattern = r'^\[(\d+)\]:\s+(https?://\S+)(?:\s+"([^"]+)")?\s*$'
+        seen_urls: set[str] = set()
+        citations: List[Citation] = []
+
+        for match in re.finditer(footnote_pattern, extracted_response_text, flags=re.MULTILINE):
+            url = match.group(2)
+            norm = NetworkLogParser._normalize_url_for_match(url)
+            if not norm or norm in seen_urls:
+                continue
+            seen_urls.add(norm)
+            title = match.group(3) if match.group(3) else None
+            citations.append(Citation(url=url, title=title, rank=None))
+
+        return ProviderResponse(
+            response_text=extracted_response_text,
+            search_queries=[],
+            sources=[],
+            citations=citations,
+            raw_response={"fallback": "response_text_only"},
+            model=model,
+            provider="openai",
+            response_time_ms=response_time_ms,
+            data_source="web",
+        )
 
     @staticmethod
     def parse_chatgpt_log(
@@ -222,28 +289,36 @@ class NetworkLogParser:
             # Build sources independently (associate with response, not individual queries)
             safe_url_set = set(safe_urls)
 
+            def strip_html_tags(text: str) -> str:
+                """Remove HTML tags from text."""
+                if not isinstance(text, str):
+                    return text
+                # Remove HTML tags using regex
+                return re.sub(r'<[^>]+>', '', text).strip()
+
             def to_iso(ts: Any) -> str:
-                """Convert timestamp-like values into ISO-8601 strings."""
+                """Convert timestamp-like values into ISO-8601 strings or return cleaned string."""
                 try:
                     if ts is None:
                         return None
+                    # Strip HTML tags if ts is a string
+                    if isinstance(ts, str):
+                        cleaned = strip_html_tags(ts)
+                        # Try to convert to timestamp
+                        try:
+                            ts_float = float(cleaned)
+                            return datetime.fromtimestamp(ts_float, tz=timezone.utc).isoformat()
+                        except (ValueError, TypeError):
+                            # If conversion fails, return the cleaned string as-is
+                            # (ChatGPT sometimes returns pre-formatted dates)
+                            return cleaned if cleaned else None
+                    # For non-string values, try direct conversion
                     ts_float = float(ts)
                     return datetime.fromtimestamp(ts_float, tz=timezone.utc).isoformat()
                 except Exception:
                     return None
 
-            def clean_url(url: str) -> str:
-                """Normalize URL for comparison (remove tracking params)."""
-                from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
-                if not url:
-                    return ""
-                parsed = urlparse(url)
-                qs = parse_qs(parsed.query)
-                # Drop tracking params
-                qs = {k: v for k, v in qs.items() if not k.lower().startswith('utm_') and k.lower() not in ['source']}
-                new_query = urlencode(qs, doseq=True)
-                normalized = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', new_query, ''))
-                return normalized
+            normalize = NetworkLogParser._normalize_url_for_match
 
             # Collect additional entries directly from the SSE body to avoid missing groups
             def extract_entries_from_body(body_text: str) -> List[Dict[str, Any]]:
@@ -315,13 +390,13 @@ class NetworkLogParser:
                         continue
 
                     # Deduplicate by normalized URL
-                    clean = clean_url(url)
+                    clean = normalize(url)
                     if clean in seen_urls:
                         continue
                     seen_urls.add(clean)
 
-                    title = entry.get('title', '')
-                    snippet = entry.get('snippet', '')
+                    title = strip_html_tags(entry.get('title', ''))
+                    snippet = strip_html_tags(entry.get('snippet', ''))
                     pub_date_iso = to_iso(entry.get('pub_date'))
                     ref_id = entry.get('ref_id', {})
 
@@ -337,7 +412,7 @@ class NetworkLogParser:
                         domain=entry.get('attribution', domain),
                         rank=rank_counter,
                         pub_date=pub_date_iso,
-                        snippet_text=snippet,
+                        search_description=snippet,
                         internal_score=None,
                         metadata=metadata
                     )
@@ -410,20 +485,9 @@ class NetworkLogParser:
             - Citations include both sources used (from search) and extra links
             - extra_links_count is the number of citations NOT from search results
         """
-        from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
-
-        def clean_url(url: str) -> str:
-            """Normalize URL for comparison (remove tracking params)."""
-            if not url:
-                return ""
-            parsed = urlparse(url)
-            qs = parse_qs(parsed.query)
-            qs = {k: v for k, v in qs.items() if not k.lower().startswith('utm_') and k.lower() not in ['source']}
-            new_query = urlencode(qs, doseq=True)
-            return urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', new_query, ''))
-
+        normalize = NetworkLogParser._normalize_url_for_match
         # Build URL mapping from sources for quick lookup
-        source_map = {clean_url(s.url): s for s in sources}
+        source_map = {normalize(s.url): s for s in sources}
 
         citations: List[Citation] = []
         extra_links_count = 0
@@ -431,23 +495,39 @@ class NetworkLogParser:
 
         # 1) Reference-style definitions: [N]: URL "Title"
         ref_def_pattern = r'^\[(\d+)\]:\s*(https?://[^\s"]+)(?:\s+"([^"]*)")?\s*$'
+        def _normalize_snippet(snippet: Optional[str]) -> Optional[str]:
+            if snippet is None:
+                return None
+            normalized = snippet.strip()
+            return normalized or None
+
+        def strip_html(text: str) -> str:
+            """Remove HTML tags from text."""
+            if not isinstance(text, str):
+                return text
+            return re.sub(r'<[^>]+>', '', text).strip()
+
         for match in re.finditer(ref_def_pattern, response_text, flags=re.MULTILINE):
-            ref_num, url, title = match.group(1), match.group(2), match.group(3) or ""
-            norm = clean_url(url)
+            ref_num, url, title = match.group(1), match.group(2), strip_html(match.group(3) or "")
+            norm = normalize(url)
             if norm in seen_norm_urls:
                 continue
             seen_norm_urls.add(norm)
 
             if norm in source_map:
                 src = source_map[norm]
+                snippet = _normalize_snippet(
+                    getattr(src, "search_description", None) or getattr(src, "snippet_text", None)
+                )
                 citations.append(Citation(
                     url=src.url,
                     title=src.title or title,
                     rank=src.rank,
+                    text_snippet=snippet,
                     metadata={
                         "citation_number": int(ref_num),
                         "query_index": None,  # Network logs don't provide query association
-                        "snippet": src.snippet_text,
+                        "snippet": getattr(src, "search_description", None) or getattr(src, "snippet_text", None),
                         "pub_date": src.pub_date
                     }
                 ))
@@ -466,22 +546,26 @@ class NetworkLogParser:
         # 2) Inline markdown links: [text](URL) -- ignore image markdown ![...](...)
         inline_pattern = r'(?<!!)\[([^\]]+)\]\((https?://[^\s)]+)\)'
         for match in re.finditer(inline_pattern, response_text):
-            link_text, url = match.group(1), match.group(2)
-            norm = clean_url(url)
+            link_text, url = strip_html(match.group(1)), match.group(2)
+            norm = normalize(url)
             if norm in seen_norm_urls:
                 continue
             seen_norm_urls.add(norm)
 
             if norm in source_map:
                 src = source_map[norm]
+                snippet = _normalize_snippet(
+                    getattr(src, "search_description", None) or getattr(src, "snippet_text", None)
+                )
                 citations.append(Citation(
                     url=src.url,
                     title=src.title or link_text,
                     rank=src.rank,
+                    text_snippet=snippet,
                     metadata={
                         "citation_number": None,
                         "query_index": None,
-                        "snippet": src.snippet_text,
+                        "snippet": getattr(src, "search_description", None) or getattr(src, "snippet_text", None),
                         "pub_date": src.pub_date
                     }
                 ))

@@ -33,7 +33,7 @@ SQLite databases should be backed up regularly to protect against:
 
 ## Backup Strategy
 
-###Recommended Backup Schedule
+### Recommended Backup Schedule
 
 | Frequency | When | Method |
 |-----------|------|--------|
@@ -469,7 +469,6 @@ mv backend/data/llm_search.db backend/data/llm_search_sqlite_backup.db
 
 - **Environment Variables:** [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md)
 - **Docker Setup Verification:** Run `./scripts/verify-docker-setup.sh`
-- **Deployment Guide:** [IMPLEMENTATION_PLAN.md](../IMPLEMENTATION_PLAN.md)
 
 ## Production Deployment Checklist (Post-Interactions Schema)
 

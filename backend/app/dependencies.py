@@ -33,6 +33,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.config import settings
 from app.repositories.interaction_repository import InteractionRepository
 from app.services.batch_service import BatchService
+from app.services.citation_tagging_service import CitationTaggingService
 from app.services.export_service import ExportService
 from app.services.interaction_service import InteractionService
 from app.services.provider_service import ProviderService
@@ -49,6 +50,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Singleton batch service (needs session factory for background jobs)
 batch_service_instance = BatchService(SessionLocal)
+citation_tagger_instance = CitationTaggingService.from_settings()
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -91,7 +93,7 @@ def get_interaction_service(
   Returns:
     InteractionService instance
   """
-  return InteractionService(repository)
+  return InteractionService(repository, citation_tagger=citation_tagger_instance)
 
 
 def get_provider_service(

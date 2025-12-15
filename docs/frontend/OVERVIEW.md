@@ -22,7 +22,7 @@ Key principles:
 - **Backend-first** – the FastAPI service is the source of truth for metrics, model names, exports, etc. The UI renders what the API returns.
 - **Modular tabs** – each tab lives in `frontend/tabs/` with minimal shared state beyond `st.session_state`.
 - **Reusable components** – complex display helpers (response rendering, CSS, error handling) live in `frontend/components/` and `frontend/helpers/`.
-- **Network capture isolation** – Live browser automation is implemented under `frontend/network_capture/` and documented in `docs/frontend/network_capture.md`.
+- **Network capture isolation** – Live browser automation is implemented under `frontend/network_capture/` and documented in `docs/frontend/NETWORK_CAPTURE.md`.
 
 ## Tabs at a Glance
 
@@ -44,7 +44,7 @@ All tabs use the shared `APIClient` to talk to FastAPI and share the unified err
 - `get_providers()` / `get_models()`
 - `export_interaction_markdown(...)`
 
-See `docs/backend/overview.md` for the corresponding FastAPI endpoints.
+See `docs/backend/OVERVIEW.md` for the corresponding FastAPI endpoints.
 
 ## Testing
 
@@ -54,9 +54,9 @@ See `docs/backend/overview.md` for the corresponding FastAPI endpoints.
 
 ## Network Capture
 
-Refer to `docs/frontend/network_capture.md` for Playwright prerequisites, architecture, and current status. Network capture is encapsulated so the rest of the UI consumes normalized data identical to the API mode.
+Refer to `docs/frontend/NETWORK_CAPTURE.md` for Playwright prerequisites, architecture, and current status. Network capture is encapsulated so the rest of the UI consumes normalized data identical to the API mode.
 
 ## Active Work
 
-- **Frontend Refactor Plan** (`FRONTEND_REFACTOR_PLAN.md`) – Phase 3 focuses on pagination/filtering, React-ready contracts, and further modularization.
+- **Frontend Refactor Plan** (`docs/archive/FRONTEND_REFACTOR_PLAN.md`) – Phase 3 focuses on pagination/filtering, React-ready contracts, and further modularization.
 - **Live Network Logs Plan** (`docs/proposals/LIVE_NETWORK_LOGS_PLAN.md`) – adds a fourth tab that streams browser events in real time, reusing the existing network capture stack.

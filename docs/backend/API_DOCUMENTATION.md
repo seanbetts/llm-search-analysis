@@ -561,7 +561,8 @@ interface Source {
   domain: string;
   rank: number;
   pub_date?: string | null;
-  snippet_text?: string | null;
+  search_description?: string | null;
+  snippet_text?: string | null; // Deprecated alias for search_description
   internal_score?: number | null;
   metadata?: Record<string, any> | null;
 }
@@ -570,7 +571,7 @@ interface Citation {
   url: string;
   title: string | null;
   rank: number | null;
-  snippet_used?: string | null;
+  snippet_cited?: string | null;
   citation_confidence?: number | null;
   metadata?: Record<string, any> | null;
 }

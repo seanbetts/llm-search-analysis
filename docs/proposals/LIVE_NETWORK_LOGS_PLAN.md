@@ -1,5 +1,3 @@
-% LIVE_NETWORK_LOGS_PLAN.md
-
 # Live Network Log Tab – Implementation Plan
 
 This document captures the approach for adding a “Live Network Log” experience to the Streamlit app. The goal is to let users:

@@ -4,7 +4,7 @@ Defines the interface that all provider implementations must follow.
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 
@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 class SearchQuery:
   """Represents a search query made by the model."""
   query: str
-  sources: List['Source'] = None
+  sources: List['Source'] = field(default_factory=list)
   timestamp: Optional[str] = None
   order_index: int = 0
   # Network log exclusive fields
@@ -34,7 +34,7 @@ class Source:
   rank: Optional[int] = None  # Position in search results (1-indexed)
   pub_date: Optional[str] = None  # ISO-formatted publication date if available
   # Network log exclusive fields
-  snippet_text: Optional[str] = None
+  search_description: Optional[str] = None
   internal_score: Optional[float] = None
   metadata: Optional[Dict] = None
 
@@ -51,8 +51,12 @@ class Citation:
   published_at: Optional[str] = None
   metadata: Optional[Dict[str, Any]] = None  # Additional citation metadata (e.g., citation_id)
   # Network log exclusive fields
-  snippet_used: Optional[str] = None
+  snippet_cited: Optional[str] = None
   citation_confidence: Optional[float] = None
+  function_tags: List[str] = field(default_factory=list)
+  stance_tags: List[str] = field(default_factory=list)
+  provenance_tags: List[str] = field(default_factory=list)
+  influence_summary: Optional[str] = None
 
 
 @dataclass

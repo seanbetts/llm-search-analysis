@@ -120,6 +120,7 @@ class _BatchJob:
         errors=self.errors.copy(),
         started_at=self.started_at,
         completed_at=self.completed_at,
+        estimated_completion=None,
       )
 
 

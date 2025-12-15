@@ -1,15 +1,50 @@
-"""Shared metrics computation for responses."""
+"""Shared metrics computation for responses.
+
+Note: This module still contains a hardcoded model_names mapping for backward
+compatibility and to handle web-captured models. The backend's ProviderFactory
+is the true source of truth for API models.
+
+For consistency, keep the model_names dict in sync with backend's MODEL_REGISTRY.
+"""
 
 import re
 from types import SimpleNamespace
 from typing import List, Optional
 
 
+def is_known_model_id(model: str) -> bool:
+    """Return True when we have an explicit display mapping for the given model id."""
+    if not model:
+        return False
+    known = {
+        # Anthropic
+        'claude-sonnet-4-5-20250929',
+        'claude-haiku-4-5-20251001',
+        'claude-opus-4-1-20250805',
+        # OpenAI (include dashed variants used by some clients)
+        'gpt-5-1',
+        'gpt-5.1',
+        'gpt-5-2',
+        'gpt-5.2',
+        'gpt-5-mini',
+        'gpt-5-nano',
+        # Google
+        'gemini-3-pro-preview',
+        'gemini-2.5-flash',
+        'gemini-2.5-flash-lite',
+        # Network capture
+        'ChatGPT (Free)',
+        'chatgpt-free',
+        'ChatGPT',
+    }
+    return model in known
+
+
 def get_model_display_name(model: str) -> str:
     """Get formatted display name for a model.
 
-    Maps known model IDs to friendly display names, and formats
-    unknown model IDs by converting hyphens to spaces and capitalizing.
+    Maps known model IDs to friendly display names using a local cache.
+    This cache should match backend's ProviderFactory.MODEL_REGISTRY.
 
     Args:
         model: The model identifier
@@ -18,36 +53,35 @@ def get_model_display_name(model: str) -> str:
         Formatted display name
 
     Examples:
-        >>> get_model_display_name("gpt-5-1")
+        >>> get_model_display_name("gpt-5.1")
         'GPT-5.1'
         >>> get_model_display_name("claude-sonnet-4-5-20250929")
         'Claude Sonnet 4.5'
-        >>> get_model_display_name("unknown-model-20250101")
-        'Unknown Model'
+        >>> get_model_display_name("chatgpt-free")
+        'ChatGPT (Free)'
     """
     if not model:
         return ''
 
-    # Model display names mapping
+    # Model display names - KEEP IN SYNC WITH BACKEND ProviderFactory.MODEL_REGISTRY
+    # TODO: Fetch this from backend API at startup instead of hardcoding
     model_names = {
-        # Anthropic (multiple format variants for robustness)
+        # Anthropic
         'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
-        'claude-sonnet-4-5.2-0250929': 'Claude Sonnet 4.5',
-        'claude-sonnet-4.5-20250929': 'Claude Sonnet 4.5',
         'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
-        'claude-haiku-4.5-20251001': 'Claude Haiku 4.5',
         'claude-opus-4-1-20250805': 'Claude Opus 4.1',
-        'claude-opus-4.1-20250805': 'Claude Opus 4.1',
         # OpenAI
-        'gpt-5.1': 'GPT-5.1',
         'gpt-5-1': 'GPT-5.1',
+        'gpt-5.1': 'GPT-5.1',
+        'gpt-5-2': 'GPT-5.2',
+        'gpt-5.2': 'GPT-5.2',
         'gpt-5-mini': 'GPT-5 Mini',
         'gpt-5-nano': 'GPT-5 Nano',
         # Google
         'gemini-3-pro-preview': 'Gemini 3 Pro (Preview)',
         'gemini-2.5-flash': 'Gemini 2.5 Flash',
         'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite',
-        # Network capture
+        # Network capture models (not in backend registry)
         'ChatGPT (Free)': 'ChatGPT (Free)',
         'chatgpt-free': 'ChatGPT (Free)',
         'ChatGPT': 'ChatGPT (Free)',

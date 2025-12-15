@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -9,6 +10,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+import app.api.v1.endpoints.interactions as interactions_endpoint
+import app.dependencies as dependencies
 from app.api.v1.schemas.responses import BatchStatus, SendPromptResponse
 from app.dependencies import get_batch_service, get_db
 from app.main import app
@@ -528,7 +531,7 @@ class TestBatchEndpoints:
               "title": "Example Article",
               "domain": "example.com",
               "rank": 1,
-              "snippet_text": "Example snippet",
+              "search_description": "Example snippet",
               "pub_date": "2024-01-01"
             }
           ]
@@ -540,7 +543,7 @@ class TestBatchEndpoints:
           "title": "Example Article",
           "domain": "example.com",
           "rank": 1,
-          "snippet_text": "Example snippet",
+          "search_description": "Example snippet",
           "pub_date": "2024-01-01"
         }
       ],
@@ -549,7 +552,7 @@ class TestBatchEndpoints:
           "url": "https://example.com/article",
           "title": "Example Article",
           "rank": 1,
-          "snippet_used": "Example snippet"
+          "snippet_cited": "Example snippet"
         }
       ],
       "response_time_ms": 1200,
@@ -569,6 +572,124 @@ class TestBatchEndpoints:
     assert recent.status_code == 200
     recent_data = recent.json()
     assert any(item["prompt"] == payload["prompt"] for item in recent_data["items"])
+
+  def test_save_network_log_runs_citation_tagging_when_snippets_present(self, client, monkeypatch):
+    """Web captures should enqueue citation tagging after snippet_cited is derived."""
+
+    class DummyTagger:
+      """Citation tagger stub that signals tagging is enabled."""
+
+      def __init__(self):
+        """Initialise config used to decide whether to enqueue tagging."""
+        self.config = SimpleNamespace(
+          enabled=True,
+          provider="openai",
+          model="gpt-5-mini",
+          temperature=0.0,
+          openai_api_key="test",
+          google_api_key="",
+        )
+
+    monkeypatch.setattr(dependencies, "citation_tagger_instance", DummyTagger())
+
+    enqueued = {}
+
+    def fake_enqueue(response_id: int, prompt: str, response_text: str) -> None:
+      """Capture enqueue arguments without starting threads."""
+      enqueued["response_id"] = response_id
+      enqueued["prompt"] = prompt
+      enqueued["response_text"] = response_text
+
+    monkeypatch.setattr(interactions_endpoint, "enqueue_web_citation_tagging", fake_enqueue)
+
+    response_text = (
+      "Steam Frame is an open standard for capturing network traces ([Example][1]).\n\n"
+      '[1]: https://example.com/article "Example Article"\n'
+    )
+    payload = {
+      "provider": "openai",
+      "model": "chatgpt-free",
+      "prompt": "Capture ChatGPT conversation",
+      "response_text": response_text,
+      "search_queries": [],
+      "sources": [
+        {
+          "url": "https://example.com/article",
+          "title": "Example Article",
+          "domain": "example.com",
+          "rank": 1,
+          "search_description": "Example snippet",
+          "pub_date": "2024-01-01"
+        }
+      ],
+      "citations": [
+        {
+          "url": "https://example.com/article",
+          "title": "Example Article",
+          "rank": 1,
+        }
+      ],
+      "response_time_ms": 1200,
+      "extra_links_count": 0,
+      "raw_response": {"mode": "network_log"},
+      "enable_citation_tagging": True,
+    }
+
+    response = client.post("/api/v1/interactions/save-network-log", json=payload)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["data_source"] == "web"
+    assert data["citations"], "Expected citations to be returned"
+    citation = data["citations"][0]
+    assert citation["snippet_cited"], "Expected snippet_cited to be populated for web captures"
+    assert citation["function_tags"] == []
+    assert citation["stance_tags"] == []
+    assert citation["provenance_tags"] == []
+    assert citation["influence_summary"] in (None, "")
+
+    metadata = data.get("metadata") or {}
+    assert metadata.get("citation_tagging_status") == "queued"
+    assert enqueued.get("response_id") == data["interaction_id"]
+
+  def test_save_network_log_disables_citation_tagging_when_flag_false(self, client, monkeypatch):
+    """Web captures should not enqueue tagging when explicitly disabled."""
+    monkeypatch.setattr(
+      dependencies,
+      "citation_tagger_instance",
+      SimpleNamespace(config=SimpleNamespace(enabled=True)),
+    )
+
+    called = {"count": 0}
+
+    def fake_enqueue(*_args, **_kwargs):
+      called["count"] += 1
+
+    monkeypatch.setattr(interactions_endpoint, "enqueue_web_citation_tagging", fake_enqueue)
+
+    payload = {
+      "provider": "openai",
+      "model": "chatgpt-free",
+      "prompt": "Capture ChatGPT conversation",
+      "response_text": 'Answer.\n\n[1]: https://example.com/article "Example Article"\n',
+      "search_queries": [],
+      "sources": [
+        {"url": "https://example.com/article", "title": "Example Article", "domain": "example.com", "rank": 1},
+      ],
+      "citations": [
+        {"url": "https://example.com/article", "title": "Example Article", "rank": 1},
+      ],
+      "response_time_ms": 1200,
+      "extra_links_count": 0,
+      "raw_response": {"mode": "network_log"},
+      "enable_citation_tagging": False,
+    }
+
+    response = client.post("/api/v1/interactions/save-network-log", json=payload)
+    assert response.status_code == 201
+    data = response.json()
+    metadata = data.get("metadata") or {}
+    assert metadata.get("citation_tagging_status") == "disabled"
+    assert called["count"] == 0
 
   def test_save_network_log_invalid_payload(self, client):
     """Invalid network log payloads should return 422 with detail."""
@@ -608,7 +729,7 @@ class TestBatchEndpoints:
           "title": "Export Source",
           "domain": "example.com",
           "rank": 1,
-          "snippet_text": "Snippet"
+          "search_description": "Snippet"
         }
       ],
       "citations": [],

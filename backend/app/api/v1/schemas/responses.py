@@ -23,7 +23,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 def _empty_source_list() -> List[Source]:
@@ -41,6 +41,43 @@ def _empty_citation_list() -> List[Citation]:
   return []
 
 
+def _empty_tag_list() -> List[str]:
+  """Return a new list for tag fields."""
+  return []
+
+
+class CitationMention(BaseModel):
+  """One mention of a citation in the response (one cited span/snippet)."""
+
+  mention_index: int = Field(..., ge=0, description="0-indexed mention order for this citation")
+  start_index: Optional[int] = Field(None, ge=0, description="Start offset of cited text")
+  end_index: Optional[int] = Field(None, ge=0, description="End offset of cited text")
+  snippet_cited: Optional[str] = Field(None, description="Exact snippet cited for this mention")
+  metadata: Optional[Dict[str, Any]] = Field(None, description="Additional mention metadata")
+
+  function_tags: List[str] = Field(
+    default_factory=_empty_tag_list,
+    description="Functional roles applied to this mention"
+  )
+  stance_tags: List[str] = Field(
+    default_factory=_empty_tag_list,
+    description="Stance annotations for this mention"
+  )
+  provenance_tags: List[str] = Field(
+    default_factory=_empty_tag_list,
+    description="Provenance annotations for this mention"
+  )
+  influence_summary: Optional[str] = Field(
+    None,
+    description="Short summary describing how the source influenced the claim for this mention"
+  )
+
+
+def _empty_citation_mention_list() -> List[CitationMention]:
+  """Return a new list for citation mention fields."""
+  return []
+
+
 class Source(BaseModel):
   """Source/URL fetched during search."""
 
@@ -51,9 +88,25 @@ class Source(BaseModel):
   pub_date: Optional[str] = Field(None, description="ISO-formatted publication date")
 
   # Network log exclusive fields
-  snippet_text: Optional[str] = Field(None, description="Snippet extracted by model")
+  search_description: Optional[str] = Field(
+    None,
+    description="Search result description/snippet text for the source",
+  )
+  snippet_text: Optional[str] = Field(
+    None,
+    description="Deprecated alias for search_description",
+  )
   internal_score: Optional[float] = Field(None, description="Internal relevance score")
   metadata: Optional[Dict[str, Any]] = Field(None, description="Full metadata from logs")
+
+  @model_validator(mode="after")
+  def _sync_description_alias(self) -> "Source":
+    """Keep `snippet_text` and `search_description` in sync for compatibility."""
+    if self.search_description is None and self.snippet_text is not None:
+      self.search_description = self.snippet_text
+    if self.snippet_text is None and self.search_description is not None:
+      self.snippet_text = self.search_description
+    return self
 
   model_config = {
     "json_schema_extra": {
@@ -113,7 +166,7 @@ class Citation(BaseModel):
   published_at: Optional[str] = Field(None, description="Published date provided by provider")
 
   # Network log exclusive fields
-  snippet_used: Optional[str] = Field(None, description="Exact snippet cited")
+  snippet_cited: Optional[str] = Field(None, description="Exact snippet cited")
   citation_confidence: Optional[float] = Field(
     None,
     ge=0.0,
@@ -123,6 +176,26 @@ class Citation(BaseModel):
   metadata: Optional[Dict[str, Any]] = Field(
     None,
     description="Additional citation metadata"
+  )
+  function_tags: List[str] = Field(
+    default_factory=_empty_tag_list,
+    description="Functional roles applied to this citation"
+  )
+  stance_tags: List[str] = Field(
+    default_factory=_empty_tag_list,
+    description="Stance annotations describing how the citation relates to the claim"
+  )
+  provenance_tags: List[str] = Field(
+    default_factory=_empty_tag_list,
+    description="Provenance annotations derived from citation metadata"
+  )
+  influence_summary: Optional[str] = Field(
+    None,
+    description="Short summary describing how the source influenced the claim"
+  )
+  mentions: List[CitationMention] = Field(
+    default_factory=_empty_citation_mention_list,
+    description="All cited snippets/mentions for this URL within the response"
   )
 
   model_config = {

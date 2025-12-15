@@ -316,7 +316,7 @@ class TestInteractionService:
     mock_source.domain = "example.com"
     mock_source.rank = 1
     mock_source.pub_date = None
-    mock_source.snippet_text = None
+    mock_source.search_description = None
     mock_source.internal_score = None
     mock_source.metadata_json = None
 
@@ -334,7 +334,7 @@ class TestInteractionService:
     mock_citation.url = "https://example.com"
     mock_citation.title = "Example"
     mock_citation.rank = 1
-    mock_citation.snippet_used = None
+    mock_citation.snippet_cited = None
     mock_citation.citation_confidence = None
     mock_citation.metadata_json = None
     mock_response.sources_used = [mock_citation]

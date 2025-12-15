@@ -4,7 +4,7 @@ FastAPI-based REST API for analyzing LLM search capabilities across OpenAI, Goog
 
 **Version:** 1.0.0
 **Test Coverage:** 95% (191 tests)
-**Python:** 3.10+
+**Python:** 3.11+
 
 ## Table of Contents
 
@@ -233,7 +233,6 @@ query_sources (
   domain TEXT,
   rank INTEGER,
   pub_date TEXT,
-  snippet_text TEXT,
   internal_score REAL,
   metadata_json JSON
 )
@@ -246,7 +245,7 @@ response_sources (
   domain TEXT,
   rank INTEGER,
   pub_date TEXT,
-  snippet_text TEXT,
+  search_description TEXT,
   internal_score REAL,
   metadata_json JSON
 )
@@ -259,7 +258,7 @@ sources_used (
   url TEXT NOT NULL,
   title TEXT,
   rank INTEGER,
-  snippet_used TEXT,
+  snippet_cited TEXT,
   citation_confidence REAL,
   metadata_json JSON,
   CHECK (
@@ -416,6 +415,45 @@ class BaseProvider(ABC):
 - Format code with Black (recommended)
 - Sort imports with isort (recommended)
 
+### Adding a New Model
+
+**IMPORTANT:** As of December 2025, model configuration is **centralized in a single location**.
+
+To add a new model, update `MODEL_REGISTRY` in **one file only**:
+
+**File:** `app/services/providers/provider_factory.py`
+
+```python
+MODEL_REGISTRY: Dict[str, ModelInfo] = {
+    # OpenAI models
+    "gpt-5.1": ModelInfo("gpt-5.1", "openai", "GPT-5.1"),
+    "gpt-5.2": ModelInfo("gpt-5.2", "openai", "GPT-5.2"),
+
+    # Add your new model here
+    "gpt-6.0": ModelInfo("gpt-6.0", "openai", "GPT-6.0"),
+
+    # Google models
+    "gemini-3-pro-preview": ModelInfo("gemini-3-pro-preview", "google", "Gemini 3 Pro (Preview)"),
+
+    # Anthropic models
+    "claude-sonnet-4-5-20250929": ModelInfo("claude-sonnet-4-5-20250929", "anthropic", "Claude Sonnet 4.5"),
+}
+```
+
+**That's it!** All other components (ProviderService, API endpoints, frontend) will automatically sync.
+
+**ModelInfo Parameters:**
+- `model_id`: Unique identifier (e.g., `"gpt-5.1"`)
+- `provider`: Provider name (`"openai"`, `"google"`, or `"anthropic"`)
+- `display_name`: Human-friendly name (e.g., `"GPT-5.1"`)
+
+**Naming Conventions:**
+- **Model IDs:** Lowercase with hyphens (`gpt-5.1`, `gemini-2.5-flash`)
+- **Display Names:** Proper capitalization (`GPT-5.1`, `Gemini 2.5 Flash`)
+- **Date-suffixed models:** Keep full date in ID, hide from display name
+  - ID: `claude-sonnet-4-5-20250929`
+  - Display: `Claude Sonnet 4.5`
+
 ### Adding a New Provider
 
 1. **Create provider class:**
@@ -424,31 +462,38 @@ class BaseProvider(ABC):
    from .base_provider import BaseProvider, ProviderResponse
 
    class NewProvider(BaseProvider):
-     SUPPORTED_MODELS = ["model-1", "model-2"]
-
      def get_provider_name(self) -> str:
        return "new_provider"
 
      def get_supported_models(self) -> List[str]:
-       return self.SUPPORTED_MODELS
+       # This is now derived from MODEL_REGISTRY, not hardcoded
+       from .provider_factory import ProviderFactory
+       models = ProviderFactory.get_models_for_provider("new_provider")
+       return [m.model_id for m in models]
 
      def send_prompt(self, prompt: str, model: str) -> ProviderResponse:
        # Implementation
        pass
    ```
 
-2. **Add to factory:**
+2. **Add models to MODEL_REGISTRY:**
+   ```python
+   # app/services/providers/provider_factory.py
+   MODEL_REGISTRY: Dict[str, ModelInfo] = {
+       # ... existing models ...
+
+       # New provider models
+       "new-model-1": ModelInfo("new-model-1", "new_provider", "New Model 1"),
+       "new-model-2": ModelInfo("new-model-2", "new_provider", "New Model 2"),
+   }
+   ```
+
+3. **Add to factory:**
    ```python
    # app/services/providers/provider_factory.py
    from .new_provider import NewProvider
 
    class ProviderFactory:
-     PROVIDER_MODELS = {
-       # ... existing providers
-       "model-1": "new_provider",
-       "model-2": "new_provider",
-     }
-
      @staticmethod
      def create_provider(provider_name: str, api_key: str):
        if provider_name == "new_provider":
@@ -456,7 +501,24 @@ class BaseProvider(ABC):
        # ... existing providers
    ```
 
-3. **Write tests:**
+4. **Update ProviderService:**
+   ```python
+   # app/services/provider_service.py
+   def get_available_providers(self) -> List[ProviderInfo]:
+     provider_display_names = {
+       "openai": "OpenAI",
+       "google": "Google",
+       "anthropic": "Anthropic",
+       "new_provider": "New Provider",  # Add here
+     }
+
+     # Build providers from centralized registry
+     for provider_name in ["openai", "google", "anthropic", "new_provider"]:
+       if api_keys.get(provider_name):
+         # Models automatically fetched from MODEL_REGISTRY
+   ```
+
+5. **Write tests:**
    ```python
    # tests/test_new_provider.py
    import pytest
@@ -468,6 +530,34 @@ class BaseProvider(ABC):
        assert provider.get_provider_name() == "new_provider"
      # ... more tests
    ```
+
+### Model Configuration Architecture
+
+**Before December 2025 (❌ Deprecated):**
+- Model configuration was duplicated in 5+ files
+- Adding a model required updating multiple locations
+- Easy to miss one (caused sync bugs like gpt-5.2)
+
+**After December 2025 (✅ Current):**
+- **Single source of truth:** `provider_factory.py` MODEL_REGISTRY
+- Add model in ONE place, everything syncs automatically
+- Prevents duplication bugs
+
+**Migration Guide:**
+If you see hardcoded model lists anywhere, they're outdated:
+```python
+# OLD PATTERN - DEPRECATED ❌
+SUPPORTED_MODELS = ["gpt-5.1", "gpt-5-mini"]
+
+# NEW PATTERN - USE THIS ✅
+from app.services.providers import ProviderFactory
+models = ProviderFactory.get_models_for_provider("openai")
+```
+
+**Troubleshooting:**
+- Model not showing in dropdown? Rebuild backend container
+- Wrong display name? Check `MODEL_REGISTRY` display_name field
+- 422 validation error? Model ID not in `MODEL_REGISTRY`
 
 ## API Documentation
 

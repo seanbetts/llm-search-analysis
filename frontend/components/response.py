@@ -1,5 +1,6 @@
 """Response formatting and display utilities."""
 
+import html
 import re
 from urllib.parse import urlparse
 
@@ -9,12 +10,100 @@ from frontend.utils import format_pub_date
 
 
 def _format_snippet(snippet):
-  """Return readable snippet text or 'N/A' if not present."""
+  """Return HTML-safe snippet text or 'N/A' if not present."""
   if not snippet:
     return "N/A"
   if isinstance(snippet, (dict, list)):
     return "N/A"
-  return str(snippet)
+  escaped = html.escape(str(snippet))
+  return escaped.replace("\n", "<br/>")
+
+
+def _render_tag_group(label, tags):
+  if not tags:
+    return ""
+  chips = " ".join(
+    f"<span style='display:inline-block;margin:0 4px 4px 0;padding:2px 6px;"
+    f"border-radius:6px;background-color:rgba(0,0,0,0.05);font-size:0.8rem;'>{tag}</span>"
+    for tag in tags
+  )
+  return f"<div style='margin-top:4px;'><strong>{label}:</strong> {chips}</div>"
+
+
+def _render_citation_tags(citation):
+  sections = []
+  sections.append(_render_tag_group("Provenance", getattr(citation, "provenance_tags", None)))
+  sections.append(_render_tag_group("Function", getattr(citation, "function_tags", None)))
+  sections.append(_render_tag_group("Stance", getattr(citation, "stance_tags", None)))
+  sections = [section for section in sections if section]
+  if not sections:
+    return ""
+  return (
+    "<div style='margin-top:6px;padding-top:4px;border-top:1px dashed rgba(0,0,0,0.1);'>"
+    + "".join(sections)
+    + "</div>"
+  )
+
+
+def _extract_citation_mentions(citation):
+  """Return normalized mention dicts for a citation."""
+  raw_mentions = getattr(citation, "mentions", None) or []
+  mentions = []
+  for item in raw_mentions:
+    if isinstance(item, dict):
+      mention = dict(item)
+    else:
+      mention = {
+        "mention_index": getattr(item, "mention_index", None),
+        "start_index": getattr(item, "start_index", None),
+        "end_index": getattr(item, "end_index", None),
+        "snippet_cited": getattr(item, "snippet_cited", None),
+        "metadata": getattr(item, "metadata", None),
+        "function_tags": getattr(item, "function_tags", None),
+        "stance_tags": getattr(item, "stance_tags", None),
+        "provenance_tags": getattr(item, "provenance_tags", None),
+        "influence_summary": getattr(item, "influence_summary", None),
+      }
+    mentions.append(mention)
+  mentions.sort(key=lambda m: m.get("mention_index") if isinstance(m.get("mention_index"), int) else 10**9)
+  return mentions
+
+
+def _render_citation_mentions_table(citation):
+  """Render a compact HTML table for all citation mentions."""
+  mentions = _extract_citation_mentions(citation)
+  if not mentions:
+    return ""
+
+  rows = []
+  for fallback_idx, mention in enumerate(mentions):
+    mention_index = mention.get("mention_index")
+    display_idx = (mention_index + 1) if isinstance(mention_index, int) else (fallback_idx + 1)
+    snippet_display = _format_snippet(mention.get("snippet_cited"))
+    influence_display = _format_snippet(mention.get("influence_summary"))
+    rows.append(
+      "<tr>"
+      f"<td style='vertical-align:top;padding:6px 8px;border:1px solid rgba(0,0,0,0.08);width:36px;'><strong>{display_idx}</strong></td>"  # noqa: E501
+      f"<td style='vertical-align:top;padding:6px 8px;border:1px solid rgba(0,0,0,0.08);'><em>{snippet_display}</em></td>"  # noqa: E501
+      f"<td style='vertical-align:top;padding:6px 8px;border:1px solid rgba(0,0,0,0.08);'><em>{influence_display}</em></td>"  # noqa: E501
+      "</tr>"
+    )
+
+  header = (
+    "<tr>"
+    "<th style='text-align:left;padding:6px 8px;border:1px solid rgba(0,0,0,0.08);width:36px;'>#</th>"
+    "<th style='text-align:left;padding:6px 8px;border:1px solid rgba(0,0,0,0.08);'>Snippet Cited</th>"
+    "<th style='text-align:left;padding:6px 8px;border:1px solid rgba(0,0,0,0.08);'>Influence Summary</th>"
+    "</tr>"
+  )
+  table = (
+    "<div style='margin-top:4px;'>"
+    "<table style='width:100%;border-collapse:collapse;font-size:0.95rem;'>"
+    f"{header}{''.join(rows)}"
+    "</table>"
+    "</div>"
+  )
+  return table
 
 
 def sanitize_response_markdown(text: str) -> str:
@@ -241,10 +330,17 @@ def display_response(response, prompt=None):
             url_display = source.url or 'No URL'
             # Use domain as title fallback when title is missing
             display_title = source.title or source.domain or 'Unknown source'
-            snippet = getattr(source, "snippet_text", None)
+            snippet = (
+              getattr(source, "search_description", None)
+              or getattr(source, "snippet_text", None)
+            )
             pub_date = getattr(source, "pub_date", None)
             snippet_display = _format_snippet(snippet)
-            snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
+            description_block = (
+              "<div style='margin-top:4px; font-size:0.95rem;'>"
+              f"<strong>Description:</strong> <em>{snippet_display}</em>"
+              "</div>"
+            )
             pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
             pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
             domain_link = f'<a href="{url_display}" target="_blank">{source.domain or "Open source"}</a>'
@@ -252,7 +348,7 @@ def display_response(response, prompt=None):
             <div class="source-item">
                 <strong>{j}. {display_title}</strong><br/>
                 <small>{domain_link}</small>
-                {snippet_block}
+                {description_block}
                 {pub_date_block}
             </div>
             """, unsafe_allow_html=True)
@@ -262,16 +358,23 @@ def display_response(response, prompt=None):
     all_sources = getattr(response, 'all_sources', []) or []
     if all_sources:
       st.markdown(f"### 📚 Sources Found ({len(all_sources)}):")
-      st.caption("_Note: Network logs don't provide reliable query-to-source mapping._")
+      st.caption("_Note: Web Analyses don't provide reliable query-to-source mapping._")
       with st.expander(f"View all {len(all_sources)} sources", expanded=False):
         for j, source in enumerate(all_sources, 1):
           url_display = source.url or 'No URL'
           # Use domain as title fallback when title is missing
           display_title = source.title or source.domain or 'Unknown source'
-          snippet = getattr(source, "snippet_text", None)
+          snippet = (
+            getattr(source, "search_description", None)
+            or getattr(source, "snippet_text", None)
+          )
           pub_date = getattr(source, "pub_date", None)
           snippet_display = _format_snippet(snippet)
-          snippet_block = f"<div style='margin-top:4px; font-size:0.95rem;'><strong>Snippet:</strong> <em>{snippet_display}</em></div>"  # noqa: E501
+          description_block = (
+            "<div style='margin-top:4px; font-size:0.95rem;'>"
+            f"<strong>Description:</strong> <em>{snippet_display}</em>"
+            "</div>"
+          )
           pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
           pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
           domain_link = f'<a href="{url_display}" target="_blank">{source.domain or "Open source"}</a>'
@@ -279,7 +382,7 @@ def display_response(response, prompt=None):
           <div class="source-item">
               <strong>{j}. {display_title}</strong><br/>
               <small>{domain_link}</small>
-              {snippet_block}
+              {description_block}
               {pub_date_block}
           </div>
           """, unsafe_allow_html=True)
@@ -322,24 +425,55 @@ def display_response(response, prompt=None):
         domain = urlparse(citation.url).netloc if citation.url else 'Unknown domain'
         display_title = citation.title or domain or 'Unknown source'
         source_fallback = url_to_source.get(citation.url)
-        snippet = getattr(source_fallback, "snippet_text", None)
+        snippet = (
+          getattr(source_fallback, "search_description", None)
+          or getattr(source_fallback, "snippet_text", None)
+        )
+        snippet_cited = (
+          getattr(citation, "snippet_cited", None)
+          or getattr(citation, "snippet_used", None)
+          or None
+        )
+        mentions_block = _render_citation_mentions_table(citation)
+        influence_summary = getattr(citation, "influence_summary", None)
         pub_date_val = getattr(source_fallback, "pub_date", None)
         snippet_display = _format_snippet(snippet)
-        snippet_block = (
+        description_block = (
           "<div style='margin-top:4px; font-size:0.95rem;'>"
-          f"<strong>Snippet:</strong> <em>{snippet_display}</em>"
+          f"<strong>Description:</strong> <em>{snippet_display}</em>"
+          "</div>"
+        )
+        snippet_cited_display = _format_snippet(snippet_cited)
+        snippet_cited_block = (
+          "<div style='margin-top:4px; font-size:0.95rem;'>"
+          f"<strong>Snippet Cited:</strong> <em>{snippet_cited_display}</em>"
+          "</div>"
+        )
+        influence_display = _format_snippet(influence_summary)
+        influence_block = (
+          "<div style='margin-top:4px; font-size:0.95rem;'>"
+          f"<strong>Influence Summary:</strong> <em>{influence_display}</em>"
           "</div>"
         )
         pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"
         pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
+        divider_block = "<div style='margin-top:6px;border-top:1px solid rgba(0,0,0,0.12);'></div>"
+        tags_block = _render_citation_tags(citation)
         st.markdown(f"""
         <div class="citation-item">
             <strong>{i}. {display_title}{rank_display}</strong><br/>
             {domain_link}
-            {snippet_block}
+            {description_block}
             {pub_date_block}
+            {divider_block}
+            {mentions_block or (snippet_cited_block + influence_block)}
+            {tags_block}
         </div>
         """, unsafe_allow_html=True)
+
+  # Show snippet-cited for all citations (including extra links) in the sources list.
+  # Extra links are rendered below and remain labeled as snippets because they do not
+  # necessarily correspond to a source "description" payload.
 
   # Extra links (citations not from search results)
   extra_links = [c for c in response.citations if not c.rank]
@@ -355,23 +489,53 @@ def display_response(response, prompt=None):
         domain = urlparse(citation.url).netloc if citation.url else 'Unknown domain'
         display_title = citation.title or domain or 'Unknown source'
 
-        # Get snippet from metadata if available
-        snippet = None
+        # Extra links do not have a search result description; only show a description if it is explicitly present.
+        description = None
         if getattr(citation, "metadata", None):
-          snippet = citation.metadata.get("snippet")
-        if not snippet:
-          snippet = getattr(citation, "text_snippet", None) or getattr(citation, "snippet_used", None)
-        snippet_display = _format_snippet(snippet)
-        snippet_block = (
+          description = citation.metadata.get("snippet")
+        description_display = _format_snippet(description)
+        description_block = (
           "<div style='margin-top:4px; font-size:0.95rem;'>"
-          f"<strong>Snippet:</strong> <em>{snippet_display}</em>"
+          f"<strong>Description:</strong> <em>{description_display}</em>"
           "</div>"
         )
+        snippet_cited = (
+          getattr(citation, "snippet_cited", None)
+          or getattr(citation, "snippet_used", None)
+          or None
+        )
+        mentions_block = _render_citation_mentions_table(citation)
+        snippet_cited_display = _format_snippet(snippet_cited)
+        snippet_cited_block = (
+          "<div style='margin-top:4px; font-size:0.95rem;'>"
+          f"<strong>Snippet Cited:</strong> <em>{snippet_cited_display}</em>"
+          "</div>"
+        )
+        pub_date_val = (
+          getattr(citation, "published_at", None)
+          or (citation.metadata or {}).get("published_at")
+          or (citation.metadata or {}).get("pub_date")
+        )
+        pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"
+        pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
+        divider_block = "<div style='margin-top:6px;border-top:1px solid rgba(0,0,0,0.12);'></div>"
+        influence_summary = getattr(citation, "influence_summary", None)
+        influence_display = _format_snippet(influence_summary)
+        influence_block = (
+          "<div style='margin-top:4px; font-size:0.95rem;'>"
+          f"<strong>Influence Summary:</strong> <em>{influence_display}</em>"
+          "</div>"
+        )
+        tags_block = _render_citation_tags(citation)
 
         st.markdown(f"""
         <div class="citation-item">
             <strong>{i}. {display_title}</strong><br/>
             {domain_link}
-            {snippet_block}
+            {description_block}
+            {pub_date_block}
+            {divider_block}
+            {mentions_block or (snippet_cited_block + influence_block)}
+            {tags_block}
         </div>
         """, unsafe_allow_html=True)

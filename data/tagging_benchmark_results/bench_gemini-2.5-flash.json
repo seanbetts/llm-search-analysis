@@ -1,0 +1,3466 @@
+[
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 275,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame",
+    "citation_title": "Steam Frame - Wikipedia",
+    "citation_rank": 3,
+    "function_tags": [
+      "evidence",
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1243,
+    "output_tokens": 36,
+    "total_tokens": 1927,
+    "estimated_cost": 0.0005781,
+    "influence_summary": "A Wikipedia article provides the foundational details, confirming Steam Frame as an upcoming standalone VR headset developed by Valve and its November 2025 announcement."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 275,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.uploadvr.com/valve-steam-frame-official-announcement-features-details/",
+    "citation_title": "Valve Officially Announces Steam Frame, A \"Streaming-First\" Standalone VR Headset",
+    "citation_rank": 7,
+    "function_tags": [
+      "evidence",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1257,
+    "output_tokens": 32,
+    "total_tokens": 1650,
+    "estimated_cost": 0.000495,
+    "influence_summary": "A news report confirms Valve's official announcement of the Steam Frame, detailing its 'streaming-first' nature and 'early 2026' launch."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 275,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+    "citation_title": "Steam Frame Release Date Window, Possible Price, Specs, And Everything We Know About Valve's Next-Gen VR Headset - GameSpot",
+    "citation_rank": 8,
+    "function_tags": [
+      "solution_or_answer",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1300,
+    "output_tokens": 32,
+    "total_tokens": 1749,
+    "estimated_cost": 0.0005246999999999999,
+    "influence_summary": "A news report confirms Valve's promise that the new VR headset is set to launch in early 2026, specifically constraining the release to Q1."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 274,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+    "citation_title": "gamespot.com",
+    "citation_rank": 1,
+    "function_tags": [
+      "background",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1524,
+    "output_tokens": 29,
+    "total_tokens": 1852,
+    "estimated_cost": 0.0005556000000000001,
+    "influence_summary": "A news report provides the background information that Valve officially revealed the Steam Frame, a standalone VR headset, in November 2025."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 274,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.tomshardware.com/peripherals/gaming-headsets/hands-on-with-valves-new-steam-frame-headset-arm-powered-mixed-mode-device-uses-new-fex-translation-layer-for-traditional-x86-games",
+    "citation_title": "tomshardware.com",
+    "citation_rank": 10,
+    "function_tags": [
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1560,
+    "output_tokens": 33,
+    "total_tokens": 2054,
+    "estimated_cost": 0.0006161999999999999,
+    "influence_summary": "A news report confirms the Steam Frame's design as a \"streaming-first\" device, bridging high-end PC VR and standalone convenience."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 274,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame",
+    "citation_title": "wikipedia.org",
+    "citation_rank": 2,
+    "function_tags": [
+      "solution_or_answer",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1458,
+    "output_tokens": 32,
+    "total_tokens": 1802,
+    "estimated_cost": 0.0005406,
+    "influence_summary": "An encyclopedic entry confirms that the price for the Steam Frame has not yet been officially announced."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 274,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.pcgamer.com/hardware/vr-hardware/steam-frame-specs-availability/",
+    "citation_title": "pcgamer.com",
+    "citation_rank": 5,
+    "function_tags": [
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1495,
+    "output_tokens": 62,
+    "total_tokens": 1890,
+    "estimated_cost": 0.000567,
+    "influence_summary": "A news report confirms the Steam Frame's primary focus is wireless PC streaming, elaborating on its \"streaming-first\" design despite native game capability."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 274,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://store.steampowered.com/sale/steamframe",
+    "citation_title": "steampowered.com",
+    "citation_rank": 11,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "official"
+    ],
+    "input_tokens": 1520,
+    "output_tokens": 29,
+    "total_tokens": 2003,
+    "estimated_cost": 0.0006009,
+    "influence_summary": "An official product page directly defines \"Foveated Streaming\" as a feature that uses eye-tracking to optimize wireless VR visuals by prioritizing clarity where the user looks."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 274,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.ign.com/articles/valve-heads-into-vr-headset-hardware-once-again-with-steam-frame-the-big-interview",
+    "citation_title": "ign.com",
+    "citation_rank": 7,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1517,
+    "output_tokens": 25,
+    "total_tokens": 2132,
+    "estimated_cost": 0.0006396,
+    "influence_summary": "A news report provides direct evidence for the Steam Frame's supported refresh rates, including 72Hz, 120Hz, and an experimental 144Hz mode."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 273,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai",
+    "citation_title": "Steam Frame",
+    "citation_rank": 10,
+    "function_tags": [
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 2833,
+    "output_tokens": 62,
+    "total_tokens": 3730,
+    "estimated_cost": 0.001119,
+    "influence_summary": "A Wikipedia article provides details confirming the Steam Frame's capability to wirelessly stream PC games from a gaming PC, Steam Deck, or the new Steam Machine."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 273,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai",
+    "citation_title": "Valve rejoins the VR hardware wars with standalone Steam Frame - Ars Technica",
+    "citation_rank": 9,
+    "function_tags": [
+      "evidence",
+      "elaboration",
+      "limitation_or_risk"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2920,
+    "output_tokens": 68,
+    "total_tokens": 3846,
+    "estimated_cost": 0.0011538,
+    "influence_summary": "A news report provides evidence for the Steam Frame's limitation of only supporting wireless PC streaming, with no wired connection announced."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 273,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.gematsu.com/2025/11/valve-announces-steam-machine-steam-frame-and-steam-controller?utm_source=openai",
+    "citation_title": "Valve announces Steam Machine, Steam Frame, and Steam Controller - Gematsu",
+    "citation_rank": 11,
+    "function_tags": [
+      "evidence",
+      "background",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2909,
+    "output_tokens": 35,
+    "total_tokens": 3398,
+    "estimated_cost": 0.0010194,
+    "influence_summary": "A news report confirms the Steam Frame was announced on November 12, 2025, alongside the new Steam Machine and Steam Controller."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 273,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai",
+    "citation_title": "Valve announces three new Steam Hardware devices: Steam Machine, Steam Frame, and Steam Controller \u00b7 SteamDB",
+    "citation_rank": 12,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "blog"
+    ],
+    "input_tokens": 2861,
+    "output_tokens": 29,
+    "total_tokens": 3639,
+    "estimated_cost": 0.0010917000000000001,
+    "influence_summary": "A blog post from SteamDB provides evidence that Valve aims to price the Steam Frame below the original Valve Index."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 273,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://play.asia/blog/2025/11/13/the-steam-hardware-family-expands-valve-announces-frame-machine-and-controller-for-early-2026-release/?utm_source=openai",
+    "citation_title": "The Steam Hardware Family Expands: Valve Announces Frame, Machine, and Controller For Early 2026 Release",
+    "citation_rank": 15,
+    "function_tags": [
+      "elaboration",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "blog"
+    ],
+    "input_tokens": 2970,
+    "output_tokens": 29,
+    "total_tokens": 3442,
+    "estimated_cost": 0.0010325999999999998,
+    "influence_summary": "A blog post confirms the existence of a \"Steam Frame Verified\" program, which will label games running well standalone on the headset."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 273,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.windowscentral.com/hardware/virtual-reality/valve-announce-steam-frame-snapdragon-xr-headset-steam-os-arm-support?utm_source=openai",
+    "citation_title": "Valve lays the foundations for an Arm-based gaming handheld future with first Snapdragon-powered SteamOS VR headset | Windows Central",
+    "citation_rank": 5,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2932,
+    "output_tokens": 29,
+    "total_tokens": 3333,
+    "estimated_cost": 0.0009999,
+    "influence_summary": "A news report from Windows Central provides details on the Steam Frame's audio features, specifically its dual speakers and dual-mic array."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 273,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://gameinformer.com/2025/11/12/valve-announces-console-like-steam-machine-steam-frame-vr-headset-and-new-steam?utm_source=openai",
+    "citation_title": "Valve Announces Console-Like Steam Machine, Steam Frame VR Headset, And New Steam Controller - Game Informer",
+    "citation_rank": 13,
+    "function_tags": [
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2952,
+    "output_tokens": 26,
+    "total_tokens": 3248,
+    "estimated_cost": 0.0009743999999999999,
+    "influence_summary": "A news report details Valve's pitched use cases for the Steam Frame, including playing flat, non-VR Steam games on a giant virtual screen via streaming or standalone."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 273,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai",
+    "citation_title": "Confirmed: Steam Frame will lack this Apple Vision Pro and Meta Quest feature at launch - Valve says it's 'on our list'",
+    "citation_rank": 8,
+    "function_tags": [
+      "limitation_or_risk"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2990,
+    "output_tokens": 30,
+    "total_tokens": 3412,
+    "estimated_cost": 0.0010236,
+    "influence_summary": "A news report confirms that the Steam Frame will not support automatic stereoscopic 3D for flat content at launch, citing Valve's statement on the feature."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 272,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+    "citation_title": "Steam Frame Release Date Window, Possible Price, Specs, And Everything We Know About Valve's Next-Gen VR Headset - GameSpot",
+    "citation_rank": 1,
+    "function_tags": [
+      "solution_or_answer",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1269,
+    "output_tokens": 32,
+    "total_tokens": 1676,
+    "estimated_cost": 0.0005028,
+    "influence_summary": "A news report provides the specific release window for the Steam Frame, stating it will be available in Q1 2026."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 272,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.uploadvr.com/valve-steam-frame-official-announcement-features-details/",
+    "citation_title": "Valve Officially Announces Steam Frame, A \"Streaming-First\" Standalone VR Headset",
+    "citation_rank": 3,
+    "function_tags": [
+      "solution_or_answer",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1278,
+    "output_tokens": 61,
+    "total_tokens": 2036,
+    "estimated_cost": 0.0006108,
+    "influence_summary": "A news report confirms Valve's official announcement of the Steam Frame, detailing its \"streaming-first\" nature and early 2026 launch."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 272,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://vr-compare.com/headset/steamframe",
+    "citation_title": "Steam Frame: Full Specification - VRcompare",
+    "citation_rank": 9,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1268,
+    "output_tokens": 25,
+    "total_tokens": 1694,
+    "estimated_cost": 0.0005082,
+    "influence_summary": "A VR comparison website provides the specific technical specifications for the Steam Frame's processor, field of view, display resolution, and refresh rate."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 272,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame",
+    "citation_title": "Steam Frame - Wikipedia",
+    "citation_rank": 4,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1284,
+    "output_tokens": 25,
+    "total_tokens": 1574,
+    "estimated_cost": 0.0004722,
+    "influence_summary": "A Wikipedia article provides specific details regarding the Steam Frame's processor, memory, and storage configurations."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 272,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.pcgamer.com/hardware/vr-hardware/steam-frame-specs-availability/",
+    "citation_title": "Valve announces the Steam Frame: 'a new way to play your entire Steam library' | PC Gamer",
+    "citation_rank": 2,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1256,
+    "output_tokens": 29,
+    "total_tokens": 1997,
+    "estimated_cost": 0.0005991,
+    "influence_summary": "A news report directly quotes a Valve designer, providing evidence that the Steam Frame is considered a \"streaming first headset\"."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 272,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.pcguide.com/vr/steam-frame-release-date-specs-price/",
+    "citation_title": "Steam Frame VR headset release date window, specs, and price estimate - PC Guide",
+    "citation_rank": 8,
+    "function_tags": [
+      "solution_or_answer",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1274,
+    "output_tokens": 32,
+    "total_tokens": 1700,
+    "estimated_cost": 0.00051,
+    "influence_summary": "A news report confirms the Steam Frame will be cheaper than the Valve Index, providing direct evidence for this pricing detail."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 271,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.youtube.com/watch?v=2UK6VDUOtXo",
+    "citation_title": "youtube.com",
+    "citation_rank": 1,
+    "function_tags": [
+      "evidence",
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "official"
+    ],
+    "input_tokens": 1463,
+    "output_tokens": 67,
+    "total_tokens": 2937,
+    "estimated_cost": 0.0008811,
+    "influence_summary": "An official video announcement directly states that the Steam Frame is Valve's new standalone virtual reality headset."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 271,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame",
+    "citation_title": "wikipedia.org",
+    "citation_rank": 3,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1458,
+    "output_tokens": 25,
+    "total_tokens": 1696,
+    "estimated_cost": 0.0005088,
+    "influence_summary": "The Wikipedia article provides the specific details regarding the Steam Frame's processor and its ARM64 architecture."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 271,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://store.steampowered.com/sale/steamframe",
+    "citation_title": "steampowered.com",
+    "citation_rank": 5,
+    "function_tags": [
+      "evidence",
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "official"
+    ],
+    "input_tokens": 1471,
+    "output_tokens": 67,
+    "total_tokens": 1715,
+    "estimated_cost": 0.0005145,
+    "influence_summary": "The official documentation provides direct evidence for the Steam Frame's display specifications, including its dual LCD panels and pancake lenses."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 271,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.cnet.com/tech/gaming/i-tried-valves-steam-frame-machine-and-controller-coming-in-2026-steam-os-is-coming-for-your-face-and-tv/",
+    "citation_title": "cnet.com",
+    "citation_rank": 4,
+    "function_tags": [
+      "evidence",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1521,
+    "output_tokens": 61,
+    "total_tokens": 2287,
+    "estimated_cost": 0.0006861,
+    "influence_summary": "The news report directly states Valve's marketing approach, confirming their intent to position the Steam Frame as a device for an entire game library."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 270,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai",
+    "citation_title": "Steam Frame",
+    "citation_rank": 3,
+    "function_tags": [
+      "evidence",
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 3179,
+    "output_tokens": 67,
+    "total_tokens": 3467,
+    "estimated_cost": 0.0010401,
+    "influence_summary": "The Wikipedia article provides foundational details and specifications, serving as a primary reference and evidence for the model's various claims about the Steam Frame."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 270,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.digitaltrends.com/gaming/valves-steam-frame-is-an-all-in-one-headset-for-vr-pc-games-and-streaming/?utm_source=openai",
+    "citation_title": "Valve\u2019s Steam Frame is an all-in one headset for VR, PC games, and streaming - Digital Trends",
+    "citation_rank": 4,
+    "function_tags": [
+      "evidence",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 3285,
+    "output_tokens": 32,
+    "total_tokens": 3679,
+    "estimated_cost": 0.0011037,
+    "influence_summary": "A news report confirms that Valve has not announced the Steam Frame's price but indicated it would be cheaper than the Index."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 270,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai",
+    "citation_title": "Valve rejoins the VR hardware wars with standalone Steam Frame - Ars Technica",
+    "citation_rank": 2,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 3267,
+    "output_tokens": 25,
+    "total_tokens": 3607,
+    "estimated_cost": 0.0010821,
+    "influence_summary": "A news report provides evidence for the specific technical specifications and design features listed as key traits of the Steam Frame."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 270,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://gameinformer.com/2025/11/12/valve-announces-console-like-steam-machine-steam-frame-vr-headset-and-new-steam?utm_source=openai",
+    "citation_title": "Valve Announces Console-Like Steam Machine, Steam Frame VR Headset, And New Steam Controller - Game Informer",
+    "citation_rank": 5,
+    "function_tags": [
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 3298,
+    "output_tokens": 26,
+    "total_tokens": 3669,
+    "estimated_cost": 0.0011007,
+    "influence_summary": "A news report elaborates on the Steam Frame's optimized wireless PC streaming, detailing its \"Foveated Streaming\" feature that prioritizes visual detail."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 270,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.timesofgames.com/news/steam-frame-pc-gaming-arm/?utm_source=openai",
+    "citation_title": "ARM Gaming Is the Future, Thanks to the Steam Frame",
+    "citation_rank": 6,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 3212,
+    "output_tokens": 25,
+    "total_tokens": 3895,
+    "estimated_cost": 0.0011685,
+    "influence_summary": "A news report indicates that Android apps and games can run natively on the Steam Frame through an Android compatibility layer."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 270,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai",
+    "citation_title": "Confirmed: Steam Frame will lack this Apple Vision Pro and Meta Quest feature at launch - Valve says it's 'on our list'",
+    "citation_rank": 1,
+    "function_tags": [
+      "limitation_or_risk"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 3337,
+    "output_tokens": 57,
+    "total_tokens": 3677,
+    "estimated_cost": 0.0011030999999999999,
+    "influence_summary": "A news report confirms that stereoscopic 3D conversion of 2D content will not be supported at launch, highlighting a known limitation of the Steam Frame."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 269,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame",
+    "citation_title": "Steam Frame - Wikipedia",
+    "citation_rank": 3,
+    "function_tags": [
+      "evidence",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1241,
+    "output_tokens": 32,
+    "total_tokens": 1668,
+    "estimated_cost": 0.0005004,
+    "influence_summary": "A Wikipedia entry directly states that Steam Frame is an upcoming standalone VR headset developed by Valve Corporation, announced in November 2025."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 269,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.uploadvr.com/valve-steam-frame-official-announcement-features-details/",
+    "citation_title": "Valve Officially Announces Steam Frame, A \"Streaming-First\" Standalone VR Headset",
+    "citation_rank": 7,
+    "function_tags": [
+      "solution_or_answer",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1255,
+    "output_tokens": 32,
+    "total_tokens": 1629,
+    "estimated_cost": 0.0004887,
+    "influence_summary": "A news report confirms Valve's official announcement of the Steam Frame, detailing its 'streaming-first' nature and 'early 2026' launch."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 269,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://vr-compare.com/headset/steamframe",
+    "citation_title": "Steam Frame: Full Specification - VRcompare",
+    "citation_rank": 6,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1261,
+    "output_tokens": 25,
+    "total_tokens": 1645,
+    "estimated_cost": 0.0004935,
+    "influence_summary": "A VR comparison website provides the specific technical specifications for the Steam Frame, including its processor, field of view, display resolution, and refresh rate."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 269,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+    "citation_title": "Steam Frame Release Date Window, Possible Price, Specs, And Everything We Know About Valve's Next-Gen VR Headset - GameSpot",
+    "citation_rank": 8,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1298,
+    "output_tokens": 25,
+    "total_tokens": 1802,
+    "estimated_cost": 0.0005406,
+    "influence_summary": "A news report provides direct evidence from Valve, clarifying that the Steam Frame's launch is constrained to Q1 2026."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 269,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.uploadvr.com/valve-steam-frame-content-no-divide/",
+    "citation_title": "Valve: 'We See The Lines Between VR & Non-VR Content Really Being Blurred'",
+    "citation_rank": 2,
+    "function_tags": [
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1247,
+    "output_tokens": 26,
+    "total_tokens": 1897,
+    "estimated_cost": 0.0005691,
+    "influence_summary": "The news report directly provides the statement about expecting a review of the Steam Frame in 2026."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 268,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.techradar.com/tech/steam-frame-official-7-things-you-need-to-know-about-valves-quest-3-rival",
+    "citation_title": "techradar.com",
+    "citation_rank": 1,
+    "function_tags": [
+      "evidence",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1600,
+    "output_tokens": 32,
+    "total_tokens": 2195,
+    "estimated_cost": 0.0006585,
+    "influence_summary": "A news report directly confirms the official announcement date of the Steam Frame by Valve as November 12, 2025, and its entry into the standalone VR market."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 268,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.pcgamer.com/hardware/vr-hardware/steam-frame-specs-availability/",
+    "citation_title": "pcgamer.com",
+    "citation_rank": 2,
+    "function_tags": [
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1602,
+    "output_tokens": 62,
+    "total_tokens": 2132,
+    "estimated_cost": 0.0006396,
+    "influence_summary": "A news report confirms the Steam Frame's design as a streaming-first headset that plays native games, succeeding the Valve Index without base stations or a tether."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 268,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame",
+    "citation_title": "wikipedia.org",
+    "citation_rank": 5,
+    "function_tags": [
+      "evidence",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1553,
+    "output_tokens": 32,
+    "total_tokens": 1982,
+    "estimated_cost": 0.0005946,
+    "influence_summary": "The Wikipedia article provides direct evidence, confirming that the Steam Frame will be available in two storage variants: 256GB and 1TB."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 268,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.ign.com/articles/valve-announces-steam-frame-its-next-gen-vr-headset",
+    "citation_title": "ign.com",
+    "citation_rank": 4,
+    "function_tags": [
+      "evidence",
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1583,
+    "output_tokens": 36,
+    "total_tokens": 2078,
+    "estimated_cost": 0.0006234,
+    "influence_summary": "A news report provides evidence for the Steam Frame's streaming-first focus by detailing its dedicated 6GHz Wi-Fi 7 wireless adapter."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 268,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.cnet.com/tech/gaming/i-tried-valves-steam-frame-machine-and-controller-coming-in-2026-steam-os-is-coming-for-your-face-and-tv/",
+    "citation_title": "cnet.com",
+    "citation_rank": 6,
+    "function_tags": [
+      "evidence",
+      "elaboration",
+      "cause_or_reason"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1628,
+    "output_tokens": 36,
+    "total_tokens": 2051,
+    "estimated_cost": 0.0006152999999999999,
+    "influence_summary": "A news report provides evidence that the dedicated Wi-Fi 7 adapter creates a direct, low-latency link for streaming the Steam library without clogging home Wi-Fi."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 268,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://store.steampowered.com/sale/steamframe",
+    "citation_title": "steampowered.com",
+    "citation_rank": 7,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "official"
+    ],
+    "input_tokens": 1558,
+    "output_tokens": 29,
+    "total_tokens": 1903,
+    "estimated_cost": 0.0005708999999999999,
+    "influence_summary": "An official product page confirms the Steam Frame features custom \"pancake\" lenses, providing edge-to-edge sharpness and a slimmer profile."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 268,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.roadtovr.com/valve-steam-frame-stereoscopic-3d-support-flat-games-spatial-video/",
+    "citation_title": "roadtovr.com",
+    "citation_rank": 8,
+    "function_tags": [
+      "evidence",
+      "elaboration",
+      "limitation_or_risk"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1672,
+    "output_tokens": 37,
+    "total_tokens": 2047,
+    "estimated_cost": 0.0006141,
+    "influence_summary": "A news report clarifies Valve's statement that the Steam Frame will not support stereoscopic 3D conversion for flat games at launch, though it is planned for future updates."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 267,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.cnet.com/tech/gaming/i-tried-valves-steam-frame-machine-and-controller-coming-in-2026-steam-os-is-coming-for-your-face-and-tv/",
+    "citation_title": "cnet.com",
+    "citation_rank": 1,
+    "function_tags": [
+      "solution_or_answer",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1609,
+    "output_tokens": 61,
+    "total_tokens": 1963,
+    "estimated_cost": 0.0005889,
+    "influence_summary": "The news report directly confirms Valve's official announcement of the Steam Frame as a new standalone virtual reality headset in December 2025."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 267,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame",
+    "citation_title": "wikipedia.org",
+    "citation_rank": 6,
+    "function_tags": [
+      "solution_or_answer",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1540,
+    "output_tokens": 61,
+    "total_tokens": 1900,
+    "estimated_cost": 0.00057,
+    "influence_summary": "A Wikipedia entry directly provides the specific early 2026 (Q1) release window for the Steam Frame, serving as the basis for this claim."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 267,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Deck",
+    "citation_title": "wikipedia.org",
+    "citation_rank": 7,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1572,
+    "output_tokens": 29,
+    "total_tokens": 2031,
+    "estimated_cost": 0.0006092999999999999,
+    "influence_summary": "The Wikipedia article on Steam Deck provides the specific storage variations (256GB and 1TB) expected for the Steam Frame, noting their similarity to the Steam Deck lineup."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 267,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.techradar.com/tech/steam-frame-official-7-things-you-need-to-know-about-valves-quest-3-rival",
+    "citation_title": "techradar.com",
+    "citation_rank": 2,
+    "function_tags": [
+      "elaboration",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1561,
+    "output_tokens": 29,
+    "total_tokens": 2052,
+    "estimated_cost": 0.0006156,
+    "influence_summary": "A news report confirms that an OLED model for the Steam Frame has not been announced."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 267,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.ign.com/articles/valve-heads-into-vr-headset-hardware-once-again-with-steam-frame-the-big-interview",
+    "citation_title": "ign.com",
+    "citation_rank": 5,
+    "function_tags": [
+      "background",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1573,
+    "output_tokens": 29,
+    "total_tokens": 1946,
+    "estimated_cost": 0.0005838,
+    "influence_summary": "A news report provides background, stating that Valve announced the Steam Frame as part of a broader hardware push, supporting the model's claim."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 267,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://twit.tv/posts/tech/steam-frame-steam-machine-and-more-valves-new-hardware",
+    "citation_title": "twit.tv",
+    "citation_rank": 8,
+    "function_tags": [
+      "evidence",
+      "elaboration",
+      "background"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1573,
+    "output_tokens": 32,
+    "total_tokens": 2180,
+    "estimated_cost": 0.000654,
+    "influence_summary": "A news report directly provides the details about the new console-sized Steam Machine and its purpose for the living room."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 266,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+    "citation_title": "gamespot.com",
+    "citation_rank": 1,
+    "function_tags": [
+      "evidence",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1662,
+    "output_tokens": 32,
+    "total_tokens": 1969,
+    "estimated_cost": 0.0005906999999999999,
+    "influence_summary": "A news report provides direct evidence that Valve officially announced the Steam Frame in November 2025 as a next-generation, standalone VR headset."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 266,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.uploadvr.com/valve-steam-frame-official-announcement-features-details/",
+    "citation_title": "uploadvr.com",
+    "citation_rank": 2,
+    "function_tags": [
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1650,
+    "output_tokens": 62,
+    "total_tokens": 2218,
+    "estimated_cost": 0.0006654,
+    "influence_summary": "A news report directly states that the device is designed as a \"streaming-first\" headset with standalone capabilities, serving as a successor to the Valve Index."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 266,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.escapistmagazine.com/steam-frame-release/",
+    "citation_title": "escapistmagazine.com",
+    "citation_rank": 6,
+    "function_tags": [
+      "speculation_or_rumour",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1683,
+    "output_tokens": 35,
+    "total_tokens": 2092,
+    "estimated_cost": 0.0006276000000000001,
+    "influence_summary": "A news report provides the analyst estimate for the Steam Frame's price, suggesting it will range from $500-$600 to compete with other headsets."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 266,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame",
+    "citation_title": "wikipedia.org",
+    "citation_rank": 3,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1618,
+    "output_tokens": 25,
+    "total_tokens": 2177,
+    "estimated_cost": 0.0006531,
+    "influence_summary": "A Wikipedia entry provides the specific detail that the Steam Frame will feature a Qualcomm Snapdragon 8 Gen 3 processor."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 266,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://store.steampowered.com/sale/steamframe",
+    "citation_title": "steampowered.com",
+    "citation_rank": 7,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "official"
+    ],
+    "input_tokens": 1645,
+    "output_tokens": 25,
+    "total_tokens": 1957,
+    "estimated_cost": 0.0005871,
+    "influence_summary": "An official product page directly provides the specifications for the Steam Frame's display, including its dual LCD panels and pancake lenses."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 266,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://vr-compare.com/headset/steamframe",
+    "citation_title": "vr-compare.com",
+    "citation_rank": 9,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1606,
+    "output_tokens": 52,
+    "total_tokens": 1908,
+    "estimated_cost": 0.0005723999999999999,
+    "influence_summary": "A VR comparison website provides the specific field of view measurement of approximately 110 degrees for the Steam Frame, directly supporting the claim."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 266,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.cnet.com/tech/gaming/i-tried-valves-steam-frame-machine-and-controller-coming-in-2026-steam-os-is-coming-for-your-face-and-tv/",
+    "citation_title": "cnet.com",
+    "citation_rank": 8,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1675,
+    "output_tokens": 25,
+    "total_tokens": 1994,
+    "estimated_cost": 0.0005981999999999999,
+    "influence_summary": "A news report confirms that the Steam Frame will feature black-and-white pass-through cameras for seeing surroundings, not full-color mixed reality."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 266,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list",
+    "citation_title": "tomsguide.com",
+    "citation_rank": 10,
+    "function_tags": [
+      "limitation_or_risk"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1723,
+    "output_tokens": 30,
+    "total_tokens": 2253,
+    "estimated_cost": 0.0006759,
+    "influence_summary": "A news report confirms that the Steam Frame will not support stereoscopic 3D rendering for 2D content at launch, but Valve has it \"on their list\" for future updates."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 266,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.pcgamer.com/hardware/vr-hardware/steam-frame-specs-availability/",
+    "citation_title": "pcgamer.com",
+    "citation_rank": 4,
+    "function_tags": [
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1657,
+    "output_tokens": 33,
+    "total_tokens": 2204,
+    "estimated_cost": 0.0006611999999999999,
+    "influence_summary": "A news report confirms that the Steam Frame and Steam Machine are designed for seamless game switching between TV and headset."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 265,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.pcgamer.com/hardware/vr-hardware/steam-frame-specs-availability/",
+    "citation_title": "pcgamer.com",
+    "citation_rank": 1,
+    "function_tags": [
+      "solution_or_answer",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1673,
+    "output_tokens": 32,
+    "total_tokens": 2162,
+    "estimated_cost": 0.0006486,
+    "influence_summary": "The news report directly confirms Valve's official announcement of the Steam Frame, a new standalone VR headset designed to succeed the Valve Index."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 265,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame",
+    "citation_title": "wikipedia.org",
+    "citation_rank": 4,
+    "function_tags": [
+      "evidence",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1624,
+    "output_tokens": 61,
+    "total_tokens": 1903,
+    "estimated_cost": 0.0005708999999999999,
+    "influence_summary": "The encyclopedia entry directly provides the release window for the Steam Frame, confirming it is set for early 2026 (Q1)."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 265,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.escapistmagazine.com/steam-frame-release/",
+    "citation_title": "escapistmagazine.com",
+    "citation_rank": 6,
+    "function_tags": [
+      "speculation_or_rumour"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1645,
+    "output_tokens": 31,
+    "total_tokens": 1975,
+    "estimated_cost": 0.0005925,
+    "influence_summary": "A news report provides the basis for the speculation that the Steam Frame might ship in February 2026."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 265,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://store.steampowered.com/sale/steamframe",
+    "citation_title": "steampowered.com",
+    "citation_rank": 8,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "official"
+    ],
+    "input_tokens": 1637,
+    "output_tokens": 52,
+    "total_tokens": 1957,
+    "estimated_cost": 0.0005871,
+    "influence_summary": "Official documentation directly provides the specific display resolution and panel type for the Steam Frame headset."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 265,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.youtube.com/watch?v=vBhYlgYY4Kk",
+    "citation_title": "youtube.com",
+    "citation_rank": 9,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1627,
+    "output_tokens": 29,
+    "total_tokens": 2640,
+    "estimated_cost": 0.000792,
+    "influence_summary": "A news report directly confirms the Steam Frame includes eye tracking for foveated rendering, providing evidence for this hardware specification."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 265,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.reddit.com/r/Steam/comments/1ovc7id/introducing_steam_frame/",
+    "citation_title": "reddit.com",
+    "citation_rank": 11,
+    "function_tags": [
+      "solution_or_answer",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "community"
+    ],
+    "input_tokens": 1634,
+    "output_tokens": 32,
+    "total_tokens": 1946,
+    "estimated_cost": 0.0005838,
+    "influence_summary": "A community discussion confirms that the Steam Frame operates as a standalone device running SteamOS on ARM architecture."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 265,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list",
+    "citation_title": "tomsguide.com",
+    "citation_rank": 12,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1767,
+    "output_tokens": 29,
+    "total_tokens": 2198,
+    "estimated_cost": 0.0006594,
+    "influence_summary": "The news report confirms the Steam Frame will not support stereoscopic 3D for 2D content at launch, but notes Valve plans to add it later."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 264,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame",
+    "citation_title": "wikipedia.org",
+    "citation_rank": 1,
+    "function_tags": [
+      "solution_or_answer",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1572,
+    "output_tokens": 33,
+    "total_tokens": 1850,
+    "estimated_cost": 0.000555,
+    "influence_summary": "A Wikipedia entry directly defines the Steam Frame as a standalone, wireless VR headset running SteamOS, providing the core description for the claim."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 264,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.youtube.com/watch?v=X_QLKI25SGk",
+    "citation_title": "youtube.com",
+    "citation_rank": 3,
+    "function_tags": [
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "official"
+    ],
+    "input_tokens": 1581,
+    "output_tokens": 62,
+    "total_tokens": 2598,
+    "estimated_cost": 0.0007794,
+    "influence_summary": "An official announcement confirms the Steam Frame is the successor to the Valve Index, previously known by its rumored codename \"Deckard\"."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 264,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.pcgamer.com/hardware/vr-hardware/steam-frame-specs-availability/",
+    "citation_title": "pcgamer.com",
+    "citation_rank": 2,
+    "function_tags": [
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1651,
+    "output_tokens": 33,
+    "total_tokens": 2083,
+    "estimated_cost": 0.0006249,
+    "influence_summary": "A news report confirms the Steam Frame's marketing as a \"streaming-first\" device capable of playing the entire Steam library, including both VR and flat games on a virtual screen."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 264,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.ign.com/articles/valve-announces-steam-frame-its-next-gen-vr-headset",
+    "citation_title": "ign.com",
+    "citation_rank": 7,
+    "function_tags": [
+      "evidence",
+      "cause_or_reason"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1602,
+    "output_tokens": 61,
+    "total_tokens": 2216,
+    "estimated_cost": 0.0006648,
+    "influence_summary": "A news report provides evidence that the dedicated 6GHz USB wireless adapter creates a direct, low-latency link for streaming high-fidelity VR games."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 264,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.techradar.com/tech/steam-frame-official-7-things-you-need-to-know-about-valves-quest-3-rival",
+    "citation_title": "techradar.com",
+    "citation_rank": 8,
+    "function_tags": [
+      "elaboration",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1641,
+    "output_tokens": 29,
+    "total_tokens": 2043,
+    "estimated_cost": 0.0006129,
+    "influence_summary": "A news report provides evidence and elaborates on the foveated streaming feature, explaining how it uses eye-tracking to optimize video resolution and save bandwidth."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 264,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.tomshardware.com/peripherals/gaming-headsets/hands-on-with-valves-new-steam-frame-headset-arm-powered-mixed-mode-device-uses-new-fex-translation-layer-for-traditional-x86-games",
+    "citation_title": "tomshardware.com",
+    "citation_rank": 6,
+    "function_tags": [
+      "elaboration",
+      "enablement"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1643,
+    "output_tokens": 30,
+    "total_tokens": 2165,
+    "estimated_cost": 0.0006495,
+    "influence_summary": "A news report confirms that the Steam Frame's microSD card slot is interoperable with the Steam Deck, allowing immediate access to an installed library."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 264,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://store.steampowered.com/sale/steamframe",
+    "citation_title": "steampowered.com",
+    "citation_rank": 5,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "official"
+    ],
+    "input_tokens": 1597,
+    "output_tokens": 29,
+    "total_tokens": 2037,
+    "estimated_cost": 0.0006111000000000001,
+    "influence_summary": "Official documentation directly provides the specific details regarding the Steam Frame's inside-out tracking system, including its cameras and low-light capabilities."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 264,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list",
+    "citation_title": "tomsguide.com",
+    "citation_rank": 10,
+    "function_tags": [
+      "limitation_or_risk"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1713,
+    "output_tokens": 30,
+    "total_tokens": 2082,
+    "estimated_cost": 0.0006246,
+    "influence_summary": "A news report confirms that the Steam Frame will not support stereoscopic 3D for 2D games at launch, though Valve plans to add it later."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 263,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.techradar.com/tech/steam-frame-official-7-things-you-need-to-know-about-valves-quest-3-rival",
+    "citation_title": "techradar.com",
+    "citation_rank": 1,
+    "function_tags": [
+      "solution_or_answer",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1465,
+    "output_tokens": 32,
+    "total_tokens": 1890,
+    "estimated_cost": 0.000567,
+    "influence_summary": "A news report directly confirms that the Steam Frame is Valve's newly announced standalone VR headset, officially revealed on November 12, 2025."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 263,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+    "citation_title": "gamespot.com",
+    "citation_rank": 4,
+    "function_tags": [
+      "solution_or_answer",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1464,
+    "output_tokens": 32,
+    "total_tokens": 1836,
+    "estimated_cost": 0.0005507999999999999,
+    "influence_summary": "This gaming news report directly states the Steam Frame's anticipated Q1 2026 release window."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 263,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.reddit.com/r/virtualreality/comments/1ovdwx8/valve_rejoins_the_vr_hardware_wars_with/",
+    "citation_title": "reddit.com",
+    "citation_rank": 5,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "community"
+    ],
+    "input_tokens": 1463,
+    "output_tokens": 29,
+    "total_tokens": 1897,
+    "estimated_cost": 0.0005691,
+    "influence_summary": "A community discussion provides the specific details regarding the Steam Frame's two storage options and its expandable microSD capability."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 263,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame",
+    "citation_title": "wikipedia.org",
+    "citation_rank": 6,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1426,
+    "output_tokens": 25,
+    "total_tokens": 1742,
+    "estimated_cost": 0.0005226,
+    "influence_summary": "The encyclopedia entry provides direct evidence for the Steam Frame's processor, specifying it as the Qualcomm Snapdragon 8 Gen 3."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 263,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://store.steampowered.com/sale/steamframe",
+    "citation_title": "steampowered.com",
+    "citation_rank": 9,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "official"
+    ],
+    "input_tokens": 1431,
+    "output_tokens": 25,
+    "total_tokens": 1871,
+    "estimated_cost": 0.0005612999999999999,
+    "influence_summary": "The official website directly states that the Steam Frame features dual LCD panels with 2160 x 2160 resolution per eye."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 263,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.pcgamer.com/hardware/valve-announces-steam-machine-frame-controller/",
+    "citation_title": "pcgamer.com",
+    "citation_rank": 10,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1441,
+    "output_tokens": 25,
+    "total_tokens": 2063,
+    "estimated_cost": 0.0006189,
+    "influence_summary": "A news report provides direct evidence for the Steam Frame's optical specifications, detailing its custom pancake lenses and 110-degree field of view."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 263,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.ign.com/articles/steam-frame-preview-hands-on-with-valves-state-of-the-art-vr-headset",
+    "citation_title": "ign.com",
+    "citation_rank": 7,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1460,
+    "output_tokens": 25,
+    "total_tokens": 2123,
+    "estimated_cost": 0.0006369,
+    "influence_summary": "A news report provides direct evidence for the Steam Frame's supported refresh rates, including 72Hz, 120Hz, and an experimental 144Hz mode."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 263,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.cnet.com/tech/gaming/i-tried-valves-steam-frame-machine-and-controller-coming-in-2026-steam-os-is-coming-for-your-face-and-tv/",
+    "citation_title": "cnet.com",
+    "citation_rank": 11,
+    "function_tags": [
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1472,
+    "output_tokens": 26,
+    "total_tokens": 2122,
+    "estimated_cost": 0.0006366,
+    "influence_summary": "A news report confirms the Steam Frame's announcement alongside two other complementary devices, detailing its broader ecosystem."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 262,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai",
+    "citation_title": "Valve rejoins the VR hardware wars with standalone Steam Frame - Ars Technica",
+    "citation_rank": 3,
+    "function_tags": [
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 3678,
+    "output_tokens": 26,
+    "total_tokens": 4005,
+    "estimated_cost": 0.0012015,
+    "influence_summary": "A news report confirms the Steam Frame's wireless PC VR streaming capability and notes no tethered cable mode has been announced."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 262,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai",
+    "citation_title": "Valve announces three new Steam Hardware devices: Steam Machine, Steam Frame, and Steam Controller \u00b7 SteamDB",
+    "citation_rank": 4,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news",
+      "community"
+    ],
+    "input_tokens": 3618,
+    "output_tokens": 28,
+    "total_tokens": 5065,
+    "estimated_cost": 0.0015195,
+    "influence_summary": "A community news report provides evidence for the Steam Frame's official announcement date of November 12, 2025, and the other hardware revealed simultaneously."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 262,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://gigazine.net/gsc_news/en/20251113-valve-steam-machine-controller-frame/?utm_source=openai",
+    "citation_title": "Valve announces SteamOS gaming PC 'Steam Machine,' standalone VR device 'Steam Frame,' and game controller 'Steam Controller' - GIGAZINE",
+    "citation_rank": 8,
+    "function_tags": [
+      "evidence",
+      "limitation_or_risk"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 3672,
+    "output_tokens": 33,
+    "total_tokens": 4012,
+    "estimated_cost": 0.0012036,
+    "influence_summary": "A news report confirms that the Steam Frame will only feature monochrome passthrough at launch, indicating a limitation in its initial mixed reality capabilities."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 262,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai",
+    "citation_title": "Steam Frame",
+    "citation_rank": 2,
+    "function_tags": [
+      "elaboration",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 3590,
+    "output_tokens": 29,
+    "total_tokens": 4121,
+    "estimated_cost": 0.0012362999999999999,
+    "influence_summary": "The Wikipedia article provides details on the Steam Frame's software stack, including SteamOS, Proton, FEX-Emu, and Lepton, and supports its positioning as a new way to play the Steam library."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 262,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai",
+    "citation_title": "Confirmed: Steam Frame will lack this Apple Vision Pro and Meta Quest feature at launch - Valve says it's 'on our list'",
+    "citation_rank": 1,
+    "function_tags": [
+      "limitation_or_risk",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 3748,
+    "output_tokens": 42,
+    "total_tokens": 4089,
+    "estimated_cost": 0.0012267,
+    "influence_summary": "A news report confirms the Steam Frame's initial lack of stereoscopic 3D rendering, citing Valve's statement that it's 'on our list' for future development."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 262,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.gamesradar.com/hardware/vr/valve-deckard-has-been-officially-revealed-as-the-steam-frame-and-it-looks-like-a-combination-of-psvr-2-and-the-meta-quest-3s-best-features/?utm_source=openai",
+    "citation_title": "Valve Deckard has been officially revealed as the Steam Frame, and it looks like a combination of PSVR 2 and the Meta Quest 3's best features",
+    "citation_rank": 10,
+    "function_tags": [
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 3788,
+    "output_tokens": 26,
+    "total_tokens": 4131,
+    "estimated_cost": 0.0012393,
+    "influence_summary": "A news report elaborates on the Steam Frame's competitive positioning by comparing its features to other major VR headsets like the PSVR 2 and Meta Quest 3."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 261,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai",
+    "citation_title": "Steam Frame",
+    "citation_rank": 3,
+    "function_tags": [
+      "elaboration",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 2121,
+    "output_tokens": 58,
+    "total_tokens": 2573,
+    "estimated_cost": 0.0007719,
+    "influence_summary": "A Wikipedia article provides evidence that the Steam Frame's price is unannounced but Valve has indicated it will be cheaper than the Index."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 261,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.theverge.com/news/817967/valve-index-vr-headset-stopped-manufacturing-frame?utm_source=openai",
+    "citation_title": "Valve has stopped manufacturing its Index VR headset",
+    "citation_rank": 2,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2219,
+    "output_tokens": 52,
+    "total_tokens": 2686,
+    "estimated_cost": 0.0008058,
+    "influence_summary": "A news report directly provides the specific display specifications, including panel type, resolution, and refresh rates, for the Steam Frame."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 261,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.windowscentral.com/hardware/virtual-reality/valve-announce-steam-frame-snapdragon-xr-headset-steam-os-arm-support?utm_source=openai",
+    "citation_title": "Valve lays the foundations for an Arm-based gaming handheld future with first Snapdragon-powered SteamOS VR headset | Windows Central",
+    "citation_rank": 9,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2243,
+    "output_tokens": 29,
+    "total_tokens": 3345,
+    "estimated_cost": 0.0010035,
+    "influence_summary": "A news report provides specific details on the Steam Frame's weight with its strap and facial interface, as well as its rear battery capacity."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 261,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://economictimes.indiatimes.com/news/international/us/valve-launches-the-steam-frame-steam-machine-and-steam-controller-building-a-new-gaming-ecosystem-here-are-the-key-specs-of-the-new-launches/articleshow/125282254.cms?utm_source=openai",
+    "citation_title": "steam machine gaming: Valve launches the Steam Frame, Steam Machine, and Steam Controller \u2014 building a new gaming ecosystem- here are the key specs of the new launches - The Economic Times",
+    "citation_rank": 7,
+    "function_tags": [
+      "evidence",
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2332,
+    "output_tokens": 36,
+    "total_tokens": 2787,
+    "estimated_cost": 0.0008361,
+    "influence_summary": "A news report provides details on the Steam Frame controllers, stating they use AA batteries and offer approximately 40 hours of battery life."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 261,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.digitaltrends.com/gaming/valves-steam-frame-is-an-all-in-one-headset-for-vr-pc-games-and-streaming/?utm_source=openai",
+    "citation_title": "Valve\u2019s Steam Frame is an all-in one headset for VR, PC games, and streaming - Digital Trends",
+    "citation_rank": 6,
+    "function_tags": [
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2196,
+    "output_tokens": 62,
+    "total_tokens": 2913,
+    "estimated_cost": 0.0008738999999999999,
+    "influence_summary": "A news report confirms Valve's intention for Android and VR apps to share a unified interface on the Steam Frame headset."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 261,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.androidcentral.com/gaming/virtual-reality/steam-frame-steam-deck-meta-quest-3?utm_source=openai",
+    "citation_title": "Valve's new Meta Quest rival completes the hybrid gaming vision the company began with the launch of the Steam Deck, even allowing you to sideload Android apps for added versatility. But how does it compare to the Quest 3?",
+    "citation_rank": 5,
+    "function_tags": [
+      "elaboration",
+      "background",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news",
+      "review"
+    ],
+    "input_tokens": 2224,
+    "output_tokens": 48,
+    "total_tokens": 2770,
+    "estimated_cost": 0.000831,
+    "influence_summary": "This news report provides a comprehensive overview of the Steam Frame's features, positioning, and comparison to rivals, supporting the detailed information presented."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 261,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.pcquest.com/news-launches/valve-ignites-the-future-of-play-with-the-steam-frame-and-next-gen-steam-machine-10652867?utm_source=openai",
+    "citation_title": "Valve\u2019s Steam Frame and Steam Machine Set a New Gaming Standard",
+    "citation_rank": 12,
+    "function_tags": [
+      "evidence",
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2267,
+    "output_tokens": 67,
+    "total_tokens": 3895,
+    "estimated_cost": 0.0011685,
+    "influence_summary": "A news report offers the latest details on Valve's Steam Frame and its companion Steam Machine, supporting the information provided."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 261,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.pcgamer.com/hardware/valve-recommends-sharing-your-game-library-on-sd-card-between-steam-deck-steam-frame-and-steam-machine/?utm_source=openai",
+    "citation_title": "Valve recommends sharing your game library on microSD card between Steam Deck, Steam Frame, and Steam Machine: 'They're fully interoperable, just bring it along with you'",
+    "citation_rank": 4,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2267,
+    "output_tokens": 29,
+    "total_tokens": 2810,
+    "estimated_cost": 0.000843,
+    "influence_summary": "A news report provides evidence that Valve recommends sharing game libraries via microSD cards between the Steam Deck, Steam Frame, and Steam Machine."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 261,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai",
+    "citation_title": "Confirmed: Steam Frame will lack this Apple Vision Pro and Meta Quest feature at launch - Valve says it's 'on our list'",
+    "citation_rank": 1,
+    "function_tags": [
+      "limitation_or_risk",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2295,
+    "output_tokens": 63,
+    "total_tokens": 2811,
+    "estimated_cost": 0.0008433,
+    "influence_summary": "This news report confirms that advanced features like stereoscopic 3D for 2D content conversion are not available at launch, but Valve has them \"on our list\"."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 260,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai",
+    "citation_title": "Valve rejoins the VR hardware wars with standalone Steam Frame - Ars Technica",
+    "citation_rank": 2,
+    "function_tags": [
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2215,
+    "output_tokens": 33,
+    "total_tokens": 2778,
+    "estimated_cost": 0.0008334,
+    "influence_summary": "A news report details the Steam Frame's positioning as a spiritual successor to the Valve Index and a component of a new SteamOS hardware lineup."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 260,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai",
+    "citation_title": "Valve announces three new Steam Hardware devices: Steam Machine, Steam Frame, and Steam Controller \u00b7 SteamDB",
+    "citation_rank": 6,
+    "function_tags": [
+      "solution_or_answer",
+      "speculation_or_rumour"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "blog"
+    ],
+    "input_tokens": 2192,
+    "output_tokens": 67,
+    "total_tokens": 3109,
+    "estimated_cost": 0.0009327,
+    "influence_summary": "A blog post reports Valve's statement that the Steam Frame will be cheaper than the $999 Index, with most coverage expecting a sub-$1,000 price."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 260,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai",
+    "citation_title": "Steam Frame",
+    "citation_rank": 8,
+    "function_tags": [
+      "evidence",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 2185,
+    "output_tokens": 61,
+    "total_tokens": 2543,
+    "estimated_cost": 0.0007629,
+    "influence_summary": "The Wikipedia article provides specific technical details regarding the Steam Frame's display resolution and refresh rates, serving as direct evidence for the claim."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 260,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.theverge.com/news/817967/valve-index-vr-headset-stopped-manufacturing-frame?utm_source=openai",
+    "citation_title": "Valve has stopped manufacturing its Index VR headset",
+    "citation_rank": 3,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2215,
+    "output_tokens": 58,
+    "total_tokens": 2612,
+    "estimated_cost": 0.0007836000000000001,
+    "influence_summary": "A news report provides the specific total weight of the Steam Frame, including its components, and notes that it is lighter than the Quest 3."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 260,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.windowscentral.com/hardware/virtual-reality/valve-announce-steam-frame-snapdragon-xr-headset-steam-os-arm-support?utm_source=openai",
+    "citation_title": "Valve lays the foundations for an Arm-based gaming handheld future with first Snapdragon-powered SteamOS VR headset | Windows Central",
+    "citation_rank": 12,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2253,
+    "output_tokens": 29,
+    "total_tokens": 2660,
+    "estimated_cost": 0.000798,
+    "influence_summary": "A news report provides details on the Steam Frame controllers, including haptics, capacitive sensing, AA battery power, and an estimated 40-hour battery life."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 260,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.pcgamer.com/hardware/valve-recommends-sharing-your-game-library-on-sd-card-between-steam-deck-steam-frame-and-steam-machine/?utm_source=openai",
+    "citation_title": "Valve recommends sharing your game library on microSD card between Steam Deck, Steam Frame, and Steam Machine: 'They're fully interoperable, just bring it along with you'",
+    "citation_rank": 4,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2280,
+    "output_tokens": 34,
+    "total_tokens": 4550,
+    "estimated_cost": 0.001365,
+    "influence_summary": "A news report provides evidence that Valve recommends sharing game libraries via microSD cards across Steam Deck, Steam Frame, and Steam Machine for full interoperability."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 260,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.androidcentral.com/gaming/virtual-reality/steam-frame-steam-deck-meta-quest-3?utm_source=openai",
+    "citation_title": "Valve's new Meta Quest rival completes the hybrid gaming vision the company began with the launch of the Steam Deck, even allowing you to sideload Android apps for added versatility. But how does it compare to the Quest 3?",
+    "citation_rank": 5,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2253,
+    "output_tokens": 25,
+    "total_tokens": 2631,
+    "estimated_cost": 0.0007892999999999999,
+    "influence_summary": "A news report provides evidence that the Steam Frame will support sideloading Android apps through a compatibility layer."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 260,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai",
+    "citation_title": "Confirmed: Steam Frame will lack this Apple Vision Pro and Meta Quest feature at launch - Valve says it's 'on our list'",
+    "citation_rank": 1,
+    "function_tags": [
+      "limitation_or_risk"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 2324,
+    "output_tokens": 30,
+    "total_tokens": 2719,
+    "estimated_cost": 0.0008156999999999999,
+    "influence_summary": "A news report confirms that automatic 2D-to-3D conversion for flat games will not be available at launch, despite being on Valve's future plans."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 259,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame",
+    "citation_title": "Steam Frame - Wikipedia",
+    "citation_rank": 2,
+    "function_tags": [
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1234,
+    "output_tokens": 33,
+    "total_tokens": 1581,
+    "estimated_cost": 0.00047429999999999993,
+    "influence_summary": "A Wikipedia article directly identifies Steam Frame as an upcoming standalone virtual reality headset developed by Valve Corporation, including its announcement details."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 259,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.uploadvr.com/valve-steam-frame-official-announcement-features-details/",
+    "citation_title": "Valve Officially Announces Steam Frame, A \"Streaming-First\" Standalone VR Headset",
+    "citation_rank": 5,
+    "function_tags": [
+      "solution_or_answer",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1248,
+    "output_tokens": 32,
+    "total_tokens": 1708,
+    "estimated_cost": 0.0005124,
+    "influence_summary": "The news report confirms Valve's official announcement of the Steam Frame, detailing its \"streaming-first\" nature and \"early 2026\" launch."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 259,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+    "citation_title": "Steam Frame Release Date Window, Possible Price, Specs, And Everything We Know About Valve's Next-Gen VR Headset - GameSpot",
+    "citation_rank": 7,
+    "function_tags": [
+      "solution_or_answer",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1291,
+    "output_tokens": 32,
+    "total_tokens": 1762,
+    "estimated_cost": 0.0005286000000000001,
+    "influence_summary": "A news report provides direct evidence that Valve promises an early 2026 launch for the Steam Frame, further clarifying it will be in Q1."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 259,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list",
+    "citation_title": "Confirmed: Steam Frame will lack this Apple Vision Pro and Meta Quest feature at launch \u2014 Valve says it's 'on our list' | Tom's Guide",
+    "citation_rank": 10,
+    "function_tags": [
+      "limitation_or_risk",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1310,
+    "output_tokens": 33,
+    "total_tokens": 1784,
+    "estimated_cost": 0.0005351999999999999,
+    "influence_summary": "A news report confirms the Steam Frame's current lack of stereoscopic 3D rendering, detailing a limitation of the device at launch."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 258,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+    "citation_title": "gamespot.com",
+    "citation_rank": 1,
+    "function_tags": [
+      "solution_or_answer",
+      "background"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1526,
+    "output_tokens": 32,
+    "total_tokens": 1901,
+    "estimated_cost": 0.0005702999999999999,
+    "influence_summary": "A news report confirms the Steam Frame's identity as Valve's new standalone VR headset, citing announcements as of December 11, 2025."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 258,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame",
+    "citation_title": "wikipedia.org",
+    "citation_rank": 4,
+    "function_tags": [
+      "evidence",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1480,
+    "output_tokens": 32,
+    "total_tokens": 2049,
+    "estimated_cost": 0.0006146999999999999,
+    "influence_summary": "A Wikipedia entry directly states the Steam Frame's release window is scheduled for Q1 2026, providing the specific detail for the claim."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 258,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://store.steampowered.com/sale/steamframe",
+    "citation_title": "steampowered.com",
+    "citation_rank": 5,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "official"
+    ],
+    "input_tokens": 1483,
+    "output_tokens": 52,
+    "total_tokens": 1842,
+    "estimated_cost": 0.0005526,
+    "influence_summary": "The official website directly provides the specific details about the Steam Frame's display specifications, confirming it uses dual 2160 x 2160 LCD panels."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 258,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://vr-compare.com/headset/steamframe",
+    "citation_title": "vr-compare.com",
+    "citation_rank": 6,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1454,
+    "output_tokens": 52,
+    "total_tokens": 1953,
+    "estimated_cost": 0.0005859,
+    "influence_summary": "A VR comparison website provides the specific detail that the Steam Frame's field of view is approximately 110 degrees."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 258,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.cnet.com/tech/gaming/i-tried-valves-steam-frame-machine-and-controller-coming-in-2026-steam-os-is-coming-for-your-face-and-tv/",
+    "citation_title": "cnet.com",
+    "citation_rank": 3,
+    "function_tags": [
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1545,
+    "output_tokens": 53,
+    "total_tokens": 1929,
+    "estimated_cost": 0.0005786999999999999,
+    "influence_summary": "The news report directly supports the claim by detailing the Steam Frame's hybrid design, functioning as both a standalone device and a high-end PC VR streaming headset."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 258,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFiVFtwOQFJ2tTNWaY_05BTIoPIc62BiusqusAQWofi8QNBSvD0ei9tbwXvVcrQgY0GC1OOGwULpgcQ8RKbtc9FmmbOirqczXSP_VQ4pie1pdb9ykZL3owhaVCGeQBLcHm_8kUUNktl_XkYMTqrhhBPP828922vMiXhlMrrXYA3QYfh16fiXqZzDdAei6uf3ZQQluPvf2WzioKhWvJuoL16j-m-",
+    "citation_title": "techradar.com",
+    "citation_rank": 2,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1633,
+    "output_tokens": 58,
+    "total_tokens": 2261,
+    "estimated_cost": 0.0006783,
+    "influence_summary": "A news report provides direct evidence that the Steam Frame will feature built-in eye tracking to enable foveated rendering."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 258,
+    "response_provider": "google",
+    "response_model": "gemini-3-pro-preview",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list",
+    "citation_title": "tomsguide.com",
+    "citation_rank": 7,
+    "function_tags": [
+      "limitation_or_risk",
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1570,
+    "output_tokens": 33,
+    "total_tokens": 2185,
+    "estimated_cost": 0.0006555,
+    "influence_summary": "A news report confirms Valve's statement that the Steam Frame will not support stereoscopic 3D for flat games at launch, highlighting a current limitation."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 257,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://arstechnica.com/gaming/2025/11/valve-rejoins-the-vr-hardware-wars-with-standalone-steam-frame/?utm_source=openai",
+    "citation_title": "Valve rejoins the VR hardware wars with standalone Steam Frame - Ars Technica",
+    "citation_rank": 2,
+    "function_tags": [
+      "evidence",
+      "background",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 3146,
+    "output_tokens": 44,
+    "total_tokens": 3523,
+    "estimated_cost": 0.0010569,
+    "influence_summary": "This news report provides the official announcement details for the Steam Frame, confirming its standalone VR headset nature and early 2026 consumer launch."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 257,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://cyberockk.com/2025/10/valves-steam-frame-vr-headset-enters-mass-production-leaks-hint-at-late-2025-launch/?utm_source=openai",
+    "citation_title": "Valve's \"Steam Frame\" VR Headset Enters Mass Production, Leaks Hint at Late 2025 Launch",
+    "citation_rank": 6,
+    "function_tags": [
+      "evidence"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 3190,
+    "output_tokens": 52,
+    "total_tokens": 3976,
+    "estimated_cost": 0.0011928,
+    "influence_summary": "A news report provides evidence that mass production of the Steam Frame was gearing up in late 2025 under codename \"Deckard,\" with initial expectations of ~500k units."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 257,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://steamdb.info/blog/steam-hardware-2025/?utm_source=openai",
+    "citation_title": "Valve announces three new Steam Hardware devices: Steam Machine, Steam Frame, and Steam Controller \u00b7 SteamDB",
+    "citation_rank": 4,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news",
+      "blog"
+    ],
+    "input_tokens": 3086,
+    "output_tokens": 63,
+    "total_tokens": 4005,
+    "estimated_cost": 0.0012015,
+    "influence_summary": "A blog post confirms the Steam Frame was announced alongside two other new Steam hardware devices, all targeting an early 2026 launch."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 257,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.timesofgames.com/news/steam-frame-pc-gaming-arm/?utm_source=openai",
+    "citation_title": "ARM Gaming Is the Future, Thanks to the Steam Frame",
+    "citation_rank": 3,
+    "function_tags": [
+      "evidence",
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 3091,
+    "output_tokens": 67,
+    "total_tokens": 3902,
+    "estimated_cost": 0.0011706,
+    "influence_summary": "A news report confirms that the Steam Frame will run SteamOS natively on ARM, highlighting its role in the future of ARM gaming."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 257,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.tomsguide.com/computing/vr-ar/confirmed-steam-frame-will-lack-this-apple-vision-pro-and-meta-quest-feature-at-launch-valve-says-its-on-our-list?utm_source=openai",
+    "citation_title": "Confirmed: Steam Frame will lack this Apple Vision Pro and Meta Quest feature at launch - Valve says it's 'on our list'",
+    "citation_rank": 1,
+    "function_tags": [
+      "limitation_or_risk"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 3216,
+    "output_tokens": 57,
+    "total_tokens": 3592,
+    "estimated_cost": 0.0010776,
+    "influence_summary": "A news report confirms that the Steam Frame will not offer stereoscopic 3D conversion for flat media at launch, supporting the claim about this initial limitation."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 257,
+    "response_provider": "openai",
+    "response_model": "gpt-5.1",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame?utm_source=openai",
+    "citation_title": "Steam Frame",
+    "citation_rank": 5,
+    "function_tags": [
+      "solution_or_answer",
+      "enablement"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 3058,
+    "output_tokens": 33,
+    "total_tokens": 3482,
+    "estimated_cost": 0.0010446,
+    "influence_summary": "The Wikipedia article provides a reference point for users to find Valve's official Steam Frame page for updates and preorders."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 256,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.gamespot.com/articles/steam-frame-release-date-price-specs-everything-we-know/1100-6536287/",
+    "citation_title": "Steam Frame Release Date Window, Possible Price, Specs, And Everything We Know About Valve's Next-Gen VR Headset - GameSpot",
+    "citation_rank": 1,
+    "function_tags": [
+      "evidence",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1341,
+    "output_tokens": 41,
+    "total_tokens": 1709,
+    "estimated_cost": 0.0005126999999999999,
+    "influence_summary": "A news report provides direct evidence for the Steam Frame's release in Q1 2026."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 256,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.uploadvr.com/valve-steam-frame-official-announcement-features-details/",
+    "citation_title": "Valve Officially Announces Steam Frame, A \"Streaming-First\" Standalone VR Headset",
+    "citation_rank": 3,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1348,
+    "output_tokens": 29,
+    "total_tokens": 1791,
+    "estimated_cost": 0.0005373,
+    "influence_summary": "A news report provides the specific weight details for the Steam Frame's core frontbox and full system, directly supporting the claim."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 256,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://en.wikipedia.org/wiki/Steam_Frame",
+    "citation_title": "Steam Frame - Wikipedia",
+    "citation_rank": 4,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1356,
+    "output_tokens": 29,
+    "total_tokens": 1688,
+    "estimated_cost": 0.0005064,
+    "influence_summary": "The Wikipedia article provides the specific details regarding the VR headset's processor, memory, and storage configurations."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 256,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://vr-compare.com/headset/steamframe",
+    "citation_title": "Steam Frame: Full Specification - VRcompare",
+    "citation_rank": 8,
+    "function_tags": [
+      "evidence",
+      "elaboration",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "reference"
+    ],
+    "input_tokens": 1340,
+    "output_tokens": 36,
+    "total_tokens": 1733,
+    "estimated_cost": 0.0005199,
+    "influence_summary": "A VR comparison website provides the technical specifications for the Steam Frame's processor, field of view, display resolution, and refresh rate."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 256,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.pcgamer.com/hardware/vr-hardware/steam-frame-specs-availability/",
+    "citation_title": "Valve announces the Steam Frame: 'a new way to play your entire Steam library' | PC Gamer",
+    "citation_rank": 2,
+    "function_tags": [
+      "evidence",
+      "elaboration"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1328,
+    "output_tokens": 58,
+    "total_tokens": 1718,
+    "estimated_cost": 0.0005154,
+    "influence_summary": "A news report directly quotes a Valve designer stating the Steam Frame is intended as a streaming-first headset."
+  },
+  {
+    "benchmark_provider": "google",
+    "benchmark_model": "gemini-2.5-flash",
+    "price_per_million": 0.3,
+    "response_id": 256,
+    "response_provider": "anthropic",
+    "response_model": "claude-sonnet-4-5-20250929",
+    "prompt": "Find me the latest details on the Steam Frame",
+    "citation_url": "https://www.pcguide.com/vr/steam-frame-release-date-specs-price/",
+    "citation_title": "Steam Frame VR headset release date window, specs, and price estimate - PC Guide",
+    "citation_rank": 9,
+    "function_tags": [
+      "evidence",
+      "solution_or_answer"
+    ],
+    "stance_tags": [
+      "supports"
+    ],
+    "provenance_tags": [
+      "news"
+    ],
+    "input_tokens": 1346,
+    "output_tokens": 32,
+    "total_tokens": 1670,
+    "estimated_cost": 0.000501,
+    "influence_summary": "A news report confirms the Steam Frame will be cheaper than the Valve Index, citing a VR-focused publication's interview."
+  }
+]

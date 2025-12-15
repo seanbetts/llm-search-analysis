@@ -6,6 +6,7 @@ from frontend.components.models import get_all_models
 from frontend.components.response import display_response
 from frontend.helpers.error_handling import safe_api_call
 from frontend.helpers.interactive import build_api_response
+from frontend.helpers.markdown_export import render_markdown_download_button
 
 RESPONSE_KEY = "api_response"
 ERROR_KEY = "api_error"
@@ -23,6 +24,16 @@ def tab_api():
   models = get_all_models()
   if not models:
     st.error("No API keys configured. Please set up your .env file with at least one provider API key.")
+    return
+
+  # GPT-5.2 supersedes GPT-5.1 for new API analyses; keep GPT-5.1 in history but hide it here.
+  models = {
+    label: (provider, model_id)
+    for label, (provider, model_id) in models.items()
+    if not (provider == "openai" and model_id == "gpt-5.1")
+  }
+  if not models:
+    st.error("No supported models available for API testing.")
     return
 
   model_labels = list(models.keys())
@@ -65,3 +76,13 @@ def tab_api():
       st.session_state[RESPONSE_KEY],
       st.session_state.get(PROMPT_KEY),
     )
+    interaction_id = getattr(st.session_state[RESPONSE_KEY], "interaction_id", None)
+    if interaction_id:
+      st.divider()
+      btn_wrap, _ = st.columns([1, 4])
+      with btn_wrap:
+        render_markdown_download_button(
+          base_url=st.session_state.api_client.base_url,
+          interaction_id=interaction_id,
+          key=f"api-md-{interaction_id}",
+        )
