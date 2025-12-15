@@ -32,9 +32,9 @@ def _render_tag_group(label, tags):
 
 def _render_citation_tags(citation):
   sections = []
+  sections.append(_render_tag_group("Provenance", getattr(citation, "provenance_tags", None)))
   sections.append(_render_tag_group("Function", getattr(citation, "function_tags", None)))
   sections.append(_render_tag_group("Stance", getattr(citation, "stance_tags", None)))
-  sections.append(_render_tag_group("Provenance", getattr(citation, "provenance_tags", None)))
   sections = [section for section in sections if section]
   if not sections:
     return ""
@@ -373,6 +373,7 @@ def display_response(response, prompt=None):
           or getattr(citation, "snippet_used", None)
           or None
         )
+        influence_summary = getattr(citation, "influence_summary", None)
         pub_date_val = getattr(source_fallback, "pub_date", None)
         snippet_display = _format_snippet(snippet)
         description_block = (
@@ -386,16 +387,25 @@ def display_response(response, prompt=None):
           f"<strong>Snippet Cited:</strong> <em>{snippet_cited_display}</em>"
           "</div>"
         )
+        influence_display = _format_snippet(influence_summary)
+        influence_block = (
+          "<div style='margin-top:4px; font-size:0.95rem;'>"
+          f"<strong>Influence Summary:</strong> <em>{influence_display}</em>"
+          "</div>"
+        )
         pub_date_fmt = format_pub_date(pub_date_val) if pub_date_val else "N/A"
         pub_date_block = f"<small><strong>Published:</strong> {pub_date_fmt}</small>"
+        divider_block = "<div style='margin-top:6px;border-top:1px solid rgba(0,0,0,0.12);'></div>"
         tags_block = _render_citation_tags(citation)
         st.markdown(f"""
         <div class="citation-item">
             <strong>{i}. {display_title}{rank_display}</strong><br/>
             {domain_link}
             {description_block}
-            {snippet_cited_block}
             {pub_date_block}
+            {divider_block}
+            {snippet_cited_block}
+            {influence_block}
             {tags_block}
         </div>
         """, unsafe_allow_html=True)

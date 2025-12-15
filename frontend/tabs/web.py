@@ -133,14 +133,12 @@ def tab_web():
             bool(st.session_state.get(TAGGING_KEY, True))
             and citation_status in {"queued", "running"}
             and isinstance(interaction_id, int)
-          )
+              )
 
           if should_wait:
-            status_container = st.empty()
             started = time.time()
             while True:
               elapsed = int(time.time() - started)
-              status_container.write(f"⏳ Waiting for citation tagging to complete… ({elapsed}s)")
               refreshed, err = safe_api_call(
                 st.session_state.api_client.get_interaction,
                 interaction_id=interaction_id,
