@@ -1,17 +1,21 @@
 """Web (network log) interactive tab."""
 
+import time
+
 import streamlit as st
 
 from frontend.components.response import display_response
 from frontend.config import Config
 from frontend.helpers.error_handling import safe_api_call
-from frontend.helpers.interactive import build_web_response
+from frontend.helpers.interactive import build_api_response, build_web_response
+from frontend.helpers.markdown_export import render_markdown_download_button
 from frontend.helpers.serialization import namespace_to_dict
 from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 
 RESPONSE_KEY = "web_response"
 ERROR_KEY = "web_error"
 PROMPT_KEY = "web_prompt"
+TAGGING_KEY = "web_enable_citation_tagging"
 
 
 def tab_web():
@@ -20,14 +24,20 @@ def tab_web():
   st.session_state.setdefault(ERROR_KEY, None)
   st.session_state.setdefault(PROMPT_KEY, None)
   st.session_state.setdefault('network_show_browser', False)
+  st.session_state.setdefault(TAGGING_KEY, True)
 
   st.markdown("### 🌐 Web Testing")
 
   st.checkbox(
     "Show browser window",
-    value=st.session_state.network_show_browser,
     key="network_show_browser",
     help="Uncheck to run headless for faster captures."
+  )
+
+  st.checkbox(
+    "Enable citation tagging",
+    key=TAGGING_KEY,
+    help="Runs in the background after saving (adds tags and influence summaries)."
   )
 
   prompt = st.chat_input("Prompt (Enter to send, Shift+Enter for new line)", key="web_prompt_input")
@@ -37,10 +47,13 @@ def tab_web():
       st.warning("Please enter a prompt")
     else:
       status_placeholder = st.empty()
+      saved_payload = None
+      save_error = None
+      response_ns = None
 
       try:
         with status_placeholder.container():
-          with st.status("Analyzing with web capture...", expanded=True):
+          with st.status("Analyzing with web capture...", expanded=True) as status:
             status_container = st.empty()
 
             def update_status(message: str):
@@ -62,27 +75,93 @@ def tab_web():
               except Exception:
                 pass
 
-        response_ns = build_web_response(provider_response)
+            status_container.write("Processing captured response...")
+            response_ns = build_web_response(provider_response)
 
-        _, save_error = safe_api_call(
-          st.session_state.api_client.save_network_log,
-          provider=response_ns.provider,
-          model=response_ns.model,
-          prompt=trimmed_prompt,
-          response_text=response_ns.response_text,
-          search_queries=namespace_to_dict(response_ns.search_queries),
-          sources=namespace_to_dict(response_ns.all_sources),
-          citations=namespace_to_dict(response_ns.citations),
-          response_time_ms=response_ns.response_time_ms,
-          raw_response=response_ns.raw_response,
-          extra_links_count=response_ns.extra_links_count,
-          show_spinner=False
-        )
+            status_container.write("Saving capture (citation tagging will run in the background)...")
+            saved_payload, save_error = safe_api_call(
+              st.session_state.api_client.save_network_log,
+              provider=response_ns.provider,
+              model=response_ns.model,
+              prompt=trimmed_prompt,
+              response_text=response_ns.response_text,
+              search_queries=namespace_to_dict(response_ns.search_queries),
+              sources=namespace_to_dict(response_ns.all_sources),
+              citations=namespace_to_dict(response_ns.citations),
+              response_time_ms=response_ns.response_time_ms,
+              enable_citation_tagging=st.session_state.get(TAGGING_KEY, True),
+              raw_response=response_ns.raw_response,
+              extra_links_count=response_ns.extra_links_count,
+              show_spinner=False
+            )
+
+            if save_error:
+              status.update(label="Web analysis complete (save failed)", state="error")
+            else:
+              annotations = None
+              citation_status = None
+              citation_error = None
+              if isinstance(saved_payload, dict):
+                metadata = saved_payload.get("metadata") or {}
+                annotations = metadata.get("citation_annotations")
+                citation_status = metadata.get("citation_tagging_status")
+                citation_error = metadata.get("citation_tagging_error")
+              if isinstance(annotations, dict):
+                annotated = annotations.get("annotated_citations")
+                total = annotations.get("total_citations")
+                if annotated is not None and total is not None:
+                  if citation_status == "queued":
+                    status_container.write(f"⏳ Citation tagging queued: {annotated}/{total} annotated so far.")
+                  elif citation_status == "completed":
+                    status_container.write(f"✅ Citation annotations saved: {annotated}/{total} citations annotated.")
+                  elif citation_status == "failed":
+                    status_container.write("⚠️ Citation tagging failed (see History for details).")
+                  elif citation_status == "disabled":
+                    status_container.write("ℹ️ Citation tagging is disabled.")
+                  else:
+                    status_container.write(f"ℹ️ Citation tagging status: {citation_status or 'unknown'}")
+              if citation_error:
+                status_container.write(f"⚠️ Citation tagging error: {citation_error}")
+              status.update(label="Web analysis complete", state="complete")
 
         if save_error:
           st.warning(f"Response captured but failed to save: {save_error}")
+        elif saved_payload and response_ns is not None:
+          interaction_id = saved_payload.get("interaction_id")
+          metadata = saved_payload.get("metadata") or {}
+          citation_status = metadata.get("citation_tagging_status")
+          should_wait = (
+            bool(st.session_state.get(TAGGING_KEY, True))
+            and citation_status in {"queued", "running"}
+            and isinstance(interaction_id, int)
+              )
 
-        st.session_state[RESPONSE_KEY] = response_ns
+          if should_wait:
+            started = time.time()
+            while True:
+              elapsed = int(time.time() - started)
+              refreshed, err = safe_api_call(
+                st.session_state.api_client.get_interaction,
+                interaction_id=interaction_id,
+                show_spinner=False,
+              )
+              if err:
+                st.warning(f"Error refreshing tagging status: {err}")
+                break
+              refreshed_meta = (refreshed or {}).get("metadata") or {}
+              refreshed_status = refreshed_meta.get("citation_tagging_status")
+              if refreshed_status in {"completed", "failed", "disabled", "skipped"}:
+                saved_payload = refreshed
+                break
+              if elapsed >= 180:
+                st.warning("Timed out waiting for citation tagging; check History for results.")
+                break
+              time.sleep(2)
+
+          response_ns = build_api_response(saved_payload)
+
+        if response_ns is not None:
+          st.session_state[RESPONSE_KEY] = response_ns
         st.session_state[PROMPT_KEY] = trimmed_prompt
         st.session_state[ERROR_KEY] = None
 
@@ -100,3 +179,13 @@ def tab_web():
       st.session_state[RESPONSE_KEY],
       st.session_state.get(PROMPT_KEY),
     )
+    interaction_id = getattr(st.session_state[RESPONSE_KEY], "interaction_id", None)
+    if interaction_id:
+      st.divider()
+      btn_wrap, _ = st.columns([1, 4])
+      with btn_wrap:
+        render_markdown_download_button(
+          base_url=st.session_state.api_client.base_url,
+          interaction_id=interaction_id,
+          key=f"web-md-{interaction_id}",
+        )

@@ -4,9 +4,9 @@ import time
 from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 
-import requests
-from google.genai import Client
-from google.genai.types import GenerateContentConfig, GoogleSearch, Tool
+import requests  # type: ignore[import-untyped]
+from google.genai import Client  # type: ignore[import-untyped]
+from google.genai.types import GenerateContentConfig, GoogleSearch, Tool  # type: ignore[import-untyped]
 
 from app.core.provider_schemas import validate_google_raw_response
 
@@ -195,8 +195,8 @@ class GoogleProvider(BaseProvider):
               segment_text = getattr(segment, 'text', None) if segment else None
 
               for chunk_idx in chunk_indices:
-                source_obj = chunk_index_to_source.get(chunk_idx)
-                if not source_obj:
+                chunk_source = chunk_index_to_source.get(chunk_idx)
+                if chunk_source is None:
                   continue
 
                 start_index, end_index, snippet = self._extract_segment_span(
@@ -207,11 +207,11 @@ class GoogleProvider(BaseProvider):
                 )
 
                 citations.append(Citation(
-                  url=source_obj.url,
-                  title=source_obj.title,
-                  rank=source_obj.rank,
+                  url=chunk_source.url,
+                  title=chunk_source.title,
+                  rank=chunk_source.rank,
                   text_snippet=snippet,
-                  snippet_used=snippet,
+                  snippet_cited=snippet,
                   start_index=start_index,
                   end_index=end_index,
                   metadata={
@@ -257,6 +257,8 @@ class GoogleProvider(BaseProvider):
   ) -> Tuple[Optional[int], Optional[int], Optional[str]]:
     """Normalize segment span indices and snippet text."""
     text_length = len(text or "")
+    cleaned_segment = GoogleProvider._clean_segment_text(segment_text)
+
     def _clamp_indices(start: int, end: int) -> Tuple[int, int]:
       start = GoogleProvider._trim_span_start(text, start, end)
       end = GoogleProvider._trim_span_end(text, start, end)
@@ -293,7 +295,12 @@ class GoogleProvider(BaseProvider):
       snippet = segment.strip() or GoogleProvider._clean_segment_text(segment_text)
       return trimmed_start, trimmed_end, snippet
 
-    return None, None, GoogleProvider._clean_segment_text(segment_text)
+    if cleaned_segment:
+      alt_idx = text.find(cleaned_segment)
+      if alt_idx != -1:
+        return alt_idx, alt_idx + len(cleaned_segment), cleaned_segment
+
+    return None, None, cleaned_segment
 
   @staticmethod
   def _trim_span_start(text: str, start: int, end: int) -> int:

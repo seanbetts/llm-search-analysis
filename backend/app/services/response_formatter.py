@@ -63,8 +63,9 @@ def format_response_with_citations(text: str, citations: Iterable[Citation]) -> 
     if isinstance(start, int) and isinstance(end, int) and 0 <= start < end <= len(text):
       span = (start, end)
     else:
-      snippet = citation.text_snippet or citation.snippet_used
-      span = _find_span(text, snippet, used_ranges)
+      snippet = citation.text_snippet or citation.snippet_cited
+      if isinstance(snippet, str):
+        span = _find_span(text, snippet, used_ranges)
     if span is None or _has_overlap(span, used_ranges):
       continue
     used_ranges.append(span)

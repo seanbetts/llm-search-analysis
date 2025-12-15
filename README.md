@@ -25,11 +25,14 @@ cd llm-search-analysis
 cp .env.example .env
 # edit .env and add API keys / ChatGPT credentials if needed
 
-# Start both services (runs DB migrations automatically)
+# Start backend service
 docker compose up -d
 
 # Verify everything
 ./scripts/verify-docker-setup.sh
+
+# Start Streamlit UI locally
+API_BASE_URL=http://localhost:8000 streamlit run app.py
 ```
 - Streamlit UI: http://localhost:8501
 - FastAPI backend/OpenAPI: http://localhost:8000/docs
@@ -44,7 +47,7 @@ docker compose up -d
    ```
 2. Install frontend deps: `pip install -r requirements.txt && playwright install chrome`.
 3. Run Streamlit UI: `API_BASE_URL=http://localhost:8000 streamlit run app.py`.
-4. Network capture requires Chrome, non-headless mode, and the env vars noted in `docs/frontend/network_capture.md`.
+4. Network capture requires Chrome, non-headless mode, and the env vars noted in `docs/frontend/NETWORK_CAPTURE.md`.
 
 ### Database migrations
 - Apply latest schema: `cd backend && alembic upgrade head`.
@@ -74,9 +77,9 @@ docker compose up -d
 - The script reports invalid provider blobs and nulls them when `--fix` is supplied, preventing broken JSON from crashing Streamlit/API consumers.
 
 ## Documentation Map
-- **Architecture & API** – `docs/backend/overview.md` (links to `docs/backend/API_DOCUMENTATION.md` and `docs/backend/TESTING.md`).
+- **Architecture & API** – `docs/backend/OVERVIEW.md` (links to `docs/backend/API_DOCUMENTATION.md` and `docs/backend/TESTING.md`).
 - **Operations** – `docs/operations/ENVIRONMENT_VARIABLES.md`, `docs/operations/BACKUP_AND_RESTORE.md`, plus helper scripts under `scripts/`.
-- **Frontend docs** – `docs/frontend/TESTING.md` (UI tests) and `docs/frontend/network_capture.md` (browser automation guide).
+- **Frontend docs** – `docs/frontend/TESTING.md` (UI tests) and `docs/frontend/NETWORK_CAPTURE.md` (browser automation guide).
 - **Research** – `docs/research/LLM_SEARCH_FINDINGS.md` captures the investigative findings that motivated many features.
 - **Proposals / future work** – `docs/proposals/LIVE_NETWORK_LOGS_PLAN.md`, `docs/proposals/LANGUAGE_CLASSIFIER_EXTENSION.md`.
 - **History / archive** – prior roadmaps live in `docs/archive/` (e.g., `FASTAPI_IMPLEMENTATION_PLAN.md`, `DEVELOPMENT_PLAN.md`).
@@ -85,7 +88,7 @@ docker compose up -d
 ```
 llm-search-analysis/
 ├── app.py                      # Streamlit entry point
-├── docker-compose.yml          # Backend + frontend services
+├── docker-compose.yml          # Backend service (Streamlit runs locally by default)
 ├── requirements.txt            # Frontend deps (Streamlit + Playwright)
 ├── backend/                    # FastAPI application
 │   ├── app/                    # Routes, services, repositories, models
@@ -100,13 +103,13 @@ llm-search-analysis/
 │   └── archive/                # Historical plans
 ├── scripts/                    # verify-docker-setup.sh, backup/restore utilities
 ├── data/                       # Streamlit data + network log storage
-└── FRONTEND_REFACTOR_PLAN.md   # Active refactor plan (Phase 3+)
+└── docs/archive/FRONTEND_REFACTOR_PLAN.md   # Streamlit → React-ready plan
 ```
 
 ## Active Plans & Next Steps
-- **Frontend Refactor Plan** (`FRONTEND_REFACTOR_PLAN.md`) – continuing with Phase 3 to keep Streamlit thin and React-ready.
+- **Frontend Refactor Plan** (`docs/archive/FRONTEND_REFACTOR_PLAN.md`) – continuing with Phase 3 to keep Streamlit thin and React-ready.
 - **Live Network Logs** (`docs/proposals/LIVE_NETWORK_LOGS_PLAN.md`) – design for streaming ChatGPT capture events to the UI.
-- **Network capture enhancements** (`docs/frontend/network_capture.md`) – extend beyond ChatGPT and add richer analytics.
+- **Network capture enhancements** (`docs/frontend/NETWORK_CAPTURE.md`) – extend beyond ChatGPT and add richer analytics.
 
 ## Contributing & Testing
 1. Follow the quickstart above, then run:

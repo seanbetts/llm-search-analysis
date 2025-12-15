@@ -31,6 +31,8 @@ def test_parse_chatgpt_log_extracts_queries_sources_and_citations():
   assert response.sources[0].url == "https://example.com/article"
   assert len(response.citations) == 1
   assert response.citations[0].url == "https://example.com/article"
+  assert response.citations[0].snippet_cited is None
+  assert response.citations[0].text_snippet == "Snippet text"
   assert response.extra_links_count == 0
   assert response.data_source == "web"
 
@@ -45,3 +47,42 @@ def test_parse_chatgpt_log_handles_missing_body():
   assert response.response_text == ""
   assert response.sources == []
   assert response.search_queries == []
+
+
+def test_parse_chatgpt_response_text_fallback_extracts_footnote_citations():
+  """Fallback should recover citations/sources from markdown footnotes."""
+  response = NetworkLogParser.parse_chatgpt_response_text_fallback(
+    extracted_response_text=(
+      "Answer text.\n\n"
+      '[1]: https://example.com/a "Example A"\n'
+      '[2]: https://example.com/b "Example B"\n'
+    ),
+    model="chatgpt-free",
+    response_time_ms=500,
+  )
+  assert response.data_source == "web"
+  assert response.search_queries == []
+  assert len(response.citations) == 2
+  assert response.citations[0].url == "https://example.com/a"
+  assert response.citations[0].title == "Example A"
+  assert response.sources == []
+
+
+def test_parse_chatgpt_log_matches_sources_to_citations_with_tracking_params():
+  """Citation URLs should match sources even when they include tracking params."""
+  sse_body = "\n".join([
+    'data: {"v":{"message":{"metadata":{"search_result_groups":[{"domain":"example.com","entries":[{"type":"search_result","url":"https://example.com/article?ref=abc&utm_source=openai","title":"Example Title","snippet":"Snippet text"}]}]}}}}',  # noqa: E501
+  ])
+  response = NetworkLogParser.parse_chatgpt_log(
+    network_response={"body": sse_body},
+    model="chatgpt-free",
+    response_time_ms=1500,
+    extracted_response_text=(
+      "Answer with [1]\n\n"
+      '[1]: https://example.com/article?utm_source=openai "Example Title"\n'
+    )
+  )
+  assert len(response.sources) == 1
+  assert len(response.citations) == 1
+  assert response.citations[0].rank == 1
+  assert response.extra_links_count == 0

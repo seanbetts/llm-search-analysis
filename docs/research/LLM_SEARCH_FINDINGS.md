@@ -474,7 +474,7 @@ search_query_id INT NULL  -- API mode: required, Network: NULL
 response_id INT NULL      -- API mode: NULL, Network: required
 rank INT NULL             -- Position in search results (1-indexed)
 internal_score FLOAT NULL -- Network logs only
-snippet_text TEXT NULL    -- Network logs only
+search_description TEXT NULL    -- Network logs only (formerly snippet_text)
 
 -- Search Queries
 query_reformulations JSON NULL  -- Network logs only

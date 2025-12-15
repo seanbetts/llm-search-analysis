@@ -4,7 +4,7 @@ import math
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 from fastapi.responses import PlainTextResponse
 
 from app.api.v1.schemas.requests import BatchRequest, SaveNetworkLogRequest, SendPromptRequest
@@ -28,6 +28,7 @@ from app.dependencies import (
   get_provider_service,
 )
 from app.services.batch_service import BatchService
+from app.services.citation_tagging_jobs import enqueue_web_citation_tagging
 from app.services.export_service import ExportService
 from app.services.interaction_service import InteractionService
 from app.services.provider_service import ProviderService
@@ -265,6 +266,7 @@ async def send_prompt(
 )
 async def save_network_log_data(
   request: SaveNetworkLogRequest,
+  background_tasks: BackgroundTasks,
   interaction_service: InteractionService = Depends(get_interaction_service),
 ):
   """Save web capture data captured by frontend.
@@ -275,6 +277,7 @@ async def save_network_log_data(
 
   Args:
     request: SaveNetworkLogRequest with all interaction data
+    background_tasks: Schedules post-save work without blocking the response
     interaction_service: InteractionService dependency
 
   Returns:
@@ -297,7 +300,29 @@ async def save_network_log_data(
       response_time_ms=request.response_time_ms,
       raw_response=request.raw_response,
       extra_links_count=request.extra_links_count,
+      enable_citation_tagging=request.enable_citation_tagging,
     )
+
+    try:
+      status_value = None
+      if isinstance(getattr(response, "metadata", None), dict):
+        status_value = (response.metadata or {}).get("citation_tagging_status")
+      if status_value == "queued":
+        response_id = getattr(response, "interaction_id", None)
+        if not isinstance(response_id, int):
+          return response
+        # Run in a background thread to avoid blocking the request.
+        background_tasks.add_task(
+          enqueue_web_citation_tagging,
+          response_id,
+          request.prompt,
+          request.response_text,
+        )
+    except Exception:
+      # Tagging should never block persistence.
+      import logging
+      logging.getLogger(__name__).exception("Failed to enqueue citation tagging job")
+
     return response
   except ValueError as e:
     from app.core.exceptions import InvalidRequestError

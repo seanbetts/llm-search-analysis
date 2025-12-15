@@ -76,7 +76,6 @@ class ProviderService:
           "domain": source.domain,
           "rank": source.rank,
           "pub_date": source.pub_date,
-          "snippet_text": source.snippet_text,
           "internal_score": source.internal_score,
           "metadata": source.metadata,
         })
@@ -90,21 +89,23 @@ class ProviderService:
         "query_reformulations": query.query_reformulations,
       })
 
-    strip_snippets = provider_response.provider == "google"
-
     citations_dict = []
     for citation in provider_response.citations:
       citations_dict.append({
         "url": citation.url,
         "title": citation.title,
         "rank": citation.rank,
-        "text_snippet": None if strip_snippets else citation.text_snippet,
-        "snippet_used": None if strip_snippets else citation.snippet_used,
+        "text_snippet": citation.text_snippet,
+        "snippet_cited": citation.snippet_cited,
         "start_index": citation.start_index,
         "end_index": citation.end_index,
         "published_at": citation.published_at,
         "citation_confidence": citation.citation_confidence,
         "metadata": citation.metadata,
+        "function_tags": citation.function_tags,
+        "stance_tags": citation.stance_tags,
+        "provenance_tags": citation.provenance_tags,
+        "influence_summary": citation.influence_summary,
       })
 
     # Convert top-level sources (for network_log mode)
@@ -117,7 +118,7 @@ class ProviderService:
           "domain": source.domain,
           "rank": source.rank,
           "pub_date": source.pub_date,
-          "snippet_text": source.snippet_text,
+          "search_description": source.search_description,
           "internal_score": source.internal_score,
           "metadata": source.metadata,
         })
@@ -141,7 +142,9 @@ class ProviderService:
 
     # Return full response using get_interaction_details to get proper schema
     if interaction_id:
-      return self.interaction_service.get_interaction_details(interaction_id)
+      details = self.interaction_service.get_interaction_details(interaction_id)
+      assert details is not None
+      return details
     else:
       # If not saved, construct response directly
       from datetime import datetime
@@ -159,7 +162,8 @@ class ProviderService:
             domain=s.domain,
             rank=s.rank,
             pub_date=s.pub_date,
-            snippet_text=s.snippet_text,
+            search_description=s.search_description,
+            snippet_text=s.search_description,
             internal_score=s.internal_score,
             metadata=s.metadata,
           )
@@ -184,12 +188,17 @@ class ProviderService:
             url=c.url,
             title=c.title,
             rank=c.rank,
-            text_snippet=None if strip_snippets else c.text_snippet,
+            text_snippet=c.text_snippet,
             start_index=c.start_index,
             end_index=c.end_index,
-            snippet_used=None if strip_snippets else c.snippet_used,
+            published_at=c.published_at,
+            snippet_cited=c.snippet_cited,
             citation_confidence=c.citation_confidence,
             metadata=c.metadata,
+            function_tags=c.function_tags,
+            stance_tags=c.stance_tags,
+            provenance_tags=c.provenance_tags,
+            influence_summary=c.influence_summary,
           )
         )
 
@@ -213,14 +222,21 @@ class ProviderService:
         model_display_name=get_model_display_name(provider_response.model),
         response_time_ms=provider_response.response_time_ms,
         data_source=provider_response.data_source,
+        sources_found=len(sources_dict) if sources_dict else 0,
+        sources_used=len([c for c in provider_response.citations if c.rank is not None]),
+        avg_rank=None,
         extra_links_count=provider_response.extra_links_count,
         interaction_id=None,
         created_at=datetime.utcnow(),
         raw_response=provider_response.raw_response,
+        metadata=provider_response.metadata,
       )
 
   def get_available_providers(self) -> List[ProviderInfo]:
     """Get list of available providers.
+
+    Uses the centralized model registry from ProviderFactory to ensure
+    consistency across the application. No more hardcoded model lists!
 
     Returns:
       List of ProviderInfo objects
@@ -230,44 +246,26 @@ class ProviderService:
     # Check which API keys are configured
     api_keys = self._get_api_keys()
 
-    # OpenAI
-    if api_keys.get("openai"):
-      providers.append(ProviderInfo(
-        name="openai",
-        display_name="OpenAI",
-        is_active=True,
-        supported_models=[
-          "gpt-5.1",
-          "gpt-5-mini",
-          "gpt-5-nano",
-        ]
-      ))
+    # Provider display names
+    provider_display_names = {
+      "openai": "OpenAI",
+      "google": "Google",
+      "anthropic": "Anthropic",
+    }
 
-    # Google
-    if api_keys.get("google"):
-      providers.append(ProviderInfo(
-        name="google",
-        display_name="Google",
-        is_active=True,
-        supported_models=[
-          "gemini-3-pro-preview",
-          "gemini-2.5-flash",
-          "gemini-2.5-flash-lite",
-        ]
-      ))
+    # Build providers from centralized registry
+    for provider_name in ["openai", "google", "anthropic"]:
+      if api_keys.get(provider_name):
+        # Get all models for this provider from registry
+        models = ProviderFactory.get_models_for_provider(provider_name)
+        model_ids = [model.model_id for model in models]
 
-    # Anthropic
-    if api_keys.get("anthropic"):
-      providers.append(ProviderInfo(
-        name="anthropic",
-        display_name="Anthropic",
-        is_active=True,
-        supported_models=[
-          "claude-sonnet-4-5-20250929",
-          "claude-haiku-4-5-20251001",
-          "claude-opus-4-1-20250805",
-        ]
-      ))
+        providers.append(ProviderInfo(
+          name=provider_name,
+          display_name=provider_display_names[provider_name],
+          is_active=True,
+          supported_models=model_ids
+        ))
 
     return providers
 

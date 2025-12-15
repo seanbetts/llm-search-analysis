@@ -10,6 +10,9 @@ from app.api.v1.schemas.responses import (
   Citation as CitationSchema,
 )
 from app.api.v1.schemas.responses import (
+  CitationMention as CitationMentionSchema,
+)
+from app.api.v1.schemas.responses import (
   InteractionSummary,
   QueryHistoryStats,
   SendPromptResponse,
@@ -32,6 +35,7 @@ from app.core.utils import (
   normalize_model_name,
 )
 from app.repositories.interaction_repository import InteractionRepository
+from app.services.citation_tagging_service import CitationTaggingService
 from app.services.providers.base_provider import Citation as CitationModel
 from app.services.response_formatter import format_response_with_citations
 
@@ -41,13 +45,19 @@ class InteractionService:
   _json_dict_adapter = TypeAdapter(Dict[str, Any])
   _list_str_adapter = TypeAdapter(List[str])
 
-  def __init__(self, repository: InteractionRepository):
+  def __init__(
+    self,
+    repository: InteractionRepository,
+    citation_tagger: Optional[CitationTaggingService] = None,
+  ):
     """Initialize service with repository.
 
     Args:
       repository: InteractionRepository instance
+      citation_tagger: Optional service for annotating citations
     """
     self.repository = repository
+    self.citation_tagger = citation_tagger or CitationTaggingService.from_settings()
 
   def save_interaction(
     self,
@@ -61,7 +71,8 @@ class InteractionService:
     raw_response: Optional[dict],
     data_source: str = "api",
     extra_links_count: int = 0,
-    sources: List[dict] = None,
+    sources: Optional[List[dict]] = None,
+    enable_citation_tagging: Optional[bool] = None,
   ) -> int:
     """Save interaction with business logic applied.
 
@@ -82,6 +93,7 @@ class InteractionService:
       data_source: Data collection mode
       extra_links_count: Number of extra links
       sources: List of source dicts linked directly to response (for web capture mode)
+      enable_citation_tagging: Optional per-interaction override (web captures only)
 
     Returns:
       The response ID
@@ -135,14 +147,60 @@ class InteractionService:
       response_time_ms=response_time_ms,
       search_queries=normalized_queries,
       sources_used=normalized_citations,
-      raw_response=normalized_raw_response,
+      raw_response=normalized_raw_response or {},
       data_source=data_source,
       extra_links_count=extra_links_count,
       sources=normalized_sources,
       sources_found=sources_found,
       sources_used_count=sources_used,
       avg_rank=avg_rank,
+      citation_tagging_requested=enable_citation_tagging,
     )
+
+  def _set_web_citation_tagging_status(self, response_id: int) -> str:
+    """Set initial citation tagging status for a saved web capture.
+
+    This method does not run any tagging; it only sets the status so callers
+    can decide whether to enqueue a background job.
+    """
+    response = self.repository.get_by_id(response_id)
+    if not response:
+      return "unknown"
+
+    response.citation_tagging_error = None
+    response.citation_tagging_started_at = None
+    response.citation_tagging_completed_at = None
+
+    if not response.citation_tagging_requested:
+      response.citation_tagging_status = "disabled"
+      self.repository.db.commit()
+      return "disabled"
+
+    # Evaluate effective config for this request (not env-global).
+    tagger = CitationTaggingService.from_settings(enabled_override=True)
+    if not tagger.config.enabled:
+      response.citation_tagging_status = "disabled"
+      self.repository.db.commit()
+      return "disabled"
+
+    if response.data_source not in ("web", "network_log"):
+      response.citation_tagging_status = "skipped"
+      self.repository.db.commit()
+      return "skipped"
+
+    taggable = [
+      source
+      for source in (response.sources_used or [])
+      if isinstance(source.snippet_cited, str) and source.snippet_cited.strip()
+    ]
+    if not taggable:
+      response.citation_tagging_status = "skipped"
+      self.repository.db.commit()
+      return "skipped"
+
+    response.citation_tagging_status = "queued"
+    self.repository.db.commit()
+    return "queued"
 
   def get_recent_interactions(
     self,
@@ -261,7 +319,8 @@ class InteractionService:
           domain=s.domain,
           rank=s.rank,
           pub_date=s.pub_date,
-          snippet_text=s.snippet_text,
+          search_description=None,
+          snippet_text=None,
           internal_score=s.internal_score,
           metadata=s.metadata_json,
         )
@@ -270,7 +329,7 @@ class InteractionService:
 
       search_queries.append(
         SearchQuerySchema(
-          query=query.search_query,
+          query=query.search_query or "",
           sources=sources,
           timestamp=query.created_at.isoformat() if query.created_at else None,
           order_index=query.order_index,
@@ -282,18 +341,41 @@ class InteractionService:
     # Convert citations to schemas
     citations = []
     for c in (response.sources_used or []):
-      metadata = c.metadata_json or {}
+      citation_metadata = c.metadata_json or {}
+      influence_summary = c.influence_summary if isinstance(c.influence_summary, str) else None
+      mentions: List[CitationMentionSchema] = []
+      for mention in sorted(getattr(c, "mentions", []) or [], key=lambda m: m.mention_index):
+        mention_metadata = mention.metadata_json or {}
+        mentions.append(
+          CitationMentionSchema(
+            mention_index=mention.mention_index,
+            start_index=mention.start_index,
+            end_index=mention.end_index,
+            snippet_cited=mention.snippet_cited,
+            metadata=mention_metadata,
+            function_tags=mention.function_tags or [],
+            stance_tags=mention.stance_tags or [],
+            provenance_tags=mention.provenance_tags or [],
+            influence_summary=mention.influence_summary,
+          )
+        )
       citations.append(
         CitationSchema(
           url=c.url,
           title=c.title,
           rank=c.rank,
-          text_snippet=c.snippet_used,
-          start_index=metadata.get("start_index"),
-          end_index=metadata.get("end_index"),
-          snippet_used=c.snippet_used,
+          text_snippet=c.snippet_cited,
+          start_index=citation_metadata.get("start_index"),
+          end_index=citation_metadata.get("end_index"),
+          published_at=citation_metadata.get("published_at"),
+          snippet_cited=c.snippet_cited,
           citation_confidence=c.citation_confidence,
-          metadata=metadata,
+          metadata=citation_metadata,
+          function_tags=c.function_tags or [],
+          stance_tags=c.stance_tags or [],
+          provenance_tags=c.provenance_tags or [],
+          influence_summary=influence_summary,
+          mentions=mentions,
         )
       )
 
@@ -309,7 +391,8 @@ class InteractionService:
           domain=s.domain,
           rank=s.rank,
           pub_date=s.pub_date,
-          snippet_text=s.snippet_text,
+          search_description=s.search_description,
+          snippet_text=s.search_description,
           internal_score=s.internal_score,
           metadata=s.metadata_json,
         )
@@ -326,7 +409,8 @@ class InteractionService:
               domain=s.domain,
               rank=s.rank,
               pub_date=s.pub_date,
-              snippet_text=s.snippet_text,
+              search_description=None,
+              snippet_text=None,
               internal_score=s.internal_score,
               metadata=s.metadata_json,
             )
@@ -349,7 +433,39 @@ class InteractionService:
     if (provider_name or "").lower() in skip_format_providers:
       formatted_response = response.response_text or ""
     else:
-      formatted_response = self._format_response_text_with_citations(response.response_text, citations)
+      formatted_response = self._format_response_text_with_citations(response.response_text or "", citations)
+    response_metadata: Dict[str, Any] = {}
+    if response.avg_rank is not None:
+      response_metadata["average_rank"] = response.avg_rank
+    if response.data_source in ("web", "network_log"):
+      response_metadata["citation_tagging_status"] = response.citation_tagging_status
+      response_metadata["citation_tagging_error"] = response.citation_tagging_error
+      response_metadata["citation_tagging_started_at"] = (
+        response.citation_tagging_started_at.isoformat()
+        if response.citation_tagging_started_at
+        else None
+      )
+      response_metadata["citation_tagging_completed_at"] = (
+        response.citation_tagging_completed_at.isoformat()
+        if response.citation_tagging_completed_at
+        else None
+      )
+      citations_total = len(response.sources_used or [])
+      citations_annotated = 0
+      for citation in response.sources_used or []:
+        has_tags = any([
+          bool(citation.function_tags),
+          bool(citation.stance_tags),
+          bool(citation.provenance_tags),
+        ])
+        has_influence = isinstance(citation.influence_summary, str) and bool(citation.influence_summary.strip())
+        if has_tags or has_influence:
+          citations_annotated += 1
+      response_metadata["citation_annotations"] = {
+        "total_citations": citations_total,
+        "annotated_citations": citations_annotated,
+      }
+
     return SendPromptResponse(
       prompt=prompt_text,
       response_text=formatted_response,
@@ -368,7 +484,7 @@ class InteractionService:
       interaction_id=response.id,
       created_at=response.created_at,
       raw_response=response.raw_response_json,
-      metadata={"average_rank": response.avg_rank} if response.avg_rank else None,
+      metadata=response_metadata or None,
     )
 
   def save_network_log_interaction(
@@ -383,6 +499,7 @@ class InteractionService:
     response_time_ms: int,
     raw_response: Optional[dict],
     extra_links_count: int = 0,
+    enable_citation_tagging: bool = True,
   ) -> SendPromptResponse:
     """Save web capture interaction and return formatted response.
 
@@ -400,6 +517,7 @@ class InteractionService:
       response_time_ms: Response time in milliseconds
       raw_response: Raw response data
       extra_links_count: Number of extra links
+      enable_citation_tagging: Whether to queue citation tagging for this web capture
 
     Returns:
       SendPromptResponse with interaction_id and all data
@@ -417,10 +535,16 @@ class InteractionService:
       data_source="web",
       extra_links_count=extra_links_count,
       sources=sources,
+      enable_citation_tagging=enable_citation_tagging,
     )
 
+    # Mark citation tagging status so the API can enqueue work without blocking the request.
+    self._set_web_citation_tagging_status(response_id)
+
     # Retrieve the saved interaction to return full data
-    return self.get_interaction_details(response_id)
+    details = self.get_interaction_details(response_id)
+    assert details is not None
+    return details
 
   def delete_interaction(self, interaction_id: int) -> bool:
     """Delete an interaction.

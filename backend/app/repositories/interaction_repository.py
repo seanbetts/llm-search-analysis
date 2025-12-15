@@ -1,8 +1,11 @@
 """Repository for database operations on interactions (prompts + responses)."""
 
+import json
 import logging
+import re
+from collections import defaultdict
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
@@ -16,9 +19,104 @@ from app.models.database import (
   ResponseSource,
   SearchQuery,
   SourceUsed,
+  SourceUsedMention,
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _normalize_url(url: str) -> str:
+  """Normalize URL for matching by removing query params and trailing slash."""
+  if not isinstance(url, str):
+    return ""
+  base_url = url.split('?')[0]
+  base_url = base_url.rstrip('/')
+  return base_url
+
+
+def _parse_footnote_definitions(text: str) -> dict:
+  """Parse footnote definitions from response text.
+
+  Format: `[N]: URL "Title"`.
+  Returns: dict mapping citation_number -> {url, title}.
+  """
+  footnote_pattern = r'\[(\d+)\]:\s+(https?://[^\s]+)(?:\s+"([^"]+)")?'
+  footnotes = {}
+  for match in re.finditer(footnote_pattern, text):
+    citation_num = int(match.group(1))
+    url = match.group(2)
+    title = match.group(3) if match.group(3) else None
+    footnotes[citation_num] = {'url': url, 'title': title}
+  return footnotes
+
+
+def _extract_snippet_before_citation(text: str, citation_match) -> Optional[str]:
+  """Extract the text snippet before a citation marker."""
+  position = citation_match.start()
+
+  # Get text before citation (up to 300 chars back)
+  start = max(0, position - 300)
+  context = text[start:position]
+
+  # Find boundaries (paragraphs, bullets, sentences)
+  boundaries = []
+
+  if '\n\n' in context:
+    boundaries.append(('para', context.rfind('\n\n')))
+  if '\n* ' in context:
+    boundaries.append(('bullet', context.rfind('\n* ')))
+  if '\n🔹 ' in context:
+    boundaries.append(('bullet', context.rfind('\n🔹 ')))
+  if '\n✅ ' in context:
+    boundaries.append(('bullet', context.rfind('\n✅ ')))
+  if '\n❌ ' in context:
+    boundaries.append(('bullet', context.rfind('\n❌ ')))
+  if '\n⚠️ ' in context:
+    boundaries.append(('bullet', context.rfind('\n⚠️ ')))
+
+  sentence_boundary = context.rfind('. ')
+  if sentence_boundary != -1 and sentence_boundary < len(context) - 20:
+    boundaries.append(('sentence', sentence_boundary))
+
+  if boundaries:
+    boundaries.sort(key=lambda x: x[1])
+    boundary_type, boundary_pos = boundaries[-1]
+    context = context[boundary_pos:]
+
+  # Clean up
+  context = context.strip()
+  context = re.sub(r'^[*•🔹✅❌⚠️\n\s-]+', '', context)
+  context = re.sub(r'\*\*', '', context)
+  context = re.sub(r'\*', '', context)
+  context = re.sub(r':\s*$', '', context).strip()
+  context = re.sub(r'^\.\s*', '', context).strip()
+
+  return context if len(context) > 10 else None
+
+
+def _extract_snippets_from_citations(text: str) -> dict:
+  """Extract all snippets for each citation number from inline citations.
+
+  Returns: dict mapping citation_number -> list of snippet texts.
+  """
+  # Find footnote start to avoid matching them
+  footnote_start = text.find('\n[1]: https://')
+  inline_text = text[:footnote_start] if footnote_start != -1 else text
+
+  # Find all inline citations with pattern ([Source Name][N])
+  all_citations = list(re.finditer(r'\(\[([^\]]+)\]\[(\d+)\]\)', inline_text))
+
+  snippets_by_number = defaultdict(list)
+
+  for match in all_citations:
+    citation_num = int(match.group(2))
+    snippet = _extract_snippet_before_citation(text, match)
+
+    if snippet:
+      snippets_by_number[citation_num].append(snippet)
+
+  return dict(snippets_by_number)
+
 
 # Provider display name mapping
 PROVIDER_DISPLAY_NAMES = {
@@ -52,10 +150,11 @@ class InteractionRepository:
     raw_response: dict,
     data_source: str = "api",
     extra_links_count: int = 0,
-    sources: List[dict] = None,
+    sources: Optional[List[dict]] = None,
     sources_found: int = 0,
     sources_used_count: int = 0,
     avg_rank: Optional[float] = None,
+    citation_tagging_requested: Optional[bool] = None,
   ) -> int:
     """Save a complete interaction (prompt + response + search data).
 
@@ -74,6 +173,7 @@ class InteractionRepository:
       sources_found: Total number of sources from search
       sources_used_count: Number of citations with rank (from search results)
       avg_rank: Average rank of citations
+      citation_tagging_requested: Optional override for whether to queue tagging for this response
 
     Returns:
       The response ID
@@ -100,7 +200,7 @@ class InteractionRepository:
         if not url:
           return None
         normalized_url = url.strip()
-        keys = []
+        keys: list[tuple[str, Optional[int]]] = []
         if rank is not None:
           keys.append((normalized_url, rank))
         keys.append((normalized_url, None))
@@ -131,6 +231,8 @@ class InteractionRepository:
       self.db.add(interaction)
       self.db.flush()
 
+      raw_response_text = self._extract_full_text(raw_response)
+
       # Create response
       response = Response(
         interaction_id=interaction.id,
@@ -141,7 +243,12 @@ class InteractionRepository:
         extra_links_count=extra_links_count,
         sources_found=sources_found,
         sources_used_count=sources_used_count,
-        avg_rank=avg_rank
+        avg_rank=avg_rank,
+        citation_tagging_requested=(
+          citation_tagging_requested
+          if citation_tagging_requested is not None
+          else True
+        ),
       )
       self.db.add(response)
       self.db.flush()
@@ -167,7 +274,6 @@ class InteractionRepository:
             domain=source_data.get("domain"),
             rank=source_data.get("rank"),
             pub_date=source_data.get("pub_date"),
-            snippet_text=source_data.get("snippet_text"),
             internal_score=source_data.get("internal_score"),
             metadata_json=source_data.get("metadata"),
           )
@@ -178,33 +284,100 @@ class InteractionRepository:
       # Create top-level sources (for web capture mode)
       if sources:
         for source_data in sources:
-          source = ResponseSource(
+          response_source = ResponseSource(
             response_id=response.id,
             url=source_data.get("url", ""),
             title=source_data.get("title"),
             domain=source_data.get("domain"),
             rank=source_data.get("rank"),
             pub_date=source_data.get("pub_date"),
-            snippet_text=source_data.get("snippet_text"),
+            search_description=(
+              source_data.get("search_description")
+              or source_data.get("snippet_text")
+            ),
             internal_score=source_data.get("internal_score"),
             metadata_json=source_data.get("metadata"),
           )
-          self.db.add(source)
+          self.db.add(response_source)
           self.db.flush()
-          register_source(response_source_lookup, source.url or "", source.rank, source.id)
+          register_source(
+            response_source_lookup,
+            response_source.url or "",
+            response_source.rank,
+            response_source.id,
+          )
+
+      def _clean_snippet(value: Optional[str]) -> Optional[str]:
+        if isinstance(value, str):
+          trimmed = value.strip()
+          return trimmed or None
+        return None
+
+      def _slice_from_text(text: Optional[str], meta: dict) -> Optional[str]:
+        start = meta.get("start_index")
+        end = meta.get("end_index")
+        if start is None and meta.get("segment_start_index") is not None:
+          start = meta.get("segment_start_index")
+        if end is None and meta.get("segment_end_index") is not None:
+          end = meta.get("segment_end_index")
+        if start is None and isinstance(end, int) and end >= 0:
+          start = 0
+        if (
+          isinstance(start, int)
+          and isinstance(end, int)
+          and isinstance(text, str)
+          and 0 <= start < end <= len(text)
+        ):
+          snippet = text[start:end].strip()
+          return snippet or None
+        return None
+
+      def _snippet_from_indices(meta: dict) -> Optional[str]:
+        texts = [response_text]
+        if raw_response_text and raw_response_text != response_text:
+          texts.append(raw_response_text)
+        for candidate in texts:
+          snippet = _slice_from_text(candidate, meta)
+          if snippet:
+            return snippet
+        return None
+
+      # Parse footnotes once for web/network_log responses
+      footnote_mapping = {}
+      snippet_mapping = {}
+
+      if response.data_source in ("web", "network_log") and response_text:
+        footnotes = _parse_footnote_definitions(response_text)
+        if footnotes:
+          snippets_by_number = _extract_snippets_from_citations(response_text)
+
+          # Build URL -> citation_number mapping
+          for citation_num, footnote_data in footnotes.items():
+            url_norm = _normalize_url(footnote_data['url'])
+            footnote_mapping[url_norm] = citation_num
+            snippet_mapping[citation_num] = snippets_by_number.get(citation_num, [])
 
       # Create sources used (citations)
+      source_used_lookup: dict[tuple[str, Optional[int]], SourceUsed] = {}
+      mention_counts: dict[int, int] = {}
+      mention_seen: dict[int, set[str]] = {}
       for citation_data in sources_used:
+        url = citation_data.get("url", "") or ""
+        url_norm = _normalize_url(url)
+        key = (url_norm, citation_data.get("rank"))
+
+        existing_source = source_used_lookup.get(key)
+
         matched_query_source = match_source(
           query_source_lookup,
-          citation_data.get("url"),
+          url,
           citation_data.get("rank"),
         )
         matched_response_source = None
         if matched_query_source is None:
           matched_response_source = match_source(
             response_source_lookup,
-            citation_data.get("url"),
+            url,
             citation_data.get("rank"),
           )
 
@@ -216,18 +389,66 @@ class InteractionRepository:
         if citation_data.get("published_at"):
           metadata.setdefault("published_at", citation_data.get("published_at"))
 
-        source_used = SourceUsed(
-          response_id=response.id,
-          query_source_id=matched_query_source,
-          response_source_id=matched_response_source,
-          url=citation_data.get("url", ""),
-          title=citation_data.get("title"),
-          rank=citation_data.get("rank"),
-          snippet_used=citation_data.get("snippet_used") or citation_data.get("text_snippet"),
-          citation_confidence=citation_data.get("citation_confidence"),
-          metadata_json=metadata,
-        )
-        self.db.add(source_used)
+        mention_snippets: list[str] = []
+        snippet_value = None
+
+        if response.data_source in ("web", "network_log"):
+          if footnote_mapping and url_norm in footnote_mapping:
+            citation_num = footnote_mapping[url_norm]
+            metadata["citation_number"] = citation_num
+            mention_snippets = snippet_mapping.get(citation_num, []) or []
+            snippet_value = mention_snippets[0] if mention_snippets else None
+        else:
+          # For API mode: do not persist snippet_cited (indices can be provider-specific and may not align).
+          snippet_value = None
+
+        if existing_source is None:
+          source_used = SourceUsed(
+            response_id=response.id,
+            query_source_id=matched_query_source,
+            response_source_id=matched_response_source,
+            url=url,
+            title=citation_data.get("title"),
+            rank=citation_data.get("rank"),
+            snippet_cited=snippet_value,
+            citation_confidence=citation_data.get("citation_confidence"),
+            metadata_json=metadata,
+            function_tags=citation_data.get("function_tags") or [],
+            stance_tags=citation_data.get("stance_tags") or [],
+            provenance_tags=citation_data.get("provenance_tags") or [],
+            influence_summary=citation_data.get("influence_summary"),
+          )
+          self.db.add(source_used)
+          self.db.flush()
+          source_used_lookup[key] = source_used
+        else:
+          source_used = existing_source
+          if source_used.snippet_cited is None and snippet_value is not None:
+            source_used.snippet_cited = snippet_value
+
+        # Persist per-mention snippets for web/network_log responses.
+        if response.data_source in ("web", "network_log") and mention_snippets:
+          mention_idx = mention_counts.get(source_used.id, 0)
+          seen = mention_seen.setdefault(source_used.id, set())
+          for snippet in mention_snippets:
+            clean_snippet = _clean_snippet(snippet)
+            if not clean_snippet:
+              continue
+            if clean_snippet in seen:
+              continue
+            mention = SourceUsedMention(
+              source_used_id=source_used.id,
+              response_id=response.id,
+              mention_index=mention_idx,
+              snippet_cited=clean_snippet,
+              metadata_json={
+                "citation_number": (metadata or {}).get("citation_number"),
+              },
+            )
+            self.db.add(mention)
+            seen.add(clean_snippet)
+            mention_idx += 1
+          mention_counts[source_used.id] = mention_idx
 
       self.db.commit()
       return response.id
@@ -254,7 +475,7 @@ class InteractionRepository:
         .joinedload(InteractionModel.provider),
         joinedload(Response.search_queries)
         .joinedload(SearchQuery.sources),
-        joinedload(Response.sources_used),
+        joinedload(Response.sources_used).joinedload(SourceUsed.mentions),
         joinedload(Response.response_sources),
       )
       .filter_by(id=response_id)
@@ -296,7 +517,7 @@ class InteractionRepository:
         .joinedload(InteractionModel.provider),
         joinedload(Response.search_queries)
         .joinedload(SearchQuery.sources),
-        joinedload(Response.sources_used),
+        joinedload(Response.sources_used).joinedload(SourceUsed.mentions),
         joinedload(Response.response_sources),
       )
     )
@@ -439,3 +660,72 @@ class InteractionRepository:
       "avg_sources_used": _as_float(avg_sources_used),
       "avg_rank": _as_float(avg_rank),
     }
+
+  def _extract_full_text(self, raw_response: Any) -> Optional[str]:
+    """Attempt to reconstruct full response text from provider payload."""
+    payload = raw_response
+    if payload is None:
+      return None
+    if isinstance(payload, (bytes, bytearray)):
+      payload = payload.decode("utf-8", errors="ignore")
+    if isinstance(payload, str):
+      try:
+        payload = json.loads(payload)
+      except json.JSONDecodeError:
+        return payload
+
+    if not isinstance(payload, dict):
+      return None
+
+    output = payload.get("output")
+    if isinstance(output, list):
+      chunks: List[str] = []
+      for item in output:
+        if not isinstance(item, dict):
+          continue
+        if item.get("type") == "message":
+          for content in item.get("content") or []:
+            text = content.get("text")
+            if text:
+              chunks.append(text)
+      if chunks:
+        return "".join(chunks)
+
+    candidates = payload.get("candidates")
+    if isinstance(candidates, list):
+      chunks = []
+      for candidate in candidates:
+        if not isinstance(candidate, dict):
+          continue
+        content_obj = candidate.get("content")
+        if isinstance(content_obj, str):
+          if content_obj:
+            chunks.append(content_obj)
+          continue
+        contents = content_obj if isinstance(content_obj, list) else [content_obj]
+        for content in contents:
+          if not isinstance(content, dict):
+            continue
+          parts = content.get("parts") or []
+          for part in parts:
+            if not isinstance(part, dict):
+              continue
+            text = part.get("text")
+            if text:
+              chunks.append(text)
+      if chunks:
+        return "".join(chunks)
+
+    content_list = payload.get("content")
+    if isinstance(content_list, list):
+      chunks = []
+      for block in content_list:
+        if not isinstance(block, dict):
+          continue
+        text = block.get("text")
+        if text:
+          chunks.append(text)
+      if chunks:
+        return "".join(chunks)
+
+    return None

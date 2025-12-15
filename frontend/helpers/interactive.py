@@ -23,6 +23,8 @@ def build_api_response(response_data: Dict[str, Any]) -> SimpleNamespace:
   all_sources = [SimpleNamespace(**src) for src in response_data.get('all_sources', [])]
 
   return SimpleNamespace(
+    interaction_id=response_data.get('interaction_id'),
+    created_at=response_data.get('created_at'),
     provider=response_data.get('provider'),
     model=response_data.get('model'),
     model_display_name=response_data.get('model_display_name'),
@@ -37,6 +39,7 @@ def build_api_response(response_data: Dict[str, Any]) -> SimpleNamespace:
     avg_rank=response_data.get('avg_rank'),
     extra_links_count=response_data.get('extra_links_count', 0),
     raw_response=response_data.get('raw_response', {}),
+    metadata=response_data.get('metadata'),
   )
 
 
@@ -50,7 +53,7 @@ def build_web_response(provider_response) -> SimpleNamespace:
       domain=s.domain,
       rank=s.rank,
       pub_date=s.pub_date,
-      snippet_text=s.snippet_text,
+      search_description=getattr(s, "search_description", None) or getattr(s, "snippet_text", None),
       internal_score=s.internal_score,
       metadata=s.metadata,
     ) for s in query.sources]
@@ -66,8 +69,13 @@ def build_web_response(provider_response) -> SimpleNamespace:
     url=c.url,
     title=c.title,
     rank=c.rank,
-    snippet_used=c.snippet_used,
+    text_snippet=c.text_snippet,
+    snippet_cited=c.snippet_cited,
     citation_confidence=c.citation_confidence,
+    function_tags=c.function_tags,
+    stance_tags=c.stance_tags,
+    provenance_tags=c.provenance_tags,
+    influence_summary=c.influence_summary,
     metadata=c.metadata,
   ) for c in provider_response.citations]
 
@@ -77,7 +85,7 @@ def build_web_response(provider_response) -> SimpleNamespace:
     domain=s.domain,
     rank=s.rank,
     pub_date=s.pub_date,
-    snippet_text=s.snippet_text,
+    search_description=getattr(s, "search_description", None) or getattr(s, "snippet_text", None),
     internal_score=s.internal_score,
     metadata=s.metadata,
   ) for s in provider_response.sources]

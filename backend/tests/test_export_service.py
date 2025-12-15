@@ -39,7 +39,7 @@ def _api_response():
             title="Example Source",
             domain="example.com",
             rank=1,
-            snippet_text="Snippet text",
+            search_description="Snippet text",
             pub_date="2024-01-01",
           )
         ],
@@ -50,7 +50,19 @@ def _api_response():
         url="https://example.com",
         title="Example Source",
         rank=1,
-        snippet_used="Snippet text",
+        snippet_cited="Snippet text",
+        mentions=[
+          {
+            "mention_index": 0,
+            "snippet_cited": "Claim A",
+            "influence_summary": "Influence A",
+          },
+          {
+            "mention_index": 1,
+            "snippet_cited": "Claim B",
+            "influence_summary": "Influence B",
+          },
+        ],
       )
     ],
     provider="OpenAI",
@@ -85,7 +97,7 @@ def _network_log_response():
         title="Network Source",
         domain="example.org",
         rank=None,
-        snippet_text="Captured snippet",
+        search_description="Captured snippet",
       )
     ],
     provider="OpenAI",
@@ -118,7 +130,10 @@ def test_build_markdown_formats_api_interaction(export_service, mock_interaction
   assert "# Interaction 123" in markdown
   assert "## Prompt" in markdown and "What is AI?" in markdown
   assert "## Search Queries" in markdown
+  assert "## Sources Found (by Query)" in markdown
   assert "### Query 1 Sources (1)" in markdown
+  assert "- Description: Snippet text" in markdown
+  assert "| # | Snippet Cited | Influence Summary |" in markdown
   # Reference-style links should be converted inline
   assert "[Source](https://example.com)" in markdown
 

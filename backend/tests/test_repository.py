@@ -319,7 +319,6 @@ class TestInteractionRepository:
             "url": "https://example.com",
             "title": "AI Research",
             "rank": 1,
-            "snippet_text": "AI is a field...",
             "internal_score": 0.92,
             "metadata": {"extra": "data"}
           }
@@ -331,7 +330,7 @@ class TestInteractionRepository:
       {
         "url": "https://example.com",
         "rank": 1,
-        "snippet_used": "AI is a field...",
+        "snippet_cited": "AI is a field...",
         "citation_confidence": 0.95,
         "metadata": {"citation_id": "1"}
       }
@@ -360,11 +359,82 @@ class TestInteractionRepository:
     assert search_query.query_reformulations == ["AI", "artificial intelligence"]
 
     source = search_query.sources[0]
-    assert source.snippet_text == "AI is a field..."
+    assert not hasattr(source, "snippet_text")
     assert source.internal_score == 0.92
     assert source.metadata_json == {"extra": "data"}
 
     citation = response.sources_used[0]
-    assert citation.snippet_used == "AI is a field..."
+    assert citation.snippet_cited is None
     assert citation.citation_confidence == 0.95
     assert citation.metadata_json == {"citation_id": "1"}
+
+  def test_save_interaction_derives_snippet_from_indices(self, repository):
+    """API mode should store indices but not persist snippet_cited."""
+    snippet = "Derived snippet"
+    response_body = f"Intro text. {snippet} follows with more text."
+    response_id = repository.save(
+      prompt_text="Explain something",
+      provider_name="openai",
+      model_name="gpt-5.1",
+      response_text=response_body,
+      response_time_ms=500,
+      search_queries=[],
+      sources_used=[
+        {
+          "url": "https://example.com/derived",
+          "rank": 1,
+          "start_index": response_body.index(snippet),
+          "end_index": response_body.index(snippet) + len(snippet),
+        }
+      ],
+      raw_response={},
+    )
+
+    stored = repository.get_by_id(response_id)
+    assert stored is not None
+    assert stored.sources_used[0].snippet_cited is None
+    assert stored.sources_used[0].metadata_json["start_index"] == response_body.index(snippet)
+    assert stored.sources_used[0].metadata_json["end_index"] == response_body.index(snippet) + len(snippet)
+
+  def test_save_interaction_uses_raw_text_for_indices(self, repository):
+    """API mode should store indices even if raw payload includes the full text."""
+    raw_text = "Summary. Detailed citation sentence."
+    trimmed_text = "Summary."
+    snippet = "Detailed citation sentence."
+    start = raw_text.index(snippet)
+    end = start + len(snippet)
+
+    raw_payload = {
+      "output": [
+        {
+          "type": "message",
+          "content": [
+            {"type": "output_text", "text": raw_text}
+          ],
+        }
+      ]
+    }
+
+    response_id = repository.save(
+      prompt_text="Summarize",
+      provider_name="openai",
+      model_name="gpt-5.1",
+      response_text=trimmed_text,
+      response_time_ms=200,
+      search_queries=[],
+      sources_used=[
+        {
+          "url": "https://example.com/detail",
+          "rank": 1,
+          "start_index": start,
+          "end_index": end,
+        }
+      ],
+      raw_response=raw_payload,
+    )
+
+    stored = repository.get_by_id(response_id)
+    assert stored is not None
+    assert stored.sources_used[0].snippet_cited is None
+    assert stored.sources_used[0].metadata_json["start_index"] == start
+    assert stored.sources_used[0].metadata_json["end_index"] == end

@@ -92,7 +92,7 @@ class AnthropicProvider(BaseProvider):
           "type": "web_search_20250305",
           "name": "web_search",
           "max_uses": 5
-        }]
+        }]  # type: ignore[typeddict-item,typeddict-unknown-key]
       )
 
       # Calculate response time
@@ -119,7 +119,7 @@ class AnthropicProvider(BaseProvider):
     """
     response_text = ""
     search_queries = []
-    sources = []
+    sources: List[Source] = []
     citations = []
 
     # Temporary storage to link queries with their results
@@ -168,7 +168,7 @@ class AnthropicProvider(BaseProvider):
                   title=title,
                   rank=rank,
                   text_snippet=snippet,
-                  snippet_used=snippet,
+                  snippet_cited=snippet,
                   start_index=start_index,
                   end_index=end_index,
                 ))
