@@ -69,25 +69,6 @@ class ExportService:
     lines.append(f"- Sources Used: {num_sources_used}")
     lines.append(f"- Avg. Rank: {avg_rank_display}")
     lines.append(f"- Extra Links: {extra_links}")
-
-    metadata = details.get("metadata") or {}
-    citation_status = metadata.get("citation_tagging_status")
-    if citation_status is not None:
-      lines.append(f"- Citation Tagging: {citation_status}")
-      annotations = metadata.get("citation_annotations") or {}
-      total = annotations.get("total_citations")
-      annotated = annotations.get("annotated_citations")
-      if total is not None and annotated is not None:
-        lines.append(f"- Citation Annotations: {annotated}/{total}")
-      started_at = metadata.get("citation_tagging_started_at")
-      completed_at = metadata.get("citation_tagging_completed_at")
-      if started_at:
-        lines.append(f"- Citation Tagging Started: {started_at}")
-      if completed_at:
-        lines.append(f"- Citation Tagging Completed: {completed_at}")
-      citation_error = metadata.get("citation_tagging_error")
-      if citation_error:
-        lines.append(f"- Citation Tagging Error: {citation_error}")
     lines.append("")
 
     lines.append("## Response")
@@ -95,6 +76,7 @@ class ExportService:
       details.get('response_text', ''),
       details.get('citations', []),
     )
+    response_text = self._nest_response_headings(response_text)
     lines.append(response_text or "_No response text available._")
     lines.append("")
 
@@ -133,7 +115,7 @@ class ExportService:
     else:
       if all_sources:
         lines.append(f"## Sources Found ({len(all_sources)})")
-        lines.append("_Note: Network logs don't provide reliable query-to-source mapping._")
+        lines.append("_Note: Web Analyses don't provide reliable query-to-source mapping._")
         lines.append("")
         for s_idx, src in enumerate(all_sources, 1):
           title = src.get('title') or src.get('domain') or 'Unknown source'
@@ -272,5 +254,27 @@ class ExportService:
       replacement = r'[\1](' + url + ')'
       formatted_text = re.sub(pattern, replacement, formatted_text)
 
+    formatted_text = re.sub(r'^\[(\d+)\]:\s+https?://\S+.*$', '', formatted_text, flags=re.MULTILINE)
+    formatted_text = re.sub(r'\n{3,}', '\n\n', formatted_text).strip()
     return formatted_text
 
+  def _nest_response_headings(self, text: str) -> str:
+    """Demote markdown headings so they nest under the Response section.
+
+    Example: "## Title" becomes "### Title".
+    """
+    if not text:
+      return ""
+
+    nested_lines: list[str] = []
+    for line in text.splitlines():
+      stripped = line.lstrip()
+      if stripped.startswith("#"):
+        hashes = len(stripped) - len(stripped.lstrip("#"))
+        if hashes >= 1:
+          content = stripped[hashes:]
+          new_hashes = min(6, hashes + 1)
+          nested_lines.append(f"{'#' * new_hashes}{content}")
+          continue
+      nested_lines.append(line)
+    return "\n".join(nested_lines).strip()

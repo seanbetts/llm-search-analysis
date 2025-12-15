@@ -297,7 +297,7 @@ def display_response(response, prompt=None):
     all_sources = getattr(response, 'all_sources', []) or []
     if all_sources:
       st.markdown(f"### 📚 Sources Found ({len(all_sources)}):")
-      st.caption("_Note: Network logs don't provide reliable query-to-source mapping._")
+      st.caption("_Note: Web Analyses don't provide reliable query-to-source mapping._")
       with st.expander(f"View all {len(all_sources)} sources", expanded=False):
         for j, source in enumerate(all_sources, 1):
           url_display = source.url or 'No URL'
