@@ -118,6 +118,11 @@ class Response(Base):
     back_populates="response",
     cascade="all, delete-orphan",
   )
+  citation_mentions: Mapped[List["SourceUsedMention"]] = relationship(
+    "SourceUsedMention",
+    back_populates="response",
+    cascade="all, delete-orphan",
+  )
 
 
 class SearchQuery(Base):
@@ -211,6 +216,11 @@ class SourceUsed(Base):
   stance_tags: Mapped[Any] = mapped_column(JSON, default=list, nullable=False)
   provenance_tags: Mapped[Any] = mapped_column(JSON, default=list, nullable=False)
   influence_summary: Mapped[Optional[str]] = mapped_column(Text)
+  mentions: Mapped[List["SourceUsedMention"]] = relationship(
+    "SourceUsedMention",
+    back_populates="source_used",
+    cascade="all, delete-orphan",
+  )
 
   __table_args__ = (
     Index("ix_sources_used_response_id", "response_id"),
@@ -225,3 +235,43 @@ class SourceUsed(Base):
   response: Mapped["Response"] = relationship("Response", back_populates="sources_used")
   query_source: Mapped[Optional["QuerySource"]] = relationship("QuerySource")
   response_source: Mapped[Optional["ResponseSource"]] = relationship("ResponseSource")
+
+
+class SourceUsedMention(Base):
+  """One mention of a source in the response (one cited span/snippet)."""
+
+  __tablename__ = "source_used_mentions"
+
+  id: Mapped[int] = mapped_column(Integer, primary_key=True)
+  source_used_id: Mapped[int] = mapped_column(
+    Integer,
+    ForeignKey("sources_used.id", ondelete="CASCADE"),
+    nullable=False,
+  )
+  response_id: Mapped[int] = mapped_column(
+    Integer,
+    ForeignKey("responses.id", ondelete="CASCADE"),
+    nullable=False,
+  )
+  mention_index: Mapped[int] = mapped_column(Integer, default=0)
+  start_index: Mapped[Optional[int]] = mapped_column(Integer)
+  end_index: Mapped[Optional[int]] = mapped_column(Integer)
+  snippet_cited: Mapped[Optional[str]] = mapped_column(Text)
+  metadata_json: Mapped[Optional[Any]] = mapped_column(JSON)
+
+  function_tags: Mapped[Any] = mapped_column(JSON, default=list, nullable=False)
+  stance_tags: Mapped[Any] = mapped_column(JSON, default=list, nullable=False)
+  provenance_tags: Mapped[Any] = mapped_column(JSON, default=list, nullable=False)
+  influence_summary: Mapped[Optional[str]] = mapped_column(Text)
+
+  created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+  __table_args__ = (
+    Index("ix_source_used_mentions_source_used_id", "source_used_id"),
+    Index("ix_source_used_mentions_response_id", "response_id"),
+    Index("ix_source_used_mentions_created_at", "created_at"),
+    Index("ix_source_used_mentions_source_used_id_mention_index", "source_used_id", "mention_index", unique=True),
+  )
+
+  source_used: Mapped["SourceUsed"] = relationship("SourceUsed", back_populates="mentions")
+  response: Mapped["Response"] = relationship("Response", back_populates="citation_mentions")

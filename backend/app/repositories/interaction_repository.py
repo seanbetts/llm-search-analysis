@@ -19,6 +19,7 @@ from app.models.database import (
   ResponseSource,
   SearchQuery,
   SourceUsed,
+  SourceUsedMention,
 )
 
 logger = logging.getLogger(__name__)
@@ -357,17 +358,26 @@ class InteractionRepository:
             snippet_mapping[citation_num] = snippets_by_number.get(citation_num, [])
 
       # Create sources used (citations)
+      source_used_lookup: dict[tuple[str, Optional[int]], SourceUsed] = {}
+      mention_counts: dict[int, int] = {}
+      mention_seen: dict[int, set[str]] = {}
       for citation_data in sources_used:
+        url = citation_data.get("url", "") or ""
+        url_norm = _normalize_url(url)
+        key = (url_norm, citation_data.get("rank"))
+
+        existing_source = source_used_lookup.get(key)
+
         matched_query_source = match_source(
           query_source_lookup,
-          citation_data.get("url"),
+          url,
           citation_data.get("rank"),
         )
         matched_response_source = None
         if matched_query_source is None:
           matched_response_source = match_source(
             response_source_lookup,
-            citation_data.get("url"),
+            url,
             citation_data.get("rank"),
           )
 
@@ -379,39 +389,66 @@ class InteractionRepository:
         if citation_data.get("published_at"):
           metadata.setdefault("published_at", citation_data.get("published_at"))
 
-        # For web/network_log, always extract from footnotes (don't use provided snippets)
+        mention_snippets: list[str] = []
+        snippet_value = None
+
         if response.data_source in ("web", "network_log"):
-          snippet_value = None
-          if footnote_mapping:
-            url_norm = _normalize_url(citation_data.get("url", ""))
-
-            if url_norm in footnote_mapping:
-              citation_num = footnote_mapping[url_norm]
-              metadata["citation_number"] = citation_num
-
-              snippets = snippet_mapping.get(citation_num, [])
-              if snippets:
-                snippet_value = snippets[0]
+          if footnote_mapping and url_norm in footnote_mapping:
+            citation_num = footnote_mapping[url_norm]
+            metadata["citation_number"] = citation_num
+            mention_snippets = snippet_mapping.get(citation_num, []) or []
+            snippet_value = mention_snippets[0] if mention_snippets else None
         else:
           # For API mode: do not persist snippet_cited (indices can be provider-specific and may not align).
           snippet_value = None
 
-        source_used = SourceUsed(
-          response_id=response.id,
-          query_source_id=matched_query_source,
-          response_source_id=matched_response_source,
-          url=citation_data.get("url", ""),
-          title=citation_data.get("title"),
-          rank=citation_data.get("rank"),
-          snippet_cited=snippet_value,
-          citation_confidence=citation_data.get("citation_confidence"),
-          metadata_json=metadata,
-          function_tags=citation_data.get("function_tags") or [],
-          stance_tags=citation_data.get("stance_tags") or [],
-          provenance_tags=citation_data.get("provenance_tags") or [],
-          influence_summary=citation_data.get("influence_summary"),
-        )
-        self.db.add(source_used)
+        if existing_source is None:
+          source_used = SourceUsed(
+            response_id=response.id,
+            query_source_id=matched_query_source,
+            response_source_id=matched_response_source,
+            url=url,
+            title=citation_data.get("title"),
+            rank=citation_data.get("rank"),
+            snippet_cited=snippet_value,
+            citation_confidence=citation_data.get("citation_confidence"),
+            metadata_json=metadata,
+            function_tags=citation_data.get("function_tags") or [],
+            stance_tags=citation_data.get("stance_tags") or [],
+            provenance_tags=citation_data.get("provenance_tags") or [],
+            influence_summary=citation_data.get("influence_summary"),
+          )
+          self.db.add(source_used)
+          self.db.flush()
+          source_used_lookup[key] = source_used
+        else:
+          source_used = existing_source
+          if source_used.snippet_cited is None and snippet_value is not None:
+            source_used.snippet_cited = snippet_value
+
+        # Persist per-mention snippets for web/network_log responses.
+        if response.data_source in ("web", "network_log") and mention_snippets:
+          mention_idx = mention_counts.get(source_used.id, 0)
+          seen = mention_seen.setdefault(source_used.id, set())
+          for snippet in mention_snippets:
+            clean_snippet = _clean_snippet(snippet)
+            if not clean_snippet:
+              continue
+            if clean_snippet in seen:
+              continue
+            mention = SourceUsedMention(
+              source_used_id=source_used.id,
+              response_id=response.id,
+              mention_index=mention_idx,
+              snippet_cited=clean_snippet,
+              metadata_json={
+                "citation_number": (metadata or {}).get("citation_number"),
+              },
+            )
+            self.db.add(mention)
+            seen.add(clean_snippet)
+            mention_idx += 1
+          mention_counts[source_used.id] = mention_idx
 
       self.db.commit()
       return response.id
@@ -438,7 +475,7 @@ class InteractionRepository:
         .joinedload(InteractionModel.provider),
         joinedload(Response.search_queries)
         .joinedload(SearchQuery.sources),
-        joinedload(Response.sources_used),
+        joinedload(Response.sources_used).joinedload(SourceUsed.mentions),
         joinedload(Response.response_sources),
       )
       .filter_by(id=response_id)
@@ -480,7 +517,7 @@ class InteractionRepository:
         .joinedload(InteractionModel.provider),
         joinedload(Response.search_queries)
         .joinedload(SearchQuery.sources),
-        joinedload(Response.sources_used),
+        joinedload(Response.sources_used).joinedload(SourceUsed.mentions),
         joinedload(Response.response_sources),
       )
     )

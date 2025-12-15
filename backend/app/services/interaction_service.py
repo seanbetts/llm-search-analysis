@@ -10,6 +10,9 @@ from app.api.v1.schemas.responses import (
   Citation as CitationSchema,
 )
 from app.api.v1.schemas.responses import (
+  CitationMention as CitationMentionSchema,
+)
+from app.api.v1.schemas.responses import (
   InteractionSummary,
   QueryHistoryStats,
   SendPromptResponse,
@@ -340,6 +343,22 @@ class InteractionService:
     for c in (response.sources_used or []):
       citation_metadata = c.metadata_json or {}
       influence_summary = c.influence_summary if isinstance(c.influence_summary, str) else None
+      mentions: List[CitationMentionSchema] = []
+      for mention in sorted(getattr(c, "mentions", []) or [], key=lambda m: m.mention_index):
+        mention_metadata = mention.metadata_json or {}
+        mentions.append(
+          CitationMentionSchema(
+            mention_index=mention.mention_index,
+            start_index=mention.start_index,
+            end_index=mention.end_index,
+            snippet_cited=mention.snippet_cited,
+            metadata=mention_metadata,
+            function_tags=mention.function_tags or [],
+            stance_tags=mention.stance_tags or [],
+            provenance_tags=mention.provenance_tags or [],
+            influence_summary=mention.influence_summary,
+          )
+        )
       citations.append(
         CitationSchema(
           url=c.url,
@@ -356,6 +375,7 @@ class InteractionService:
           stance_tags=c.stance_tags or [],
           provenance_tags=c.provenance_tags or [],
           influence_summary=influence_summary,
+          mentions=mentions,
         )
       )
 

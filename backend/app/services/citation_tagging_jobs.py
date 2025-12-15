@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import settings
 from app.core.utils import extract_domain
-from app.models.database import Response, SourceUsed
+from app.models.database import Response, SourceUsed, SourceUsedMention
 from app.services.citation_tagging_service import (
   CitationInfluenceService,
   CitationTaggingService,
@@ -95,23 +95,36 @@ def _run_web_citation_tagging_job(response_id: int, prompt: str, response_text: 
     started_at = datetime.utcnow()
     _update_status(session, response, status="running", started_at=started_at, error=None)
 
-    sources_used = session.scalars(
-      select(SourceUsed).where(SourceUsed.response_id == response_id)
+    mentions = session.scalars(
+      select(SourceUsedMention)
+      .where(SourceUsedMention.response_id == response_id)
+      .order_by(SourceUsedMention.source_used_id, SourceUsedMention.mention_index)
     ).all()
-    taggable = [s for s in sources_used if isinstance(s.snippet_cited, str) and s.snippet_cited.strip()]
+    taggable = [m for m in mentions if isinstance(m.snippet_cited, str) and m.snippet_cited.strip()]
     if not taggable:
       _update_status(session, response, status="skipped", completed_at=datetime.utcnow())
       return
 
+    sources_used = session.scalars(
+      select(SourceUsed).where(SourceUsed.response_id == response_id)
+    ).all()
+    source_by_id = {s.id: s for s in sources_used}
+
     citations = []
-    for source in taggable:
-      metadata = source.metadata_json or {}
+    for mention in taggable:
+      source = source_by_id.get(mention.source_used_id)
+      if source is None:
+        continue
+      metadata = dict(source.metadata_json or {})
+      mention_meta = mention.metadata_json or {}
+      metadata.update(mention_meta)
       citations.append({
         "source_used_id": source.id,
+        "mention_id": mention.id,
         "url": source.url,
         "title": source.title,
         "rank": source.rank,
-        "snippet_cited": source.snippet_cited,
+        "snippet_cited": mention.snippet_cited,
         "start_index": metadata.get("start_index"),
         "end_index": metadata.get("end_index"),
         "metadata": metadata,
@@ -142,23 +155,55 @@ def _run_web_citation_tagging_job(response_id: int, prompt: str, response_text: 
     )
 
     updated = {
-      c.get("source_used_id"): c
+      c.get("mention_id"): c
       for c in updated_payloads
-      if c.get("source_used_id") is not None
+      if c.get("mention_id") is not None
     }
-    for source in taggable:
-      payload = updated.get(source.id)
+    for mention in taggable:
+      payload = updated.get(mention.id)
       if not payload:
         continue
-      source.function_tags = payload.get("function_tags") or []
-      source.stance_tags = payload.get("stance_tags") or []
-      source.provenance_tags = payload.get("provenance_tags") or []
       influence_summary = payload.get("influence_summary")
-      source.influence_summary = (
+      mention.function_tags = payload.get("function_tags") or []
+      mention.stance_tags = payload.get("stance_tags") or []
+      mention.provenance_tags = payload.get("provenance_tags") or []
+      mention.influence_summary = (
         influence_summary
         if isinstance(influence_summary, str) and influence_summary.strip()
         else None
       )
+
+    # Aggregate mention annotations back to SourceUsed rows for current UI/export compatibility.
+    for source in sources_used:
+      source_mentions = [m for m in taggable if m.source_used_id == source.id]
+      if not source_mentions:
+        continue
+
+      def _union(field: str) -> list[str]:
+        values: list[str] = []
+        seen: set[str] = set()
+        for m in source_mentions:
+          for tag in getattr(m, field) or []:
+            if tag in seen:
+              continue
+            seen.add(tag)
+            values.append(tag)
+        return values
+
+      source.function_tags = _union("function_tags")
+      source.stance_tags = _union("stance_tags")
+      source.provenance_tags = _union("provenance_tags")
+
+      summaries: list[str] = []
+      seen_summaries: set[str] = set()
+      for m in source_mentions:
+        s = m.influence_summary
+        if isinstance(s, str):
+          trimmed = s.strip()
+          if trimmed and trimmed not in seen_summaries:
+            seen_summaries.add(trimmed)
+            summaries.append(trimmed)
+      source.influence_summary = "\n".join(summaries) if summaries else None
 
     session.commit()
     _update_status(session, response, status="completed", completed_at=datetime.utcnow())

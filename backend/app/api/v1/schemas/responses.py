@@ -46,6 +46,38 @@ def _empty_tag_list() -> List[str]:
   return []
 
 
+class CitationMention(BaseModel):
+  """One mention of a citation in the response (one cited span/snippet)."""
+
+  mention_index: int = Field(..., ge=0, description="0-indexed mention order for this citation")
+  start_index: Optional[int] = Field(None, ge=0, description="Start offset of cited text")
+  end_index: Optional[int] = Field(None, ge=0, description="End offset of cited text")
+  snippet_cited: Optional[str] = Field(None, description="Exact snippet cited for this mention")
+  metadata: Optional[Dict[str, Any]] = Field(None, description="Additional mention metadata")
+
+  function_tags: List[str] = Field(
+    default_factory=_empty_tag_list,
+    description="Functional roles applied to this mention"
+  )
+  stance_tags: List[str] = Field(
+    default_factory=_empty_tag_list,
+    description="Stance annotations for this mention"
+  )
+  provenance_tags: List[str] = Field(
+    default_factory=_empty_tag_list,
+    description="Provenance annotations for this mention"
+  )
+  influence_summary: Optional[str] = Field(
+    None,
+    description="Short summary describing how the source influenced the claim for this mention"
+  )
+
+
+def _empty_citation_mention_list() -> List[CitationMention]:
+  """Return a new list for citation mention fields."""
+  return []
+
+
 class Source(BaseModel):
   """Source/URL fetched during search."""
 
@@ -160,6 +192,10 @@ class Citation(BaseModel):
   influence_summary: Optional[str] = Field(
     None,
     description="Short summary describing how the source influenced the claim"
+  )
+  mentions: List[CitationMention] = Field(
+    default_factory=_empty_citation_mention_list,
+    description="All cited snippets/mentions for this URL within the response"
   )
 
   model_config = {

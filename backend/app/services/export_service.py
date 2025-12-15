@@ -152,6 +152,15 @@ class ExportService:
           )
           pub_date = source_fallback.get("pub_date") or citation.get("published_at")
           pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
+          mentions = citation.get("mentions") or []
+          mention_snippets = []
+          for mention in mentions:
+            if isinstance(mention, dict):
+              snippet = mention.get("snippet_cited")
+            else:
+              snippet = getattr(mention, "snippet_cited", None)
+            if isinstance(snippet, str) and snippet.strip():
+              mention_snippets.append(snippet.strip())
           snippet_cited = citation.get('snippet_cited') or citation.get('text_snippet') or 'N/A'
           influence_summary = citation.get("influence_summary") or "N/A"
           provenance = citation.get("provenance_tags") or []
@@ -162,7 +171,12 @@ class ExportService:
           lines.append(f"   - Description: {description}")
           lines.append(f"   - Published: {pub_date_fmt}")
           lines.append("   ---")
-          lines.append(f"   - Snippet Cited: {snippet_cited}")
+          if mention_snippets:
+            lines.append("   - Snippet Cited:")
+            for snippet in mention_snippets:
+              lines.append(f"     - {snippet}")
+          else:
+            lines.append(f"   - Snippet Cited: {snippet_cited}")
           lines.append(f"   - Influence Summary: {influence_summary}")
           if provenance:
             lines.append(f"   - Provenance: {', '.join(provenance)}")
@@ -189,6 +203,15 @@ class ExportService:
             or citation_metadata.get("pub_date")
           )
           pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
+          mentions = citation.get("mentions") or []
+          mention_snippets = []
+          for mention in mentions:
+            if isinstance(mention, dict):
+              snippet = mention.get("snippet_cited")
+            else:
+              snippet = getattr(mention, "snippet_cited", None)
+            if isinstance(snippet, str) and snippet.strip():
+              mention_snippets.append(snippet.strip())
           snippet_cited = citation.get('snippet_cited') or citation.get('text_snippet') or 'N/A'
           influence_summary = citation.get("influence_summary") or "N/A"
           provenance = citation.get("provenance_tags") or []
@@ -199,7 +222,12 @@ class ExportService:
           lines.append(f"   - Description: {description}")
           lines.append(f"   - Published: {pub_date_fmt}")
           lines.append("   ---")
-          lines.append(f"   - Snippet Cited: {snippet_cited}")
+          if mention_snippets:
+            lines.append("   - Snippet Cited:")
+            for snippet in mention_snippets:
+              lines.append(f"     - {snippet}")
+          else:
+            lines.append(f"   - Snippet Cited: {snippet_cited}")
           lines.append(f"   - Influence Summary: {influence_summary}")
           if provenance:
             lines.append(f"   - Provenance: {', '.join(provenance)}")
