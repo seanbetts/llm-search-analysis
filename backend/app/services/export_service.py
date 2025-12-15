@@ -20,6 +20,37 @@ class ExportService:
     """
     self.interaction_service = interaction_service
 
+  def _format_mentions_table(self, mentions: list[dict]) -> list[str]:
+    """Return a markdown table for citation mentions.
+
+    Args:
+      mentions: List of mention dicts (as returned by the API schema)
+
+    Returns:
+      List of markdown lines (including header row)
+    """
+    rows = []
+    for mention in mentions:
+      if not isinstance(mention, dict):
+        continue
+      idx = mention.get("mention_index")
+      display_idx = str(idx + 1) if isinstance(idx, int) else ""
+      snippet = mention.get("snippet_cited") or ""
+      influence = mention.get("influence_summary") or ""
+      rows.append((display_idx, snippet, influence))
+
+    if not rows:
+      return []
+
+    lines = []
+    lines.append("   | # | Snippet Cited | Influence Summary |")
+    lines.append("   | - | ------------ | ----------------- |")
+    for display_idx, snippet, influence in rows:
+      snippet_cell = str(snippet).replace("\n", "<br/>")
+      influence_cell = str(influence).replace("\n", "<br/>")
+      lines.append(f"   | {display_idx} | {snippet_cell} | {influence_cell} |")
+    return lines
+
   def build_markdown(self, interaction_id: int) -> Optional[str]:
     r"""Build a formatted markdown export of an interaction.
 
@@ -153,14 +184,6 @@ class ExportService:
           pub_date = source_fallback.get("pub_date") or citation.get("published_at")
           pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
           mentions = citation.get("mentions") or []
-          mention_snippets = []
-          for mention in mentions:
-            if isinstance(mention, dict):
-              snippet = mention.get("snippet_cited")
-            else:
-              snippet = getattr(mention, "snippet_cited", None)
-            if isinstance(snippet, str) and snippet.strip():
-              mention_snippets.append(snippet.strip())
           snippet_cited = citation.get('snippet_cited') or citation.get('text_snippet') or 'N/A'
           influence_summary = citation.get("influence_summary") or "N/A"
           provenance = citation.get("provenance_tags") or []
@@ -171,13 +194,12 @@ class ExportService:
           lines.append(f"   - Description: {description}")
           lines.append(f"   - Published: {pub_date_fmt}")
           lines.append("   ---")
-          if mention_snippets:
-            lines.append("   - Snippet Cited:")
-            for snippet in mention_snippets:
-              lines.append(f"     - {snippet}")
+          mention_table = self._format_mentions_table(mentions) if mentions else []
+          if mention_table:
+            lines.extend(mention_table)
           else:
             lines.append(f"   - Snippet Cited: {snippet_cited}")
-          lines.append(f"   - Influence Summary: {influence_summary}")
+            lines.append(f"   - Influence Summary: {influence_summary}")
           if provenance:
             lines.append(f"   - Provenance: {', '.join(provenance)}")
           if function:
@@ -204,14 +226,6 @@ class ExportService:
           )
           pub_date_fmt = format_pub_date(pub_date) if pub_date else "N/A"
           mentions = citation.get("mentions") or []
-          mention_snippets = []
-          for mention in mentions:
-            if isinstance(mention, dict):
-              snippet = mention.get("snippet_cited")
-            else:
-              snippet = getattr(mention, "snippet_cited", None)
-            if isinstance(snippet, str) and snippet.strip():
-              mention_snippets.append(snippet.strip())
           snippet_cited = citation.get('snippet_cited') or citation.get('text_snippet') or 'N/A'
           influence_summary = citation.get("influence_summary") or "N/A"
           provenance = citation.get("provenance_tags") or []
@@ -222,13 +236,12 @@ class ExportService:
           lines.append(f"   - Description: {description}")
           lines.append(f"   - Published: {pub_date_fmt}")
           lines.append("   ---")
-          if mention_snippets:
-            lines.append("   - Snippet Cited:")
-            for snippet in mention_snippets:
-              lines.append(f"     - {snippet}")
+          mention_table = self._format_mentions_table(mentions) if mentions else []
+          if mention_table:
+            lines.extend(mention_table)
           else:
             lines.append(f"   - Snippet Cited: {snippet_cited}")
-          lines.append(f"   - Influence Summary: {influence_summary}")
+            lines.append(f"   - Influence Summary: {influence_summary}")
           if provenance:
             lines.append(f"   - Provenance: {', '.join(provenance)}")
           if function:
