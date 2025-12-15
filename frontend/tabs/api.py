@@ -6,6 +6,7 @@ from frontend.components.models import get_all_models
 from frontend.components.response import display_response
 from frontend.helpers.error_handling import safe_api_call
 from frontend.helpers.interactive import build_api_response
+from frontend.helpers.markdown_export import render_markdown_download_button
 
 RESPONSE_KEY = "api_response"
 ERROR_KEY = "api_error"
@@ -75,3 +76,12 @@ def tab_api():
       st.session_state[RESPONSE_KEY],
       st.session_state.get(PROMPT_KEY),
     )
+    interaction_id = getattr(st.session_state[RESPONSE_KEY], "interaction_id", None)
+    if interaction_id:
+      btn_wrap, _ = st.columns([1, 4])
+      with btn_wrap:
+        render_markdown_download_button(
+          base_url=st.session_state.api_client.base_url,
+          interaction_id=interaction_id,
+          key=f"api-md-{interaction_id}",
+        )

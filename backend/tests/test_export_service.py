@@ -118,7 +118,9 @@ def test_build_markdown_formats_api_interaction(export_service, mock_interaction
   assert "# Interaction 123" in markdown
   assert "## Prompt" in markdown and "What is AI?" in markdown
   assert "## Search Queries" in markdown
+  assert "## Sources Found (by Query)" in markdown
   assert "### Query 1 Sources (1)" in markdown
+  assert "- Description: Snippet text" in markdown
   # Reference-style links should be converted inline
   assert "[Source](https://example.com)" in markdown
 

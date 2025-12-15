@@ -23,6 +23,8 @@ def build_api_response(response_data: Dict[str, Any]) -> SimpleNamespace:
   all_sources = [SimpleNamespace(**src) for src in response_data.get('all_sources', [])]
 
   return SimpleNamespace(
+    interaction_id=response_data.get('interaction_id'),
+    created_at=response_data.get('created_at'),
     provider=response_data.get('provider'),
     model=response_data.get('model'),
     model_display_name=response_data.get('model_display_name'),
@@ -37,6 +39,7 @@ def build_api_response(response_data: Dict[str, Any]) -> SimpleNamespace:
     avg_rank=response_data.get('avg_rank'),
     extra_links_count=response_data.get('extra_links_count', 0),
     raw_response=response_data.get('raw_response', {}),
+    metadata=response_data.get('metadata'),
   )
 
 

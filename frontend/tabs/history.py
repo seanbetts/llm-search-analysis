@@ -11,6 +11,7 @@ from frontend.components.response import display_response
 from frontend.helpers.error_handling import safe_api_call
 from frontend.helpers.export_utils import dataframe_to_csv_bytes
 from frontend.helpers.interactive import build_api_response
+from frontend.helpers.markdown_export import render_markdown_download_button
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -23,18 +24,6 @@ def _fetch_interaction_details_cached(base_url: str, interaction_id: int):
   from frontend.api_client import APIClient
   client = APIClient(base_url=base_url)
   return client.get_interaction(interaction_id)
-
-
-@st.cache_data(ttl=300, show_spinner=False)
-def _fetch_interaction_markdown_cached(base_url: str, interaction_id: int):
-  """Cached wrapper for fetching interaction markdown export.
-
-  Cache TTL: 300 seconds (5 minutes) since exports are static.
-  Cache is keyed on base_url and interaction_id.
-  """
-  from frontend.api_client import APIClient
-  client = APIClient(base_url=base_url)
-  return client.export_interaction_markdown(interaction_id)
 
 
 def _prepare_history_dataframe(interactions: List[Dict[str, Any]]) -> pd.DataFrame:
@@ -464,27 +453,15 @@ def tab_history():
       if details_error:
         st.error(f"Error loading interaction: {details_error}")
       elif details:
-        # Download interaction as markdown (cached)
-        md_export, export_error = safe_api_call(
-          _fetch_interaction_markdown_cached,
-          base_url,
-          selected_id,
-          show_spinner=False
-        )
-        if export_error:
-          st.warning(f"Could not generate markdown export: {export_error}")
-          md_export = "# Export failed\n\nCould not generate markdown export."
         btn_wrap, _ = st.columns([1, 4])
         with btn_wrap:
           btn_col1, btn_col2 = st.columns(2, gap="small")
           with btn_col1:
-            st.download_button(
-              label="📥 Download as Markdown",
-              data=md_export,
-              file_name=f"interaction_{selected_id}.md",
-              mime="text/markdown",
-              use_container_width=True,
+            render_markdown_download_button(
+              base_url=base_url,
+              interaction_id=selected_id,
               key=f"history-detail-md-{selected_id}",
+              file_name=f"interaction_{selected_id}.md",
             )
           with btn_col2:
             if st.button("🗑️ Delete Interaction", type="secondary", use_container_width=True):
