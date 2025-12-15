@@ -340,10 +340,15 @@ class CitationTaggingService:
     self._last_usage_records: List[Dict[str, Any]] = []
 
   @classmethod
-  def from_settings(cls) -> "CitationTaggingService":
-    """Create service instance using global settings."""
+  def from_settings(cls, enabled_override: Optional[bool] = None) -> "CitationTaggingService":
+    """Create service instance using global settings.
+
+    Args:
+      enabled_override: Optional per-call override for whether tagging is enabled.
+        When None, uses `settings.ENABLE_CITATION_TAGGING`.
+    """
     cfg = CitationTaggingConfig(
-      enabled=settings.ENABLE_CITATION_TAGGING,
+      enabled=settings.ENABLE_CITATION_TAGGING if enabled_override is None else enabled_override,
       provider=settings.CITATION_TAGGER_PROVIDER,
       model=settings.CITATION_TAGGER_MODEL,
       temperature=settings.CITATION_TAGGER_TEMPERATURE,

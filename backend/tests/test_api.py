@@ -631,7 +631,8 @@ class TestBatchEndpoints:
       ],
       "response_time_ms": 1200,
       "extra_links_count": 0,
-      "raw_response": {"mode": "network_log"}
+      "raw_response": {"mode": "network_log"},
+      "enable_citation_tagging": True,
     }
 
     response = client.post("/api/v1/interactions/save-network-log", json=payload)
@@ -649,6 +650,46 @@ class TestBatchEndpoints:
     metadata = data.get("metadata") or {}
     assert metadata.get("citation_tagging_status") == "queued"
     assert enqueued.get("response_id") == data["interaction_id"]
+
+  def test_save_network_log_disables_citation_tagging_when_flag_false(self, client, monkeypatch):
+    """Web captures should not enqueue tagging when explicitly disabled."""
+    monkeypatch.setattr(
+      dependencies,
+      "citation_tagger_instance",
+      SimpleNamespace(config=SimpleNamespace(enabled=True)),
+    )
+
+    called = {"count": 0}
+
+    def fake_enqueue(*_args, **_kwargs):
+      called["count"] += 1
+
+    monkeypatch.setattr(interactions_endpoint, "enqueue_web_citation_tagging", fake_enqueue)
+
+    payload = {
+      "provider": "openai",
+      "model": "chatgpt-free",
+      "prompt": "Capture ChatGPT conversation",
+      "response_text": 'Answer.\n\n[1]: https://example.com/article "Example Article"\n',
+      "search_queries": [],
+      "sources": [
+        {"url": "https://example.com/article", "title": "Example Article", "domain": "example.com", "rank": 1},
+      ],
+      "citations": [
+        {"url": "https://example.com/article", "title": "Example Article", "rank": 1},
+      ],
+      "response_time_ms": 1200,
+      "extra_links_count": 0,
+      "raw_response": {"mode": "network_log"},
+      "enable_citation_tagging": False,
+    }
+
+    response = client.post("/api/v1/interactions/save-network-log", json=payload)
+    assert response.status_code == 201
+    data = response.json()
+    metadata = data.get("metadata") or {}
+    assert metadata.get("citation_tagging_status") == "disabled"
+    assert called["count"] == 0
 
   def test_save_network_log_invalid_payload(self, client):
     """Invalid network log payloads should return 422 with detail."""

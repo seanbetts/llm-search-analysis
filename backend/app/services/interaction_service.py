@@ -69,6 +69,7 @@ class InteractionService:
     data_source: str = "api",
     extra_links_count: int = 0,
     sources: Optional[List[dict]] = None,
+    enable_citation_tagging: Optional[bool] = None,
   ) -> int:
     """Save interaction with business logic applied.
 
@@ -89,6 +90,7 @@ class InteractionService:
       data_source: Data collection mode
       extra_links_count: Number of extra links
       sources: List of source dicts linked directly to response (for web capture mode)
+      enable_citation_tagging: Optional per-interaction override (web captures only)
 
     Returns:
       The response ID
@@ -149,6 +151,7 @@ class InteractionService:
       sources_found=sources_found,
       sources_used_count=sources_used,
       avg_rank=avg_rank,
+      citation_tagging_requested=enable_citation_tagging,
     )
 
   def _set_web_citation_tagging_status(self, response_id: int) -> str:
@@ -165,9 +168,14 @@ class InteractionService:
     response.citation_tagging_started_at = None
     response.citation_tagging_completed_at = None
 
-    tagger = self.citation_tagger
-    config = getattr(tagger, "config", None) if tagger else None
-    if not tagger or not config or not config.enabled:
+    if not response.citation_tagging_requested:
+      response.citation_tagging_status = "disabled"
+      self.repository.db.commit()
+      return "disabled"
+
+    # Evaluate effective config for this request (not env-global).
+    tagger = CitationTaggingService.from_settings(enabled_override=True)
+    if not tagger.config.enabled:
       response.citation_tagging_status = "disabled"
       self.repository.db.commit()
       return "disabled"
@@ -471,6 +479,7 @@ class InteractionService:
     response_time_ms: int,
     raw_response: Optional[dict],
     extra_links_count: int = 0,
+    enable_citation_tagging: bool = True,
   ) -> SendPromptResponse:
     """Save web capture interaction and return formatted response.
 
@@ -488,6 +497,7 @@ class InteractionService:
       response_time_ms: Response time in milliseconds
       raw_response: Raw response data
       extra_links_count: Number of extra links
+      enable_citation_tagging: Whether to queue citation tagging for this web capture
 
     Returns:
       SendPromptResponse with interaction_id and all data
@@ -505,6 +515,7 @@ class InteractionService:
       data_source="web",
       extra_links_count=extra_links_count,
       sources=sources,
+      enable_citation_tagging=enable_citation_tagging,
     )
 
     # Mark citation tagging status so the API can enqueue work without blocking the request.

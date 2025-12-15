@@ -300,6 +300,7 @@ async def save_network_log_data(
       response_time_ms=request.response_time_ms,
       raw_response=request.raw_response,
       extra_links_count=request.extra_links_count,
+      enable_citation_tagging=request.enable_citation_tagging,
     )
 
     try:

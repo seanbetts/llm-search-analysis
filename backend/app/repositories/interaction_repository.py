@@ -153,6 +153,7 @@ class InteractionRepository:
     sources_found: int = 0,
     sources_used_count: int = 0,
     avg_rank: Optional[float] = None,
+    citation_tagging_requested: Optional[bool] = None,
   ) -> int:
     """Save a complete interaction (prompt + response + search data).
 
@@ -171,6 +172,7 @@ class InteractionRepository:
       sources_found: Total number of sources from search
       sources_used_count: Number of citations with rank (from search results)
       avg_rank: Average rank of citations
+      citation_tagging_requested: Optional override for whether to queue tagging for this response
 
     Returns:
       The response ID
@@ -240,7 +242,12 @@ class InteractionRepository:
         extra_links_count=extra_links_count,
         sources_found=sources_found,
         sources_used_count=sources_used_count,
-        avg_rank=avg_rank
+        avg_rank=avg_rank,
+        citation_tagging_requested=(
+          citation_tagging_requested
+          if citation_tagging_requested is not None
+          else True
+        ),
       )
       self.db.add(response)
       self.db.flush()

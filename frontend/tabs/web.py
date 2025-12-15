@@ -12,6 +12,7 @@ from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 RESPONSE_KEY = "web_response"
 ERROR_KEY = "web_error"
 PROMPT_KEY = "web_prompt"
+TAGGING_KEY = "web_enable_citation_tagging"
 
 
 def tab_web():
@@ -20,6 +21,7 @@ def tab_web():
   st.session_state.setdefault(ERROR_KEY, None)
   st.session_state.setdefault(PROMPT_KEY, None)
   st.session_state.setdefault('network_show_browser', False)
+  st.session_state.setdefault(TAGGING_KEY, True)
 
   st.markdown("### 🌐 Web Testing")
 
@@ -28,6 +30,13 @@ def tab_web():
     value=st.session_state.network_show_browser,
     key="network_show_browser",
     help="Uncheck to run headless for faster captures."
+  )
+
+  st.checkbox(
+    "Enable citation tagging",
+    value=st.session_state[TAGGING_KEY],
+    key=TAGGING_KEY,
+    help="Runs in the background after saving (adds tags and influence summaries)."
   )
 
   prompt = st.chat_input("Prompt (Enter to send, Shift+Enter for new line)", key="web_prompt_input")
@@ -79,6 +88,7 @@ def tab_web():
               sources=namespace_to_dict(response_ns.all_sources),
               citations=namespace_to_dict(response_ns.citations),
               response_time_ms=response_ns.response_time_ms,
+              enable_citation_tagging=st.session_state.get(TAGGING_KEY, True),
               raw_response=response_ns.raw_response,
               extra_links_count=response_ns.extra_links_count,
               show_spinner=False

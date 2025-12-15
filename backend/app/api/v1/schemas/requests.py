@@ -392,6 +392,11 @@ class SaveNetworkLogRequest(BaseModel):
     description="Count of extra links (citations not from search)"
   )
 
+  enable_citation_tagging: bool = Field(
+    default=True,
+    description="Whether to run citation tagging for this web capture (queued in background)."
+  )
+
   @field_validator("provider")
   @classmethod
   def validate_provider(cls, v: str) -> str:
@@ -435,7 +440,8 @@ class SaveNetworkLogRequest(BaseModel):
           ],
           "response_time_ms": 5000,
           "raw_response": {},
-          "extra_links_count": 0
+          "extra_links_count": 0,
+          "enable_citation_tagging": True
         }
       ]
     }

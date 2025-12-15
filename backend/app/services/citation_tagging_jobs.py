@@ -79,7 +79,11 @@ def _run_web_citation_tagging_job(response_id: int, prompt: str, response_text: 
     if response.data_source not in ("web", "network_log"):
       return
 
-    tagger = CitationTaggingService.from_settings()
+    if not response.citation_tagging_requested:
+      _update_status(session, response, status="disabled")
+      return
+
+    tagger = CitationTaggingService.from_settings(enabled_override=True)
     if not tagger.config.enabled:
       _update_status(session, response, status="disabled")
       return
