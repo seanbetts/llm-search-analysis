@@ -362,9 +362,9 @@ class GoogleAIModeCapturer(BaseCapturer):
 
     self._log_status("🌐 Navigating to Google AI Mode...")
     self.page.goto(self.AIMODE_URL, wait_until="domcontentloaded", timeout=30000)
-    # Give the app shell time to hydrate; AI Mode is a heavy SPA.
+    # Avoid long `networkidle` waits; AI Mode keeps background connections open.
     try:
-      self.page.wait_for_load_state("networkidle", timeout=10000)
+      self.page.wait_for_timeout(500)
     except Exception:
       pass
 

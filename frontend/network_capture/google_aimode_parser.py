@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import base64
 import html as html_lib
+import json
 import re
 from dataclasses import dataclass
 from html.parser import HTMLParser
@@ -23,6 +24,9 @@ from backend.app.services.providers.base_provider import Citation, ProviderRespo
 
 _DISCLAIMER_MARKER = "AI responses may include mistakes"
 
+_UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
+_DATE_RE = re.compile(r"\b(\d{1,2}\s+[A-Z][a-z]{2}\s+\d{4})\b")
+
 
 class _MarkdownAndCitationsExtractor(HTMLParser):
   """Extract markdown-like text and citation anchors from folif HTML.
@@ -32,8 +36,9 @@ class _MarkdownAndCitationsExtractor(HTMLParser):
   snippet (sentence immediately preceding the citation link).
   """
 
-  def __init__(self) -> None:
+  def __init__(self, *, container_id: str) -> None:
     super().__init__()
+    self._container_id = container_id
     self._skip_depth = 0
     self._lines: List[str] = []
     self._current_line: List[str] = []
@@ -41,9 +46,15 @@ class _MarkdownAndCitationsExtractor(HTMLParser):
 
     self._in_li = False
     self._pending_link: Optional[Tuple[str, str]] = None  # (href, anchor_text)
+    self._pending_uuid: Optional[str] = None
+
+    self._capture_depth: Optional[int] = None
+    self._depth = 0
 
     # url -> (title, snippet)
     self.citations: Dict[str, Tuple[Optional[str], Optional[str]]] = {}
+    # uuid -> snippet
+    self.uuid_snippets: Dict[str, Optional[str]] = {}
 
   def handle_starttag(self, tag: str, attrs) -> None:  # noqa: ANN001
     """Track when entering a script/style block."""
@@ -51,6 +62,16 @@ class _MarkdownAndCitationsExtractor(HTMLParser):
       self._skip_depth += 1
       return
     if self._skip_depth:
+      return
+
+    self._depth += 1
+
+    if tag == "div":
+      attrs_dict = dict(attrs or [])
+      if attrs_dict.get("data-target-container-id") == self._container_id:
+        self._capture_depth = self._depth
+
+    if self._capture_depth is None:
       return
 
     if tag == "br":
@@ -86,12 +107,30 @@ class _MarkdownAndCitationsExtractor(HTMLParser):
         self._pending_link = (href, "")
       return
 
+    if tag == "button":
+      attrs_dict = dict(attrs or [])
+      uuid = attrs_dict.get("data-icl-uuid")
+      if isinstance(uuid, str) and _UUID_RE.match(uuid):
+        snippet = _extract_last_sentence("".join(self._block_text))
+        self.uuid_snippets[uuid] = snippet
+        return
+
   def handle_endtag(self, tag: str) -> None:
     """Track when leaving a script/style block."""
+    if self._capture_depth is not None:
+      if self._depth == self._capture_depth and tag == "div":
+        self._capture_depth = None
+      self._depth = max(0, self._depth - 1)
+    else:
+      self._depth = max(0, self._depth - 1)
+
     if tag in ("script", "style") and self._skip_depth:
       self._skip_depth -= 1
       return
     if self._skip_depth:
+      return
+
+    if self._capture_depth is None:
       return
 
     if tag == "a" and self._pending_link:
@@ -125,6 +164,8 @@ class _MarkdownAndCitationsExtractor(HTMLParser):
   def handle_data(self, data: str) -> None:
     """Collect visible text nodes."""
     if self._skip_depth:
+      return
+    if self._capture_depth is None:
       return
     if data and data.strip():
       text = data.strip()
@@ -166,10 +207,14 @@ class _MarkdownAndCitationsExtractor(HTMLParser):
     return markdown
 
 
-def _extract_markdown_and_citations(html: str) -> tuple[str, Dict[str, Tuple[Optional[str], Optional[str]]]]:
-  extractor = _MarkdownAndCitationsExtractor()
+def _extract_markdown_and_citations(
+  html: str,
+  *,
+  container_id: str,
+) -> tuple[str, Dict[str, Tuple[Optional[str], Optional[str]]], Dict[str, Optional[str]]]:
+  extractor = _MarkdownAndCitationsExtractor(container_id=container_id)
   extractor.feed(html)
-  return extractor.get_markdown(), extractor.citations
+  return extractor.get_markdown(), extractor.citations, extractor.uuid_snippets
 
 
 def _decode_js_escapes(value: str) -> str:
@@ -248,6 +293,197 @@ def _extract_last_sentence(text: str) -> Optional[str]:
   return cleaned[-200:].strip()
 
 
+def _strip_heavy_inline_images(html: str) -> str:
+  """Remove large `sn._setImageSrc(...)` script payloads to speed up parsing."""
+  if not html:
+    return ""
+  return re.sub(r"<script[^>]*>\s*sn\._setImageSrc\([^<]*</script>", "", html, flags=re.DOTALL)
+
+
+def _parse_uuid_source_blocks(folif_html: str) -> Dict[str, dict]:
+  r"""Parse Sv6Kpe UUID metadata blocks into a uuid -> metadata dict.
+
+  These blocks look like:
+    <!--Sv6Kpe[[\"<uuid>\",[<meta>]]]-->
+  """
+  if not folif_html:
+    return {}
+
+  text = html_lib.unescape(folif_html)
+  results: Dict[str, dict] = {}
+  for match in re.finditer(r'<!--Sv6Kpe\[\["([0-9a-fA-F-]{36})"', text):
+    start = match.start()
+    end = text.find("-->", start)
+    if end == -1:
+      continue
+    chunk = text[start + len("<!--Sv6Kpe"): end]
+    chunk = chunk[chunk.find("[") :]
+    depth = 0
+    endpos = None
+    for i, ch in enumerate(chunk):
+      if ch == "[":
+        depth += 1
+      elif ch == "]":
+        depth -= 1
+        if depth == 0:
+          endpos = i + 1
+          break
+    if not endpos:
+      continue
+    raw = chunk[:endpos]
+    try:
+      obj = json.loads(raw)
+    except Exception:
+      continue
+    if not isinstance(obj, list) or len(obj) != 1 or not isinstance(obj[0], list) or len(obj[0]) < 2:
+      continue
+    uuid, meta = obj[0][0], obj[0][1]
+    if not isinstance(uuid, str) or not _UUID_RE.match(uuid) or not isinstance(meta, list):
+      continue
+    results[uuid] = {"uuid": uuid, "meta": meta}
+  return results
+
+
+def _extract_pub_date_from_meta(meta) -> Optional[str]:  # noqa: ANN001
+  """Find a date-like string in an arbitrarily nested metadata structure."""
+  stack = [meta]
+  while stack:
+    item = stack.pop()
+    if isinstance(item, str):
+      m = _DATE_RE.search(item)
+      if m:
+        return m.group(1)
+    elif isinstance(item, list):
+      stack.extend(item)
+  return None
+
+
+class _SidebarSourcesExtractor(HTMLParser):
+  """Extract source cards from the sidebar container (data-target-container-id=13)."""
+
+  def __init__(self) -> None:
+    super().__init__()
+    self._skip_depth = 0
+    self._depth = 0
+    self._capture_depth: Optional[int] = None
+    self._current: Optional[dict] = None
+    self._current_text: List[str] = []
+    self.items: List[dict] = []
+
+  def handle_starttag(self, tag: str, attrs) -> None:  # noqa: ANN001
+    if tag in ("script", "style"):
+      self._skip_depth += 1
+      return
+    if self._skip_depth:
+      return
+    self._depth += 1
+
+    if tag == "div":
+      attrs_dict = dict(attrs or [])
+      if attrs_dict.get("data-target-container-id") == "13":
+        self._capture_depth = self._depth
+      return
+
+    if self._capture_depth is None:
+      return
+
+    if tag == "a":
+      attrs_dict = dict(attrs or [])
+      href = attrs_dict.get("href")
+      title = attrs_dict.get("aria-label") or None
+      normalized = _normalize_outgoing_url(href) if isinstance(href, str) else None
+      if normalized:
+        self._flush_current()
+        self._current = {"url": normalized, "title": title}
+        self._current_text = []
+
+  def handle_endtag(self, tag: str) -> None:
+    if tag in ("script", "style") and self._skip_depth:
+      self._skip_depth -= 1
+      return
+    if self._skip_depth:
+      return
+
+    if self._capture_depth is not None and self._depth == self._capture_depth and tag == "div":
+      self._flush_current()
+      self._capture_depth = None
+
+    self._depth = max(0, self._depth - 1)
+
+  def handle_data(self, data: str) -> None:
+    if self._skip_depth or self._capture_depth is None:
+      return
+    text = (data or "").strip()
+    if not text:
+      return
+    if self._current is not None:
+      self._current_text.append(text)
+
+  def _flush_current(self) -> None:
+    if not self._current:
+      return
+    blob = " ".join(self._current_text)
+    blob = re.sub(r"\s+", " ", blob).strip()
+    pub_date = None
+    m = _DATE_RE.search(blob)
+    if m:
+      pub_date = m.group(1)
+    # Description: remove any date strings.
+    description = _DATE_RE.sub("", blob).strip() or None
+    self._current["pub_date"] = pub_date
+    self._current["description"] = description
+    self.items.append(self._current)
+    self._current = None
+    self._current_text = []
+
+
+def extract_sidebar_sources_from_folif_html(folif_html: str) -> List[Source]:
+  """Extract sidebar source cards (titles, urls, dates, descriptions)."""
+  if not folif_html:
+    return []
+  html_text = _strip_heavy_inline_images(html_lib.unescape(folif_html))
+  parser = _SidebarSourcesExtractor()
+  parser.feed(html_text)
+
+  sources: List[Source] = []
+  seen = set()
+  for idx, item in enumerate(parser.items, start=1):
+    url = item.get("url")
+    if not isinstance(url, str) or not url:
+      continue
+    if url in seen:
+      continue
+    seen.add(url)
+    sources.append(
+      Source(
+        url=url,
+        title=item.get("title") if isinstance(item.get("title"), str) else None,
+        domain=_domain_for_url(url),
+        rank=idx,
+        pub_date=item.get("pub_date"),
+        search_description=item.get("description"),
+        internal_score=None,
+        metadata={"source_extraction": "sidebar_container_13"},
+      )
+    )
+  return sources
+
+
+def _is_google_footer_link(url: str) -> bool:
+  try:
+    parsed = urlparse(url)
+  except Exception:
+    return False
+  domain = (parsed.netloc or "").lower()
+  path = (parsed.path or "").lower()
+  if domain.endswith("google.com") and (
+    path.startswith("/policies/") or path.startswith("/support/") or path.startswith("/intl/")
+  ):
+    return True
+  if domain.endswith("support.google.com") or domain.endswith("policies.google.com"):
+    return True
+  return False
+
 def _is_noise_url(url: str) -> bool:
   lowered = url.lower()
   if "faviconv2" in lowered or "encrypted-tbn" in lowered:
@@ -321,48 +557,48 @@ def parse_google_aimode_folif_html(
 ) -> ProviderResponse:
   """Parse a Google AI Mode folif HTML payload into a ProviderResponse."""
   unescaped = html_lib.unescape(folif_html or "")
-  markdown_text, citation_map = _extract_markdown_and_citations(unescaped)
+  unescaped = _strip_heavy_inline_images(unescaped)
+
+  # Extract primary response text + in-response citations from the main answer container.
+  markdown_text, anchor_citations, uuid_snippets = _extract_markdown_and_citations(unescaped, container_id="5")
 
   response_text = (response_text_override or "").strip() or markdown_text
   if _DISCLAIMER_MARKER in response_text:
     response_text = response_text.split(_DISCLAIMER_MARKER, 1)[0].strip()
 
-  # AI Mode often appends a "N sites" sources block; keep it out of response text.
-  lines = [line.rstrip() for line in response_text.splitlines()]
-  for idx, line in enumerate(lines):
-    if re.match(r"^\d+\s+sites\b", line.strip(), flags=re.IGNORECASE):
-      lines = lines[:idx]
-      break
-  response_text = "\n".join([line for line in lines if line.strip()]).strip()
-
-  extracted_sources = extract_sources_from_folif_html(folif_html)
-  normalized_sources: List[Source] = []
-  sources_by_url: Dict[str, Source] = {}
-
+  # Sources Found: sidebar cards. Only populate when we believe a search occurred.
   has_search = bool(search_queries)
-  if has_search:
-    for idx, src in enumerate(extracted_sources, start=1):
-      normalized_url = _normalize_outgoing_url(src.url) or src.url
-      domain = _domain_for_url(normalized_url)
-      source = Source(
-        url=normalized_url,
-        title=src.title or None,
-        domain=domain,
-        rank=idx,
-        pub_date=None,
-        search_description=None,
-        internal_score=None,
-        metadata={"source_extraction": "folif_html"},
-      )
-      normalized_sources.append(source)
-      sources_by_url[normalized_url] = source
+  normalized_sources: List[Source] = extract_sidebar_sources_from_folif_html(unescaped) if has_search else []
+  sources_by_url: Dict[str, Source] = {s.url: s for s in normalized_sources if s.url}
+
+  uuid_blocks = _parse_uuid_source_blocks(unescaped)
+  uuid_to_url: Dict[str, str] = {}
+  uuid_to_title: Dict[str, Optional[str]] = {}
+  uuid_to_pub_date: Dict[str, Optional[str]] = {}
+  uuid_to_description: Dict[str, Optional[str]] = {}
+  for uuid, payload in uuid_blocks.items():
+    meta = payload.get("meta") or []
+    if not isinstance(meta, list) or len(meta) < 6:
+      continue
+    title = meta[0] if isinstance(meta[0], str) else None
+    description = meta[1] if isinstance(meta[1], str) else None
+    url = meta[5] if isinstance(meta[5], str) else None
+    normalized_url = _normalize_outgoing_url(url) if isinstance(url, str) else None
+    if normalized_url:
+      uuid_to_url[uuid] = normalized_url
+      uuid_to_title[uuid] = title
+      uuid_to_description[uuid] = description
+      uuid_to_pub_date[uuid] = _extract_pub_date_from_meta(meta)
 
   citations: List[Citation] = []
-  seen_citation_urls = set()
-  for url, (title, snippet) in citation_map.items():
-    if url in seen_citation_urls:
+  seen_urls = set()
+
+  # UUID citations in the response (primary signal for "Sources Used").
+  for uuid, snippet in uuid_snippets.items():
+    url = uuid_to_url.get(uuid)
+    if not url or url in seen_urls or _is_google_footer_link(url):
       continue
-    seen_citation_urls.add(url)
+    seen_urls.add(url)
     rank = None
     if has_search:
       match = sources_by_url.get(url)
@@ -371,11 +607,25 @@ def parse_google_aimode_folif_html(
     citations.append(
       Citation(
         url=url,
-        title=title,
+        title=uuid_to_title.get(uuid),
         rank=rank,
         snippet_cited=snippet,
+        published_at=uuid_to_pub_date.get(uuid),
+        metadata={"icl_uuid": uuid, "description": uuid_to_description.get(uuid)},
       )
     )
+
+  # Anchor links in the response (extra links or used sources when matching sidebar).
+  for url, (title, snippet) in anchor_citations.items():
+    if not url or url in seen_urls or _is_google_footer_link(url):
+      continue
+    seen_urls.add(url)
+    rank = None
+    if has_search:
+      match = sources_by_url.get(url)
+      if match and isinstance(match.rank, int):
+        rank = match.rank
+    citations.append(Citation(url=url, title=title, rank=rank, snippet_cited=snippet))
 
   return ProviderResponse(
     response_text=response_text,
