@@ -78,7 +78,7 @@ class _MarkdownAndCitationsExtractor(HTMLParser):
       self._flush_line()
       return
 
-    if tag in ("p", "div", "section", "article"):
+    if tag in ("p", "section", "article"):
       self._flush_line()
       self._flush_block()
       self._ensure_blank_line()
@@ -95,6 +95,16 @@ class _MarkdownAndCitationsExtractor(HTMLParser):
       self._flush_block()
       self._in_li = True
       self._current_line.append("- ")
+      return
+
+    if tag == "div":
+      # Many AI Mode wrappers use `display: contents` or are purely structural;
+      # treat those as inline so we don't introduce spurious line breaks.
+      attrs_dict = dict(attrs or [])
+      style = (attrs_dict.get("style") or "").replace(" ", "").lower()
+      if "display:contents" in style:
+        return
+      # Otherwise keep div as inline by default for better sentence flow.
       return
 
     if tag == "a":
@@ -152,10 +162,15 @@ class _MarkdownAndCitationsExtractor(HTMLParser):
       self._in_li = False
       self._flush_line()
       self._flush_block()
+      return
+
+    if tag in ("p", "section", "article"):
+      self._flush_line()
+      self._flush_block()
       self._ensure_blank_line()
       return
 
-    if tag in ("p", "div", "section", "article"):
+    if tag in ("ul", "ol"):
       self._flush_line()
       self._flush_block()
       self._ensure_blank_line()
@@ -203,6 +218,8 @@ class _MarkdownAndCitationsExtractor(HTMLParser):
     """Return extracted markdown text with light cleanup."""
     self._flush_line()
     markdown = "\n".join(self._lines)
+    # Trim trailing spaces and fix common spacing issues around punctuation.
+    markdown = re.sub(r"\s+([,.;:])", r"\1", markdown)
     markdown = re.sub(r"\n{3,}", "\n\n", markdown).strip()
     return markdown
 

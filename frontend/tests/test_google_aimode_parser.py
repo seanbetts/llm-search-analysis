@@ -47,6 +47,7 @@ def test_parse_google_aimode_folif_html_extracts_sidebar_sources_and_citations()
   assert response.response_time_ms == 1234
   assert "This is the first sentence." in response.response_text
   assert "AI responses may include mistakes" not in response.response_text
+  assert "- " not in response.response_text  # no list in this fixture
 
   assert [s.url for s in response.sources] == ["https://example.com/a", "https://example.org/b"]
   assert response.sources[0].pub_date == "23 Nov 2025"
@@ -61,6 +62,23 @@ def test_parse_google_aimode_folif_html_extracts_sidebar_sources_and_citations()
   assert used.rank == 1
   assert isinstance(used.snippet_cited, str)
   assert "second sentence" in used.snippet_cited.lower()
+
+
+def test_markdown_extraction_does_not_add_blank_lines_between_list_items():
+  """AI Mode bullets should render as a compact markdown list."""
+  html = """
+  <div data-target-container-id="5">
+    <p>Intro.</p>
+    <ul>
+      <li>First bullet.</li>
+      <li>Second bullet.</li>
+    </ul>
+    <div>AI responses may include mistakes. Learn more</div>
+  </div>
+  """
+  response = parse_google_aimode_folif_html(html, response_time_ms=10)
+  assert "Intro." in response.response_text
+  assert "\n- First bullet.\n- Second bullet.\n" in (response.response_text + "\n")
 
 
 def test_parse_google_aimode_folif_html_without_search_queries_has_no_sources():
