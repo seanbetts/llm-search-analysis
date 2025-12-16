@@ -97,6 +97,11 @@ class GoogleAIModeCapturer(BaseCapturer):
 
     self._log_status("🌐 Navigating to Google AI Mode...")
     self.page.goto(self.AIMODE_URL, wait_until="domcontentloaded", timeout=30000)
+    # Give the app shell time to hydrate; AI Mode is a heavy SPA.
+    try:
+      self.page.wait_for_load_state("networkidle", timeout=10000)
+    except Exception:
+      pass
 
     # Accept consent dialogs if they appear (best-effort).
     try:
@@ -108,27 +113,43 @@ class GoogleAIModeCapturer(BaseCapturer):
 
     # Find a textbox/textarea and submit prompt. Use broad fallbacks for resilience.
     self._log_status("📝 Entering prompt...")
-    textbox = None
-    selectors = [
-      "textarea",
-      "[role='textbox']",
-      "input[type='text']",
+    input_locator = None
+    locator_candidates = [
+      # Most robust: accessibility role
+      ("role:textbox", self.page.get_by_role("textbox").first),
+      # Common inputs
+      ("textarea", self.page.locator("textarea").first),
+      ("role=textbox", self.page.locator("[role='textbox']").first),
+      ("contenteditable", self.page.locator("[contenteditable='true']").first),
+      ("input", self.page.locator("input[type='text'], input:not([type])").first),
     ]
-    for sel in selectors:
-      loc = self.page.locator(sel).first
+    for _label, loc in locator_candidates:
       try:
-        if loc and loc.is_visible(timeout=2000):
-          textbox = loc
+        if loc and loc.is_visible(timeout=3000):
+          input_locator = loc
           break
       except Exception:
         continue
-    if textbox is None:
-      raise RuntimeError("Could not find input box on /aimode")
+    if input_locator is None:
+      # Provide some lightweight diagnostics.
+      counts = {}
+      for label, loc in locator_candidates:
+        try:
+          counts[label] = int(loc.count())  # type: ignore[union-attr]
+        except Exception:
+          counts[label] = 0
+      raise RuntimeError(f"Could not find input box on /aimode. Candidates={counts}")
 
     started = time.time()
-    textbox.click()
-    textbox.fill(prompt)
-    textbox.press("Enter")
+    input_locator.click()
+    # Some AI Mode inputs are contenteditable and do not support `.fill()`.
+    try:
+      input_locator.fill(prompt)
+    except Exception:
+      self.page.keyboard.type(prompt)
+
+    # Submit with Enter first; if no response appears, fall back to a send button.
+    self.page.keyboard.press("Enter")
 
     # Wait for a folif response to be captured.
     self._log_status("⏳ Waiting for AI Mode response...")
@@ -142,6 +163,22 @@ class GoogleAIModeCapturer(BaseCapturer):
       time.sleep(0.5)
 
     response_time_ms = int((time.time() - started) * 1000)
+    if not folif_html:
+      # Try clicking a likely send/submit button (best-effort) and wait again briefly.
+      try:
+        send_button = self.page.get_by_role("button", name=re.compile(r"(send|submit|ask)", re.I)).first
+        if send_button and send_button.is_visible(timeout=1000):
+          send_button.click()
+          extra_deadline = time.time() + 15
+          while time.time() < extra_deadline:
+            body = choose_latest_folif_response(self.browser_manager.get_captured_responses(url_pattern="/async/folif"))
+            if isinstance(body, str) and body.strip():
+              folif_html = body
+              break
+            time.sleep(0.5)
+      except Exception:
+        pass
+
     if not folif_html:
       raise RuntimeError("Timed out waiting for /async/folif response")
 
