@@ -755,6 +755,22 @@ def parse_google_aimode_folif_html(
         url = item.get("url")
         if not isinstance(url, str) or not url or url in seen_urls or _is_google_footer_link(url):
           continue
+        # Some "related links" sources don't appear in the initial sidebar list; treat them
+        # as discovered sources so they can be ranked and counted consistently.
+        if has_search and url not in sources_by_url:
+          normalized_sources.append(
+            Source(
+              url=url,
+              title=item.get("title") if isinstance(item.get("title"), str) else None,
+              domain=_domain_for_url(url),
+              rank=len(normalized_sources) + 1,
+              pub_date=item.get("pub_date") if isinstance(item.get("pub_date"), str) else None,
+              search_description=item.get("description") if isinstance(item.get("description"), str) else None,
+              internal_score=None,
+              metadata={"source_extraction": "related_links"},
+            )
+          )
+          sources_by_url[url] = normalized_sources[-1]
         seen_urls.add(url)
         rank = None
         if has_search:

@@ -514,7 +514,7 @@ class GoogleAIModeCapturer(BaseCapturer):
     # misclassify late-rendered sources as "extra links". This does NOT affect
     # `response_time_ms` since we already measured it above.
     try:
-      grace_ms = int(os.getenv("GOOGLE_AIMODE_POST_RENDER_GRACE_MS", "2000"))
+      grace_ms = int(os.getenv("GOOGLE_AIMODE_POST_RENDER_GRACE_MS", "3000"))
     except Exception:
       grace_ms = 2000
     if grace_ms > 0:

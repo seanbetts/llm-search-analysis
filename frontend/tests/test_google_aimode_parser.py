@@ -22,6 +22,14 @@ def test_parse_google_aimode_folif_html_extracts_sidebar_sources_and_citations()
     'null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'
     'null,null,null,null,null,"11 Nov 2025",0]]]-->'
   )
+  uuid_block_related_extra = (
+    '<!--Sv6Kpe[["9d06f938-e592-4929-a3c9-e91ed6852000",'
+    '["Example Extra","Extra desc",'
+    '"https://encrypted-tbn0.gstatic.com/faviconV2?url=https://extra.example.net&client=AIM",'
+    '"https://extra.example.net",["Example"],"https://extra.example.net/from-related",null,null,"1",null,[],[],0,[],'
+    'null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'
+    'null,null,null,null,null,"11 Nov 2025",0]]]-->'
+  )
   html = """
   <div data-target-container-id="13">
     <button aria-label="2 sites"></button>
@@ -43,7 +51,7 @@ def test_parse_google_aimode_folif_html_extracts_sidebar_sources_and_citations()
     <div>AI responses may include mistakes. Learn more</div>
   </div>
 
-  """ + uuid_block_primary + uuid_block_related
+  """ + uuid_block_primary + uuid_block_related + uuid_block_related_extra
   response = parse_google_aimode_folif_html(
     html,
     response_time_ms=1234,
@@ -57,7 +65,11 @@ def test_parse_google_aimode_folif_html_extracts_sidebar_sources_and_citations()
   assert "AI responses may include mistakes" not in response.response_text
   assert "- " not in response.response_text  # no list in this fixture
 
-  assert [s.url for s in response.sources] == ["https://example.com/a", "https://example.org/b"]
+  assert [s.url for s in response.sources] == [
+    "https://example.com/a",
+    "https://example.org/b",
+    "https://extra.example.net/from-related",
+  ]
   assert response.sources[0].pub_date == "23 Nov 2025"
   assert response.sources[0].search_description is not None
 
@@ -65,10 +77,12 @@ def test_parse_google_aimode_folif_html_extracts_sidebar_sources_and_citations()
   assert "https://example.com/a" in citation_urls
   assert "https://example.org/b" in citation_urls
   assert "https://extra.example.net/x" in citation_urls
+  # Related-link sources that aren't in the sidebar should still be treated as found/used.
+  assert "https://extra.example.net/from-related" in citation_urls
   assert "https://policies.google.com/privacy" not in citation_urls
 
-  used = [c for c in response.citations if c.url in {"https://example.com/a", "https://example.org/b"}]
-  assert all(c.rank in {1, 2} for c in used)
+  used = [c for c in response.citations if c.url in {"https://example.com/a", "https://example.org/b", "https://extra.example.net/from-related"}]
+  assert all(isinstance(c.rank, int) for c in used)
   assert all(isinstance(c.snippet_cited, str) for c in used)
   assert any("second sentence" in (c.snippet_cited or "").lower() for c in used)
 
