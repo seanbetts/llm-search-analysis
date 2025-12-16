@@ -73,6 +73,42 @@ def test_parse_google_aimode_folif_html_extracts_sidebar_sources_and_citations()
   assert any("second sentence" in (c.snippet_cited or "").lower() for c in used)
 
 
+def test_snippet_cited_includes_link_text_in_sentence():
+  """Snippet extraction should not drop visible anchor text inside sentences."""
+  uuid_block = (
+    '<!--Sv6Kpe[["9d06f938-e592-4929-a3c9-e91ed6852000",'
+    '["Steam Store","Desc",'
+    '"https://encrypted-tbn0.gstatic.com/faviconV2?url=https://store.steampowered.com&client=AIM",'
+    '"https://store.steampowered.com",["Steam"],"https://store.steampowered.com/sale/steammachine",'
+    'null,null,"1",null,[],[],0,[],'
+    'null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'
+    'null,null,null,null,null,"11 Nov 2025",0]]]-->'
+  )
+  html = """
+  <div data-target-container-id="13">
+    <button aria-label="1 sites"></button>
+    <a target="_blank" rel="noopener" aria-label="Steam Machine" href="https://store.steampowered.com/sale/steammachine"></a>
+    <div>11 Nov 2025 Steam Machine description.</div>
+  </div>
+  <div data-target-container-id="5">
+    <p>Distribution: It will be sold directly through the
+      <a href="https://store.steampowered.com/sale/steammachine">Official Steam Store</a>
+      and Komodo, similar to the Steam Deck.
+      <button data-icl-uuid="9d06f938-e592-4929-a3c9-e91ed6852000"></button>
+    </p>
+    <div>AI responses may include mistakes. Learn more</div>
+  </div>
+  """ + uuid_block
+  response = parse_google_aimode_folif_html(
+    html,
+    response_time_ms=10,
+    search_queries=[SearchQuery(query="test", order_index=0)],
+  )
+  used = [c for c in response.citations if c.rank]
+  assert used
+  assert any("official steam store" in (c.snippet_cited or "").lower() for c in used)
+
+
 def test_markdown_extraction_does_not_add_blank_lines_between_list_items():
   """AI Mode bullets should render as a compact markdown list."""
   html = """

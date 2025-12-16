@@ -186,12 +186,12 @@ class _MarkdownAndCitationsExtractor(HTMLParser):
       text = data.strip()
       if not text:
         return
+      # Always accumulate visible text so snippet extraction includes linked phrases.
+      self._block_text.append(text + " ")
       if self._pending_link:
         href, anchor_text = self._pending_link
         self._pending_link = (href, anchor_text + text)
       else:
-        # Accumulate raw block text for snippet extraction (sentence preceding a link).
-        self._block_text.append(text + " ")
         self._current_line.append(text)
 
   def _flush_line(self) -> None:
