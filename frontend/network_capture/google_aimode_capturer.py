@@ -365,6 +365,39 @@ class GoogleAIModeCapturer(BaseCapturer):
         continue
     return ""
 
+  def _wait_for_response_complete_marker(self, timeout_seconds: int = 45) -> bool:
+    """Wait for AI Mode's completion marker to appear.
+
+    AI Mode typically renders a footer/disclaimer: "AI responses may include mistakes."
+    When that appears, the answer is usually fully rendered (including citation icons).
+
+    Args:
+      timeout_seconds: Maximum time to wait.
+
+    Returns:
+      True if the marker was detected, otherwise False.
+    """
+    if not self.page:
+      return False
+
+    selectors = [
+      # Observed container in the wild.
+      "[data-xid='Gd7Hsc']",
+      # Text-based fallback.
+      "text=/AI responses may include mistakes\\./i",
+      "text=/AI responses may include mistakes/i",
+    ]
+    deadline = time.time() + max(1, int(timeout_seconds))
+    while time.time() < deadline:
+      for selector in selectors:
+        try:
+          if self.page.locator(selector).first.is_visible(timeout=500):
+            return True
+        except Exception:
+          continue
+      time.sleep(0.5)
+    return False
+
   def send_prompt(self, prompt: str, model: str = "google-aimode", enable_search: bool = True) -> ProviderResponse:
     """Submit a prompt to AI Mode and return normalized response."""
     del enable_search  # AI Mode implicitly searches as needed.
@@ -438,15 +471,41 @@ class GoogleAIModeCapturer(BaseCapturer):
       # Fallback: try Enter if we couldn't locate a send button.
       self.page.keyboard.press("Enter")
 
-    # Wait for a folif response to be captured.
+    # Wait for the response to be fully rendered and the /async/folif payload to stabilize.
     self._log_status("⏳ Waiting for AI Mode response...")
-    deadline = time.time() + 60
+    deadline = time.time() + 75
     folif_html = None
+    last_size = 0
+    last_growth_at = time.time()
+
     while time.time() < deadline:
-      body = choose_latest_folif_response(self.browser_manager.get_captured_responses(url_pattern="/async/folif"))
-      if isinstance(body, str) and body.strip():
-        folif_html = body
+      responses = self.browser_manager.get_captured_responses(url_pattern="/async/folif")
+      candidate = choose_latest_folif_response(responses)
+      if isinstance(candidate, str) and candidate.strip():
+        folif_html = candidate
+        size = len(candidate)
+        if size > last_size:
+          last_size = size
+          last_growth_at = time.time()
+
+      # Completion heuristics: footer marker OR stable payload for a short window.
+      marker_seen = False
+      if folif_html and "AI responses may include mistakes" in folif_html:
+        marker_seen = True
+      else:
+        try:
+          marker_seen = self._wait_for_response_complete_marker(timeout_seconds=1)
+        except Exception:
+          marker_seen = False
+
+      stable_enough = folif_html is not None and (time.time() - last_growth_at) >= 2.5
+      if marker_seen and stable_enough:
         break
+      if marker_seen and folif_html is not None:
+        # If UI says complete but payload isn't growing, accept.
+        if time.time() - last_growth_at >= 1.0:
+          break
+
       time.sleep(0.5)
 
     response_time_ms = int((time.time() - started) * 1000)
