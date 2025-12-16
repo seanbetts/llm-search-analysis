@@ -140,6 +140,21 @@ def test_markdown_extraction_does_not_add_blank_lines_between_list_items():
   assert "\n- First bullet.\n- Second bullet.\n" in (response.response_text + "\n")
 
 
+def test_response_text_strips_trailing_sites_source_list():
+  """AI Mode sometimes appends a raw 'N sites' dump into the answer container."""
+  html = """
+  <div data-target-container-id="5">
+    <p>Answer paragraph.</p>
+    <div>11 sites</div>
+    <div>https://example.com Example 1 11 Nov 2025 — Desc</div>
+    <div>https://example.org Example 2 12 Nov 2025 — Desc</div>
+    <div>AI responses may include mistakes. Learn more</div>
+  </div>
+  """
+  response = parse_google_aimode_folif_html(html, response_time_ms=10)
+  assert response.response_text.strip() == "Answer paragraph."
+
+
 def test_parse_google_aimode_folif_html_without_search_queries_has_no_sources():
   """If we cannot confirm a search ran, sources should not be populated."""
   html = """

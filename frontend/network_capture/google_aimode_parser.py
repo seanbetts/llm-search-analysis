@@ -26,6 +26,7 @@ _DISCLAIMER_MARKER = "AI responses may include mistakes"
 
 _UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
 _DATE_RE = re.compile(r"\b(\d{1,2}\s+[A-Z][a-z]{2}\s+\d{4})\b")
+_SITES_LINE_RE = re.compile(r"^\s*(\d{1,3})\s+sites?\s*$", re.IGNORECASE)
 
 
 class _MarkdownAndCitationsExtractor(HTMLParser):
@@ -316,6 +317,27 @@ def _strip_heavy_inline_images(html: str) -> str:
     return ""
   return re.sub(r"<script[^>]*>\s*sn\._setImageSrc\([^<]*</script>", "", html, flags=re.DOTALL)
 
+
+def _strip_trailing_sites_block(response_text: str) -> str:
+  """Remove AI Mode's trailing 'N sites' source list from the response markdown."""
+  if not response_text:
+    return ""
+  cleaned = response_text.replace("\u00a0", " ")
+
+  # Preferred: the "N sites" marker appears on its own line.
+  lines = cleaned.splitlines()
+  for idx, line in enumerate(lines):
+    if _SITES_LINE_RE.match(line):
+      return "\n".join(lines[:idx]).strip()
+
+  # Fallback: some extractions flatten blocks, producing "11 sites https://...".
+  m = re.search(r"\b(\d{1,3})\s+sites?\b", cleaned, flags=re.IGNORECASE)
+  if m:
+    tail = cleaned[m.end() : m.end() + 200].lower()
+    if "http" in tail or "www." in tail:
+      return cleaned[: m.start()].strip()
+
+  return cleaned.strip()
 
 def _parse_uuid_source_blocks(folif_html: str) -> Dict[str, dict]:
   r"""Parse Sv6Kpe UUID metadata blocks into a uuid -> metadata dict.
@@ -718,6 +740,7 @@ def parse_google_aimode_folif_html(
   response_text = (response_text_override or "").strip() or markdown_text
   if _DISCLAIMER_MARKER in response_text:
     response_text = response_text.split(_DISCLAIMER_MARKER, 1)[0].strip()
+  response_text = _strip_trailing_sites_block(response_text)
 
   # Sources Found: sidebar cards. Only populate when we believe a search occurred.
   has_search = bool(search_queries)
