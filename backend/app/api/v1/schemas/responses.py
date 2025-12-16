@@ -541,6 +541,30 @@ class ProviderInfo(BaseModel):
   }
 
 
+class ModelInfoResponse(BaseModel):
+  """Model metadata exposed to API clients.
+
+  This is used by the frontend to render consistent model display names without
+  duplicating the backend registry.
+  """
+
+  model_id: str = Field(..., description="Canonical model identifier (e.g., gpt-5.2)")
+  provider: str = Field(..., description="Provider name owning this model (e.g., openai)")
+  display_name: str = Field(..., description="Human-friendly display name")
+
+  model_config = {
+    "json_schema_extra": {
+      "examples": [
+        {
+          "model_id": "gpt-5.2",
+          "provider": "openai",
+          "display_name": "GPT-5.2",
+        }
+      ]
+    }
+  }
+
+
 class HealthResponse(BaseModel):
   """Health check response."""
 

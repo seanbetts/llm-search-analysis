@@ -87,13 +87,18 @@ class TestFunctionality:
 
     def test_get_model_display_name(self):
         """Test that get_model_display_name works correctly."""
-        from frontend.helpers.metrics import get_model_display_name
+        from frontend.helpers.metrics import get_model_display_name, load_model_display_names
 
         # Test known models
         assert get_model_display_name('gpt-5-1') == 'GPT-5.1'
         assert get_model_display_name('gpt-5.1') == 'GPT-5.1'
         assert get_model_display_name('chatgpt-free') == 'ChatGPT (Free)'
         assert get_model_display_name('claude-sonnet-4-5-20250929') == 'Claude Sonnet 4.5'
+
+        # Backend-provided registry names should override heuristics when loaded.
+        assert get_model_display_name("gemini-3-pro-preview") == "Gemini 3 Pro Preview"
+        load_model_display_names([{"model_id": "gemini-3-pro-preview", "display_name": "Gemini 3 Pro (Preview)"}])
+        assert get_model_display_name("gemini-3-pro-preview") == "Gemini 3 Pro (Preview)"
 
         # Test unknown model fallback
         result = get_model_display_name('unknown-model-name')

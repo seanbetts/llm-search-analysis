@@ -3,7 +3,7 @@
 import logging
 from typing import Dict, List
 
-from app.api.v1.schemas.responses import ProviderInfo, SendPromptResponse
+from app.api.v1.schemas.responses import ModelInfoResponse, ProviderInfo, SendPromptResponse
 from app.config import settings
 from app.core.utils import get_model_display_name
 from app.services.interaction_service import InteractionService
@@ -283,6 +283,30 @@ class ProviderService:
         models.extend(provider.supported_models)
 
     return models
+
+  def get_available_model_info(self) -> List[ModelInfoResponse]:
+    """Get model metadata for all available models across configured providers.
+
+    Returns:
+      List of ModelInfoResponse objects.
+    """
+    api_keys = self._get_api_keys()
+    model_info: List[ModelInfoResponse] = []
+
+    for provider_name in ("openai", "google", "anthropic"):
+      if not api_keys.get(provider_name):
+        continue
+      for info in ProviderFactory.get_models_for_provider(provider_name):
+        model_info.append(
+          ModelInfoResponse(
+            model_id=info.model_id,
+            provider=info.provider,
+            display_name=info.display_name,
+          )
+        )
+
+    model_info.sort(key=lambda item: (item.provider, item.model_id))
+    return model_info
 
   def get_provider_for_model(self, model: str) -> str:
     """Get the provider name for a given model.

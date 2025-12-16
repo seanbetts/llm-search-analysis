@@ -75,6 +75,13 @@ echo "🎨 Step 2: Starting frontend (native)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
+# Warn if using Docker-style secrets path while running locally.
+if grep -q '^CHATGPT_ACCOUNTS_FILE=/run/secrets/' .env 2>/dev/null; then
+    echo -e "${YELLOW}⚠️  CHATGPT_ACCOUNTS_FILE points at /run/secrets/...${NC}"
+    echo "   Hybrid mode runs Streamlit locally; set CHATGPT_ACCOUNTS_FILE=./secrets/chatgpt_accounts.json instead."
+    echo ""
+fi
+
 # Check if streamlit is installed
 if ! command -v streamlit &> /dev/null; then
     echo -e "${YELLOW}⚠️  Streamlit not found. Installing dependencies...${NC}"

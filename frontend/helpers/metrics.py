@@ -1,50 +1,113 @@
 """Shared metrics computation for responses.
 
-Note: This module still contains a hardcoded model_names mapping for backward
-compatibility and to handle web-captured models. The backend's ProviderFactory
-is the true source of truth for API models.
+Model display names are derived from the backend model registry when available
+to avoid frontend/backend drift. The frontend keeps a small runtime cache that
+can be populated by calling `load_model_display_names(...)`.
 
-For consistency, keep the model_names dict in sync with backend's MODEL_REGISTRY.
+For resilience, `get_model_display_name(...)` also includes heuristic fallbacks
+for common model-id patterns (e.g., `gpt-5-1` → `GPT-5.1`) and a small, stable
+mapping for web-capture-only models (e.g., `chatgpt-free`).
 """
 
 import re
 from types import SimpleNamespace
-from typing import List, Optional
+from typing import Dict, Iterable, List, Optional
+
+_WEB_CAPTURE_DISPLAY_NAMES: Dict[str, str] = {
+    "ChatGPT (Free)": "ChatGPT (Free)",
+    "chatgpt-free": "ChatGPT (Free)",
+    "ChatGPT": "ChatGPT (Free)",
+}
+
+_MODEL_DISPLAY_NAMES: Dict[str, str] = dict(_WEB_CAPTURE_DISPLAY_NAMES)
+
+
+def load_model_display_names(model_info: Iterable[Dict[str, str]]) -> None:
+    """Load/refresh the in-process model display-name cache from backend metadata.
+
+    Args:
+        model_info: Iterable of dicts shaped like `{"model_id": "...", "display_name": "..."}`.
+    """
+    for item in model_info or []:
+        if not isinstance(item, dict):
+            continue
+        model_id = item.get("model_id")
+        display_name = item.get("display_name")
+        if isinstance(model_id, str) and model_id and isinstance(display_name, str) and display_name:
+            _MODEL_DISPLAY_NAMES[model_id] = display_name
+
+
+def _strip_date_suffix(model: str) -> str:
+    """Strip common date suffixes (e.g., `-20250929`) from model ids."""
+    return re.sub(r"-\d{7,8}$", "", model)
+
+
+def _heuristic_model_display_name(model: str) -> Optional[str]:
+    """Return a best-effort human display name derived from model id patterns."""
+    if not model:
+        return None
+
+    cleaned = _strip_date_suffix(model.strip())
+
+    # OpenAI: gpt-5-1 -> GPT-5.1, gpt-5.1 -> GPT-5.1, gpt-5-mini -> GPT-5 Mini
+    match = re.fullmatch(r"gpt-(\d+)-(\d+)", cleaned)
+    if match:
+        major, minor = match.groups()
+        return f"GPT-{major}.{minor}"
+    match = re.fullmatch(r"gpt-(\d+)\.(\d+)", cleaned)
+    if match:
+        major, minor = match.groups()
+        return f"GPT-{major}.{minor}"
+    match = re.fullmatch(r"gpt-(\d+)-(mini|nano)", cleaned)
+    if match:
+        major, variant = match.groups()
+        return f"GPT-{major} {variant.capitalize()}"
+    match = re.fullmatch(r"gpt-(\d+)\.(\d+)-(mini|nano)", cleaned)
+    if match:
+        major, minor, variant = match.groups()
+        return f"GPT-{major}.{minor} {variant.capitalize()}"
+
+    # Anthropic: claude-sonnet-4-5 -> Claude Sonnet 4.5
+    match = re.fullmatch(r"claude-(sonnet|haiku|opus)-(\d+)-(\d+)", cleaned)
+    if match:
+        family, major, minor = match.groups()
+        return f"Claude {family.capitalize()} {major}.{minor}"
+    match = re.fullmatch(r"claude-(sonnet|haiku|opus)-(\d+)\.(\d+)", cleaned)
+    if match:
+        family, major, minor = match.groups()
+        return f"Claude {family.capitalize()} {major}.{minor}"
+
+    # Google: gemini-2.5-flash -> Gemini 2.5 Flash, gemini-3-pro-preview -> Gemini 3 Pro Preview
+    match = re.fullmatch(r"gemini-(\d+(?:\.\d+)?)-(.+)", cleaned)
+    if match:
+        version, suffix = match.groups()
+        tokens = [token for token in suffix.split("-") if token]
+        if not tokens:
+            return f"Gemini {version}"
+        label = " ".join(token.capitalize() for token in tokens)
+        return f"Gemini {version} {label}"
+
+    return None
 
 
 def is_known_model_id(model: str) -> bool:
-    """Return True when we have an explicit display mapping for the given model id."""
+    """Return True when a model id has a known/normalized display mapping.
+
+    Args:
+        model: Model identifier (e.g., `gpt-5.2`, `claude-sonnet-4-5-20250929`)
+    """
     if not model:
         return False
-    known = {
-        # Anthropic
-        'claude-sonnet-4-5-20250929',
-        'claude-haiku-4-5-20251001',
-        'claude-opus-4-1-20250805',
-        # OpenAI (include dashed variants used by some clients)
-        'gpt-5-1',
-        'gpt-5.1',
-        'gpt-5-2',
-        'gpt-5.2',
-        'gpt-5-mini',
-        'gpt-5-nano',
-        # Google
-        'gemini-3-pro-preview',
-        'gemini-2.5-flash',
-        'gemini-2.5-flash-lite',
-        # Network capture
-        'ChatGPT (Free)',
-        'chatgpt-free',
-        'ChatGPT',
-    }
-    return model in known
+    if model in _MODEL_DISPLAY_NAMES:
+        return True
+    return _heuristic_model_display_name(model) is not None
 
 
 def get_model_display_name(model: str) -> str:
     """Get formatted display name for a model.
 
-    Maps known model IDs to friendly display names using a local cache.
-    This cache should match backend's ProviderFactory.MODEL_REGISTRY.
+    Prefers the backend-derived registry cache when populated via
+    `load_model_display_names(...)`, otherwise falls back to heuristics.
 
     Args:
         model: The model identifier
@@ -55,45 +118,23 @@ def get_model_display_name(model: str) -> str:
     Examples:
         >>> get_model_display_name("gpt-5.1")
         'GPT-5.1'
-        >>> get_model_display_name("claude-sonnet-4-5-20250929")
-        'Claude Sonnet 4.5'
         >>> get_model_display_name("chatgpt-free")
         'ChatGPT (Free)'
     """
     if not model:
         return ''
 
-    # Model display names - KEEP IN SYNC WITH BACKEND ProviderFactory.MODEL_REGISTRY
-    # TODO: Fetch this from backend API at startup instead of hardcoding
-    model_names = {
-        # Anthropic
-        'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5',
-        'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
-        'claude-opus-4-1-20250805': 'Claude Opus 4.1',
-        # OpenAI
-        'gpt-5-1': 'GPT-5.1',
-        'gpt-5.1': 'GPT-5.1',
-        'gpt-5-2': 'GPT-5.2',
-        'gpt-5.2': 'GPT-5.2',
-        'gpt-5-mini': 'GPT-5 Mini',
-        'gpt-5-nano': 'GPT-5 Nano',
-        # Google
-        'gemini-3-pro-preview': 'Gemini 3 Pro (Preview)',
-        'gemini-2.5-flash': 'Gemini 2.5 Flash',
-        'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite',
-        # Network capture models (not in backend registry)
-        'ChatGPT (Free)': 'ChatGPT (Free)',
-        'chatgpt-free': 'ChatGPT (Free)',
-        'ChatGPT': 'ChatGPT (Free)',
-    }
+    # Prefer registry cache (populated from backend) and stable web-capture labels.
+    mapped = _MODEL_DISPLAY_NAMES.get(model)
+    if mapped:
+        return mapped
 
-    # Return mapped name if available
-    if model in model_names:
-        return model_names[model]
+    heuristic = _heuristic_model_display_name(model)
+    if heuristic:
+        return heuristic
 
     # Fallback: Format unknown model IDs nicely
-    # Remove date suffixes (e.g., -20250929 or -0250929)
-    formatted = re.sub(r'-\d{7,8}$', '', model)
+    formatted = _strip_date_suffix(model)
     # Remove any trailing version numbers like .2
     formatted = re.sub(r'\.\d+$', '', formatted)
     # Convert hyphens to spaces and capitalize words

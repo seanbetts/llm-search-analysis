@@ -49,6 +49,18 @@ API_BASE_URL=http://localhost:8000 streamlit run app.py
 3. Run Streamlit UI: `API_BASE_URL=http://localhost:8000 streamlit run app.py`.
 4. Network capture requires Chrome, non-headless mode, and the env vars noted in `docs/frontend/NETWORK_CAPTURE.md`.
 
+### Optional: Run Streamlit in Docker
+
+The default workflow runs Streamlit locally (for Chrome/Playwright compatibility), but you can also run the
+frontend container using the overlay compose file:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.frontend.yml up -d
+```
+
+For ChatGPT account rotation in Docker, mount `./secrets/chatgpt_accounts.json` (ignored by git) and set
+`CHATGPT_ACCOUNTS_FILE=/run/secrets/chatgpt_accounts.json` as described in `docs/operations/ENVIRONMENT_VARIABLES.md`.
+
 ### Database migrations
 - Apply latest schema: `cd backend && alembic upgrade head`.
 - Generate new revisions after model changes: `alembic revision --autogenerate -m "describe change"`.

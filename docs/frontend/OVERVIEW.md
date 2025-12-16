@@ -12,9 +12,10 @@ app.py
 ├── frontend/components/
 │   └── response.py                    # Rendering helpers (display_response, etc.)
 ├── frontend/tabs/
-│   ├── interactive.py                # Tab 1 – single prompt + network mode
-│   ├── batch.py                      # Tab 2 – prompt/model matrix
-│   └── history.py                    # Tab 3 – recent interactions
+│   ├── web.py                        # Tab 1 – single prompt + network capture
+│   ├── api.py                        # Tab 2 – single prompt via provider APIs
+│   ├── batch.py                      # Tab 3 – prompt/model matrix
+│   └── history.py                    # Tab 4 – recent interactions
 └── frontend/api_client.py            # HTTP client wrapping FastAPI
 ```
 
@@ -28,8 +29,9 @@ Key principles:
 
 | Tab | Module | Responsibilities |
 | --- | --- | --- |
-| Interactive | `frontend/tabs/interactive.py` | Single-prompt runs, model selection, network capture toggle, markdown export. |
-| Batch | `frontend/tabs/batch.py` | Prompt × model matrix execution, CSV import/export, progress display. |
+| Web | `frontend/tabs/web.py` | Single-prompt runs via network capture (Playwright), save captured interaction, markdown export. |
+| API | `frontend/tabs/api.py` | Single-prompt runs via provider APIs (backend), markdown export. |
+| Batch | `frontend/tabs/batch.py` | Prompt × model matrix execution (backend-managed batch for API mode; sequential capture for web mode), CSV import/export, progress display. |
 | History | `frontend/tabs/history.py` | Recent interactions list, filters, detail view, markdown export, delete. |
 
 All tabs use the shared `APIClient` to talk to FastAPI and share the unified error-handling helper for consistent Streamlit messaging.

@@ -43,14 +43,28 @@ frontend/network_capture/
 
 2. Configure ChatGPT authentication in `.env`:
    ```bash
-   CHATGPT_EMAIL=your_email@example.com
-   CHATGPT_PASSWORD=your_password_here
+   # Recommended (Docker/cloud): mount a secrets file with an account pool
+   CHATGPT_ACCOUNTS_FILE=/run/secrets/chatgpt_accounts.json
+
+   # Optional quota controls (defaults shown)
+   CHATGPT_DAILY_LIMIT=10
+   CHATGPT_WINDOW_HOURS=24
+
+   # Persistent state (defaults shown; mount as a volume in Docker)
+   CHATGPT_USAGE_DB_PATH=./data/account_usage.sqlite
+   CHATGPT_SESSIONS_DIR=./data/chatgpt_sessions
    ```
 
    **Session Persistence:**
-   - Login state saved to `data/chatgpt_session.json` (auto-created, ~190KB)
-   - Subsequent runs skip authentication if session valid
-   - Delete session file to force fresh login
+   - Login state is saved per account under `CHATGPT_SESSIONS_DIR` (auto-created).
+   - Subsequent runs reuse sessions where possible.
+   - Delete a specific session file to force fresh login for that account.
+
+   **Legacy single-account mode (still supported):**
+   ```bash
+   CHATGPT_EMAIL=your_email@example.com
+   CHATGPT_PASSWORD=your_password_here
+   ```
 
 ### In the UI
 
@@ -87,6 +101,14 @@ if capturer.authenticate():
 # Cleanup
 capturer.stop_browser()
 ```
+
+## Automatic Account Rotation + Quotas
+
+When `CHATGPT_ACCOUNTS_FILE`/`CHATGPT_ACCOUNTS_JSON` is configured, the app
+selects a ChatGPT account automatically for each web capture and records usage
+in `CHATGPT_USAGE_DB_PATH`. If all accounts have hit the rolling quota
+(`CHATGPT_DAILY_LIMIT` within `CHATGPT_WINDOW_HOURS`), the capture fails fast
+with a “try again later” message.
 
 ## Data Captured in Network Log Mode
 

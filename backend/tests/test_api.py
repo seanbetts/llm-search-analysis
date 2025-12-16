@@ -104,6 +104,19 @@ class TestProvidersEndpoints:
     if len(data) > 0:
       assert all(isinstance(model, str) for model in data)
 
+  def test_get_all_model_info(self, client):
+    """Test GET /api/v1/providers/models/info returns model metadata."""
+    response = client.get("/api/v1/providers/models/info")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+
+    if data:
+      item = data[0]
+      assert "model_id" in item
+      assert "provider" in item
+      assert "display_name" in item
+
 
 class TestInteractionsEndpoints:
   """Tests for interactions endpoints."""

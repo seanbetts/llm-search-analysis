@@ -5,11 +5,11 @@ import time
 import streamlit as st
 
 from frontend.components.response import display_response
-from frontend.config import Config
 from frontend.helpers.error_handling import safe_api_call
 from frontend.helpers.interactive import build_api_response, build_web_response
 from frontend.helpers.markdown_export import render_markdown_download_button
 from frontend.helpers.serialization import namespace_to_dict
+from frontend.network_capture.account_pool import AccountPoolError, AccountQuotaExceededError, select_chatgpt_account
 from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 
 RESPONSE_KEY = "web_response"
@@ -60,13 +60,24 @@ def tab_web():
               """Write browser status updates to the status container."""
               status_container.write(message)
 
-            capturer = ChatGPTCapturer(status_callback=update_status)
+            try:
+              account, storage_state_path = select_chatgpt_account()
+            except AccountQuotaExceededError as exc:
+              wait_hint = ""
+              if exc.next_available_in_seconds is not None:
+                minutes = max(1, int(exc.next_available_in_seconds / 60))
+                wait_hint = f" Next slot available in ~{minutes} min."
+              raise Exception(f"{exc}.{wait_hint}") from exc
+            except AccountPoolError as exc:
+              raise Exception(str(exc)) from exc
+
+            capturer = ChatGPTCapturer(storage_state_path=storage_state_path, status_callback=update_status)
             try:
               headless = not st.session_state.network_show_browser
               capturer.start_browser(headless=headless)
               capturer.authenticate(
-                email=Config.CHATGPT_EMAIL if Config.CHATGPT_EMAIL else None,
-                password=Config.CHATGPT_PASSWORD if Config.CHATGPT_PASSWORD else None
+                email=account.email,
+                password=account.password,
               )
               provider_response = capturer.send_prompt(trimmed_prompt, "chatgpt-free")
             finally:
@@ -78,7 +89,7 @@ def tab_web():
             status_container.write("Processing captured response...")
             response_ns = build_web_response(provider_response)
 
-            status_container.write("Saving capture (citation tagging will run in the background)...")
+            status_container.write("Saving capture...")
             saved_payload, save_error = safe_api_call(
               st.session_state.api_client.save_network_log,
               provider=response_ns.provider,
@@ -98,8 +109,49 @@ def tab_web():
             if save_error:
               status.update(label="Web analysis complete (save failed)", state="error")
             else:
+              interaction_id = saved_payload.get("interaction_id") if isinstance(saved_payload, dict) else None
+              metadata = saved_payload.get("metadata") or {} if isinstance(saved_payload, dict) else {}
+              citation_status = metadata.get("citation_tagging_status")
+
+              should_wait = (
+                bool(st.session_state.get(TAGGING_KEY, True))
+                and citation_status in {"queued", "running"}
+                and isinstance(interaction_id, int)
+              )
+
+              timed_out_waiting = False
+              if should_wait:
+                status.update(label="Web analysis: citation tagging in progress…", state="running")
+                status_container.write("Waiting for citation tagging to finish (up to 3 minutes)...")
+                started = time.time()
+                while True:
+                  elapsed = int(time.time() - started)
+                  refreshed, err = safe_api_call(
+                    st.session_state.api_client.get_interaction,
+                    interaction_id=interaction_id,
+                    show_spinner=False,
+                  )
+                  if err:
+                    status_container.write(f"⚠️ Error refreshing tagging status: {err}")
+                    break
+                  refreshed_meta = (refreshed or {}).get("metadata") or {}
+                  refreshed_status = refreshed_meta.get("citation_tagging_status")
+                  if refreshed_status in {"completed", "failed", "disabled", "skipped"}:
+                    saved_payload = refreshed
+                    break
+                  if elapsed >= 180:
+                    timed_out_waiting = True
+                    status_container.write("⚠️ Timed out waiting for citation tagging; check History for results.")
+                    break
+                  # Keep the status indicator alive while we poll.
+                  status.update(
+                    label=f"Web analysis: citation tagging in progress… ({elapsed}s)",
+                    state="running",
+                  )
+                  time.sleep(2)
+
+              # Report final tagging status (after waiting when applicable).
               annotations = None
-              citation_status = None
               citation_error = None
               if isinstance(saved_payload, dict):
                 metadata = saved_payload.get("metadata") or {}
@@ -110,54 +162,27 @@ def tab_web():
                 annotated = annotations.get("annotated_citations")
                 total = annotations.get("total_citations")
                 if annotated is not None and total is not None:
-                  if citation_status == "queued":
-                    status_container.write(f"⏳ Citation tagging queued: {annotated}/{total} annotated so far.")
-                  elif citation_status == "completed":
+                  if citation_status == "completed":
                     status_container.write(f"✅ Citation annotations saved: {annotated}/{total} citations annotated.")
                   elif citation_status == "failed":
                     status_container.write("⚠️ Citation tagging failed (see History for details).")
                   elif citation_status == "disabled":
                     status_container.write("ℹ️ Citation tagging is disabled.")
+                  elif citation_status == "skipped":
+                    status_container.write("ℹ️ Citation tagging skipped.")
                   else:
                     status_container.write(f"ℹ️ Citation tagging status: {citation_status or 'unknown'}")
               if citation_error:
                 status_container.write(f"⚠️ Citation tagging error: {citation_error}")
-              status.update(label="Web analysis complete", state="complete")
+
+              if timed_out_waiting:
+                status.update(label="Web analysis complete (citation tagging pending)", state="complete")
+              else:
+                status.update(label="Web analysis complete", state="complete")
 
         if save_error:
           st.warning(f"Response captured but failed to save: {save_error}")
         elif saved_payload and response_ns is not None:
-          interaction_id = saved_payload.get("interaction_id")
-          metadata = saved_payload.get("metadata") or {}
-          citation_status = metadata.get("citation_tagging_status")
-          should_wait = (
-            bool(st.session_state.get(TAGGING_KEY, True))
-            and citation_status in {"queued", "running"}
-            and isinstance(interaction_id, int)
-              )
-
-          if should_wait:
-            started = time.time()
-            while True:
-              elapsed = int(time.time() - started)
-              refreshed, err = safe_api_call(
-                st.session_state.api_client.get_interaction,
-                interaction_id=interaction_id,
-                show_spinner=False,
-              )
-              if err:
-                st.warning(f"Error refreshing tagging status: {err}")
-                break
-              refreshed_meta = (refreshed or {}).get("metadata") or {}
-              refreshed_status = refreshed_meta.get("citation_tagging_status")
-              if refreshed_status in {"completed", "failed", "disabled", "skipped"}:
-                saved_payload = refreshed
-                break
-              if elapsed >= 180:
-                st.warning("Timed out waiting for citation tagging; check History for results.")
-                break
-              time.sleep(2)
-
           response_ns = build_api_response(saved_payload)
 
         if response_ns is not None:

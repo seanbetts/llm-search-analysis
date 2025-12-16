@@ -23,7 +23,7 @@ This document explains our frontend testing strategy for the Streamlit applicati
 ### Bug 1: Model Display Name Not Formatting Properly
 **Symptom**: UI showed "gpt-5-1" instead of "GPT 5.1"
 
-**Root Cause**: `interactive.py` wasn't including `model_display_name` from backend response
+**Root Cause**: `frontend/helpers/interactive.py` wasn't including `model_display_name` when building the response object
 
 **Fix**: Added `model_display_name` to response object construction
 
@@ -32,7 +32,7 @@ This document explains our frontend testing strategy for the Streamlit applicati
 ### Bug 2: Sources Found Count Missing
 **Symptom**: "Sources Found" metric showed 0 even when sources existed
 
-**Root Cause**: `interactive.py` wasn't including `sources_found` from backend response
+**Root Cause**: `frontend/helpers/interactive.py` wasn't including `sources_found` when building the response object
 
 **Fix**: Added `sources_found` to response object construction
 
@@ -41,7 +41,7 @@ This document explains our frontend testing strategy for the Streamlit applicati
 ### Bug 3: Sources Used Count Missing
 **Symptom**: "Sources Used" metric showed 0 even when citations existed
 
-**Root Cause**: `interactive.py` wasn't including `sources_used` from backend response
+**Root Cause**: `frontend/helpers/interactive.py` wasn't including `sources_used` when building the response object
 
 **Fix**: Added `sources_used` to response object construction
 
@@ -147,7 +147,7 @@ Streamlit apps are difficult to test because:
 Always ensure response objects have all required fields:
 
 ```python
-# ✅ Good - Tests the exact structure used in interactive.py
+# ✅ Good - Tests the exact structure used in `build_api_response()` (`frontend/helpers/interactive.py`)
 def test_response_has_all_required_fields(self):
     response_data = {
       'provider': 'openai',
@@ -183,13 +183,13 @@ def test_optional_field_handling(self):
 Test how backend data is converted to frontend objects:
 
 ```python
-# ✅ Good - Tests actual conversion logic from interactive.py
+# ✅ Good - Tests actual conversion logic from `build_api_response()` (`frontend/helpers/interactive.py`)
 def test_search_queries_structure(self):
     query_data = {
       'query': 'test query',
       'sources': [{'url': 'https://example.com', 'rank': 1}]
     }
-    # This is the exact conversion from interactive.py
+    # This is the exact conversion from `build_api_response()`
     sources = [SimpleNamespace(**src) for src in query_data['sources']]
     search_query = SimpleNamespace(
       query=query_data['query'],
