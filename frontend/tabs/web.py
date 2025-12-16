@@ -5,11 +5,11 @@ import time
 import streamlit as st
 
 from frontend.components.response import display_response
-from frontend.config import Config
 from frontend.helpers.error_handling import safe_api_call
 from frontend.helpers.interactive import build_api_response, build_web_response
 from frontend.helpers.markdown_export import render_markdown_download_button
 from frontend.helpers.serialization import namespace_to_dict
+from frontend.network_capture.account_pool import AccountPoolError, AccountQuotaExceededError, select_chatgpt_account
 from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 
 RESPONSE_KEY = "web_response"
@@ -60,13 +60,24 @@ def tab_web():
               """Write browser status updates to the status container."""
               status_container.write(message)
 
-            capturer = ChatGPTCapturer(status_callback=update_status)
+            try:
+              account, storage_state_path = select_chatgpt_account()
+            except AccountQuotaExceededError as exc:
+              wait_hint = ""
+              if exc.next_available_in_seconds is not None:
+                minutes = max(1, int(exc.next_available_in_seconds / 60))
+                wait_hint = f" Next slot available in ~{minutes} min."
+              raise Exception(f"{exc}.{wait_hint}") from exc
+            except AccountPoolError as exc:
+              raise Exception(str(exc)) from exc
+
+            capturer = ChatGPTCapturer(storage_state_path=storage_state_path, status_callback=update_status)
             try:
               headless = not st.session_state.network_show_browser
               capturer.start_browser(headless=headless)
               capturer.authenticate(
-                email=Config.CHATGPT_EMAIL if Config.CHATGPT_EMAIL else None,
-                password=Config.CHATGPT_PASSWORD if Config.CHATGPT_PASSWORD else None
+                email=account.email,
+                password=account.password,
               )
               provider_response = capturer.send_prompt(trimmed_prompt, "chatgpt-free")
             finally:

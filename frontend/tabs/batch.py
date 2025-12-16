@@ -9,11 +9,11 @@ import pandas as pd
 import streamlit as st
 
 from frontend.components.models import get_all_models
-from frontend.config import Config
 from frontend.helpers.error_handling import safe_api_call
 from frontend.helpers.export_utils import dataframe_to_csv_bytes
 from frontend.helpers.metrics import compute_metrics, get_model_display_name
 from frontend.helpers.serialization import namespace_to_dict
+from frontend.network_capture.account_pool import AccountPoolError, AccountQuotaExceededError, select_chatgpt_account
 from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
 
 
@@ -358,16 +358,24 @@ def tab_batch():
         if provider_name != 'openai':
           raise Exception(f"Network log mode only supports OpenAI/ChatGPT. Skipping {provider_name}")
 
-        if not Config.CHATGPT_EMAIL or not Config.CHATGPT_PASSWORD:
-          raise Exception("ChatGPT credentials not found. Please add CHATGPT_EMAIL and CHATGPT_PASSWORD to your .env file.")  # noqa: E501
+        try:
+          account, storage_state_path = select_chatgpt_account()
+        except AccountQuotaExceededError as exc:
+          wait_hint = ""
+          if exc.next_available_in_seconds is not None:
+            minutes = max(1, int(exc.next_available_in_seconds / 60))
+            wait_hint = f" Next slot available in ~{minutes} min."
+          raise Exception(f"{exc}.{wait_hint}") from exc
+        except AccountPoolError as exc:
+          raise Exception(str(exc)) from exc
 
-        capturer = ChatGPTCapturer()
+        capturer = ChatGPTCapturer(storage_state_path=storage_state_path)
         capturer.start_browser(headless=not st.session_state.network_show_browser)
 
         try:
           if not capturer.authenticate(
-            email=Config.CHATGPT_EMAIL,
-            password=Config.CHATGPT_PASSWORD
+            email=account.email,
+            password=account.password,
           ):
             raise Exception("Failed to authenticate with ChatGPT")
 

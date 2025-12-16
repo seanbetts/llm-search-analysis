@@ -57,6 +57,50 @@ CHATGPT_PASSWORD=your_secure_password
 
 **Note:** Leave these blank if you're only using official APIs.
 
+### Network Capture Accounts (Docker/Cloud)
+
+For Docker/cloud deployments (or any setup with multiple ChatGPT accounts), prefer
+supplying an account pool via a secrets file mounted into the container.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `CHATGPT_ACCOUNTS_FILE` | Path to a JSON secret file containing accounts | (none) |
+| `CHATGPT_ACCOUNTS_JSON` | JSON payload containing accounts (alternative to file) | (none) |
+| `CHATGPT_DAILY_LIMIT` | Max web captures per account per rolling window | `10` |
+| `CHATGPT_WINDOW_HOURS` | Rolling window size in hours | `24` |
+| `CHATGPT_USAGE_DB_PATH` | SQLite file used to track per-account usage | `./data/account_usage.sqlite` |
+| `CHATGPT_SESSIONS_DIR` | Directory for per-account Playwright storageState files | `./data/chatgpt_sessions` |
+
+**Accounts JSON schema:**
+```json
+{
+  "default_password": "optional",
+  "accounts": [
+    {"email": "acct1@example.com", "password": "optional", "id": "optional-stable-id"},
+    {"email": "acct2@example.com"}
+  ]
+}
+```
+
+**Docker Compose secrets example:**
+```yaml
+services:
+  frontend:
+    environment:
+      CHATGPT_ACCOUNTS_FILE: /run/secrets/chatgpt_accounts.json
+      CHATGPT_DAILY_LIMIT: "10"
+      CHATGPT_WINDOW_HOURS: "24"
+    secrets:
+      - chatgpt_accounts.json
+
+secrets:
+  chatgpt_accounts.json:
+    file: ./secrets/chatgpt_accounts.json
+```
+
+The app rotates accounts automatically in the background and tracks usage in
+`CHATGPT_USAGE_DB_PATH` (no passwords are stored there).
+
 ### Application Settings
 
 | Variable | Description | Default |
