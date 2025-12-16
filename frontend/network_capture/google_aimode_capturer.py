@@ -68,6 +68,7 @@ class GoogleAIModeCapturer(BaseCapturer):
   def start_browser(self, headless: bool = True) -> None:
     """Start browser instance."""
     self._log_status("🚀 Starting browser...")
+    self._headless = headless
     self.playwright = sync_playwright().start()
     chrome_args = [
       "--disable-blink-features=AutomationControlled",
@@ -173,6 +174,76 @@ class GoogleAIModeCapturer(BaseCapturer):
     """No authentication is required for Google AI Mode."""
     return True
 
+  def _maybe_wait_for_challenge_clear(self, timeout_seconds: int = 180) -> None:
+    """Wait for a visible prompt input to appear when a CAPTCHA blocks the page."""
+    if not self.page or getattr(self, "_headless", True):
+      return
+
+    try:
+      url = self.page.url or ""
+    except Exception:
+      url = ""
+
+    challenge_indicators = [
+      "sorry/index",  # common google bot-check flow
+      "recaptcha",
+      "unusual traffic",
+    ]
+
+    try:
+      content = (self.page.content() or "").lower()
+    except Exception:
+      content = ""
+
+    maybe_challenged = any(indicator in url.lower() for indicator in challenge_indicators) or any(
+      indicator in content for indicator in challenge_indicators
+    )
+    if not maybe_challenged:
+      return
+
+    self._log_status("⚠️ CAPTCHA/bot-check detected. Please complete it in the browser window…")
+
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+      locator = self._find_prompt_input_locator(wait_for_textarea=False)
+      if locator is not None:
+        self._log_status("✅ CAPTCHA cleared; continuing…")
+        return
+      time.sleep(2)
+
+  def _find_prompt_input_locator(self, *, wait_for_textarea: bool = True):
+    """Return a Playwright locator for the prompt input when available."""
+    if not self.page:
+      return None
+
+    if wait_for_textarea:
+      # AI Mode currently exposes the prompt box as a textarea with aria-label "Ask anything".
+      try:
+        self.page.wait_for_selector("textarea[aria-label='Ask anything']", timeout=10000)
+      except Exception:
+        pass
+
+    locator_candidates = [
+      ("textarea[aria-label]", self.page.locator("textarea[aria-label='Ask anything']").first),
+      ("textarea[placeholder]", self.page.locator("textarea[placeholder='Ask anything']").first),
+      ("textarea.ITIRGe", self.page.locator("textarea.ITIRGe").first),
+      # Most robust: accessibility role
+      ("role:textbox", self.page.get_by_role("textbox").first),
+      # Common inputs
+      ("textarea", self.page.locator("textarea").first),
+      ("role=textbox", self.page.locator("[role='textbox']").first),
+      ("contenteditable", self.page.locator("[contenteditable='true']").first),
+      ("input", self.page.locator("input[type='text'], input:not([type])").first),
+    ]
+
+    for _label, loc in locator_candidates:
+      try:
+        if loc and loc.is_visible(timeout=3000):
+          return loc
+      except Exception:
+        continue
+    return None
+
   def send_prompt(self, prompt: str, model: str = "google-aimode", enable_search: bool = True) -> ProviderResponse:
     """Submit a prompt to AI Mode and return normalized response."""
     del enable_search  # AI Mode implicitly searches as needed.
@@ -201,40 +272,15 @@ class GoogleAIModeCapturer(BaseCapturer):
 
     # Find a textbox/textarea and submit prompt. Use broad fallbacks for resilience.
     self._log_status("📝 Entering prompt...")
-    input_locator = None
-    # AI Mode currently exposes the prompt box as a textarea with aria-label "Ask anything".
-    try:
-      self.page.wait_for_selector("textarea[aria-label='Ask anything']", timeout=10000)
-    except Exception:
-      pass
-    locator_candidates = [
-      ("textarea[aria-label]", self.page.locator("textarea[aria-label='Ask anything']").first),
-      ("textarea[placeholder]", self.page.locator("textarea[placeholder='Ask anything']").first),
-      ("textarea.ITIRGe", self.page.locator("textarea.ITIRGe").first),
-      # Most robust: accessibility role
-      ("role:textbox", self.page.get_by_role("textbox").first),
-      # Common inputs
-      ("textarea", self.page.locator("textarea").first),
-      ("role=textbox", self.page.locator("[role='textbox']").first),
-      ("contenteditable", self.page.locator("[contenteditable='true']").first),
-      ("input", self.page.locator("input[type='text'], input:not([type])").first),
-    ]
-    for _label, loc in locator_candidates:
-      try:
-        if loc and loc.is_visible(timeout=3000):
-          input_locator = loc
-          break
-      except Exception:
-        continue
+    input_locator = self._find_prompt_input_locator()
     if input_locator is None:
-      # Provide some lightweight diagnostics.
-      counts = {}
-      for label, loc in locator_candidates:
-        try:
-          counts[label] = int(loc.count())  # type: ignore[union-attr]
-        except Exception:
-          counts[label] = 0
-      raise RuntimeError(f"Could not find input box on /aimode. Candidates={counts}")
+      self._maybe_wait_for_challenge_clear()
+      input_locator = self._find_prompt_input_locator(wait_for_textarea=False)
+      if input_locator is None:
+        raise RuntimeError(
+          "Could not find input box on /aimode. If a CAPTCHA is shown, enable "
+          "'Show browser window' and complete the challenge, then retry."
+        )
 
     started = time.time()
     input_locator.click()
