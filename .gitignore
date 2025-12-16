@@ -45,6 +45,9 @@ ENV/
 # Environment variables
 .env
 
+# Local secrets (Docker secret source files)
+secrets/
+
 # Database files (all SQLite databases and related files)
 *.db
 *.sqlite
