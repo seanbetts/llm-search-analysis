@@ -107,6 +107,13 @@ class TestFormatResponseText:
     result = format_response_text(text, [])
     assert "\n\n\n" not in result
 
+  def test_escapes_currency_dollar_signs_for_streamlit(self):
+    """Dollar-prefixed currency amounts should not be interpreted as LaTeX."""
+    text = "Experts estimate between $700 and $800."
+    result = format_response_text(text, [])
+    assert "\\$700" in result
+    assert "\\$800" in result
+
   def test_injects_citation_markers_when_metadata_present(self):
     """Citations with segment metadata should add inline markers."""
     text = "Valve is working on new hardware according to reports."

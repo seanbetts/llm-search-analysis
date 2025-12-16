@@ -195,6 +195,10 @@ def format_response_text(text: str, citations: list) -> str:
   # Step 5: Clean up any resulting multiple newlines
   text = re.sub(r'\n{3,}', '\n\n', text)
 
+  # Streamlit treats `$...$` as LaTeX; escape currency amounts like `$700`.
+  # This prevents odd rendering/copy behavior when responses contain prices.
+  text = re.sub(r"(?<!\\)\$(?=\d)", r"\\$", text)
+
   return sanitize_response_markdown(text.strip())
 
 
