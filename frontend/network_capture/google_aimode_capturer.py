@@ -283,6 +283,19 @@ class GoogleAIModeCapturer(BaseCapturer):
     requests = getattr(self.browser_manager, "intercepted_requests", []) or []
     candidates: list[str] = []
 
+    def is_likely_human_query(value: str) -> bool:
+      """Return True when a captured query value looks like a real search query."""
+      lowered = value.lower().strip()
+      # Google image thumbnail requests often look like `tbn:ANd9Gc...`.
+      if lowered.startswith("tbn:") or "tbn:and9gc" in lowered or "tbn:an" in lowered:
+        return False
+      if "encrypted-tbn" in lowered:
+        return False
+      # Filter out hash-like single tokens.
+      if len(value.split()) == 1 and re.fullmatch(r"[A-Za-z0-9_-]{20,}", value):
+        return False
+      return True
+
     def consider(value: str) -> None:
       if not value:
         return
@@ -290,6 +303,8 @@ class GoogleAIModeCapturer(BaseCapturer):
       if len(value) < 3 or len(value) > 240:
         return
       if value.lower().startswith("http"):
+        return
+      if not is_likely_human_query(value):
         return
       candidates.append(value)
 
