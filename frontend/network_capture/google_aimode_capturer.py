@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 import time
+from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
@@ -81,13 +82,20 @@ class GoogleAIModeCapturer(BaseCapturer):
       ],
     )
 
+    storage_state = None
+    if self.storage_state_path:
+      path = Path(self.storage_state_path)
+      path.parent.mkdir(parents=True, exist_ok=True)
+      if path.exists():
+        storage_state = self.storage_state_path
+
     self.context = self.browser.new_context(
       viewport={"width": 1440, "height": 900},
       user_agent=(
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
       ),
-      storage_state=self.storage_state_path or None,
+      storage_state=storage_state,
     )
     self.page = self.context.new_page()
     if STEALTH_AVAILABLE:
