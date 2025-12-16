@@ -11,11 +11,13 @@ from frontend.helpers.markdown_export import render_markdown_download_button
 from frontend.helpers.serialization import namespace_to_dict
 from frontend.network_capture.account_pool import AccountPoolError, AccountQuotaExceededError, select_chatgpt_account
 from frontend.network_capture.chatgpt_capturer import ChatGPTCapturer
+from frontend.network_capture.google_aimode_capturer import GoogleAIModeCapturer
 
 RESPONSE_KEY = "web_response"
 ERROR_KEY = "web_error"
 PROMPT_KEY = "web_prompt"
 TAGGING_KEY = "web_enable_citation_tagging"
+WEB_PROVIDER_KEY = "web_provider"
 
 
 def tab_web():
@@ -25,8 +27,16 @@ def tab_web():
   st.session_state.setdefault(PROMPT_KEY, None)
   st.session_state.setdefault('network_show_browser', False)
   st.session_state.setdefault(TAGGING_KEY, True)
+  st.session_state.setdefault(WEB_PROVIDER_KEY, "ChatGPT")
 
   st.markdown("### 🌐 Web Testing")
+
+  st.selectbox(
+    "Web provider",
+    options=["ChatGPT", "Google AI Mode"],
+    key=WEB_PROVIDER_KEY,
+    help="ChatGPT uses account rotation; Google AI Mode requires no login.",
+  )
 
   st.checkbox(
     "Show browser window",
@@ -60,31 +70,45 @@ def tab_web():
               """Write browser status updates to the status container."""
               status_container.write(message)
 
-            try:
-              account, storage_state_path = select_chatgpt_account()
-            except AccountQuotaExceededError as exc:
-              wait_hint = ""
-              if exc.next_available_in_seconds is not None:
-                minutes = max(1, int(exc.next_available_in_seconds / 60))
-                wait_hint = f" Next slot available in ~{minutes} min."
-              raise Exception(f"{exc}.{wait_hint}") from exc
-            except AccountPoolError as exc:
-              raise Exception(str(exc)) from exc
+            provider_choice = st.session_state.get(WEB_PROVIDER_KEY, "ChatGPT")
+            headless = not st.session_state.network_show_browser
 
-            capturer = ChatGPTCapturer(storage_state_path=storage_state_path, status_callback=update_status)
-            try:
-              headless = not st.session_state.network_show_browser
-              capturer.start_browser(headless=headless)
-              capturer.authenticate(
-                email=account.email,
-                password=account.password,
-              )
-              provider_response = capturer.send_prompt(trimmed_prompt, "chatgpt-free")
-            finally:
+            if provider_choice == "Google AI Mode":
+              capturer = GoogleAIModeCapturer(status_callback=update_status)
               try:
-                capturer.stop_browser()
-              except Exception:
-                pass
+                capturer.start_browser(headless=headless)
+                capturer.authenticate()
+                provider_response = capturer.send_prompt(trimmed_prompt, "google-aimode")
+              finally:
+                try:
+                  capturer.stop_browser()
+                except Exception:
+                  pass
+            else:
+              try:
+                account, storage_state_path = select_chatgpt_account()
+              except AccountQuotaExceededError as exc:
+                wait_hint = ""
+                if exc.next_available_in_seconds is not None:
+                  minutes = max(1, int(exc.next_available_in_seconds / 60))
+                  wait_hint = f" Next slot available in ~{minutes} min."
+                raise Exception(f"{exc}.{wait_hint}") from exc
+              except AccountPoolError as exc:
+                raise Exception(str(exc)) from exc
+
+              capturer = ChatGPTCapturer(storage_state_path=storage_state_path, status_callback=update_status)
+              try:
+                capturer.start_browser(headless=headless)
+                capturer.authenticate(
+                  email=account.email,
+                  password=account.password,
+                )
+                provider_response = capturer.send_prompt(trimmed_prompt, "chatgpt-free")
+              finally:
+                try:
+                  capturer.stop_browser()
+                except Exception:
+                  pass
 
             status_container.write("Processing captured response...")
             response_ns = build_web_response(provider_response)

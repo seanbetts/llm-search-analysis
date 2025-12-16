@@ -1,0 +1,154 @@
+"""Google AI Mode capturer using Playwright network interception.
+
+This capturer navigates to https://www.google.com/aimode, submits a prompt, and
+parses the `/async/folif` response into the common ProviderResponse structure.
+"""
+
+from __future__ import annotations
+
+import re
+import time
+
+from playwright.sync_api import sync_playwright
+
+from backend.app.services.providers.base_provider import ProviderResponse
+
+from .base_capturer import BaseCapturer
+from .browser_manager import BrowserManager
+from .google_aimode_parser import choose_latest_folif_response, parse_google_aimode_folif_html
+
+
+class GoogleAIModeCapturer(BaseCapturer):
+  """Google AI Mode network traffic capturer."""
+
+  AIMODE_URL = "https://www.google.com/aimode"
+  SUPPORTED_MODELS = ["google-aimode"]
+
+  def __init__(self, status_callback=None):  # noqa: ANN001
+    """Initialize capturer.
+
+    Args:
+      status_callback: Optional callable that accepts status messages.
+    """
+    super().__init__()
+    self.playwright = None
+    self.browser = None
+    self.context = None
+    self.page = None
+    self.browser_manager = BrowserManager()
+    self._status_callback = status_callback
+
+  def _log_status(self, message: str) -> None:
+    """Emit status updates to the UI callback, when provided."""
+    if self._status_callback:
+      try:
+        self._status_callback(message)
+      except Exception:
+        pass
+
+  def get_provider_name(self) -> str:
+    """Return provider name."""
+    return "google"
+
+  def get_supported_models(self) -> list[str]:
+    """Return supported model identifiers."""
+    return self.SUPPORTED_MODELS
+
+  def start_browser(self, headless: bool = True) -> None:
+    """Start browser instance."""
+    self._log_status("🚀 Starting browser...")
+    self.playwright = sync_playwright().start()
+    self.browser = self.playwright.chromium.launch(headless=headless, channel="chrome")
+    self.context = self.browser.new_context(viewport={"width": 1440, "height": 900})
+    self.page = self.context.new_page()
+    self.browser_manager.setup_network_interception(
+      self.page,
+      response_filter=lambda resp: "google.com" in resp.url,
+    )
+    self.is_active = True
+
+  def stop_browser(self) -> None:
+    """Stop browser and cleanup."""
+    try:
+      if self.page:
+        self.page.close()
+      if self.context:
+        self.context.close()
+      if self.browser:
+        self.browser.close()
+      if self.playwright:
+        self.playwright.stop()
+    finally:
+      self.is_active = False
+
+  def authenticate(self, *_args, **_kwargs) -> bool:
+    """No authentication is required for Google AI Mode."""
+    return True
+
+  def send_prompt(self, prompt: str, model: str = "google-aimode", enable_search: bool = True) -> ProviderResponse:
+    """Submit a prompt to AI Mode and return normalized response."""
+    del enable_search  # AI Mode implicitly searches as needed.
+    if not self.page:
+      raise RuntimeError("Browser not started")
+    if model not in self.SUPPORTED_MODELS:
+      raise ValueError(f"Unsupported model: {model}")
+
+    self.browser_manager.clear_captured_data()
+
+    self._log_status("🌐 Navigating to Google AI Mode...")
+    self.page.goto(self.AIMODE_URL, wait_until="domcontentloaded", timeout=30000)
+
+    # Accept consent dialogs if they appear (best-effort).
+    try:
+      consent = self.page.get_by_role("button", name=re.compile("accept all", re.I))
+      if consent and consent.is_visible():
+        consent.click(timeout=2000)
+    except Exception:
+      pass
+
+    # Find a textbox/textarea and submit prompt. Use broad fallbacks for resilience.
+    self._log_status("📝 Entering prompt...")
+    textbox = None
+    selectors = [
+      "textarea",
+      "[role='textbox']",
+      "input[type='text']",
+    ]
+    for sel in selectors:
+      loc = self.page.locator(sel).first
+      try:
+        if loc and loc.is_visible(timeout=2000):
+          textbox = loc
+          break
+      except Exception:
+        continue
+    if textbox is None:
+      raise RuntimeError("Could not find input box on /aimode")
+
+    started = time.time()
+    textbox.click()
+    textbox.fill(prompt)
+    textbox.press("Enter")
+
+    # Wait for a folif response to be captured.
+    self._log_status("⏳ Waiting for AI Mode response...")
+    deadline = time.time() + 60
+    folif_html = None
+    while time.time() < deadline:
+      body = choose_latest_folif_response(self.browser_manager.get_captured_responses(url_pattern="/async/folif"))
+      if isinstance(body, str) and body.strip():
+        folif_html = body
+        break
+      time.sleep(0.5)
+
+    response_time_ms = int((time.time() - started) * 1000)
+    if not folif_html:
+      raise RuntimeError("Timed out waiting for /async/folif response")
+
+    self._log_status("✅ Parsing response...")
+    return parse_google_aimode_folif_html(
+      folif_html,
+      model=model,
+      provider="google",
+      response_time_ms=response_time_ms,
+    )
