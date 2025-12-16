@@ -17,7 +17,7 @@ _WEB_CAPTURE_DISPLAY_NAMES: Dict[str, str] = {
     "ChatGPT (Free)": "ChatGPT (Free)",
     "chatgpt-free": "ChatGPT (Free)",
     "ChatGPT": "ChatGPT (Free)",
-    "google-aimode": "Google AI Mode",
+    "google-aimode": "AI Mode",
 }
 
 _MODEL_DISPLAY_NAMES: Dict[str, str] = dict(_WEB_CAPTURE_DISPLAY_NAMES)

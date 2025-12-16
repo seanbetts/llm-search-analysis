@@ -153,6 +153,7 @@ def get_model_display_name(model: str) -> str:
     'ChatGPT (Free)': 'ChatGPT (Free)',
     'chatgpt-free': 'ChatGPT (Free)',
     'ChatGPT': 'ChatGPT (Free)',
+    'google-aimode': 'AI Mode',
   }
   if model in web_capture_models:
     return web_capture_models[model]

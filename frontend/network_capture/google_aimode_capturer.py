@@ -10,16 +10,20 @@ import os
 import re
 import time
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 from urllib.request import Request, urlopen
 
 from playwright.sync_api import sync_playwright
 
-from backend.app.services.providers.base_provider import ProviderResponse
+from backend.app.services.providers.base_provider import ProviderResponse, SearchQuery
 
 from .base_capturer import BaseCapturer
 from .browser_manager import BrowserManager
-from .google_aimode_parser import choose_latest_folif_response, parse_google_aimode_folif_html
+from .google_aimode_parser import (
+  choose_latest_folif_response,
+  extract_sources_from_folif_html,
+  parse_google_aimode_folif_html,
+)
 
 try:
   from playwright_stealth import Stealth
@@ -149,6 +153,7 @@ class GoogleAIModeCapturer(BaseCapturer):
           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
           "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
         ),
+        permissions=["clipboard-read", "clipboard-write"],
       )
       self.browser = self.context.browser
       self.page = self.context.new_page()
@@ -174,6 +179,7 @@ class GoogleAIModeCapturer(BaseCapturer):
           "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
         ),
         storage_state=storage_state,
+        permissions=["clipboard-read", "clipboard-write"],
       )
       self.page = self.context.new_page()
 
@@ -265,6 +271,85 @@ class GoogleAIModeCapturer(BaseCapturer):
         continue
     return None
 
+  def _extract_search_queries(self) -> list[SearchQuery]:
+    """Extract best-effort search queries from captured Google requests.
+
+    AI Mode performs searches behind the scenes; we attempt to infer query strings
+    from request URLs / payloads so the persisted schema stays consistent.
+
+    Returns:
+      List of SearchQuery objects (sources are not mapped in web-capture mode).
+    """
+    requests = getattr(self.browser_manager, "intercepted_requests", []) or []
+    candidates: list[str] = []
+
+    def consider(value: str) -> None:
+      if not value:
+        return
+      value = value.strip()
+      if len(value) < 3 or len(value) > 240:
+        return
+      if value.lower().startswith("http"):
+        return
+      candidates.append(value)
+
+    for req in requests:
+      if not isinstance(req, dict):
+        continue
+      url = req.get("url") or ""
+      post_data = req.get("post_data") or ""
+      # URLs: look for common q= query params.
+      if isinstance(url, str) and "q=" in url:
+        try:
+          parsed = urlparse(url)
+          qs = parse_qs(parsed.query or "")
+          q = qs.get("q", [None])[0]
+          if isinstance(q, str):
+            consider(q)
+        except Exception:
+          pass
+      # JSON-ish payloads: look for "q":"...".
+      if isinstance(post_data, str) and post_data:
+        m = re.search(r'"q"\\s*:\\s*"([^"]{3,240})"', post_data)
+        if m:
+          consider(m.group(1))
+
+    # De-dupe in order.
+    seen = set()
+    deduped: list[str] = []
+    for q in candidates:
+      key = q.lower()
+      if key in seen:
+        continue
+      seen.add(key)
+      deduped.append(q)
+
+    return [SearchQuery(query=q, order_index=i) for i, q in enumerate(deduped)]
+
+  def _extract_response_text_via_copy_button(self) -> str:
+    """Attempt to extract the rendered answer via AI Mode's copy UI, when present."""
+    if not self.page:
+      return ""
+
+    # Best-effort selectors; AI Mode UI changes frequently.
+    selectors = [
+      "button:has-text('Copy')",
+      "button[aria-label*='Copy']",
+      "[role='button']:has-text('Copy')",
+    ]
+    for selector in selectors:
+      try:
+        btn = self.page.locator(selector).first
+        if btn and btn.is_visible(timeout=1000) and btn.is_enabled():
+          btn.click(timeout=2000)
+          self.page.wait_for_timeout(300)
+          text = self.page.evaluate("navigator.clipboard.readText()")
+          if isinstance(text, str) and len(text.strip()) > 10:
+            return text.strip()
+      except Exception:
+        continue
+    return ""
+
   def send_prompt(self, prompt: str, model: str = "google-aimode", enable_search: bool = True) -> ProviderResponse:
     """Submit a prompt to AI Mode and return normalized response."""
     del enable_search  # AI Mode implicitly searches as needed.
@@ -312,6 +397,9 @@ class GoogleAIModeCapturer(BaseCapturer):
       input_locator.fill(prompt)
     except Exception:
       self.page.keyboard.type(prompt)
+
+    # Clear captured data again so query extraction focuses on post-submit traffic.
+    self.browser_manager.clear_captured_data()
 
     # Prefer clicking the send button (more reliable than Enter for textarea inputs).
     send_clicked = False
@@ -368,9 +456,21 @@ class GoogleAIModeCapturer(BaseCapturer):
       raise RuntimeError("Timed out waiting for /async/folif response")
 
     self._log_status("✅ Parsing response...")
+    search_queries = self._extract_search_queries()
+    if not search_queries and extract_sources_from_folif_html(folif_html):
+      # If we can see sources in the response but couldn't infer a concrete query
+      # from requests, use the user's prompt as a best-effort proxy query.
+      search_queries = [SearchQuery(query=prompt, order_index=0)]
+    copied_text = ""
+    try:
+      copied_text = self._extract_response_text_via_copy_button()
+    except Exception:
+      copied_text = ""
     return parse_google_aimode_folif_html(
       folif_html,
       model=model,
       provider="google",
       response_time_ms=response_time_ms,
+      search_queries=search_queries,
+      response_text_override=copied_text or None,
     )

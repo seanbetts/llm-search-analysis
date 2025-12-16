@@ -1,8 +1,9 @@
 """Tests for parsing Google AI Mode folif HTML payloads."""
 
+from backend.app.services.providers.base_provider import SearchQuery
 from frontend.network_capture.google_aimode_parser import (
-  extract_sources_from_folif_html,
-  parse_google_aimode_folif_html,
+    extract_sources_from_folif_html,
+    parse_google_aimode_folif_html,
 )
 
 
@@ -26,19 +27,39 @@ def test_parse_google_aimode_folif_html_extracts_answer_and_sources():
   """Parser should return ProviderResponse compatible with web persistence."""
   html = """
   <div>
-    <p>Hello world answer.</p>
+    <p>Hello world answer <a href="https://example.com/article">Example One</a>.</p>
     <p>Second paragraph.</p>
     <div>AI responses may include mistakes. Learn more</div>
   </div>
   <!--Sv6Kpe[[0,[[&quot;Example One&quot;,null,&quot;https://example.com/article&quot;]]]]-->
   <!--Sv6Kpe[[0,[[&quot;Example Two&quot;,null,&quot;https://example.org/post&quot;]]]]-->
   """
-  response = parse_google_aimode_folif_html(html, response_time_ms=1234)
+  response = parse_google_aimode_folif_html(
+    html,
+    response_time_ms=1234,
+    search_queries=[SearchQuery(query="test", order_index=0)],
+  )
   assert response.provider == "google"
   assert response.model == "google-aimode"
   assert response.data_source == "web"
   assert response.response_time_ms == 1234
-  assert response.response_text == "Hello world answer. Second paragraph."
+  assert "Hello world answer" in response.response_text
+  assert "Second paragraph." in response.response_text
   assert [s.url for s in response.sources] == ["https://example.com/article", "https://example.org/post"]
-  assert [c.url for c in response.citations] == ["https://example.com/article", "https://example.org/post"]
+  assert [c.url for c in response.citations] == ["https://example.com/article"]
+  assert response.citations[0].rank == 1
 
+
+def test_parse_google_aimode_folif_html_without_search_queries_has_no_sources():
+  """If we cannot confirm a search ran, sources should not be populated."""
+  html = """
+  <div>
+    <p>Hello world answer <a href="https://example.com/article">Example One</a>.</p>
+  </div>
+  <!--Sv6Kpe[[0,[[&quot;Example One&quot;,null,&quot;https://example.com/article&quot;]]]]-->
+  """
+  response = parse_google_aimode_folif_html(html, response_time_ms=10)
+  assert response.search_queries == []
+  assert response.sources == []
+  assert [c.url for c in response.citations] == ["https://example.com/article"]
+  assert response.citations[0].rank is None
