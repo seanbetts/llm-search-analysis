@@ -6,6 +6,7 @@ parses the `/async/folif` response into the common ProviderResponse structure.
 
 from __future__ import annotations
 
+import os
 import re
 import time
 from pathlib import Path
@@ -68,36 +69,75 @@ class GoogleAIModeCapturer(BaseCapturer):
     """Start browser instance."""
     self._log_status("🚀 Starting browser...")
     self.playwright = sync_playwright().start()
-    self.browser = self.playwright.chromium.launch(
-      headless=headless,
-      channel="chrome",
-      args=[
-        "--disable-blink-features=AutomationControlled",
-        "--disable-dev-shm-usage",
-        "--disable-web-security",
-        "--no-sandbox",
-        "--disable-gpu",
-        "--disable-software-rasterizer",
-        "--disable-setuid-sandbox",
-      ],
+    chrome_args = [
+      "--disable-blink-features=AutomationControlled",
+      "--disable-dev-shm-usage",
+      "--disable-web-security",
+      "--no-sandbox",
+      "--disable-gpu",
+      "--disable-software-rasterizer",
+      "--disable-setuid-sandbox",
+    ]
+
+    # Best option to reduce repeated CAPTCHA prompts: reuse a persistent user profile.
+    cdp_url = os.getenv("CHROME_CDP_URL")
+    if cdp_url:
+      self._log_status(f"🔗 Attaching to Chrome via CDP: {cdp_url}")
+      self.browser = self.playwright.chromium.connect_over_cdp(cdp_url)
+      contexts = getattr(self.browser, "contexts", None) or []
+      self.context = contexts[0] if contexts else self.browser.new_context()
+      self.page = self.context.new_page()
+      self.is_active = True
+      self.browser_manager.setup_network_interception(
+        self.page,
+        response_filter=lambda resp: "google.com" in resp.url,
+      )
+      return
+
+    use_persistent_profile = os.getenv("GOOGLE_AIMODE_USE_PERSISTENT_PROFILE", "1") != "0"
+    user_data_dir_value = os.getenv("GOOGLE_AIMODE_USER_DATA_DIR")
+    user_data_dir = (
+      Path(user_data_dir_value)
+      if user_data_dir_value
+      else (Path.cwd() / "data" / "google_aimode_profile")
     )
 
-    storage_state = None
-    if self.storage_state_path:
-      path = Path(self.storage_state_path)
-      path.parent.mkdir(parents=True, exist_ok=True)
-      if path.exists():
-        storage_state = self.storage_state_path
+    if use_persistent_profile:
+      user_data_dir.mkdir(parents=True, exist_ok=True)
+      self._log_status(f"🔒 Using persistent Chrome profile: {user_data_dir}")
+      self.context = self.playwright.chromium.launch_persistent_context(
+        user_data_dir=str(user_data_dir),
+        headless=headless,
+        channel="chrome",
+        args=chrome_args,
+        viewport={"width": 1440, "height": 900},
+        user_agent=(
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+          "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+        ),
+      )
+      self.browser = self.context.browser
+      self.page = self.context.new_page()
+    else:
+      self.browser = self.playwright.chromium.launch(headless=headless, channel="chrome", args=chrome_args)
 
-    self.context = self.browser.new_context(
-      viewport={"width": 1440, "height": 900},
-      user_agent=(
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-      ),
-      storage_state=storage_state,
-    )
-    self.page = self.context.new_page()
+      storage_state = None
+      if self.storage_state_path:
+        path = Path(self.storage_state_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if path.exists():
+          storage_state = self.storage_state_path
+
+      self.context = self.browser.new_context(
+        viewport={"width": 1440, "height": 900},
+        user_agent=(
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+          "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+        ),
+        storage_state=storage_state,
+      )
+      self.page = self.context.new_page()
+
     if STEALTH_AVAILABLE:
       try:
         Stealth().apply_stealth_sync(self.page)
