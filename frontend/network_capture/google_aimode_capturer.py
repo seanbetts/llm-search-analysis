@@ -156,8 +156,27 @@ class GoogleAIModeCapturer(BaseCapturer):
     except Exception:
       self.page.keyboard.type(prompt)
 
-    # Submit with Enter first; if no response appears, fall back to a send button.
-    self.page.keyboard.press("Enter")
+    # Prefer clicking the send button (more reliable than Enter for textarea inputs).
+    send_clicked = False
+    send_locators = [
+      # Known send icon controller in AI Mode markup.
+      self.page.locator("button:has(svg[jscontroller='Veb2cb'])").first,
+      self.page.locator("button:has(div.wilSz.Iq9dx)").first,
+      # Best-effort generic label matches.
+      self.page.get_by_role("button", name=re.compile(r"(send|submit|ask)", re.I)).first,
+    ]
+    for loc in send_locators:
+      try:
+        if loc and loc.is_visible(timeout=1000) and loc.is_enabled():
+          loc.click()
+          send_clicked = True
+          break
+      except Exception:
+        continue
+
+    if not send_clicked:
+      # Fallback: try Enter if we couldn't locate a send button.
+      self.page.keyboard.press("Enter")
 
     # Wait for a folif response to be captured.
     self._log_status("⏳ Waiting for AI Mode response...")
@@ -174,16 +193,17 @@ class GoogleAIModeCapturer(BaseCapturer):
     if not folif_html:
       # Try clicking a likely send/submit button (best-effort) and wait again briefly.
       try:
-        send_button = self.page.get_by_role("button", name=re.compile(r"(send|submit|ask)", re.I)).first
-        if send_button and send_button.is_visible(timeout=1000):
-          send_button.click()
-          extra_deadline = time.time() + 15
-          while time.time() < extra_deadline:
-            body = choose_latest_folif_response(self.browser_manager.get_captured_responses(url_pattern="/async/folif"))
-            if isinstance(body, str) and body.strip():
-              folif_html = body
-              break
-            time.sleep(0.5)
+        for loc in send_locators:
+          if loc and loc.is_visible(timeout=1000) and loc.is_enabled():
+            loc.click()
+            break
+        extra_deadline = time.time() + 15
+        while time.time() < extra_deadline:
+          body = choose_latest_folif_response(self.browser_manager.get_captured_responses(url_pattern="/async/folif"))
+          if isinstance(body, str) and body.strip():
+            folif_html = body
+            break
+          time.sleep(0.5)
       except Exception:
         pass
 
