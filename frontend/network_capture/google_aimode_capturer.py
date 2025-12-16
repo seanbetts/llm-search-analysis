@@ -509,6 +509,27 @@ class GoogleAIModeCapturer(BaseCapturer):
       time.sleep(0.5)
 
     response_time_ms = int((time.time() - started) * 1000)
+    # Small grace window: AI Mode can still render/add attribution immediately after the
+    # completion marker appears. We wait briefly and re-check `/async/folif` so we don't
+    # misclassify late-rendered sources as "extra links". This does NOT affect
+    # `response_time_ms` since we already measured it above.
+    try:
+      grace_ms = int(os.getenv("GOOGLE_AIMODE_POST_RENDER_GRACE_MS", "2000"))
+    except Exception:
+      grace_ms = 2000
+    if grace_ms > 0:
+      try:
+        self.page.wait_for_timeout(grace_ms)
+        responses = self.browser_manager.get_captured_responses(url_pattern="/async/folif")
+        candidate = choose_latest_folif_response(responses)
+        if (
+          isinstance(candidate, str)
+          and candidate.strip()
+          and (folif_html is None or len(candidate) >= len(folif_html))
+        ):
+          folif_html = candidate
+      except Exception:
+        pass
     if not folif_html:
       # Try clicking a likely send/submit button (best-effort) and wait again briefly.
       try:

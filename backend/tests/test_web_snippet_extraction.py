@@ -123,6 +123,38 @@ Key features include:
     assert source.snippet_cited is None
     assert source.metadata_json.get("citation_number") is None
 
+  def test_web_sources_can_persist_provider_snippet_cited(self, repository):
+    """Provider-supplied snippet_cited should be persisted for web captures."""
+    response_text = "AI Mode response without ChatGPT-style footnotes."
+
+    sources_used = [
+      {
+        "url": "https://example.com/article",
+        "title": "Example",
+        "rank": 1,
+        "snippet_cited": "This is the snippet that AI Mode attributed.",
+      }
+    ]
+
+    response_id = repository.save(
+      prompt_text="Test query",
+      provider_name="google",
+      model_name="google-aimode",
+      response_text=response_text,
+      response_time_ms=1000,
+      search_queries=[],
+      sources_used=sources_used,
+      raw_response={},
+      data_source="web",
+    )
+
+    response = repository.get_by_id(response_id)
+    source = response.sources_used[0]
+
+    assert source.snippet_cited == "This is the snippet that AI Mode attributed."
+    assert source.mentions
+    assert source.mentions[0].snippet_cited == "This is the snippet that AI Mode attributed."
+
   def test_url_normalization_in_footnote_matching(self, repository):
     """URLs with query params should still match footnotes."""
     response_text = """Recent research shows interesting findings ([Source][1]).

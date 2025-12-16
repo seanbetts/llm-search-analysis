@@ -393,11 +393,19 @@ class InteractionRepository:
         snippet_value = None
 
         if response.data_source in ("web", "network_log"):
+          # Prefer provider-supplied snippet_cited for web captures (e.g., Google AI Mode),
+          # falling back to footnote-derived snippets when available.
+          snippet_value = _clean_snippet(
+            citation_data.get("snippet_cited")
+            or citation_data.get("snippet_used")
+            or citation_data.get("text_snippet")
+          )
           if footnote_mapping and url_norm in footnote_mapping:
             citation_num = footnote_mapping[url_norm]
             metadata["citation_number"] = citation_num
             mention_snippets = snippet_mapping.get(citation_num, []) or []
-            snippet_value = mention_snippets[0] if mention_snippets else None
+            if snippet_value is None:
+              snippet_value = mention_snippets[0] if mention_snippets else None
         else:
           # For API mode: do not persist snippet_cited (indices can be provider-specific and may not align).
           snippet_value = None
@@ -449,6 +457,21 @@ class InteractionRepository:
             seen.add(clean_snippet)
             mention_idx += 1
           mention_counts[source_used.id] = mention_idx
+        elif response.data_source in ("web", "network_log") and snippet_value:
+          # If we only have a single snippet, store it as the first mention so the UI
+          # can show it consistently alongside footnote-derived mentions.
+          clean_snippet = _clean_snippet(snippet_value)
+          if clean_snippet:
+            mention = SourceUsedMention(
+              source_used_id=source_used.id,
+              response_id=response.id,
+              mention_index=0,
+              snippet_cited=clean_snippet,
+              metadata_json={
+                "citation_number": (metadata or {}).get("citation_number"),
+              },
+            )
+            self.db.add(mention)
 
       self.db.commit()
       return response.id
