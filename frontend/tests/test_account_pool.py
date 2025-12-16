@@ -45,3 +45,19 @@ def test_select_chatgpt_account_rotates_and_enforces_quota(tmp_path: Path, monke
     select_chatgpt_account(now_ts=1000)
   assert excinfo.value.next_available_in_seconds == 24 * 3600
 
+
+def test_select_chatgpt_account_is_sticky_until_exhausted(tmp_path: Path, monkeypatch):
+  """Selector should keep using the same account until its quota is exhausted."""
+  monkeypatch.delenv("CHATGPT_ACCOUNTS_FILE", raising=False)
+  monkeypatch.setenv(
+    "CHATGPT_ACCOUNTS_JSON",
+    '{"accounts":[{"email":"a@example.com","password":"p"},{"email":"b@example.com","password":"p"}]}',
+  )
+  monkeypatch.setenv("CHATGPT_USAGE_DB_PATH", str(tmp_path / "usage.sqlite"))
+  monkeypatch.setenv("CHATGPT_DAILY_LIMIT", "10")
+  monkeypatch.setenv("CHATGPT_WINDOW_HOURS", "24")
+  monkeypatch.setenv("CHATGPT_SESSIONS_DIR", str(tmp_path / "sessions"))
+
+  first, _ = select_chatgpt_account(now_ts=1000)
+  second, _ = select_chatgpt_account(now_ts=1001)
+  assert first.email == second.email

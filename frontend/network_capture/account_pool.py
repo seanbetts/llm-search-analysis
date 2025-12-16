@@ -194,6 +194,15 @@ class QuotaUsageStore:
         """
       )
       conn.execute("CREATE INDEX IF NOT EXISTS idx_usage_events_account_ts ON usage_events(account_id, ts)")
+      conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS selector_state (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL,
+          updated_ts INTEGER NOT NULL
+        )
+        """
+      )
 
   def _prune(self, conn: sqlite3.Connection, window_start_ts: int) -> None:
     conn.execute("DELETE FROM usage_events WHERE ts < ?", (window_start_ts,))
@@ -208,10 +217,10 @@ class QuotaUsageStore:
   ) -> WebAccount:
     """Select an account within quota and immediately record a usage event.
 
-    Selection strategy is deterministic and quota-aware:
-    - Prefer lowest usage count in the window.
-    - Tie-break by least-recently-used.
-    - Final tie-break by account_id for stable ordering.
+    Selection strategy is "sticky until exhausted" to minimize repeated logins:
+    - Prefer the current account if it is still under quota.
+    - Otherwise advance to the next account (in configured order) that has quota.
+    - Persist the current account pointer so restarts keep the same rotation.
     """
     if not accounts:
       raise AccountPoolError("No accounts available to select from")
@@ -226,6 +235,12 @@ class QuotaUsageStore:
     with self._connect() as conn:
       conn.execute("BEGIN IMMEDIATE")
       self._prune(conn, window_start)
+
+      state_row = conn.execute(
+        "SELECT value FROM selector_state WHERE key = ?",
+        ("current_account_id",),
+      ).fetchone()
+      current_account_id = state_row[0] if state_row and isinstance(state_row[0], str) else None
 
       placeholders = ",".join("?" for _ in accounts)
       account_ids = [acct.account_id for acct in accounts]
@@ -242,46 +257,79 @@ class QuotaUsageStore:
 
       by_id: Dict[str, Tuple[int, Optional[int]]] = {row[0]: (int(row[1]), row[2]) for row in rows}
 
-      candidates: List[Tuple[int, int, str, WebAccount]] = []
-      for acct in accounts:
-        count, last_ts = by_id.get(acct.account_id, (0, None))
-        if count >= limit:
-          continue
-        last_val = int(last_ts) if isinstance(last_ts, int) else 0
-        candidates.append((count, last_val, acct.account_id, acct))
+      def under_quota(acct: WebAccount) -> bool:
+        """Return True when the account has remaining quota in the rolling window."""
+        count, _last_ts = by_id.get(acct.account_id, (0, None))
+        return count < limit
 
-      if not candidates:
-        next_in = self._seconds_until_next_available(conn, account_ids, window_seconds, now)
+      account_by_id = {acct.account_id: acct for acct in accounts}
+      chosen: Optional[WebAccount] = None
+
+      # 1) Stick with current account if possible.
+      if current_account_id and current_account_id in account_by_id:
+        current = account_by_id[current_account_id]
+        if under_quota(current):
+          chosen = current
+
+      # 2) Otherwise, rotate to the next available account in configured order.
+      if chosen is None:
+        start_index = 0
+        if current_account_id:
+          for idx, acct in enumerate(accounts):
+            if acct.account_id == current_account_id:
+              start_index = idx + 1
+              break
+
+        ordered = list(accounts[start_index:]) + list(accounts[:start_index])
+        for acct in ordered:
+          if under_quota(acct):
+            chosen = acct
+            break
+
+      if chosen is None:
+        exhausted_ids = [
+          acct.account_id
+          for acct in accounts
+          if not under_quota(acct)
+        ]
+        next_in = self._seconds_until_next_available_for_exhausted(
+          conn,
+          exhausted_ids,
+          window_seconds,
+          now,
+        )
         raise AccountQuotaExceededError(
           "All ChatGPT accounts have reached the rolling quota; try again later.",
           next_available_in_seconds=next_in,
         )
 
-      # Sort by (count asc, last_used asc) => least-used, least-recently-used.
-      candidates.sort(key=lambda item: (item[0], item[1], item[2]))
-      chosen = candidates[0][3]
-
       conn.execute("INSERT INTO usage_events(account_id, ts) VALUES (?, ?)", (chosen.account_id, now))
+      conn.execute(
+        "INSERT OR REPLACE INTO selector_state(key, value, updated_ts) VALUES (?, ?, ?)",
+        ("current_account_id", chosen.account_id, now),
+      )
       conn.commit()
       return chosen
 
-  def _seconds_until_next_available(
+  def _seconds_until_next_available_for_exhausted(
     self,
     conn: sqlite3.Connection,
-    account_ids: Sequence[str],
+    exhausted_account_ids: Sequence[str],
     window_seconds: int,
     now: int,
   ) -> Optional[int]:
-    placeholders = ",".join("?" for _ in account_ids)
-    row = conn.execute(
-      f"SELECT MIN(ts) FROM usage_events WHERE account_id IN ({placeholders})",
-      tuple(account_ids),
-    ).fetchone()
-    min_ts = row[0] if row else None
-    if not isinstance(min_ts, int):
+    if not exhausted_account_ids:
       return None
-    next_ts = min_ts + window_seconds
-    return max(0, int(next_ts - now))
+    placeholders = ",".join("?" for _ in exhausted_account_ids)
+    rows = conn.execute(
+      f"SELECT account_id, MIN(ts) FROM usage_events WHERE account_id IN ({placeholders}) GROUP BY account_id",
+      tuple(exhausted_account_ids),
+    ).fetchall()
+    candidate_seconds: List[int] = []
+    for _account_id, min_ts in rows:
+      if isinstance(min_ts, int):
+        candidate_seconds.append(max(0, int(min_ts + window_seconds - now)))
+    return min(candidate_seconds) if candidate_seconds else None
 
 
 def chatgpt_usage_store_from_env() -> QuotaUsageStore:
