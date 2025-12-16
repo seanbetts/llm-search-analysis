@@ -20,6 +20,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+try:
+  from dotenv import load_dotenv
+except ImportError:  # pragma: no cover
+  load_dotenv = None
+
 
 class AccountPoolError(RuntimeError):
   """Raised when an account pool cannot be loaded or used."""
@@ -94,6 +99,18 @@ def load_chatgpt_accounts_from_env() -> List[WebAccount]:
   Returns:
     List of WebAccount objects.
   """
+  # Ensure local development picks up `.env` even when callers do not import
+  # `frontend.config` (which also calls `load_dotenv()`).
+  #
+  # Only load `.env` as a fallback when none of the relevant variables are
+  # present, so unit tests and container deployments remain deterministic.
+  if load_dotenv is not None and not (
+    os.getenv("CHATGPT_ACCOUNTS_FILE")
+    or os.getenv("CHATGPT_ACCOUNTS_JSON")
+    or (os.getenv("CHATGPT_EMAIL") and os.getenv("CHATGPT_PASSWORD"))
+  ):
+    load_dotenv()
+
   legacy_email = os.getenv("CHATGPT_EMAIL")
   legacy_password = os.getenv("CHATGPT_PASSWORD")
 
@@ -291,4 +308,3 @@ def select_chatgpt_account(now_ts: Optional[int] = None) -> Tuple[WebAccount, st
   store = chatgpt_usage_store_from_env()
   chosen = store.select_and_record(accounts, limit=limit, window_seconds=window_seconds, now_ts=now_ts)
   return chosen, chatgpt_session_path_for_account(chosen)
-
