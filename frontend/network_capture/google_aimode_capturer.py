@@ -17,6 +17,12 @@ from .base_capturer import BaseCapturer
 from .browser_manager import BrowserManager
 from .google_aimode_parser import choose_latest_folif_response, parse_google_aimode_folif_html
 
+try:
+  from playwright_stealth import Stealth
+  STEALTH_AVAILABLE = True
+except ImportError:  # pragma: no cover
+  STEALTH_AVAILABLE = False
+
 
 class GoogleAIModeCapturer(BaseCapturer):
   """Google AI Mode network traffic capturer."""
@@ -24,10 +30,12 @@ class GoogleAIModeCapturer(BaseCapturer):
   AIMODE_URL = "https://www.google.com/aimode"
   SUPPORTED_MODELS = ["google-aimode"]
 
-  def __init__(self, status_callback=None):  # noqa: ANN001
+  def __init__(self, storage_state_path: str | None = None, status_callback=None):  # noqa: ANN001
     """Initialize capturer.
 
     Args:
+      storage_state_path: Optional Playwright storageState file path used to
+        persist captcha/consent cookies across runs.
       status_callback: Optional callable that accepts status messages.
     """
     super().__init__()
@@ -37,6 +45,7 @@ class GoogleAIModeCapturer(BaseCapturer):
     self.page = None
     self.browser_manager = BrowserManager()
     self._status_callback = status_callback
+    self.storage_state_path = storage_state_path
 
   def _log_status(self, message: str) -> None:
     """Emit status updates to the UI callback, when provided."""
@@ -58,9 +67,35 @@ class GoogleAIModeCapturer(BaseCapturer):
     """Start browser instance."""
     self._log_status("🚀 Starting browser...")
     self.playwright = sync_playwright().start()
-    self.browser = self.playwright.chromium.launch(headless=headless, channel="chrome")
-    self.context = self.browser.new_context(viewport={"width": 1440, "height": 900})
+    self.browser = self.playwright.chromium.launch(
+      headless=headless,
+      channel="chrome",
+      args=[
+        "--disable-blink-features=AutomationControlled",
+        "--disable-dev-shm-usage",
+        "--disable-web-security",
+        "--no-sandbox",
+        "--disable-gpu",
+        "--disable-software-rasterizer",
+        "--disable-setuid-sandbox",
+      ],
+    )
+
+    self.context = self.browser.new_context(
+      viewport={"width": 1440, "height": 900},
+      user_agent=(
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+      ),
+      storage_state=self.storage_state_path or None,
+    )
     self.page = self.context.new_page()
+    if STEALTH_AVAILABLE:
+      try:
+        Stealth().apply_stealth_sync(self.page)
+        self._log_status("✓ Stealth mode applied")
+      except Exception:
+        self._log_status("⚠️ Stealth mode failed to apply")
     self.browser_manager.setup_network_interception(
       self.page,
       response_filter=lambda resp: "google.com" in resp.url,
@@ -70,6 +105,11 @@ class GoogleAIModeCapturer(BaseCapturer):
   def stop_browser(self) -> None:
     """Stop browser and cleanup."""
     try:
+      if self.context and self.storage_state_path:
+        try:
+          self.context.storage_state(path=self.storage_state_path)
+        except Exception:
+          pass
       if self.page:
         self.page.close()
       if self.context:

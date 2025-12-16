@@ -18,6 +18,7 @@ ERROR_KEY = "web_error"
 PROMPT_KEY = "web_prompt"
 TAGGING_KEY = "web_enable_citation_tagging"
 WEB_PROVIDER_KEY = "web_provider"
+GOOGLE_SESSION_KEY = "google_aimode_session_path"
 
 
 def tab_web():
@@ -28,6 +29,7 @@ def tab_web():
   st.session_state.setdefault('network_show_browser', False)
   st.session_state.setdefault(TAGGING_KEY, True)
   st.session_state.setdefault(WEB_PROVIDER_KEY, "ChatGPT")
+  st.session_state.setdefault(GOOGLE_SESSION_KEY, "./data/google_aimode_session.json")
 
   st.markdown("### 🌐 Web Testing")
 
@@ -74,7 +76,10 @@ def tab_web():
             headless = not st.session_state.network_show_browser
 
             if provider_choice == "Google AI Mode":
-              capturer = GoogleAIModeCapturer(status_callback=update_status)
+              capturer = GoogleAIModeCapturer(
+                storage_state_path=st.session_state.get(GOOGLE_SESSION_KEY),
+                status_callback=update_status,
+              )
               try:
                 capturer.start_browser(headless=headless)
                 capturer.authenticate()
