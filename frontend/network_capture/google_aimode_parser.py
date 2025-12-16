@@ -375,6 +375,102 @@ def _extract_pub_date_from_meta(meta) -> Optional[str]:  # noqa: ANN001
   return None
 
 
+def _extract_uuid_related_sources(folif_html: str) -> Dict[str, List[dict]]:
+  """Extract per-snippet related sources keyed by `data-icl-uuid`.
+
+  AI Mode embeds attribution data in Sv6Kpe comment payloads. For a given UUID,
+  there can be multiple entries (the “View related links” popover list).
+
+  Returns:
+    Mapping of icl UUID -> list of dicts with url/title/description/pub_date.
+  """
+  if not folif_html:
+    return {}
+
+  text = html_lib.unescape(folif_html)
+  results: Dict[str, List[dict]] = {}
+
+  i = 0
+  while True:
+    start = text.find("<!--Sv6Kpe", i)
+    if start == -1:
+      break
+    end = text.find("-->", start)
+    if end == -1:
+      break
+    chunk = text[start + len("<!--Sv6Kpe") : end]
+    i = end + 3
+
+    payload = chunk[chunk.find("[") :]
+    if not payload:
+      continue
+    depth = 0
+    endpos = None
+    for j, ch in enumerate(payload):
+      if ch == "[":
+        depth += 1
+      elif ch == "]":
+        depth -= 1
+        if depth == 0:
+          endpos = j + 1
+          break
+    if not endpos:
+      continue
+
+    raw = payload[:endpos]
+    try:
+      obj = json.loads(raw)
+    except Exception:
+      continue
+
+    # Most relevant payloads are shaped like `[[uuid, ...]]`.
+    if not isinstance(obj, list) or len(obj) != 1 or not isinstance(obj[0], list) or not obj[0]:
+      continue
+    entry = obj[0]
+    uuid = entry[0] if len(entry) >= 1 else None
+    if not isinstance(uuid, str) or not _UUID_RE.match(uuid):
+      continue
+
+    # Full metadata: [[uuid, [title, description, favicon, base, publishers, url, ... date ...]]]
+    meta = entry[1] if len(entry) >= 2 else None
+    if isinstance(meta, list) and len(meta) >= 6:
+      title = meta[0] if isinstance(meta[0], str) else None
+      description = meta[1] if isinstance(meta[1], str) else None
+      url = meta[5] if isinstance(meta[5], str) else None
+      normalized_url = _normalize_outgoing_url(url) if isinstance(url, str) else None
+      if normalized_url and not _is_google_footer_link(normalized_url):
+        results.setdefault(uuid, []).append(
+          {
+            "url": normalized_url,
+            "title": title,
+            "description": description,
+            "pub_date": _extract_pub_date_from_meta(meta),
+          }
+        )
+      continue
+
+    # Lightweight payload: [[uuid, "<id>", 0, "<url>", ...]]
+    if len(entry) >= 4 and isinstance(entry[3], str) and entry[3].startswith("http"):
+      normalized_url = _normalize_outgoing_url(entry[3])
+      if normalized_url and not _is_google_footer_link(normalized_url):
+        results.setdefault(uuid, []).append({"url": normalized_url})
+
+  # De-dupe URLs per uuid while preserving order.
+  for uuid, items in list(results.items()):
+    seen = set()
+    deduped = []
+    for item in items:
+      url = item.get("url")
+      if not isinstance(url, str) or not url:
+        continue
+      if url in seen:
+        continue
+      seen.add(url)
+      deduped.append(item)
+    results[uuid] = deduped
+  return results
+
+
 class _SidebarSourcesExtractor(HTMLParser):
   """Extract source cards from the sidebar container (data-target-container-id=13)."""
 
@@ -629,6 +725,7 @@ def parse_google_aimode_folif_html(
   sources_by_url: Dict[str, Source] = {s.url: s for s in normalized_sources if s.url}
 
   uuid_blocks = _parse_uuid_source_blocks(unescaped)
+  related_by_uuid = _extract_uuid_related_sources(unescaped)
   uuid_to_url: Dict[str, str] = {}
   uuid_to_title: Dict[str, Optional[str]] = {}
   uuid_to_pub_date: Dict[str, Optional[str]] = {}
@@ -652,6 +749,37 @@ def parse_google_aimode_folif_html(
 
   # UUID citations in the response (primary signal for "Sources Used").
   for uuid, snippet in uuid_snippets.items():
+    related_items = related_by_uuid.get(uuid) or []
+    if related_items:
+      for item in related_items:
+        url = item.get("url")
+        if not isinstance(url, str) or not url or url in seen_urls or _is_google_footer_link(url):
+          continue
+        seen_urls.add(url)
+        rank = None
+        if has_search:
+          match = sources_by_url.get(url)
+          if match and isinstance(match.rank, int):
+            rank = match.rank
+        citations.append(
+          Citation(
+            url=url,
+            title=item.get("title") if isinstance(item.get("title"), str) else uuid_to_title.get(uuid),
+            rank=rank,
+            snippet_cited=snippet,
+            published_at=item.get("pub_date") if isinstance(item.get("pub_date"), str) else uuid_to_pub_date.get(uuid),
+            metadata={
+              "icl_uuid": uuid,
+              "description": (
+                item.get("description")
+                if isinstance(item.get("description"), str)
+                else uuid_to_description.get(uuid)
+              ),
+            },
+          )
+        )
+      continue
+
     url = uuid_to_url.get(uuid)
     if not url or url in seen_urls or _is_google_footer_link(url):
       continue

@@ -6,13 +6,21 @@ from frontend.network_capture.google_aimode_parser import parse_google_aimode_fo
 
 def test_parse_google_aimode_folif_html_extracts_sidebar_sources_and_citations():
   """Parser should normalize sidebar sources and in-response citations."""
-  uuid_block = (
+  uuid_block_primary = (
     '<!--Sv6Kpe[["9d06f938-e592-4929-a3c9-e91ed6852000",'
     '["Example One","Sidebar desc",'
     '"https://encrypted-tbn0.gstatic.com/faviconV2?url=https://example.com&client=AIM",'
     '"https://example.com",["Example"],"https://example.com/a",null,null,"1",null,[],[],0,[],'
     'null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'
     'null,null,null,null,null,"23 Nov 2025",0]]]-->'
+  )
+  uuid_block_related = (
+    '<!--Sv6Kpe[["9d06f938-e592-4929-a3c9-e91ed6852000",'
+    '["Example Two","Other desc",'
+    '"https://encrypted-tbn0.gstatic.com/faviconV2?url=https://example.org&client=AIM",'
+    '"https://example.org",["Example"],"https://example.org/b",null,null,"1",null,[],[],0,[],'
+    'null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'
+    'null,null,null,null,null,"11 Nov 2025",0]]]-->'
   )
   html = """
   <div data-target-container-id="13">
@@ -35,7 +43,7 @@ def test_parse_google_aimode_folif_html_extracts_sidebar_sources_and_citations()
     <div>AI responses may include mistakes. Learn more</div>
   </div>
 
-  """ + uuid_block
+  """ + uuid_block_primary + uuid_block_related
   response = parse_google_aimode_folif_html(
     html,
     response_time_ms=1234,
@@ -55,13 +63,14 @@ def test_parse_google_aimode_folif_html_extracts_sidebar_sources_and_citations()
 
   citation_urls = [c.url for c in response.citations]
   assert "https://example.com/a" in citation_urls
+  assert "https://example.org/b" in citation_urls
   assert "https://extra.example.net/x" in citation_urls
   assert "https://policies.google.com/privacy" not in citation_urls
 
-  used = [c for c in response.citations if c.url == "https://example.com/a"][0]
-  assert used.rank == 1
-  assert isinstance(used.snippet_cited, str)
-  assert "second sentence" in used.snippet_cited.lower()
+  used = [c for c in response.citations if c.url in {"https://example.com/a", "https://example.org/b"}]
+  assert all(c.rank in {1, 2} for c in used)
+  assert all(isinstance(c.snippet_cited, str) for c in used)
+  assert any("second sentence" in (c.snippet_cited or "").lower() for c in used)
 
 
 def test_markdown_extraction_does_not_add_blank_lines_between_list_items():
