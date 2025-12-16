@@ -114,7 +114,15 @@ class GoogleAIModeCapturer(BaseCapturer):
     # Find a textbox/textarea and submit prompt. Use broad fallbacks for resilience.
     self._log_status("📝 Entering prompt...")
     input_locator = None
+    # AI Mode currently exposes the prompt box as a textarea with aria-label "Ask anything".
+    try:
+      self.page.wait_for_selector("textarea[aria-label='Ask anything']", timeout=10000)
+    except Exception:
+      pass
     locator_candidates = [
+      ("textarea[aria-label]", self.page.locator("textarea[aria-label='Ask anything']").first),
+      ("textarea[placeholder]", self.page.locator("textarea[placeholder='Ask anything']").first),
+      ("textarea.ITIRGe", self.page.locator("textarea.ITIRGe").first),
       # Most robust: accessibility role
       ("role:textbox", self.page.get_by_role("textbox").first),
       # Common inputs
