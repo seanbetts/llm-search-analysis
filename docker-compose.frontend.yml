@@ -1,0 +1,42 @@
+# Optional Docker Compose overlay to run Streamlit in Docker.
+#
+# Default repo workflow remains "hybrid" (backend in Docker, frontend local) because
+# Playwright + Chrome can be finicky on ARM Macs inside containers.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.frontend.yml up -d
+#
+# Requirements:
+# - Create `./secrets/chatgpt_accounts.json` (ignored by git) and keep `./data/` persisted.
+# - If you run Chrome outside the container and connect via CDP, set `CHROME_CDP_URL`.
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: llm-search-frontend
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - API_BASE_URL=http://api:8000
+      - CHATGPT_ACCOUNTS_FILE=/run/secrets/chatgpt_accounts.json
+      - CHATGPT_DAILY_LIMIT=${CHATGPT_DAILY_LIMIT:-10}
+      - CHATGPT_WINDOW_HOURS=${CHATGPT_WINDOW_HOURS:-24}
+      - CHATGPT_USAGE_DB_PATH=${CHATGPT_USAGE_DB_PATH:-./data/account_usage.sqlite}
+      - CHATGPT_SESSIONS_DIR=${CHATGPT_SESSIONS_DIR:-./data/chatgpt_sessions}
+      - CHROME_CDP_URL=${CHROME_CDP_URL:-}
+    secrets:
+      - chatgpt_accounts.json
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - llm-search-network
+
+secrets:
+  chatgpt_accounts.json:
+    file: ./secrets/chatgpt_accounts.json
+
