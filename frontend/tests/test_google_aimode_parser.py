@@ -16,10 +16,13 @@ def test_parse_google_aimode_folif_html_extracts_sidebar_sources_and_citations()
   )
   html = """
   <div data-target-container-id="13">
+    <button aria-label="2 sites"></button>
     <a target="_blank" rel="noopener" aria-label="Example One" href="https://example.com/a"></a>
     <div>23 Nov 2025 Example One description.</div>
     <a target="_blank" rel="noopener" aria-label="Example Two" href="https://example.org/b"></a>
     <div>11 Nov 2025 Example Two description.</div>
+    <a target="_blank" rel="noopener" aria-label="Example Three" href="https://example.net/c"></a>
+    <div>01 Jan 2024 Example Three description.</div>
   </div>
 
   <div data-target-container-id="5">

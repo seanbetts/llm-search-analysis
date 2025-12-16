@@ -369,6 +369,7 @@ class _SidebarSourcesExtractor(HTMLParser):
     self._current: Optional[dict] = None
     self._current_text: List[str] = []
     self.items: List[dict] = []
+    self.expected_sites_count: Optional[int] = None
 
   def handle_starttag(self, tag: str, attrs) -> None:  # noqa: ANN001
     if tag in ("script", "style"):
@@ -387,12 +388,29 @@ class _SidebarSourcesExtractor(HTMLParser):
     if self._capture_depth is None:
       return
 
+    if tag == "button":
+      attrs_dict = dict(attrs or [])
+      label = attrs_dict.get("aria-label")
+      if isinstance(label, str):
+        m = re.match(r"^\s*(\d+)\s+sites\s*$", label, flags=re.IGNORECASE)
+        if m:
+          try:
+            count = int(m.group(1))
+          except Exception:
+            count = None
+          if isinstance(count, int) and count > 0:
+            if self.expected_sites_count is None:
+              self.expected_sites_count = count
+            else:
+              self.expected_sites_count = min(self.expected_sites_count, count)
+      return
+
     if tag == "a":
       attrs_dict = dict(attrs or [])
       href = attrs_dict.get("href")
       title = attrs_dict.get("aria-label") or None
       normalized = _normalize_outgoing_url(href) if isinstance(href, str) else None
-      if normalized:
+      if normalized and title:
         self._flush_current()
         self._current = {"url": normalized, "title": title}
         self._current_text = []
@@ -451,21 +469,43 @@ def extract_sidebar_sources_from_folif_html(folif_html: str) -> List[Source]:
     url = item.get("url")
     if not isinstance(url, str) or not url:
       continue
+    if _is_google_footer_link(url):
+      continue
+    title = item.get("title") if isinstance(item.get("title"), str) else None
+    if title and "learn more about ai mode" in title.lower():
+      continue
     if url in seen:
       continue
     seen.add(url)
+    pub_date = item.get("pub_date")
+    description = item.get("description")
+    if isinstance(description, str) and description:
+      lowered = description.lower()
+      if "creating a public link" in lowered or "your feedback helps google" in lowered:
+        continue
     sources.append(
       Source(
         url=url,
-        title=item.get("title") if isinstance(item.get("title"), str) else None,
+        title=title,
         domain=_domain_for_url(url),
         rank=idx,
-        pub_date=item.get("pub_date"),
-        search_description=item.get("description"),
+        pub_date=pub_date if isinstance(pub_date, str) else None,
+        search_description=description if isinstance(description, str) else None,
         internal_score=None,
         metadata={"source_extraction": "sidebar_container_13"},
       )
     )
+
+  if isinstance(parser.expected_sites_count, int) and parser.expected_sites_count > 0:
+    if len(sources) > parser.expected_sites_count:
+      sources = sources[: parser.expected_sites_count]
+
+  # Re-rank after filtering/truncation.
+  for idx, source in enumerate(sources, start=1):
+    try:
+      object.__setattr__(source, "rank", idx)
+    except Exception:
+      source.rank = idx
   return sources
 
 
