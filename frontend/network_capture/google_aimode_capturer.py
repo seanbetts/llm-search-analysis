@@ -10,6 +10,8 @@ import os
 import re
 import time
 from pathlib import Path
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 from playwright.sync_api import sync_playwright
 
@@ -47,7 +49,35 @@ class GoogleAIModeCapturer(BaseCapturer):
     self.page = None
     self.browser_manager = BrowserManager()
     self._status_callback = status_callback
+    if storage_state_path is None:
+      project_root = Path(__file__).resolve().parents[2]
+      storage_state_path = str(project_root / "data" / "google_aimode_session.json")
     self.storage_state_path = storage_state_path
+
+  def _connect_over_cdp(self, cdp_url: str):
+    """Connect to an existing Chrome instance via CDP.
+
+    This mirrors the ChatGPT capturer's behavior of resolving the WebSocket
+    debugger endpoint first, which is more reliable across Docker/host setups.
+
+    Args:
+      cdp_url: Base CDP HTTP URL (e.g. `http://localhost:9223`).
+
+    Returns:
+      Connected Playwright browser instance.
+    """
+    parsed = urlparse(cdp_url)
+    version_url = f"{cdp_url}/json/version"
+    req = Request(version_url)
+    req.add_header("Host", f"localhost:{parsed.port or 9222}")
+    with urlopen(req, timeout=5) as response:
+      data = response.read().decode("utf-8")
+
+    import json
+    payload = json.loads(data)
+    ws_endpoint = payload["webSocketDebuggerUrl"]
+    ws_endpoint = ws_endpoint.replace("localhost", parsed.hostname or "localhost")
+    return self.playwright.chromium.connect_over_cdp(ws_endpoint)
 
   def _log_status(self, message: str) -> None:
     """Emit status updates to the UI callback, when provided."""
@@ -72,6 +102,7 @@ class GoogleAIModeCapturer(BaseCapturer):
     self.playwright = sync_playwright().start()
     chrome_args = [
       "--disable-blink-features=AutomationControlled",
+      "--disable-infobars",
       "--disable-dev-shm-usage",
       "--disable-web-security",
       "--no-sandbox",
@@ -79,12 +110,13 @@ class GoogleAIModeCapturer(BaseCapturer):
       "--disable-software-rasterizer",
       "--disable-setuid-sandbox",
     ]
+    ignore_default_args = ["--enable-automation"]
 
     # Best option to reduce repeated CAPTCHA prompts: reuse a persistent user profile.
     cdp_url = os.getenv("CHROME_CDP_URL")
     if cdp_url:
       self._log_status(f"🔗 Attaching to Chrome via CDP: {cdp_url}")
-      self.browser = self.playwright.chromium.connect_over_cdp(cdp_url)
+      self.browser = self._connect_over_cdp(cdp_url)
       contexts = getattr(self.browser, "contexts", None) or []
       self.context = contexts[0] if contexts else self.browser.new_context()
       self.page = self.context.new_page()
@@ -111,6 +143,7 @@ class GoogleAIModeCapturer(BaseCapturer):
         headless=headless,
         channel="chrome",
         args=chrome_args,
+        ignore_default_args=ignore_default_args,
         viewport={"width": 1440, "height": 900},
         user_agent=(
           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
@@ -120,7 +153,12 @@ class GoogleAIModeCapturer(BaseCapturer):
       self.browser = self.context.browser
       self.page = self.context.new_page()
     else:
-      self.browser = self.playwright.chromium.launch(headless=headless, channel="chrome", args=chrome_args)
+      self.browser = self.playwright.chromium.launch(
+        headless=headless,
+        channel="chrome",
+        args=chrome_args,
+        ignore_default_args=ignore_default_args,
+      )
 
       storage_state = None
       if self.storage_state_path:
@@ -156,6 +194,7 @@ class GoogleAIModeCapturer(BaseCapturer):
     try:
       if self.context and self.storage_state_path:
         try:
+          Path(self.storage_state_path).parent.mkdir(parents=True, exist_ok=True)
           self.context.storage_state(path=self.storage_state_path)
         except Exception:
           pass
@@ -175,30 +214,12 @@ class GoogleAIModeCapturer(BaseCapturer):
     return True
 
   def _maybe_wait_for_challenge_clear(self, timeout_seconds: int = 180) -> None:
-    """Wait for a visible prompt input to appear when a CAPTCHA blocks the page."""
+    """Wait for a visible prompt input to appear when a CAPTCHA blocks the page.
+
+    Google frequently blocks `/aimode` behind a bot-check. When running in
+    headed mode, we keep the browser open so the user can complete the challenge.
+    """
     if not self.page or getattr(self, "_headless", True):
-      return
-
-    try:
-      url = self.page.url or ""
-    except Exception:
-      url = ""
-
-    challenge_indicators = [
-      "sorry/index",  # common google bot-check flow
-      "recaptcha",
-      "unusual traffic",
-    ]
-
-    try:
-      content = (self.page.content() or "").lower()
-    except Exception:
-      content = ""
-
-    maybe_challenged = any(indicator in url.lower() for indicator in challenge_indicators) or any(
-      indicator in content for indicator in challenge_indicators
-    )
-    if not maybe_challenged:
       return
 
     self._log_status("⚠️ CAPTCHA/bot-check detected. Please complete it in the browser window…")
@@ -274,7 +295,9 @@ class GoogleAIModeCapturer(BaseCapturer):
     self._log_status("📝 Entering prompt...")
     input_locator = self._find_prompt_input_locator()
     if input_locator is None:
-      self._maybe_wait_for_challenge_clear()
+      # If the input isn't available, Google is often showing a CAPTCHA/bot-check.
+      # Keep the browser open (headed mode) to allow the user to clear it.
+      self._maybe_wait_for_challenge_clear(timeout_seconds=600)
       input_locator = self._find_prompt_input_locator(wait_for_textarea=False)
       if input_locator is None:
         raise RuntimeError(
