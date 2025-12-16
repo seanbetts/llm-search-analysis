@@ -567,6 +567,17 @@ class APIClient:
     """
     return self._request("GET", "/api/v1/providers/models")
 
+  def get_model_info(self) -> List[Dict[str, Any]]:
+    """Get model metadata for all available models across all providers.
+
+    Returns:
+      List of model info objects, each containing:
+        - model_id: Canonical model identifier
+        - provider: Provider name owning this model
+        - display_name: Human-friendly display name
+    """
+    return self._request("GET", "/api/v1/providers/models/info")
+
   def export_interaction_markdown(self, interaction_id: int) -> str:
     """Export an interaction as formatted Markdown.
 

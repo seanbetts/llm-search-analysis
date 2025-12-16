@@ -5,6 +5,7 @@ import os
 import streamlit as st
 
 from frontend.api_client import APIClient
+from frontend.helpers.metrics import load_model_display_names
 from frontend.styles import load_styles
 from frontend.tabs import tab_api, tab_batch, tab_history, tab_web
 
@@ -29,6 +30,15 @@ def initialize_session_state():
             base_url=api_base_url,
             timeout_send_prompt=120.0
         )
+        st.session_state.model_registry_loaded = False
+    if not st.session_state.get("model_registry_loaded", False):
+        try:
+            model_info = st.session_state.api_client.get_model_info()
+            load_model_display_names(model_info)
+            st.session_state.model_registry_loaded = True
+        except Exception:
+            # If the backend is down/unreachable, fall back to heuristic display names.
+            st.session_state.model_registry_loaded = False
     if 'batch_results' not in st.session_state:
         st.session_state.batch_results = []
     if 'browser_session_active' not in st.session_state:

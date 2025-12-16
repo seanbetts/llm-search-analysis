@@ -4,7 +4,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.api.v1.schemas.responses import ProviderInfo
+from app.api.v1.schemas.responses import ModelInfoResponse, ProviderInfo
 from app.dependencies import get_provider_service
 from app.services.provider_service import ProviderService
 
@@ -71,4 +71,31 @@ async def get_all_models(
     raise HTTPException(
       status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
       detail=f"Error retrieving models: {str(e)}"
+    )
+
+
+@router.get(
+  "/models/info",
+  response_model=List[ModelInfoResponse],
+  status_code=status.HTTP_200_OK,
+  summary="Get available model metadata",
+  description="Get model IDs with provider + display names for all configured providers.",
+)
+async def get_all_model_info(
+  provider_service: ProviderService = Depends(get_provider_service),
+):
+  """Get model metadata for all available models.
+
+  Args:
+    provider_service: ProviderService dependency
+
+  Returns:
+    List of model metadata objects.
+  """
+  try:
+    return provider_service.get_available_model_info()
+  except Exception as e:
+    raise HTTPException(
+      status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+      detail=f"Error retrieving model info: {str(e)}"
     )
